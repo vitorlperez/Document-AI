@@ -1,0 +1,3 @@
+interface:
+  display_name: "Spec-Driven Delivery"
+  short_description: "Implement features with tests and independent validation"

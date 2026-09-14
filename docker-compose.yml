@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: document_intelligence
+      POSTGRES_USER: document_intelligence
+      POSTGRES_PASSWORD: document_intelligence
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U document_intelligence -d document_intelligence"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: ./backend
+    environment: &backend_environment
+      DATABASE_URL: postgresql+psycopg://document_intelligence:document_intelligence@postgres:5432/document_intelligence
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: development
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:3000}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+      GOOGLE_OAUTH_REDIRECT_URI: ${GOOGLE_OAUTH_REDIRECT_URI:-http://localhost:8000/data-sources/google/oauth/callback}
+      GOOGLE_TOKEN_ENCRYPTION_KEY: ${GOOGLE_TOKEN_ENCRYPTION_KEY:-}
+      WORKOS_API_KEY: ${WORKOS_API_KEY:-}
+      WORKOS_CLIENT_ID: ${WORKOS_CLIENT_ID:-}
+      WORKOS_REDIRECT_URI: ${WORKOS_REDIRECT_URI:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      INVITATION_FROM_EMAIL: ${INVITATION_FROM_EMAIL:-}
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build: ./backend
+    environment: *backend_environment
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8000/health/live')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  worker:
+    build: ./backend
+    environment: *backend_environment
+    command: ["celery", "-A", "app.ingestion.tasks", "worker", "--loglevel=INFO"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy

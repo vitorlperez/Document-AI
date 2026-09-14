@@ -1,0 +1,46 @@
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# JavaScript / TypeScript
+node_modules/
+dist/
+build/
+.next/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Logs and runtime data
+*.log
+logs/
+*.pid
+
+# Local artifacts and temporary work
+tmp/
+output/
+
+# Local agent and tool metadata
+.codex/.DS_Store

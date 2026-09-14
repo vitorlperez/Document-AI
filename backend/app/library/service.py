@@ -1,0 +1,379 @@
+"""Company-scoped Library projection and browse boundary."""
+
+from dataclasses import dataclass
+from datetime import datetime
+from uuid import UUID
+
+from sqlalchemy import case, func, select
+from sqlalchemy.orm import Session
+
+from app.core.scoping import OrganizationScope
+from app.ingestion.models import ProcessingJob, ProcessingJobStatus
+from app.ingestion.service import DiscoveredDocument, SyncAccessDenied
+from app.integrations.google_drive import RemoteFolder
+from app.integrations.models import DataSource
+from app.knowledge.models import Document
+from app.library.models import LibraryNode
+from app.organizations.models import Membership
+from app.workspaces.models import WorkspaceFolder
+
+SOURCE_ROOT_EXTERNAL_ID = "__company_library_source_root__"
+PAGE_SIZE_MAX = 100
+SEARCH_RESULT_LIMIT = 50
+SYNC_RESULT_LIMIT = 20
+
+
+@dataclass(frozen=True)
+class BrowsePage:
+    items: list[LibraryNode]
+    page: int
+    page_size: int
+    total: int
+
+    @property
+    def pages(self) -> int:
+        return max(1, (self.total + self.page_size - 1) // self.page_size)
+
+
+@dataclass(frozen=True)
+class LibraryContext:
+    id: UUID
+    name: str
+    status: str
+    source_id: UUID
+
+
+@dataclass(frozen=True)
+class LibrarySync:
+    id: UUID
+    source_id: UUID
+    workspace_folder_id: UUID
+    workspace_name: str
+    status: str
+    created_at: datetime
+    started_at: datetime | None
+    completed_at: datetime | None
+    error_code: str | None
+
+
+class LibraryService:
+    def __init__(self, session: Session):
+        self.session = session
+
+    def require_member(self, *, scope: OrganizationScope, user_id: UUID) -> None:
+        member = self.session.scalar(
+            select(Membership).where(
+                Membership.organization_id == scope.organization_id,
+                Membership.user_id == user_id,
+                Membership.is_active.is_(True),
+            )
+        )
+        if member is None:
+            raise SyncAccessDenied("company library access denied")
+
+    def roots(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibraryNode]:
+        self.require_member(scope=scope, user_id=user_id)
+        return list(
+            self.session.scalars(
+                select(LibraryNode)
+                .where(
+                    LibraryNode.organization_id == scope.organization_id,
+                    LibraryNode.kind == "source",
+                )
+                .order_by(LibraryNode.name, LibraryNode.id)
+            )
+        )
+
+    def children(
+        self, *, scope: OrganizationScope, user_id: UUID, parent_id: UUID, page: int, page_size: int
+    ) -> BrowsePage:
+        self.require_member(scope=scope, user_id=user_id)
+        parent = self.session.scalar(
+            select(LibraryNode).where(
+                LibraryNode.id == parent_id,
+                LibraryNode.organization_id == scope.organization_id,
+            )
+        )
+        if parent is None or parent.kind == "file":
+            raise SyncAccessDenied("company library node unavailable")
+        statement = select(LibraryNode).where(
+            LibraryNode.organization_id == scope.organization_id,
+            LibraryNode.parent_id == parent.id,
+        )
+        total = int(self.session.scalar(select(func.count()).select_from(statement.subquery())) or 0)
+        items = list(
+            self.session.scalars(
+                statement.order_by(
+                    LibraryNode.kind.desc(), LibraryNode.name, LibraryNode.id
+                ).offset((page - 1) * page_size).limit(page_size)
+            )
+        )
+        return BrowsePage(items=items, page=page, page_size=page_size, total=total)
+
+    def workspace_provenance(self, *, scope: OrganizationScope, node: LibraryNode) -> list[UUID]:
+        """Return only sync-scope UUIDs that currently index this file.
+
+        The tree itself is provider-centric; this metadata makes an overlap
+        auditable without turning each synchronization back into a visual silo.
+        """
+        if node.kind != "file":
+            return []
+        return list(
+            self.session.scalars(
+                select(Document.workspace_folder_id)
+                .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+                .where(
+                    Document.organization_id == scope.organization_id,
+                    WorkspaceFolder.source_id == node.source_id,
+                    Document.external_file_id == node.external_id,
+                    Document.index_status == "indexed",
+                )
+                .distinct()
+                .order_by(Document.workspace_folder_id)
+            )
+        )
+
+    def search_names(
+        self, *, scope: OrganizationScope, user_id: UUID, query: str, limit: int = SEARCH_RESULT_LIMIT
+    ) -> list[LibraryNode]:
+        self.require_member(scope=scope, user_id=user_id)
+        normalized = query.strip()
+        if not normalized or len(normalized) > 500:
+            raise ValueError("query must contain between 1 and 500 characters")
+        return list(
+            self.session.scalars(
+                select(LibraryNode)
+                .where(
+                    LibraryNode.organization_id == scope.organization_id,
+                    LibraryNode.kind.in_(["folder", "file"]),
+                    func.lower(LibraryNode.name).contains(normalized.lower(), autoescape=True),
+                )
+                .order_by(LibraryNode.kind.desc(), LibraryNode.name, LibraryNode.id)
+                .limit(limit)
+            )
+        )
+
+    def question_contexts(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibraryContext]:
+        self.require_member(scope=scope, user_id=user_id)
+        return [
+            LibraryContext(id=row.id, name=row.name, status=row.status, source_id=row.source_id)
+            for row in self.session.scalars(
+                select(WorkspaceFolder)
+                .where(
+                    WorkspaceFolder.organization_id == scope.organization_id,
+                    WorkspaceFolder.status.in_(["ready", "partial_failure"]),
+                )
+                .order_by(WorkspaceFolder.name, WorkspaceFolder.id)
+            )
+        ]
+
+    def recent_syncs(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibrarySync]:
+        self.require_member(scope=scope, user_id=user_id)
+        rows = self.session.execute(
+            select(ProcessingJob, WorkspaceFolder)
+            .join(WorkspaceFolder, WorkspaceFolder.id == ProcessingJob.workspace_folder_id)
+            .where(
+                ProcessingJob.organization_id == scope.organization_id,
+                WorkspaceFolder.organization_id == scope.organization_id,
+            )
+            .order_by(
+                case(
+                    (ProcessingJob.status.in_([ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING]), 0),
+                    else_=1,
+                ),
+                ProcessingJob.created_at.desc(),
+                ProcessingJob.id.desc(),
+            )
+            .limit(SYNC_RESULT_LIMIT)
+        )
+        return [
+            LibrarySync(
+                id=job.id,
+                source_id=folder.source_id,
+                workspace_folder_id=folder.id,
+                workspace_name=folder.name,
+                status=job.status.value,
+                created_at=job.created_at,
+                started_at=job.started_at,
+                completed_at=job.completed_at,
+                error_code=job.error_code,
+            )
+            for job, folder in rows
+        ]
+
+    def project_successful_sync(
+        self,
+        *,
+        organization_id: UUID,
+        source: DataSource,
+        documents: list[DiscoveredDocument],
+        folders: list[RemoteFolder],
+    ) -> None:
+        """Upsert only content that reconciled into the document store.
+
+        This deliberately receives provider-neutral values. A new connector only
+        needs to supply opaque IDs and parent relationships.
+        """
+        root = self._root(organization_id=organization_id, source=source)
+        folder_by_id = {folder.id: folder for folder in folders}
+        indexed_ids = set(
+            self.session.scalars(
+                select(Document.external_file_id)
+                .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+                .where(
+                    Document.organization_id == organization_id,
+                    WorkspaceFolder.source_id == source.id,
+                    Document.index_status == "indexed",
+                )
+            )
+        )
+        for document in documents:
+            if document.external_file_id not in indexed_ids:
+                continue
+            parent = self._folder_parent(
+                organization_id=organization_id,
+                source_id=source.id,
+                root=root,
+                parent_ids=document.parent_ids,
+                folder_by_id=folder_by_id,
+            )
+            node = self._by_external(source_id=source.id, external_id=document.external_file_id)
+            if node is None:
+                node = LibraryNode(
+                    organization_id=organization_id,
+                    source_id=source.id,
+                    parent_id=parent.id,
+                    external_id=document.external_file_id,
+                    kind="file",
+                    name=document.name,
+                    mime_type=document.mime_type,
+                    source_url=document.source_url,
+                )
+                self.session.add(node)
+            else:
+                node.parent_id, node.name, node.mime_type, node.source_url = (
+                    parent.id,
+                    document.name,
+                    document.mime_type,
+                    document.source_url,
+                )
+        # A remote item may leave one sync scope. Keep it while any other
+        # scope of this same source still indexes it; remove it only after the
+        # last eligible copy disappears from the document store.
+        for node in self.session.scalars(
+            select(LibraryNode).where(LibraryNode.source_id == source.id, LibraryNode.kind == "file")
+        ):
+            if node.external_id not in indexed_ids:
+                self.session.delete(node)
+        self.session.flush()
+        self._remove_empty_folders(source_id=source.id)
+        self.session.flush()
+
+    def _root(self, *, organization_id: UUID, source: DataSource) -> LibraryNode:
+        root = self._by_external(source_id=source.id, external_id=SOURCE_ROOT_EXTERNAL_ID)
+        provider_name = {"google_drive": "Google Drive"}.get(source.provider, source.provider.replace("_", " ").title())
+        if root is None:
+            root = LibraryNode(
+                organization_id=organization_id,
+                source_id=source.id,
+                parent_id=None,
+                external_id=SOURCE_ROOT_EXTERNAL_ID,
+                kind="source",
+                name=provider_name,
+                mime_type=None,
+                source_url=None,
+            )
+            self.session.add(root)
+            self.session.flush()
+        return root
+
+    def _folder_parent(
+        self,
+        *,
+        organization_id: UUID,
+        source_id: UUID,
+        root: LibraryNode,
+        parent_ids: tuple[str, ...],
+        folder_by_id: dict[str, RemoteFolder],
+    ) -> LibraryNode:
+        parent_external_id = next((item for item in parent_ids if item != "root"), None)
+        if parent_external_id is None:
+            return root
+        return self._folder(
+            organization_id=organization_id,
+            source_id=source_id,
+            root=root,
+            external_id=parent_external_id,
+            folder_by_id=folder_by_id,
+            visited=set(),
+        )
+
+    def _folder(
+        self,
+        *,
+        organization_id: UUID,
+        source_id: UUID,
+        root: LibraryNode,
+        external_id: str,
+        folder_by_id: dict[str, RemoteFolder],
+        visited: set[str],
+    ) -> LibraryNode:
+        existing = self._by_external(source_id=source_id, external_id=external_id)
+        if existing is not None:
+            return existing
+        if external_id in visited:
+            return root
+        visited.add(external_id)
+        remote = folder_by_id.get(external_id)
+        if remote is None:
+            return root
+        parent_external_id = next((item for item in remote.parent_ids if item != "root" and item not in visited), None)
+        parent = (
+            self._folder(
+                organization_id=organization_id,
+                source_id=source_id,
+                root=root,
+                external_id=parent_external_id,
+                folder_by_id=folder_by_id,
+                visited=visited,
+            )
+            if parent_external_id is not None
+            else root
+        )
+        node = LibraryNode(
+            organization_id=organization_id,
+            source_id=source_id,
+            parent_id=parent.id,
+            external_id=external_id,
+            kind="folder",
+            name=remote.name,
+            mime_type=None,
+            source_url=None,
+        )
+        self.session.add(node)
+        self.session.flush()
+        return node
+
+    def _by_external(self, *, source_id: UUID, external_id: str) -> LibraryNode | None:
+        return self.session.scalar(
+            select(LibraryNode).where(
+                LibraryNode.source_id == source_id,
+                LibraryNode.external_id == external_id,
+            )
+        )
+
+    def _remove_empty_folders(self, *, source_id: UUID) -> None:
+        """Prune only orphaned folder metadata, never a source root."""
+        while True:
+            empty = [
+                node
+                for node in self.session.scalars(
+                    select(LibraryNode).where(LibraryNode.source_id == source_id, LibraryNode.kind == "folder")
+                )
+                if self.session.scalar(select(LibraryNode.id).where(LibraryNode.parent_id == node.id).limit(1)) is None
+            ]
+            if not empty:
+                return
+            for node in empty:
+                self.session.delete(node)
+            self.session.flush()
