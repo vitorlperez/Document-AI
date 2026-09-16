@@ -135,3 +135,82 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.workspace-shell > :first-child {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.page-surface {
+  overflow: hidden;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1.5rem;
+  background: white;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+}
+
+.page-surface > div {
+  max-width: none;
+}
+
+.page-surface > .grid > section,
+.page-surface > .grid > form {
+  border-color: rgb(226 232 240);
+  border-radius: 1rem;
+  background: rgb(248 250 252 / 0.8);
+  box-shadow: none;
+}
+
+@media (min-width: 640px) {
+  .page-surface {
+    padding: 1.75rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .workspace-shell > :first-child {
+    overflow: hidden;
+  }
+
+  .workspace-shell > :first-child > .grid {
+    min-height: 0;
+    flex: 1 1 0%;
+  }
+
+  .workspace-shell > :first-child > .grid > aside,
+  .workspace-shell > :first-child > .grid > main:not(#consultas) {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .workspace-shell > :first-child > .grid > main#consultas {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .workspace-shell > :first-child > .grid > main#consultas > .flex-1 {
+    min-height: 0;
+    overscroll-behavior: contain;
+  }
+}
+
+@keyframes toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[toast-progress_6000ms_linear_forwards\] {
+    animation: none;
+  }
+}

@@ -34,5 +34,6 @@ class UserSession(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     secret_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    provider_session_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

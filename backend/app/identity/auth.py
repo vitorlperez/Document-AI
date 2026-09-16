@@ -1,5 +1,7 @@
 """Identity, opaque-session and AuthKit integration boundaries."""
 
+import base64
+import json
 import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -29,6 +31,23 @@ class VerifiedIdentity:
     provider: str
     subject: str
     email: str
+    provider_session_id: str | None = None
+
+
+def workos_session_id(access_token: str | None) -> str | None:
+    """Extract only the non-secret AuthKit session identifier from a JWT payload."""
+    if not access_token:
+        return None
+    parts = access_token.split(".")
+    if len(parts) != 3:
+        return None
+    try:
+        payload = parts[1] + "=" * (-len(parts[1]) % 4)
+        claims = json.loads(base64.urlsafe_b64decode(payload))
+    except (ValueError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    session_id = claims.get("sid") if isinstance(claims, dict) else None
+    return session_id if isinstance(session_id, str) and session_id.startswith("session_") else None
 
 
 class WorkOSAuthKitGateway:
@@ -44,9 +63,9 @@ class WorkOSAuthKitGateway:
             raise AuthenticationUnavailable("authentication provider is not configured")
         return WorkOSClient(api_key=self.api_key, client_id=self.client_id)
 
-    def authorization_url(self, *, state: str) -> str:
+    def authorization_url(self, *, state: str, screen_hint: str | None = None, max_age: int | None = None) -> str:
         return self._client().user_management.get_authorization_url(
-            provider="authkit", redirect_uri=self.redirect_uri, state=state
+            provider="authkit", redirect_uri=self.redirect_uri, state=state, screen_hint=screen_hint, max_age=max_age
         )
 
     def exchange_code(self, *, code: str) -> VerifiedIdentity:
@@ -54,7 +73,15 @@ class WorkOSAuthKitGateway:
         user = response.user
         if user is None or not user.id or not user.email or not user.email_verified:
             raise AuthenticationUnavailable("provider did not return a verified identity")
-        return VerifiedIdentity(provider="workos", subject=user.id, email=user.email)
+        return VerifiedIdentity(
+            provider="workos",
+            subject=user.id,
+            email=user.email,
+            provider_session_id=workos_session_id(getattr(response, "access_token", None)),
+        )
+
+    def logout_url(self, *, session_id: str, return_to: str) -> str:
+        return self._client().user_management.get_logout_url(session_id=session_id, return_to=return_to)
 
 
 class IdentityService:
@@ -91,11 +118,12 @@ class IdentityService:
         self.session.flush()
         return user
 
-    def create_session(self, *, user_id, ttl_hours: int) -> tuple[UserSession, str]:
+    def create_session(self, *, user_id, ttl_hours: int, provider_session_id: str | None = None) -> tuple[UserSession, str]:
         raw_secret = secrets.token_urlsafe(32)
         session = UserSession(
             user_id=user_id,
             secret_hash=hash_secret(raw_secret),
+            provider_session_id=provider_session_id,
             expires_at=datetime.now(UTC) + timedelta(hours=ttl_hours),
         )
         self.session.add(session)
@@ -115,14 +143,19 @@ class IdentityService:
         )
         return self.session.get(User, current.user_id) if current else None
 
-    def revoke_session(self, raw_secret: str | None) -> None:
-        if raw_secret:
-            self.session.execute(
-                update(UserSession)
-                .where(UserSession.secret_hash == hash_secret(raw_secret), UserSession.revoked_at.is_(None))
-                .values(revoked_at=datetime.now(UTC))
+    def revoke_session(self, raw_secret: str | None) -> str | None:
+        if not raw_secret:
+            return None
+        current = self.session.scalar(
+            select(UserSession).where(
+                UserSession.secret_hash == hash_secret(raw_secret), UserSession.revoked_at.is_(None)
             )
-            self.session.flush()
+        )
+        if current is None:
+            return None
+        current.revoked_at = datetime.now(UTC)
+        self.session.flush()
+        return current.provider_session_id
 
     def revoke_user_sessions(self, *, user_id) -> None:
         self.session.execute(

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, exists, func, select
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
@@ -12,7 +12,8 @@ from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveredDocument, SyncAccessDenied
 from app.integrations.google_drive import RemoteFolder
 from app.integrations.models import DataSource
-from app.knowledge.models import Document
+from app.knowledge.models import Document, DocumentChunk
+from app.knowledge.questions import EMBEDDING_MODEL
 from app.library.models import LibraryNode
 from app.organizations.models import Membership
 from app.workspaces.models import WorkspaceFolder
@@ -41,6 +42,7 @@ class LibraryContext:
     name: str
     status: str
     source_id: UUID
+    query_status: str
 
 
 @dataclass(frozen=True)
@@ -54,6 +56,14 @@ class LibrarySync:
     started_at: datetime | None
     completed_at: datetime | None
     error_code: str | None
+
+
+@dataclass(frozen=True)
+class IndexedDocumentProvenance:
+    """A workspace-scoped local document behind a shared library file."""
+
+    workspace_folder_id: UUID
+    document_id: UUID
 
 
 class LibraryService:
@@ -133,6 +143,88 @@ class LibraryService:
             )
         )
 
+    def document_provenance(
+        self, *, scope: OrganizationScope, node: LibraryNode
+    ) -> list[IndexedDocumentProvenance]:
+        """Expose only local UUIDs used for authorized file management actions."""
+        if node.kind != "file":
+            return []
+        return [
+            IndexedDocumentProvenance(workspace_folder_id=workspace_folder_id, document_id=document_id)
+            for workspace_folder_id, document_id in self.session.execute(
+                select(Document.workspace_folder_id, Document.id)
+                .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+                .where(
+                    Document.organization_id == scope.organization_id,
+                    WorkspaceFolder.organization_id == scope.organization_id,
+                    WorkspaceFolder.source_id == node.source_id,
+                    Document.external_file_id == node.external_id,
+                    Document.index_status == "indexed",
+                )
+                .order_by(Document.workspace_folder_id, Document.id)
+            )
+        ]
+
+    def remove_file_if_unindexed(
+        self, *, scope: OrganizationScope, source_id: UUID, external_file_id: str
+    ) -> None:
+        """Remove a projected file only after its final local index copy disappears."""
+        still_indexed = self.session.scalar(
+            select(Document.id)
+            .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+            .where(
+                Document.organization_id == scope.organization_id,
+                WorkspaceFolder.organization_id == scope.organization_id,
+                WorkspaceFolder.source_id == source_id,
+                Document.external_file_id == external_file_id,
+                Document.index_status == "indexed",
+            )
+            .limit(1)
+        )
+        if still_indexed is not None:
+            return
+        node = self._by_external(source_id=source_id, external_id=external_file_id)
+        if node is not None and node.organization_id == scope.organization_id and node.kind == "file":
+            self.session.delete(node)
+            self.session.flush()
+            self._remove_empty_folders(source_id=source_id)
+            self.session.flush()
+
+    def remove_files_if_unindexed(
+        self, *, scope: OrganizationScope, source_id: UUID, external_file_ids: tuple[str, ...]
+    ) -> None:
+        """Prune local file nodes after a whole workspace scope is removed."""
+        if not external_file_ids:
+            return
+        still_indexed = set(
+            self.session.scalars(
+                select(Document.external_file_id)
+                .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+                .where(
+                    Document.organization_id == scope.organization_id,
+                    WorkspaceFolder.organization_id == scope.organization_id,
+                    WorkspaceFolder.source_id == source_id,
+                    Document.external_file_id.in_(external_file_ids),
+                    Document.index_status == "indexed",
+                )
+                .distinct()
+            )
+        )
+        stale_nodes = self.session.scalars(
+            select(LibraryNode).where(
+                LibraryNode.organization_id == scope.organization_id,
+                LibraryNode.source_id == source_id,
+                LibraryNode.kind == "file",
+                LibraryNode.external_id.in_(external_file_ids),
+            )
+        )
+        for node in stale_nodes:
+            if node.external_id not in still_indexed:
+                self.session.delete(node)
+        self.session.flush()
+        self._remove_empty_folders(source_id=source_id)
+        self.session.flush()
+
     def search_names(
         self, *, scope: OrganizationScope, user_id: UUID, query: str, limit: int = SEARCH_RESULT_LIMIT
     ) -> list[LibraryNode]:
@@ -155,16 +247,46 @@ class LibraryService:
 
     def question_contexts(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibraryContext]:
         self.require_member(scope=scope, user_id=user_id)
+        indexed_chunks = exists(
+            select(DocumentChunk.id)
+            .join(Document, Document.id == DocumentChunk.document_id)
+            .where(
+                Document.organization_id == scope.organization_id,
+                Document.workspace_folder_id == WorkspaceFolder.id,
+                Document.index_status == "indexed",
+                DocumentChunk.organization_id == scope.organization_id,
+                DocumentChunk.workspace_folder_id == WorkspaceFolder.id,
+            )
+        )
+        compatible_embeddings = exists(
+            select(DocumentChunk.id)
+            .join(Document, Document.id == DocumentChunk.document_id)
+            .where(
+                Document.organization_id == scope.organization_id,
+                Document.workspace_folder_id == WorkspaceFolder.id,
+                Document.index_status == "indexed",
+                DocumentChunk.organization_id == scope.organization_id,
+                DocumentChunk.workspace_folder_id == WorkspaceFolder.id,
+                DocumentChunk.embedding.is_not(None),
+                DocumentChunk.embedding_model == EMBEDDING_MODEL,
+            )
+        )
         return [
-            LibraryContext(id=row.id, name=row.name, status=row.status, source_id=row.source_id)
-            for row in self.session.scalars(
-                select(WorkspaceFolder)
+            LibraryContext(
+                id=folder.id,
+                name=folder.name,
+                status=folder.status,
+                source_id=folder.source_id,
+                query_status="ready" if has_embeddings else "no_indexed_content" if not has_content else "no_compatible_embeddings",
+            )
+            for folder, has_content, has_embeddings in self.session.execute(
+                select(WorkspaceFolder, indexed_chunks.label("has_content"), compatible_embeddings.label("has_embeddings"))
                 .where(
                     WorkspaceFolder.organization_id == scope.organization_id,
                     WorkspaceFolder.status.in_(["ready", "partial_failure"]),
                 )
                 .order_by(WorkspaceFolder.name, WorkspaceFolder.id)
-            )
+            ).all()
         ]
 
     def recent_syncs(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibrarySync]:

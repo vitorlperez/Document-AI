@@ -3,6 +3,7 @@
 import json
 import logging
 import random
+import re
 import time
 from dataclasses import dataclass
 from math import sqrt
@@ -10,7 +11,7 @@ from typing import Protocol
 from uuid import UUID
 
 import httpx
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.audit_usage.service import UsageService
@@ -28,6 +29,37 @@ EMBED_BACKOFF_SECONDS = 2.0
 EMBED_MAX_BACKOFF_SECONDS = 30.0
 MAX_LEXICAL_CANDIDATES = 100
 MAX_SEMANTIC_CANDIDATES = 100
+RETRIEVAL_STATUS_SUFFICIENT = "sufficient_evidence"
+RETRIEVAL_STATUS_NO_INDEXED_CONTENT = "no_indexed_content"
+RETRIEVAL_STATUS_NO_COMPATIBLE_EMBEDDINGS = "no_compatible_embeddings"
+RETRIEVAL_STATUS_BELOW_THRESHOLD = "below_evidence_threshold"
+RETRIEVAL_STATUS_INVALID_GENERATION = "invalid_generation_output"
+MIN_STRONG_LEXICAL_TERM_LENGTH = 5
+
+_INVENTORY_DOCUMENT_TERMS = frozenset({"arquivo", "arquivos", "documento", "documentos", "file", "files", "document", "documents"})
+_INVENTORY_REQUEST_TERMS = frozenset({"qual", "quais", "lista", "listar", "liste", "list", "existem", "existe", "tem", "há", "ha", "mostrar", "mostre", "show"})
+_GENERIC_QUERY_TERMS = frozenset({"conteudo", "conteúdo", "dado", "dados", "detalhe", "detalhes", "informacao", "informação", "informacoes", "informações", "sobre", "temos", "tenho"})
+
+_QUERY_TOKEN = re.compile(r"[^\W_]+", flags=re.UNICODE)
+_QUERY_STOPWORDS = frozenset(
+    {
+        "a", "ao", "aos", "as", "com", "como", "da", "das", "de", "do", "dos", "e", "em",
+        "essa", "esse", "esta", "estas", "este", "estes", "foi", "na", "nas", "no", "nos", "o",
+        "os", "ou", "para", "por", "qual", "quais", "que", "quando", "se", "sem", "sobre", "um",
+        "uma", "what", "when", "where", "which", "with", "and", "are", "does", "for", "from", "how",
+        "is", "the", "was", "were",
+    }
+)
+
+ANSWER_OUTPUT_SCHEMA: dict[str, object] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "answer": {"type": "string"},
+        "citations": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+    },
+    "required": ["answer", "citations"],
+}
 
 logger = logging.getLogger("document_intelligence.questions")
 
@@ -98,12 +130,20 @@ class OpenAIQuestionProvider:
             {
                 "model": ANSWER_MODEL,
                 "store": False,
+                "text": {
+                    "format": {
+                        "type": "json_schema",
+                        "name": "cited_answer",
+                        "strict": True,
+                        "schema": ANSWER_OUTPUT_SCHEMA,
+                    }
+                },
                 "instructions": instructions,
                 "input": f"Question: {question}\n\nSources:\n{sources}",
             },
         )
         try:
-            payload = json.loads(str(data.get("output_text", "")))
+            payload = json.loads(_response_output_text(data))
             answer = payload.get("answer")
             citations = payload.get("citations")
             if not isinstance(answer, str) or not isinstance(citations, list) or not all(
@@ -211,6 +251,7 @@ class QuestionService:
     def ask(
         self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID, question: str
     ) -> QuestionResult:
+        started_at = time.perf_counter()
         normalized_question = " ".join(question.split())
         if not normalized_question or len(normalized_question) > 1000:
             raise ValueError("question must contain between 1 and 1000 characters")
@@ -220,6 +261,26 @@ class QuestionService:
         if folder.status not in {"ready", "partial_failure"}:
             raise ValueError("workspace folder is not ready")
         UsageService(self.session).check_and_record(scope=scope, metric="questions", increment=1)
+        indexed_chunk_count = int(
+            self.session.scalar(
+                select(func.count(DocumentChunk.id))
+                .join(Document, Document.id == DocumentChunk.document_id)
+                .where(
+                    Document.organization_id == scope.organization_id,
+                    Document.workspace_folder_id == workspace_folder_id,
+                    Document.index_status == "indexed",
+                    DocumentChunk.organization_id == scope.organization_id,
+                    DocumentChunk.workspace_folder_id == workspace_folder_id,
+                )
+            )
+            or 0
+        )
+        if indexed_chunk_count == 0:
+            return self._complete(
+                _insufficient_evidence(RETRIEVAL_STATUS_NO_INDEXED_CONTENT),
+                started_at=started_at,
+                indexed_chunk_count=0,
+            )
         scoped_rows = list(
             self.session.execute(
                 select(Document, DocumentChunk)
@@ -236,7 +297,39 @@ class QuestionService:
             ).all()
         )
         if not scoped_rows:
-            return _insufficient_evidence()
+            return self._complete(
+                _insufficient_evidence(RETRIEVAL_STATUS_NO_COMPATIBLE_EMBEDDINGS),
+                started_at=started_at,
+                indexed_chunk_count=indexed_chunk_count,
+            )
+        if _is_document_inventory_question(normalized_question):
+            inventory_evidence = _document_inventory_evidence(scoped_rows)
+            generated = self.provider.answer(question=normalized_question, evidence=inventory_evidence)
+            cited_evidence = _validate_citations(generated.citation_indexes, inventory_evidence)
+            if not generated.text or generated.text.lower() == "insufficient evidence." or not cited_evidence:
+                return self._complete(
+                    _insufficient_evidence(RETRIEVAL_STATUS_INVALID_GENERATION),
+                    started_at=started_at,
+                    indexed_chunk_count=indexed_chunk_count,
+                    compatible_embedding_count=len(scoped_rows),
+                    selected_candidate_count=len(inventory_evidence),
+                    provider_outcome="invalid_output",
+                    retrieval_strategy="document_inventory",
+                )
+            return self._complete(
+                QuestionResult(
+                    answer=generated.text,
+                    confidence="supported",
+                    citations=cited_evidence,
+                    retrieval_status=RETRIEVAL_STATUS_SUFFICIENT,
+                ),
+                started_at=started_at,
+                indexed_chunk_count=indexed_chunk_count,
+                compatible_embedding_count=len(scoped_rows),
+                selected_candidate_count=len(inventory_evidence),
+                provider_outcome="accepted",
+                retrieval_strategy="document_inventory",
+            )
         UsageService(self.session).check_and_record(
             scope=scope, metric="embedding_tokens", increment=_estimated_tokens(normalized_question)
         )
@@ -266,30 +359,102 @@ class QuestionService:
         ) if query_terms else []
         rows_by_chunk_id = {chunk.id: (document, chunk) for document, chunk in semantic_candidates}
         rows_by_chunk_id.update({chunk.id: (document, chunk) for document, chunk in lexical_candidates})
-        evidence = sorted(
+        ranked_candidates = sorted(
             (
-                _evidence(document, chunk, _hybrid_score(normalized_question, document, chunk, question_embedding))
+                (
+                    document,
+                    chunk,
+                    _hybrid_score(normalized_question, document, chunk, question_embedding),
+                    _lexical_score(document, chunk, query_terms),
+                )
                 for document, chunk in rows_by_chunk_id.values()
             ),
-            key=lambda item: (-item.score, item.document_name, str(item.chunk_id)),
+            key=lambda item: (
+                not _has_distinctive_exact_term(item[0], item[1], query_terms),
+                -item[2],
+                item[0].name,
+                str(item[1].id),
+            ),
         )[:MAX_CITATIONS]
-        supported = [item for item in evidence if item.score >= MIN_EVIDENCE_SCORE]
+        supported = [
+            _evidence(document, chunk, score)
+            for document, chunk, score, lexical_score in ranked_candidates
+            if score >= MIN_EVIDENCE_SCORE or _has_distinctive_exact_term(document, chunk, query_terms)
+        ]
+        top_score = ranked_candidates[0][2] if ranked_candidates else None
         if not supported:
-            return _insufficient_evidence()
+            return self._complete(
+                _insufficient_evidence(RETRIEVAL_STATUS_BELOW_THRESHOLD),
+                started_at=started_at,
+                indexed_chunk_count=indexed_chunk_count,
+                compatible_embedding_count=len(scoped_rows),
+                semantic_candidate_count=len(semantic_candidates),
+                lexical_candidate_count=len(lexical_candidates),
+                top_score=top_score,
+            )
         generated = self.provider.answer(question=normalized_question, evidence=supported)
         cited_evidence = _validate_citations(generated.citation_indexes, supported)
         if not generated.text or generated.text.lower() == "insufficient evidence." or not cited_evidence:
-            return _insufficient_evidence()
+            return self._complete(
+                _insufficient_evidence(RETRIEVAL_STATUS_INVALID_GENERATION),
+                started_at=started_at,
+                indexed_chunk_count=indexed_chunk_count,
+                compatible_embedding_count=len(scoped_rows),
+                semantic_candidate_count=len(semantic_candidates),
+                lexical_candidate_count=len(lexical_candidates),
+                selected_candidate_count=len(supported),
+                top_score=top_score,
+                provider_outcome="invalid_output",
+            )
+        return self._complete(
+            QuestionResult(
+                answer=generated.text,
+                confidence="supported",
+                citations=cited_evidence,
+                retrieval_status=RETRIEVAL_STATUS_SUFFICIENT,
+            ),
+            started_at=started_at,
+            indexed_chunk_count=indexed_chunk_count,
+            compatible_embedding_count=len(scoped_rows),
+            semantic_candidate_count=len(semantic_candidates),
+            lexical_candidate_count=len(lexical_candidates),
+            selected_candidate_count=len(supported),
+            top_score=top_score,
+            provider_outcome="accepted",
+        )
+
+    def _complete(
+        self,
+        result: QuestionResult,
+        *,
+        started_at: float,
+        indexed_chunk_count: int,
+        compatible_embedding_count: int = 0,
+        semantic_candidate_count: int = 0,
+        lexical_candidate_count: int = 0,
+        selected_candidate_count: int = 0,
+        top_score: float | None = None,
+        provider_outcome: str = "not_called",
+        retrieval_strategy: str = "hybrid",
+    ) -> QuestionResult:
         logger.info(
             "semantic question complete",
-            extra={"event": "semantic_question", "result": "supported", "provider": "openai", "action": "answer"},
+            extra={
+                "event": "semantic_question",
+                "result": result.confidence,
+                "retrieval_status": result.retrieval_status,
+                "provider_outcome": provider_outcome,
+                "retrieval_strategy": retrieval_strategy,
+                "indexed_chunk_count": indexed_chunk_count,
+                "compatible_embedding_count": compatible_embedding_count,
+                "semantic_candidate_count": semantic_candidate_count,
+                "lexical_candidate_count": lexical_candidate_count,
+                "selected_candidate_count": selected_candidate_count,
+                "top_score_bucket": _score_bucket(top_score),
+                "elapsed_ms": round((time.perf_counter() - started_at) * 1000, 2),
+            },
         )
-        return QuestionResult(
-            answer=generated.text,
-            confidence="supported",
-            citations=cited_evidence,
-            retrieval_status="sufficient_evidence",
-        )
+        return result
 
 def _evidence(document: Document, chunk: DocumentChunk, score: float) -> Evidence:
     return Evidence(
@@ -313,13 +478,48 @@ def _cosine_similarity(left: list[float], right: list[float]) -> float:
 def _hybrid_score(question: str, document: Document, chunk: DocumentChunk, question_embedding: list[float]) -> float:
     semantic_score = _cosine_similarity(question_embedding, chunk.embedding or [])
     query_terms = _query_terms(question)
-    searchable = f"{document.name} {chunk.search_text}".lower()
-    lexical_score = sum(term in searchable for term in query_terms) / len(query_terms) if query_terms else 0.0
+    lexical_score = _lexical_score(document, chunk, query_terms)
     return (0.8 * semantic_score) + (0.2 * lexical_score)
 
 
+def _lexical_score(document: Document, chunk: DocumentChunk, query_terms: set[str]) -> float:
+    searchable_terms = set(_QUERY_TOKEN.findall(f"{document.name} {chunk.search_text}".casefold()))
+    return sum(term in searchable_terms for term in query_terms) / len(query_terms) if query_terms else 0.0
+
+
+def _has_distinctive_exact_term(document: Document, chunk: DocumentChunk, query_terms: set[str]) -> bool:
+    searchable_terms = set(_QUERY_TOKEN.findall(f"{document.name} {chunk.search_text}".casefold()))
+    return any(
+        term in searchable_terms and term not in _GENERIC_QUERY_TERMS and len(term) >= MIN_STRONG_LEXICAL_TERM_LENGTH
+        for term in query_terms
+    )
+
+
+def _is_document_inventory_question(question: str) -> bool:
+    terms = {token.casefold() for token in _QUERY_TOKEN.findall(question)}
+    return bool(terms & _INVENTORY_DOCUMENT_TERMS) and bool(terms & _INVENTORY_REQUEST_TERMS)
+
+
+def _document_inventory_evidence(rows: list[tuple[Document, DocumentChunk]]) -> list[Evidence]:
+    first_chunk_by_document: dict[UUID, tuple[Document, DocumentChunk]] = {}
+    for document, chunk in rows:
+        current = first_chunk_by_document.get(document.id)
+        if current is None or (chunk.position, str(chunk.id)) < (current[1].position, str(current[1].id)):
+            first_chunk_by_document[document.id] = (document, chunk)
+    return [
+        _evidence(document, chunk, score=1.0)
+        for document, chunk in sorted(
+            first_chunk_by_document.values(), key=lambda item: (item[0].name.casefold(), str(item[0].id))
+        )[:MAX_CITATIONS]
+    ]
+
+
 def _query_terms(text: str) -> set[str]:
-    return {term for term in text.lower().split() if len(term) > 1}
+    return {
+        term
+        for token in _QUERY_TOKEN.findall(text.casefold())
+        if len(term := token.casefold()) > 1 and term not in _QUERY_STOPWORDS
+    }
 
 
 def _retry_after_seconds(response: httpx.Response) -> float | None:
@@ -335,8 +535,41 @@ def _retry_after_seconds(response: httpx.Response) -> float | None:
     return min(EMBED_MAX_BACKOFF_SECONDS, seconds)
 
 
-def _insufficient_evidence() -> QuestionResult:
-    return QuestionResult(answer=None, confidence="insufficient_evidence", citations=[], retrieval_status="insufficient_evidence")
+def _response_output_text(data: dict[str, object]) -> str:
+    """Read output text from the raw Responses REST envelope, not SDK conveniences."""
+    output = data.get("output")
+    if not isinstance(output, list):
+        return ""
+    parts: list[str] = []
+    for item in output:
+        if not isinstance(item, dict):
+            continue
+        content = item.get("content")
+        if not isinstance(content, list):
+            continue
+        for part in content:
+            if not isinstance(part, dict) or part.get("type") != "output_text":
+                continue
+            text = part.get("text")
+            if isinstance(text, str):
+                parts.append(text)
+    return "".join(parts)
+
+
+def _score_bucket(score: float | None) -> str:
+    if score is None:
+        return "none"
+    if score < 0.2:
+        return "below_0_2"
+    if score < 0.4:
+        return "0_2_to_0_39"
+    if score < 0.6:
+        return "0_4_to_0_59"
+    return "0_6_or_higher"
+
+
+def _insufficient_evidence(retrieval_status: str) -> QuestionResult:
+    return QuestionResult(answer=None, confidence="insufficient_evidence", citations=[], retrieval_status=retrieval_status)
 
 
 def _validate_citations(indexes: list[int], evidence: list[Evidence]) -> list[Evidence]:

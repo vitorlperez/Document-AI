@@ -6,7 +6,25 @@ from typing import Any
 class JsonFormatter(logging.Formatter):
     """Serialize approved operational fields without logging request content or secrets."""
 
-    fields = ("event", "request_id", "path", "status", "elapsed_ms", "result", "provider", "action", "job_id")
+    fields = (
+        "event",
+        "request_id",
+        "path",
+        "status",
+        "elapsed_ms",
+        "result",
+        "provider",
+        "action",
+        "job_id",
+        "retrieval_status",
+        "provider_outcome",
+        "indexed_chunk_count",
+        "compatible_embedding_count",
+        "semantic_candidate_count",
+        "lexical_candidate_count",
+        "selected_candidate_count",
+        "top_score_bucket",
+    )
 
     def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, Any] = {

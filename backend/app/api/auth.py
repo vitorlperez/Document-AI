@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
@@ -76,11 +76,21 @@ def current_user(request: Request, session: Session = Depends(database_session))
 
 
 @router.get("/auth/login")
-def login(request: Request, return_to: str | None = None) -> RedirectResponse:
+def login(
+    request: Request,
+    return_to: str | None = None,
+    screen_hint: Literal["sign-in", "sign-up"] | None = None,
+    force_reauthentication: bool = False,
+) -> RedirectResponse:
     settings = request.app.state.settings
     state = secrets.token_urlsafe(32)
+    force_reauthentication = force_reauthentication or request.cookies.get("document_intelligence_force_reauthentication") == "1"
     try:
-        authorization_url = request.app.state.auth_gateway.authorization_url(state=state)
+        authorization_url = request.app.state.auth_gateway.authorization_url(
+            state=state,
+            screen_hint=screen_hint,
+            max_age=0 if force_reauthentication else None,
+        )
     except AuthenticationUnavailable as error:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="authentication unavailable") from error
     response = RedirectResponse(authorization_url, status_code=status.HTTP_302_FOUND)
@@ -104,6 +114,7 @@ def login(request: Request, return_to: str | None = None) -> RedirectResponse:
         )
     else:
         response.delete_cookie("document_intelligence_return_to")
+    response.delete_cookie("document_intelligence_force_reauthentication")
     return response
 
 
@@ -121,7 +132,11 @@ def callback(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="authentication failed") from error
     service = IdentityService(session)
     user = service.establish_identity(identity)
-    _, raw_session = service.create_session(user_id=user.id, ttl_hours=settings.auth_session_ttl_hours)
+    _, raw_session = service.create_session(
+        user_id=user.id,
+        ttl_hours=settings.auth_session_ttl_hours,
+        provider_session_id=identity.provider_session_id,
+    )
     return_to = _safe_invitation_return_to(request.cookies.get("document_intelligence_return_to"))
     destination = f"{settings.public_app_url.rstrip('/')}{return_to}" if return_to else settings.public_app_url
     response = RedirectResponse(destination, status_code=status.HTTP_302_FOUND)
@@ -138,12 +153,31 @@ def callback(
     return response
 
 
-@router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/auth/logout")
 def logout(request: Request, session: Session = Depends(database_session)) -> Response:
     settings = request.app.state.settings
-    IdentityService(session).revoke_session(request.cookies.get(settings.auth_session_cookie_name))
-    response = Response(status_code=status.HTTP_204_NO_CONTENT)
+    provider_session_id = IdentityService(session).revoke_session(request.cookies.get(settings.auth_session_cookie_name))
+    redirect_url = settings.public_app_url
+    if provider_session_id:
+        try:
+            redirect_url = request.app.state.auth_gateway.logout_url(
+                session_id=provider_session_id,
+                return_to=settings.public_app_url,
+            )
+        except AuthenticationUnavailable:
+            # The local session is still revoked. A fresh AuthKit challenge on
+            # the next login prevents an old provider session being reused.
+            pass
+    response = JSONResponse({"redirect_url": redirect_url})
     response.delete_cookie(settings.auth_session_cookie_name)
+    response.set_cookie(
+        "document_intelligence_force_reauthentication",
+        "1",
+        httponly=True,
+        secure=settings.environment != "development",
+        samesite="lax",
+        max_age=600,
+    )
     return response
 
 

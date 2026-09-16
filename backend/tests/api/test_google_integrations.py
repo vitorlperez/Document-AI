@@ -2,7 +2,7 @@ import importlib
 from collections.abc import Generator
 from datetime import UTC, datetime
 from hashlib import sha256
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 from uuid import UUID
 
 import pytest
@@ -32,15 +32,24 @@ from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 class FakeAuthGateway:
     def __init__(self) -> None:
         self.identities: dict[str, VerifiedIdentity] = {}
+        self.authorization_calls: list[dict[str, object]] = []
+        self.logout_calls: list[dict[str, str]] = []
 
-    def authorization_url(self, *, state: str) -> str:
-        return f"https://auth.example.test/login?state={state}"
+    def authorization_url(
+        self, *, state: str, screen_hint: str | None = None, max_age: int | None = None
+    ) -> str:
+        self.authorization_calls.append({"state": state, "screen_hint": screen_hint, "max_age": max_age})
+        return f"https://auth.example.test/login?{urlencode({'state': state})}"
 
     def exchange_code(self, *, code: str) -> VerifiedIdentity:
         try:
             return self.identities[code]
         except KeyError as error:
             raise AuthenticationUnavailable("invalid code") from error
+
+    def logout_url(self, *, session_id: str, return_to: str) -> str:
+        self.logout_calls.append({"session_id": session_id, "return_to": return_to})
+        return f"https://auth.example.test/logout?{urlencode({'sid': session_id, 'return_to': return_to})}"
 
 
 class FakeGooglePort:
@@ -95,8 +104,18 @@ def google_api(monkeypatch) -> Generator[tuple[TestClient, sessionmaker[Session]
     engine.dispose()
 
 
-def login(client: TestClient, gateway: FakeAuthGateway, *, code: str, email: str, subject: str) -> None:
-    gateway.identities[code] = VerifiedIdentity(provider="workos", subject=subject, email=email)
+def login(
+    client: TestClient,
+    gateway: FakeAuthGateway,
+    *,
+    code: str,
+    email: str,
+    subject: str,
+    provider_session_id: str | None = None,
+) -> None:
+    gateway.identities[code] = VerifiedIdentity(
+        provider="workos", subject=subject, email=email, provider_session_id=provider_session_id
+    )
     start = client.get("/auth/login", follow_redirects=False)
     state = parse_qs(urlparse(start.headers["location"]).query)["state"][0]
     response = client.get(f"/auth/callback?code={code}&state={state}", follow_redirects=False)
@@ -107,6 +126,52 @@ def create_organization(client: TestClient) -> UUID:
     response = client.post("/organizations", json={"name": "Acme"})
     assert response.status_code == 201
     return UUID(response.json()["id"])
+
+
+def test_authkit_login_uses_the_selected_screen_hint(google_api) -> None:
+    client, _, auth_gateway, _ = google_api
+
+    response = client.get("/auth/login?screen_hint=sign-up", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert auth_gateway.authorization_calls[-1]["screen_hint"] == "sign-up"
+    assert auth_gateway.authorization_calls[-1]["max_age"] is None
+    assert client.get("/auth/login?screen_hint=unexpected", follow_redirects=False).status_code == 422
+
+
+def test_logout_ends_the_remote_authkit_session_and_revokes_the_local_session(google_api) -> None:
+    client, _, auth_gateway, _ = google_api
+    login(
+        client,
+        auth_gateway,
+        code="owner",
+        email="owner@example.test",
+        subject="owner",
+        provider_session_id="session_01HXYZ",
+    )
+
+    response = client.post("/auth/logout")
+
+    assert response.status_code == 200
+    assert response.json()["redirect_url"].startswith("https://auth.example.test/logout?")
+    assert auth_gateway.logout_calls == [
+        {"session_id": "session_01HXYZ", "return_to": "http://app.example.test"}
+    ]
+    assert client.get("/me").status_code == 401
+
+
+def test_legacy_logout_forces_a_fresh_authentication_challenge(google_api) -> None:
+    client, _, auth_gateway, _ = google_api
+    login(client, auth_gateway, code="owner", email="owner@example.test", subject="owner")
+
+    response = client.post("/auth/logout")
+    next_login = client.get("/auth/login?screen_hint=sign-in", follow_redirects=False)
+
+    assert response.json()["redirect_url"] == "http://app.example.test"
+    assert auth_gateway.logout_calls == []
+    assert next_login.status_code == 302
+    assert auth_gateway.authorization_calls[-1]["screen_hint"] == "sign-in"
+    assert auth_gateway.authorization_calls[-1]["max_age"] == 0
 
 
 def test_google_oauth_callback_is_one_time_hashes_state_and_encrypts_credentials(google_api) -> None:

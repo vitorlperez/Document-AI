@@ -16,6 +16,7 @@ router = APIRouter(tags=["library"])
 
 
 def _node(*, node: LibraryNode, service: LibraryService, scope: OrganizationScope) -> dict[str, object]:
+    documents = service.document_provenance(scope=scope, node=node)
     return {
         "id": str(node.id),
         "parent_id": str(node.parent_id) if node.parent_id else None,
@@ -25,6 +26,10 @@ def _node(*, node: LibraryNode, service: LibraryService, scope: OrganizationScop
         "mime_type": node.mime_type,
         "source_url": node.source_url,
         "workspace_folder_ids": [str(item) for item in service.workspace_provenance(scope=scope, node=node)],
+        "workspace_documents": [
+            {"workspace_folder_id": str(item.workspace_folder_id), "document_id": str(item.document_id)}
+            for item in documents
+        ],
     }
 
 
@@ -75,7 +80,13 @@ def library_question_contexts(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
     return {
         "items": [
-            {"id": str(item.id), "name": item.name, "status": item.status, "source_id": str(item.source_id)}
+            {
+                "id": str(item.id),
+                "name": item.name,
+                "status": item.status,
+                "source_id": str(item.source_id),
+                "query_status": item.query_status,
+            }
             for item in contexts
         ]
     }

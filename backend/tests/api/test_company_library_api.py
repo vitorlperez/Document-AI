@@ -83,9 +83,21 @@ def test_company_library_is_member_scoped_and_nodes_use_uuids(api: tuple[TestCli
     children = client.get(f"/library/nodes/{root['id']}/children?organization_id={organization}")
     assert children.status_code == 200
     assert children.json()["items"] == [
-        {"id": children.json()["items"][0]["id"], "parent_id": root["id"], "source_id": source_id, "kind": "file", "name": "Brief.pdf", "mime_type": "application/pdf", "source_url": "https://drive.example.test/brief", "workspace_folder_ids": children.json()["items"][0]["workspace_folder_ids"]}
+        {
+            "id": children.json()["items"][0]["id"],
+            "parent_id": root["id"],
+            "source_id": source_id,
+            "kind": "file",
+            "name": "Brief.pdf",
+            "mime_type": "application/pdf",
+            "source_url": "https://drive.example.test/brief",
+            "workspace_folder_ids": children.json()["items"][0]["workspace_folder_ids"],
+            "workspace_documents": children.json()["items"][0]["workspace_documents"],
+        }
     ]
     assert len(children.json()["items"][0]["workspace_folder_ids"]) == 1
+    assert len(children.json()["items"][0]["workspace_documents"]) == 1
+    assert UUID(children.json()["items"][0]["workspace_documents"][0]["document_id"])
 
 
 def test_company_library_does_not_disclose_foreign_node(api: tuple[TestClient, sessionmaker[Session]]) -> None:
@@ -118,6 +130,7 @@ def test_member_can_search_library_names_and_see_own_sync_phases(api: tuple[Test
     assert search.status_code == contexts.status_code == syncs.status_code == 200
     assert [item["name"] for item in search.json()["items"]] == ["Brief.pdf"]
     assert [item["name"] for item in contexts.json()["items"]] == ["Scope"]
+    assert [item["query_status"] for item in contexts.json()["items"]] == ["no_indexed_content"]
     assert [item["status"] for item in syncs.json()["items"]] == ["syncing"]
 
     login(client, "outsider")

@@ -10,12 +10,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.audit_usage.models import UsageRecord
+from app.audit_usage.models import AuditLog, UsageRecord
 from app.audit_usage.service import MONTHLY_LIMITS
 from app.core.config import Settings
 from app.core.models import Base
 from app.identity.auth import AuthenticationUnavailable, VerifiedIdentity
 from app.identity.models import User
+from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.questions import EMBEDDING_MODEL, GeneratedAnswer
@@ -196,6 +197,7 @@ def test_questions_api_returns_cited_answer_and_denies_cross_tenant(search_api) 
 
     assert supported.status_code == 200
     assert supported.json()["confidence"] == "supported"
+    assert supported.json()["retrieval_status"] == "sufficient_evidence"
     assert supported.json()["citations"] == [
         {
             "document_id": supported.json()["citations"][0]["document_id"],
@@ -214,6 +216,51 @@ def test_questions_api_returns_cited_answer_and_denies_cross_tenant(search_api) 
     )
     assert denied.status_code == 403
     assert "September" not in denied.text
+
+
+def test_questions_api_exposes_safe_distinct_indexing_states(search_api) -> None:
+    client, factory, gateway = search_api
+    client.app.state.semantic_provider = FakeSemanticProvider()
+    login(client, gateway, code="owner", email="owner@example.test", subject="owner")
+    organization_id = create_organization(client)
+    embedded_folder_id = seed_indexed_document(factory, organization_id=organization_id)
+    with factory.begin() as session:
+        source = session.query(DataSource).filter_by(organization_id=organization_id).one()
+        empty_folder = WorkspaceFolder(
+            organization_id=organization_id,
+            source_id=source.id,
+            external_folder_id="empty-folder",
+            name="Empty",
+            uniform_access_confirmed=True,
+            status="ready",
+        )
+        session.add(empty_folder)
+        session.query(DocumentChunk).filter_by(workspace_folder_id=embedded_folder_id).update(
+            {"embedding": None, "embedding_model": None}
+        )
+
+    no_content = client.post(
+        f"/workspace-folders/{empty_folder.id}/questions?organization_id={organization_id}",
+        json={"question": "What is available?"},
+    )
+    no_embeddings = client.post(
+        f"/workspace-folders/{embedded_folder_id}/questions?organization_id={organization_id}",
+        json={"question": "When does the campaign launch?"},
+    )
+
+    assert no_content.status_code == no_embeddings.status_code == 200
+    assert no_content.json() == {
+        "answer": None,
+        "confidence": "insufficient_evidence",
+        "citations": [],
+        "retrieval_status": "no_indexed_content",
+    }
+    assert no_embeddings.json() == {
+        "answer": None,
+        "confidence": "insufficient_evidence",
+        "citations": [],
+        "retrieval_status": "no_compatible_embeddings",
+    }
 
 
 def test_saved_queries_api_persists_only_query_metadata_and_supports_owner_crud(search_api) -> None:
@@ -301,3 +348,154 @@ def test_question_limit_blocks_only_the_new_question_and_leaves_search_readable(
     assert question.status_code == 429
     assert search.status_code == 200
     assert recorded.quantity == MONTHLY_LIMITS["questions"]
+
+
+class FakeIngestionDispatcher:
+    def __init__(self) -> None:
+        self.job_ids: list[UUID] = []
+
+    def dispatch(self, *, job_id: UUID) -> None:
+        self.job_ids.append(job_id)
+
+
+def test_document_management_api_uses_local_uuid_actions_and_blocks_members(search_api) -> None:
+    client, factory, gateway = search_api
+    dispatcher = FakeIngestionDispatcher()
+    client.app.state.ingestion_dispatcher = dispatcher
+    login(client, gateway, code="owner", email="owner@example.test", subject="owner")
+    organization_id = create_organization(client)
+    folder_id = seed_indexed_document(factory, organization_id=organization_id)
+    with factory() as session:
+        document = session.query(Document).one()
+        document_id = document.id
+
+    reprocess = client.post(
+        f"/workspace-folders/{folder_id}/documents/{document_id}/reprocess?organization_id={organization_id}"
+    )
+    assert reprocess.status_code == 202
+    assert UUID(reprocess.json()["job_id"]) in dispatcher.job_ids
+    with factory() as session:
+        document = session.get(Document, document_id)
+        assert document is not None and document.content_hash == ""
+        assert session.query(AuditLog).filter_by(action="document_index.reprocess_requested", target_id=document_id).count() == 1
+
+    active_delete = client.delete(
+        f"/workspace-folders/{folder_id}/documents/{document_id}?organization_id={organization_id}"
+    )
+    assert active_delete.status_code == 409
+
+    login(client, gateway, code="member", email="member@example.test", subject="member")
+    with factory.begin() as session:
+        member = session.query(User).filter_by(email="member@example.test").one()
+        session.add(Membership(organization_id=organization_id, user_id=member.id, role=MembershipRole.MEMBER, is_active=True))
+    denied = client.post(
+        f"/workspace-folders/{folder_id}/documents/{document_id}/reprocess?organization_id={organization_id}"
+    )
+    assert denied.status_code == 403
+    with factory() as session:
+        assert session.get(Document, document_id) is not None
+
+
+def test_document_remove_api_deletes_only_indexed_rows_and_chunks(search_api) -> None:
+    client, factory, gateway = search_api
+    login(client, gateway, code="owner", email="owner@example.test", subject="owner")
+    organization_id = create_organization(client)
+    folder_id = seed_indexed_document(factory, organization_id=organization_id)
+    with factory() as session:
+        document = session.query(Document).one()
+        document_id = document.id
+
+    with factory.begin() as session:
+        source = session.query(DataSource).filter_by(organization_id=organization_id).one()
+        another_folder = WorkspaceFolder(
+            organization_id=organization_id,
+            source_id=source.id,
+            external_folder_id="another-folder",
+            name="Another folder",
+            uniform_access_confirmed=True,
+            status="ready",
+        )
+        session.add(another_folder)
+        session.flush()
+        other_document = Document(
+            organization_id=organization_id,
+            workspace_folder_id=another_folder.id,
+            external_file_id="another-file",
+            name="Another.pdf",
+            mime_type="application/pdf",
+            source_url="https://drive.example.test/another-file",
+            content_hash="b" * 64,
+            processing_version="v1",
+            index_status="indexed",
+        )
+        session.add(other_document)
+        session.flush()
+        other_document_id = other_document.id
+
+    wrong_folder = client.delete(
+        f"/workspace-folders/{folder_id}/documents/{other_document_id}?organization_id={organization_id}"
+    )
+    assert wrong_folder.status_code == 404
+    with factory() as session:
+        assert session.get(Document, other_document_id) is not None
+
+    removed = client.delete(
+        f"/workspace-folders/{folder_id}/documents/{document_id}?organization_id={organization_id}"
+    )
+
+    assert removed.status_code == 204
+    with factory() as session:
+        assert session.get(Document, document_id) is None
+        assert session.query(DocumentChunk).filter_by(document_id=document_id).count() == 0
+        assert session.query(AuditLog).filter_by(action="document_index.removed", target_id=document_id).count() == 1
+
+
+def test_workspace_remove_api_removes_only_the_selected_local_scope(search_api) -> None:
+    client, factory, gateway = search_api
+    login(client, gateway, code="owner", email="owner@example.test", subject="owner")
+    organization_id = create_organization(client)
+    folder_id = seed_indexed_document(factory, organization_id=organization_id)
+
+    removed = client.delete(f"/workspace-folders/{folder_id}?organization_id={organization_id}")
+    listed = client.get(f"/workspace-folders?organization_id={organization_id}")
+
+    assert removed.status_code == 204
+    assert listed.status_code == 200 and listed.json() == []
+    with factory() as session:
+        assert session.get(WorkspaceFolder, folder_id) is None
+        assert session.query(Document).filter_by(workspace_folder_id=folder_id).count() == 0
+        assert session.query(DocumentChunk).filter_by(workspace_folder_id=folder_id).count() == 0
+        assert session.query(AuditLog).filter_by(action="workspace_index.removed", target_id=folder_id).count() == 1
+
+
+def test_workspace_remove_api_rejects_active_sync_member_and_foreign_tenant(search_api) -> None:
+    client, factory, gateway = search_api
+    login(client, gateway, code="owner-a", email="owner-a@example.test", subject="owner-a")
+    organization_a = create_organization(client)
+    folder_id = seed_indexed_document(factory, organization_id=organization_a)
+    with factory.begin() as session:
+        session.add(
+            ProcessingJob(
+                organization_id=organization_a,
+                workspace_folder_id=folder_id,
+                idempotency_key="active-workspace-remove-api",
+                status=ProcessingJobStatus.QUEUED,
+            )
+        )
+
+    active = client.delete(f"/workspace-folders/{folder_id}?organization_id={organization_a}")
+    assert active.status_code == 409
+
+    login(client, gateway, code="member", email="member@example.test", subject="member")
+    with factory.begin() as session:
+        member = session.query(User).filter_by(email="member@example.test").one()
+        session.add(Membership(organization_id=organization_a, user_id=member.id, role=MembershipRole.MEMBER, is_active=True))
+    member_denied = client.delete(f"/workspace-folders/{folder_id}?organization_id={organization_a}")
+    assert member_denied.status_code == 403
+
+    login(client, gateway, code="owner-b", email="owner-b@example.test", subject="owner-b")
+    organization_b = create_organization(client)
+    tenant_denied = client.delete(f"/workspace-folders/{folder_id}?organization_id={organization_b}")
+    assert tenant_denied.status_code == 403
+    with factory() as session:
+        assert session.get(WorkspaceFolder, folder_id) is not None

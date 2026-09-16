@@ -8,16 +8,23 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from app.api.ingestion import document_failures, documents
+from app.audit_usage.models import AuditLog, SavedQuery
 from app.audit_usage.service import ACTIVE_DOCUMENT_LIMIT, UsageLimitExceeded
 from app.core.models import Base
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
-from app.ingestion.models import ProcessingJobStatus
-from app.ingestion.service import JOB_LEASE, DiscoveredDocument, IngestionService, SyncAccessDenied
+from app.ingestion.models import ProcessingJob, ProcessingJobStatus
+from app.ingestion.service import (
+    JOB_LEASE,
+    DiscoveredDocument,
+    IngestionService,
+    SyncAccessDenied,
+    SyncAlreadyActive,
+)
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
 from app.organizations.models import Membership, MembershipRole, Organization
-from app.workspaces.models import WorkspaceFolder
+from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 
 @pytest.fixture()
@@ -623,3 +630,225 @@ def test_document_listing_rejects_cross_organization_scope(session: Session) -> 
     assert error.value.status_code == 403
     assert member.id != outsider.id
     assert UUID(str(folder.organization_id)) == organization.id
+
+
+def test_admin_removes_only_the_local_document_index_and_audits_it(session: Session) -> None:
+    organization, admin, folder = create_workspace(session)
+    service = IngestionService(session)
+    job = service.enqueue(scope=OrganizationScope(organization.id), user_id=admin.id, workspace_folder_id=folder.id)
+    service.reconcile(
+        job_id=job.id,
+        documents=[
+            DiscoveredDocument(
+                external_file_id="drive-file-1",
+                name="Drive original remains.pdf",
+                mime_type="application/pdf",
+                source_url="https://drive.example.test/drive-file-1",
+                text="This local index is removable.",
+            )
+        ],
+    )
+    document = session.scalar(select(Document).where(Document.external_file_id == "drive-file-1"))
+    assert document is not None
+
+    removed = service.remove_indexed_document(
+        scope=OrganizationScope(organization.id),
+        user_id=admin.id,
+        workspace_folder_id=folder.id,
+        document_id=document.id,
+    )
+
+    assert removed.id == document.id
+    assert session.get(Document, document.id) is None
+    assert session.scalar(select(DocumentChunk.id).where(DocumentChunk.document_id == document.id)) is None
+    audit = session.scalar(select(AuditLog).where(AuditLog.target_id == document.id))
+    assert audit is not None
+    assert audit.action == "document_index.removed"
+
+
+def test_reprocess_queues_a_regular_job_and_forces_only_selected_document_to_rebuild(session: Session) -> None:
+    organization, admin, folder = create_workspace(session)
+    service = IngestionService(session)
+    first_job = service.enqueue(scope=OrganizationScope(organization.id), user_id=admin.id, workspace_folder_id=folder.id)
+    initial = DiscoveredDocument(
+        external_file_id="reprocess-me",
+        name="Refresh.pdf",
+        mime_type="application/pdf",
+        source_url="https://drive.example.test/reprocess-me",
+        text="Initial text.",
+    )
+    unchanged = DiscoveredDocument(
+        external_file_id="leave-me",
+        name="Stable.pdf",
+        mime_type="application/pdf",
+        source_url="https://drive.example.test/leave-me",
+        text="Stable text.",
+    )
+    service.reconcile(job_id=first_job.id, documents=[initial, unchanged])
+    selected = session.scalar(select(Document).where(Document.external_file_id == "reprocess-me"))
+    stable = session.scalar(select(Document).where(Document.external_file_id == "leave-me"))
+    assert selected is not None and stable is not None
+    stable_chunk_id = session.scalar(select(DocumentChunk.id).where(DocumentChunk.document_id == stable.id))
+
+    job = service.request_document_reprocess(
+        scope=OrganizationScope(organization.id),
+        user_id=admin.id,
+        workspace_folder_id=folder.id,
+        document_id=selected.id,
+    )
+
+    assert job.status is ProcessingJobStatus.QUEUED
+    assert selected.content_hash == ""
+    assert session.scalar(select(AuditLog.action).where(AuditLog.target_id == selected.id)) == "document_index.reprocess_requested"
+    with pytest.raises(SyncAlreadyActive):
+        service.remove_indexed_document(
+            scope=OrganizationScope(organization.id), user_id=admin.id, workspace_folder_id=folder.id, document_id=selected.id
+        )
+
+    service.reconcile(job_id=job.id, documents=[initial, unchanged])
+
+    assert session.scalar(select(DocumentChunk.text).where(DocumentChunk.document_id == selected.id)) == "Initial text."
+    assert session.scalar(select(DocumentChunk.id).where(DocumentChunk.document_id == stable.id)) == stable_chunk_id
+
+
+def test_member_and_foreign_scope_cannot_manage_an_indexed_document(session: Session) -> None:
+    organization, _admin, folder = create_workspace(session)
+    member = User(email="member-manage@example.test")
+    session.add(member)
+    session.flush()
+    session.add(Membership(organization_id=organization.id, user_id=member.id, role=MembershipRole.MEMBER, is_active=True))
+    document = Document(
+        organization_id=organization.id,
+        workspace_folder_id=folder.id,
+        external_file_id="protected",
+        name="Protected.pdf",
+        mime_type="application/pdf",
+        source_url="https://drive.example.test/protected",
+        content_hash="hash",
+        processing_version="v1",
+        index_status="indexed",
+    )
+    session.add(document)
+    session.flush()
+    other_organization, outsider, _ = create_workspace(session)
+    service = IngestionService(session)
+
+    with pytest.raises(SyncAccessDenied):
+        service.remove_indexed_document(
+            scope=OrganizationScope(organization.id), user_id=member.id, workspace_folder_id=folder.id, document_id=document.id
+        )
+    with pytest.raises(SyncAccessDenied):
+        service.request_document_reprocess(
+            scope=OrganizationScope(other_organization.id), user_id=outsider.id, workspace_folder_id=folder.id, document_id=document.id
+        )
+    assert session.get(Document, document.id) is not None
+
+
+def test_admin_removes_a_whole_local_workspace_without_touching_the_source(session: Session) -> None:
+    organization, admin, folder = create_workspace(session)
+    source_id = folder.source_id
+    document = Document(
+        organization_id=organization.id,
+        workspace_folder_id=folder.id,
+        external_file_id="local-file",
+        name="Local.pdf",
+        mime_type="application/pdf",
+        source_url="https://drive.example.test/local-file",
+        content_hash="a" * 64,
+        processing_version="v1",
+        index_status="indexed",
+    )
+    session.add(document)
+    session.flush()
+    chunk = DocumentChunk(
+        organization_id=organization.id,
+        workspace_folder_id=folder.id,
+        document_id=document.id,
+        position=0,
+        text="Local indexed content.",
+        search_text="Local indexed content.",
+        embedding=[1.0, 0.0],
+        embedding_model="test",
+    )
+    selection = WorkspaceFolderSelection(workspace_folder_id=folder.id, kind="folder", external_folder_id="folder-1")
+    saved = SavedQuery(
+        organization_id=organization.id,
+        workspace_folder_id=folder.id,
+        user_id=admin.id,
+        name="Local query",
+        query="What is local?",
+        filters={},
+    )
+    terminal_job = ProcessingJob(
+        organization_id=organization.id,
+        workspace_folder_id=folder.id,
+        idempotency_key="terminal-workspace-removal",
+        status=ProcessingJobStatus.READY,
+    )
+    session.add_all([chunk, selection, saved, terminal_job])
+    session.flush()
+
+    removed = IngestionService(session).remove_workspace(
+        scope=OrganizationScope(organization.id), user_id=admin.id, workspace_folder_id=folder.id
+    )
+
+    assert removed.id == folder.id
+    assert removed.source_id == source_id
+    assert removed.external_file_ids == ("local-file",)
+    assert session.get(WorkspaceFolder, folder.id) is None
+    assert session.get(Document, document.id) is None
+    assert session.get(DocumentChunk, chunk.id) is None
+    assert session.get(SavedQuery, saved.id) is None
+    assert session.get(WorkspaceFolderSelection, selection.id) is None
+    assert session.get(ProcessingJob, terminal_job.id) is None
+    assert session.get(DataSource, source_id) is not None
+    assert session.scalar(select(AuditLog.action).where(AuditLog.target_id == folder.id)) == "workspace_index.removed"
+
+
+def test_workspace_removal_is_blocked_while_a_sync_is_active(session: Session) -> None:
+    organization, admin, folder = create_workspace(session)
+    document = Document(
+        organization_id=organization.id,
+        workspace_folder_id=folder.id,
+        external_file_id="protected-workspace-file",
+        name="Protected.pdf",
+        mime_type="application/pdf",
+        source_url="https://drive.example.test/protected-workspace-file",
+        content_hash="a" * 64,
+        processing_version="v1",
+        index_status="indexed",
+    )
+    session.add(document)
+    session.flush()
+    IngestionService(session).enqueue(
+        scope=OrganizationScope(organization.id), user_id=admin.id, workspace_folder_id=folder.id
+    )
+
+    with pytest.raises(SyncAlreadyActive):
+        IngestionService(session).remove_workspace(
+            scope=OrganizationScope(organization.id), user_id=admin.id, workspace_folder_id=folder.id
+        )
+
+    assert session.get(WorkspaceFolder, folder.id) is not None
+    assert session.get(Document, document.id) is not None
+
+
+def test_member_and_foreign_organization_cannot_remove_a_workspace(session: Session) -> None:
+    organization, _admin, folder = create_workspace(session)
+    member = User(email="workspace-member@example.test")
+    session.add(member)
+    session.flush()
+    session.add(Membership(organization_id=organization.id, user_id=member.id, role=MembershipRole.MEMBER, is_active=True))
+    other_organization, outsider, _ = create_workspace(session)
+    service = IngestionService(session)
+
+    with pytest.raises(SyncAccessDenied):
+        service.remove_workspace(
+            scope=OrganizationScope(organization.id), user_id=member.id, workspace_folder_id=folder.id
+        )
+    with pytest.raises(SyncAccessDenied):
+        service.remove_workspace(
+            scope=OrganizationScope(other_organization.id), user_id=outsider.id, workspace_folder_id=folder.id
+        )
+
+    assert session.get(WorkspaceFolder, folder.id) is not None

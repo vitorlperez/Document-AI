@@ -1,3 +1,5 @@
+import base64
+import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -10,6 +12,7 @@ from app.identity.auth import (
     WorkOSAuthKitGateway,
     canonical_email,
     hash_secret,
+    workos_session_id,
 )
 from app.identity.models import AuthIdentity, User, UserSession
 
@@ -100,12 +103,15 @@ def test_created_session_persists_only_hash_and_sets_future_expiration() -> None
     session = FakeSession()
     before = datetime.now(UTC)
 
-    stored_session, raw_secret = IdentityService(session).create_session(user_id=uuid4(), ttl_hours=24)
+    stored_session, raw_secret = IdentityService(session).create_session(
+        user_id=uuid4(), ttl_hours=24, provider_session_id="session_01HXYZ"
+    )
 
     assert isinstance(stored_session, UserSession)
     assert raw_secret
     assert stored_session.secret_hash == hash_secret(raw_secret)
     assert stored_session.secret_hash != raw_secret
+    assert stored_session.provider_session_id == "session_01HXYZ"
     assert stored_session.expires_at > before
     assert session.added == [stored_session]
 
@@ -118,11 +124,24 @@ def test_missing_or_altered_session_secret_authenticates_no_user(raw_secret: str
 
 
 def test_revoking_a_session_never_persists_raw_secret() -> None:
-    session = FakeSession()
+    stored_session = UserSession(
+        user_id=uuid4(),
+        secret_hash=hash_secret("opaque-secret"),
+        provider_session_id="session_01HXYZ",
+        expires_at=datetime.now(UTC),
+    )
+    session = FakeSession(scalar_results=[stored_session])
 
-    IdentityService(session).revoke_session("opaque-secret")
+    provider_session_id = IdentityService(session).revoke_session("opaque-secret")
 
-    assert len(session.executed) == 1
-    compiled = str(session.executed[0].compile(compile_kwargs={"literal_binds": True}))
-    assert hash_secret("opaque-secret") in compiled
-    assert "opaque-secret" not in compiled
+    assert provider_session_id == "session_01HXYZ"
+    assert stored_session.revoked_at is not None
+    assert session.executed == []
+
+
+def test_workos_session_id_reads_only_a_well_formed_session_claim() -> None:
+    payload = base64.urlsafe_b64encode(json.dumps({"sid": "session_01HXYZ"}).encode()).decode().rstrip("=")
+
+    assert workos_session_id(f"header.{payload}.signature") == "session_01HXYZ"
+    assert workos_session_id("header.invalid.signature") is None
+    assert workos_session_id(None) is None

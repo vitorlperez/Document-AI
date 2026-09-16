@@ -7,7 +7,7 @@ from app.core.models import Base
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
-from app.ingestion.service import DiscoveredDocument, SyncAccessDenied
+from app.ingestion.service import DiscoveredDocument, IngestionService, SyncAccessDenied
 from app.integrations.google_drive import RemoteFolder
 from app.integrations.models import DataSource
 from app.knowledge.models import Document
@@ -93,6 +93,29 @@ def test_projects_nested_drive_tree_and_merges_overlapping_syncs(session: Sessio
     assert session.query(LibraryNode).filter_by(source_id=source.id, external_id="brief").count() == 1
     assert set(service.workspace_provenance(scope=OrganizationScope(organization.id), node=files[0])) == {scope_a.id, scope_b.id}
 
+    membership = session.query(Membership).filter_by(organization_id=organization.id, user_id=user.id).one()
+    membership.role = MembershipRole.ADMIN
+    document_a = session.query(Document).filter_by(workspace_folder_id=scope_a.id, external_file_id="brief").one()
+    document_b = session.query(Document).filter_by(workspace_folder_id=scope_b.id, external_file_id="brief").one()
+    ingestion = IngestionService(session)
+    removed_a = ingestion.remove_indexed_document(
+        scope=OrganizationScope(organization.id), user_id=user.id, workspace_folder_id=scope_a.id, document_id=document_a.id
+    )
+    service.remove_file_if_unindexed(
+        scope=OrganizationScope(organization.id), source_id=removed_a.source_id, external_file_id=removed_a.external_file_id
+    )
+    assert session.query(LibraryNode).filter_by(source_id=source.id, external_id="brief").count() == 1
+    remaining = service.document_provenance(scope=OrganizationScope(organization.id), node=files[0])
+    assert [(item.workspace_folder_id, item.document_id) for item in remaining] == [(scope_b.id, document_b.id)]
+
+    removed_b = ingestion.remove_indexed_document(
+        scope=OrganizationScope(organization.id), user_id=user.id, workspace_folder_id=scope_b.id, document_id=document_b.id
+    )
+    service.remove_file_if_unindexed(
+        scope=OrganizationScope(organization.id), source_id=removed_b.source_id, external_file_id=removed_b.external_file_id
+    )
+    assert session.query(LibraryNode).filter_by(source_id=source.id, external_id="brief").count() == 0
+
 
 def test_projection_excludes_nonindexed_files_and_isolates_organizations(session: Session) -> None:
     organization, user, source = seed_company(session)
@@ -153,3 +176,4 @@ def test_library_metadata_search_and_sync_statuses_are_member_scoped(session: Se
     assert [item.status for item in syncs] == ["syncing", "ready"]
     contexts = service.question_contexts(scope=OrganizationScope(organization.id), user_id=user.id)
     assert [item.id for item in contexts] == [workspace.id]
+    assert [item.query_status for item in contexts] == ["no_indexed_content"]

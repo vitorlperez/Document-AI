@@ -11,10 +11,16 @@ from app.audit_usage.service import UsageLimitExceeded
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.ingestion.models import ProcessingJob
-from app.ingestion.service import IngestionService, SyncAccessDenied
+from app.ingestion.service import (
+    IngestionService,
+    ManagedDocumentNotFound,
+    SyncAccessDenied,
+    SyncAlreadyActive,
+)
 from app.integrations.google_drive import GoogleAccessDenied
 from app.knowledge.questions import AIProviderUnavailable, QuestionService
 from app.knowledge.search import SearchUnavailable, TextSearchService
+from app.library.service import LibraryService
 
 router = APIRouter(tags=["ingestion"])
 
@@ -77,6 +83,86 @@ def documents(
         }
         for row in rows
     ]
+
+
+@router.delete("/workspace-folders/{workspace_folder_id}/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_document_from_index(
+    workspace_folder_id: UUID,
+    document_id: UUID,
+    organization_id: UUID,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> None:
+    try:
+        scope = OrganizationScope(organization_id)
+        removed = IngestionService(session).remove_indexed_document(
+            scope=scope, user_id=user.id, workspace_folder_id=workspace_folder_id, document_id=document_id
+        )
+        LibraryService(session).remove_file_if_unindexed(
+            scope=scope, source_id=removed.source_id, external_file_id=removed.external_file_id
+        )
+        session.commit()
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    except ManagedDocumentNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="document not found") from error
+    except SyncAlreadyActive as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="workspace sync already active") from error
+
+
+@router.post(
+    "/workspace-folders/{workspace_folder_id}/documents/{document_id}/reprocess",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def reprocess_document(
+    workspace_folder_id: UUID,
+    document_id: UUID,
+    organization_id: UUID,
+    request: Request,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> dict[str, str]:
+    try:
+        job = IngestionService(session).request_document_reprocess(
+            scope=OrganizationScope(organization_id),
+            user_id=user.id,
+            workspace_folder_id=workspace_folder_id,
+            document_id=document_id,
+        )
+        session.commit()
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    except ManagedDocumentNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="document not found") from error
+    except SyncAlreadyActive as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="workspace sync already active") from error
+    try:
+        request.app.state.ingestion_dispatcher.dispatch(job_id=job.id)
+    except RuntimeError as error:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="sync queue unavailable") from error
+    return {"job_id": str(job.id), "status": job.status.value}
+
+
+@router.delete("/workspace-folders/{workspace_folder_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_workspace_from_index(
+    workspace_folder_id: UUID,
+    organization_id: UUID,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> None:
+    try:
+        scope = OrganizationScope(organization_id)
+        removed = IngestionService(session).remove_workspace(
+            scope=scope, user_id=user.id, workspace_folder_id=workspace_folder_id
+        )
+        LibraryService(session).remove_files_if_unindexed(
+            scope=scope, source_id=removed.source_id, external_file_ids=removed.external_file_ids
+        )
+        session.commit()
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    except SyncAlreadyActive as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="workspace sync already active") from error
 
 
 @router.get("/workspace-folders/{workspace_folder_id}/documents/failures")

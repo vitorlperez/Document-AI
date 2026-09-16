@@ -9,12 +9,13 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.audit_usage.models import AuditLog, SavedQuery
 from app.audit_usage.service import ACTIVE_DOCUMENT_LIMIT, UsageLimitExceeded, UsageService
 from app.core.scoping import OrganizationScope
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.knowledge.models import Document, DocumentChunk
 from app.organizations.models import Membership, MembershipRole, Organization
-from app.workspaces.models import WorkspaceFolder
+from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 PROCESSING_VERSION = "v1"
 JOB_LEASE = timedelta(minutes=20)
@@ -26,6 +27,14 @@ ELIGIBLE_MIME_TYPES = {
 
 
 class SyncAccessDenied(PermissionError):
+    pass
+
+
+class ManagedDocumentNotFound(ValueError):
+    pass
+
+
+class SyncAlreadyActive(ValueError):
     pass
 
 
@@ -42,6 +51,21 @@ class DiscoveredDocument:
     page_number: int | None = None
     error_code: str | None = None
     parent_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ManagedDocument:
+    id: UUID
+    workspace_folder_id: UUID
+    source_id: UUID
+    external_file_id: str
+
+
+@dataclass(frozen=True)
+class RemovedWorkspace:
+    id: UUID
+    source_id: UUID
+    external_file_ids: tuple[str, ...]
 
 
 class IngestionService:
@@ -71,20 +95,26 @@ class IngestionService:
         if membership is None:
             raise SyncAccessDenied("sync access denied")
 
-    def require_folder(self, *, scope: OrganizationScope, workspace_folder_id: UUID) -> WorkspaceFolder:
-        folder = self.session.scalar(
-            select(WorkspaceFolder).where(
-                WorkspaceFolder.id == workspace_folder_id,
-                WorkspaceFolder.organization_id == scope.organization_id,
-            )
+    def require_folder(
+        self, *, scope: OrganizationScope, workspace_folder_id: UUID, lock: bool = False
+    ) -> WorkspaceFolder:
+        statement = select(WorkspaceFolder).where(
+            WorkspaceFolder.id == workspace_folder_id,
+            WorkspaceFolder.organization_id == scope.organization_id,
         )
+        if lock:
+            # Sync scheduling and index management use this same row lock.
+            # That gives a request one ordered view of the active job and local
+            # document rows, rather than allowing a worker to race a removal.
+            statement = statement.with_for_update()
+        folder = self.session.scalar(statement)
         if folder is None:
             raise SyncAccessDenied("workspace access denied")
         return folder
 
     def enqueue(self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID) -> ProcessingJob:
         self.require_admin(scope=scope, user_id=user_id)
-        folder = self.require_folder(scope=scope, workspace_folder_id=workspace_folder_id)
+        folder = self.require_folder(scope=scope, workspace_folder_id=workspace_folder_id, lock=True)
         active_job = self.session.scalar(
             select(ProcessingJob).where(
                 ProcessingJob.organization_id == scope.organization_id,
@@ -138,6 +168,115 @@ class IngestionService:
                 .order_by(Document.name, Document.id)
             )
         )
+
+    def remove_indexed_document(
+        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID, document_id: UUID
+    ) -> ManagedDocument:
+        document, folder = self._managed_document(
+            scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id, document_id=document_id
+        )
+        self._require_no_active_job(scope=scope, workspace_folder_id=folder.id)
+        managed = ManagedDocument(
+            id=document.id,
+            workspace_folder_id=folder.id,
+            source_id=folder.source_id,
+            external_file_id=document.external_file_id,
+        )
+        self.session.execute(delete(DocumentChunk).where(DocumentChunk.document_id == document.id))
+        self.session.delete(document)
+        self.session.add(
+            AuditLog(
+                organization_id=scope.organization_id,
+                actor_user_id=user_id,
+                action="document_index.removed",
+                target_type="document",
+                target_id=managed.id,
+            )
+        )
+        self.session.flush()
+        return managed
+
+    def request_document_reprocess(
+        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID, document_id: UUID
+    ) -> ProcessingJob:
+        document, _folder = self._managed_document(
+            scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id, document_id=document_id
+        )
+        self._require_no_active_job(scope=scope, workspace_folder_id=workspace_folder_id)
+        # The worker sees a deliberately stale hash, rebuilds this document's
+        # chunks after its next remote read, then embeds the replacement set.
+        # Existing chunks remain readable until that atomic reconciliation succeeds.
+        document.content_hash = ""
+        self.session.add(
+            AuditLog(
+                organization_id=scope.organization_id,
+                actor_user_id=user_id,
+                action="document_index.reprocess_requested",
+                target_type="document",
+                target_id=document.id,
+            )
+        )
+        self.session.flush()
+        return self.enqueue(scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id)
+
+    def remove_workspace(
+        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID
+    ) -> RemovedWorkspace:
+        """Delete one confirmed local knowledge scope, never its Drive source."""
+        self.require_admin(scope=scope, user_id=user_id)
+        folder = self.require_folder(scope=scope, workspace_folder_id=workspace_folder_id, lock=True)
+        self._require_no_active_job(scope=scope, workspace_folder_id=folder.id)
+        external_file_ids = tuple(
+            self.session.scalars(
+                select(Document.external_file_id)
+                .where(
+                    Document.organization_id == scope.organization_id,
+                    Document.workspace_folder_id == folder.id,
+                )
+                .distinct()
+                .order_by(Document.external_file_id)
+            )
+        )
+        removed = RemovedWorkspace(id=folder.id, source_id=folder.source_id, external_file_ids=external_file_ids)
+        # Be explicit instead of relying on database-specific cascade settings;
+        # the API is used with PostgreSQL in production and SQLite in tests.
+        self.session.execute(
+            delete(DocumentChunk).where(
+                DocumentChunk.organization_id == scope.organization_id,
+                DocumentChunk.workspace_folder_id == folder.id,
+            )
+        )
+        self.session.execute(
+            delete(Document).where(
+                Document.organization_id == scope.organization_id,
+                Document.workspace_folder_id == folder.id,
+            )
+        )
+        self.session.execute(
+            delete(SavedQuery).where(
+                SavedQuery.organization_id == scope.organization_id,
+                SavedQuery.workspace_folder_id == folder.id,
+            )
+        )
+        self.session.execute(delete(WorkspaceFolderSelection).where(WorkspaceFolderSelection.workspace_folder_id == folder.id))
+        self.session.execute(
+            delete(ProcessingJob).where(
+                ProcessingJob.organization_id == scope.organization_id,
+                ProcessingJob.workspace_folder_id == folder.id,
+            )
+        )
+        self.session.delete(folder)
+        self.session.add(
+            AuditLog(
+                organization_id=scope.organization_id,
+                actor_user_id=user_id,
+                action="workspace_index.removed",
+                target_type="workspace_folder",
+                target_id=removed.id,
+            )
+        )
+        self.session.flush()
+        return removed
 
     def claim(self, *, job_id: UUID) -> ProcessingJob | None:
         """Atomically reserve a queued or abandoned job for one worker."""
@@ -326,6 +465,34 @@ class IngestionService:
             )
             .limit(1)
         ) is not None
+
+    def _managed_document(
+        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID, document_id: UUID
+    ) -> tuple[Document, WorkspaceFolder]:
+        self.require_admin(scope=scope, user_id=user_id)
+        folder = self.require_folder(scope=scope, workspace_folder_id=workspace_folder_id, lock=True)
+        document = self.session.scalar(
+            select(Document).where(
+                Document.id == document_id,
+                Document.organization_id == scope.organization_id,
+                Document.workspace_folder_id == folder.id,
+                Document.index_status == "indexed",
+            )
+        )
+        if document is None:
+            raise ManagedDocumentNotFound("indexed document not found")
+        return document, folder
+
+    def _require_no_active_job(self, *, scope: OrganizationScope, workspace_folder_id: UUID) -> None:
+        active = self.session.scalar(
+            select(ProcessingJob.id).where(
+                ProcessingJob.organization_id == scope.organization_id,
+                ProcessingJob.workspace_folder_id == workspace_folder_id,
+                ProcessingJob.status.in_([ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING]),
+            )
+        )
+        if active is not None:
+            raise SyncAlreadyActive("workspace sync is already active")
 
     def nonindexed_documents(
         self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID

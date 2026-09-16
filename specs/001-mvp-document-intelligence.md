@@ -135,6 +135,8 @@ Critérios de aceite:
 - O sistema exibe `queued`, `syncing`, `ready`, `partial_failure` ou `failed` para a pasta.
 - Um mesmo arquivo não pode criar documentos, chunks ou embeddings duplicados dentro do mesmo espaço de trabalho, inclusive com pastas sobrepostas.
 - Documento removido do escopo deixa de aparecer em resultados após a próxima sincronização bem-sucedida.
+- Owner e Admin podem remover um documento somente do índice local ou solicitar seu reprocessamento por UUID. Nenhuma dessas ações altera o arquivo original no Google Drive; uma sincronização posterior pode reimportar um arquivo que continuar elegível no escopo.
+- Owner e Admin podem remover ou sincronizar novamente uma pasta de trabalho por UUID. Remover a pasta exclui somente o escopo local, seus documentos, chunks, embeddings e consultas salvas; a estrutura e os arquivos no Google Drive permanecem inalterados.
 
 ### F4 - Pesquisar e fazer perguntas
 
@@ -147,7 +149,7 @@ Critérios de aceite:
 - A pergunta não pode consultar “toda a empresa” no MVP; uma pasta é obrigatória.
 - Busca textual considera título e texto extraído; busca semântica considera embeddings.
 - Resultados e contexto do LLM são filtrados por `organization_id` e `workspace_folder_id` antes de qualquer ranking ou geração.
-- A resposta deve dizer que não encontrou evidência suficiente quando a recuperação não sustentar uma resposta.
+- A resposta deve dizer que não encontrou evidência suficiente quando a recuperação não sustentar uma resposta. O contrato deve distinguir, sem expor conteúdo, `no_indexed_content`, `no_compatible_embeddings`, `below_evidence_threshold` e `invalid_generation_output` para que a interface indique a ação adequada.
 - Cada afirmação factual relevante deve ter uma ou mais citações. Sem fonte, a resposta não deve ser apresentada como fato.
 - Citação mostra nome do documento, trecho, página quando aplicável e link para o Drive.
 
@@ -268,6 +270,8 @@ Contrato de resposta de pergunta:
 }
 ```
 
+Quando uma resposta verificável não puder ser produzida, `answer` é `null`, `citations` é uma lista vazia e `confidence` permanece `insufficient_evidence`; `retrieval_status` informa a causa segura. Falha de provedor ou limite de uso continua sendo um erro HTTP explícito, não uma evidência insuficiente.
+
 ## 10. Requisitos não funcionais
 
 | Área | Meta inicial |
@@ -335,7 +339,7 @@ Não criar serviços distribuídos no MVP. Uma extração de módulo só é cons
 | Integração | Google Drive API com adaptador próprio | Primeiro conector isolado atrás de interface de fonte |
 | IA | Provedor configurável de embeddings, reranking e geração | Evita lock-in e permite trocar modelo com avaliação controlada |
 | Infraestrutura | Docker, Docker Compose local, IaC e serviços gerenciados em produção | Reprodutibilidade local e evolução segura para cloud |
-| Observabilidade | Logs estruturados, OpenTelemetry, métricas e error tracking | Medir custo, falha, latência e qualidade antes de escalar |
+| Observabilidade | Logs estruturados, OpenTelemetry, métricas e error tracking | Medir custo, falha, latência e qualidade antes de escalar; métricas de retrieval não incluem pergunta, trecho, embedding ou segredo |
 
 ### Módulos de aplicação
 
