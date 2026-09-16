@@ -1,0 +1,108 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: document_intelligence
+      POSTGRES_USER: document_intelligence
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U document_intelligence -d document_intelligence"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: ./backend
+    environment: &backend_environment
+      DATABASE_URL: postgresql+psycopg://document_intelligence:${POSTGRES_PASSWORD}@postgres:5432/document_intelligence
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: production
+      PUBLIC_APP_URL: https://${APP_DOMAIN}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?set OPENAI_API_KEY in .env.production}
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:?set GOOGLE_OAUTH_CLIENT_ID in .env.production}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:?set GOOGLE_OAUTH_CLIENT_SECRET in .env.production}
+      GOOGLE_OAUTH_REDIRECT_URI: https://${APP_DOMAIN}/api/data-sources/google/oauth/callback
+      GOOGLE_TOKEN_ENCRYPTION_KEY: ${GOOGLE_TOKEN_ENCRYPTION_KEY:?set GOOGLE_TOKEN_ENCRYPTION_KEY in .env.production}
+      WORKOS_API_KEY: ${WORKOS_API_KEY:?set WORKOS_API_KEY in .env.production}
+      WORKOS_CLIENT_ID: ${WORKOS_CLIENT_ID:?set WORKOS_CLIENT_ID in .env.production}
+      WORKOS_REDIRECT_URI: https://${APP_DOMAIN}/api/auth/callback
+      RESEND_API_KEY: ${RESEND_API_KEY:?set RESEND_API_KEY in .env.production}
+      INVITATION_FROM_EMAIL: ${INVITATION_FROM_EMAIL:?set INVITATION_FROM_EMAIL in .env.production}
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    environment: *backend_environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8000/health/ready')"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  worker:
+    build: ./backend
+    restart: unless-stopped
+    environment: *backend_environment
+    command: ["celery", "-A", "app.ingestion.tasks", "worker", "--loglevel=INFO"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.production
+      args:
+        VITE_API_BASE_URL: /api
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in .env.production}
+      CADDY_EMAIL: ${CADDY_EMAIL:?set CADDY_EMAIL in .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/oracle/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
