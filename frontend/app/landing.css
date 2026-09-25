@@ -375,3 +375,63 @@
 @media (max-width: 560px) {
   .landing-hero-actions { align-items: flex-start; }
 }
+
+/* Interactive evidence trail: scope → answer → sources. */
+.landing-page { --landing-accent: #b85f2c; }
+.landing-page ::selection { background: #d9e5d2; color: #173d33; }
+.landing-demo-stages { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding: 0; list-style: none; border: 1px solid var(--landing-line); border-bottom: 0; background: #f5f5ef; }
+.landing-demo-stages li + li { border-left: 1px solid var(--landing-line); }
+.landing-demo-stages button { display: flex; align-items: flex-start; gap: 13px; width: 100%; min-height: 82px; padding: 15px 18px; border: 0; background: transparent; color: var(--landing-muted); text-align: left; }
+.landing-demo-stages button > span:first-child { display: grid; place-items: center; width: 25px; height: 25px; flex: 0 0 25px; border: 1px solid #aab5a7; border-radius: 50%; font-family: Georgia, 'Times New Roman', serif; font-size: 12px; }
+.landing-demo-stages button > span:last-child { display: grid; gap: 3px; }
+.landing-demo-stages strong { color: var(--landing-ink); font-size: 11px; }
+.landing-demo-stages small { max-width: 27ch; font-size: 9px; line-height: 1.45; }
+.landing-demo-stages button:hover { background: #ebefe7; }
+.landing-demo-stages button.is-active { background: #e3ebe0; color: #496257; box-shadow: inset 0 3px var(--landing-teal); }
+.landing-demo-stages button.is-active > span:first-child { border-color: var(--landing-teal); background: var(--landing-teal); color: #fff; }
+.landing-preview-top { border-radius: 0; }
+
+.landing-provider-logo { display: grid; place-items: center; width: 25px; height: 25px; flex: 0 0 25px; border-radius: 5px; background: #fff; box-shadow: 0 0 0 1px #d9e0d6; }
+.landing-provider-logo svg { display: block; width: 19px; height: 19px; }
+.landing-provider-logo-onedrive { background: #eef7ff; }
+.landing-static-label, .landing-stage-badge { color: #607167 !important; font-size: 7px !important; font-weight: 700; letter-spacing: .12em; }
+.landing-product-source { min-height: 41px; }
+.landing-product-context div > span { border: 0; border-left: 3px solid var(--landing-teal); border-radius: 0; background: #eef3ea; padding-inline: 9px; }
+.landing-stage-badge { padding: 5px 7px; border: 1px solid #d9e1d7; border-radius: 3px; }
+.landing-product-chat { animation: landing-demo-swap 380ms cubic-bezier(.16,1,.3,1) both; }
+@keyframes landing-demo-swap { from { opacity: .25; transform: translateY(8px); } }
+.landing-product-composer { border-style: dashed; background: #fafaf7; }
+.landing-product-send { background: #e8ece5; color: #6e7c73; letter-spacing: .08em; }
+.landing-no-sources { margin: 7px 0 0 !important; padding: 9px 10px; border-left: 2px solid var(--landing-accent); background: #fbf1e9; color: #794b32; font-size: 9px; }
+.landing-demo-readout { display: grid; gap: 4px; margin: 14px 0 12px; padding: 12px 0; border-block: 1px solid #e2e7df; }
+.landing-demo-readout span { color: var(--landing-teal); font-size: 8px; font-weight: 700; letter-spacing: .12em; }
+.landing-demo-readout strong { font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: 400; }
+
+.landing-preview[data-stage="1"] .landing-product-context,
+.landing-preview[data-stage="2"] .landing-product-question-wrap,
+.landing-preview[data-stage="3"] .landing-product-references { position: relative; z-index: 1; box-shadow: 0 0 0 3px #b85f2c33; }
+.landing-preview[data-stage="1"] .landing-product-context { background: #fff8f1; }
+.landing-preview[data-stage="2"] .landing-product-question { background: #fff2e7; }
+.landing-preview[data-stage="3"] .landing-product-references { background: #f7faf4; padding-inline: 9px; }
+
+@media (max-width: 800px) {
+  .landing-demo-stages button { min-height: 92px; padding: 13px; }
+  .landing-demo-stages small { display: none; }
+}
+@media (max-width: 560px) {
+  .landing-header-actions { display: none; }
+  .landing-mobile-menu { margin-left: auto; }
+  .landing-mobile-menu nav .landing-mobile-signup { margin-top: 4px; background: var(--landing-teal); color: #fff; }
+  .landing-hero > h1, .landing-demo-guide h2 { max-width: 100%; overflow-wrap: anywhere; }
+  .landing-hero > h1 { font-size: clamp(35px, 9.5vw, 44px); letter-spacing: -.045em; }
+  .landing-demo-stages { grid-template-columns: 1fr; }
+  .landing-demo-stages li + li { border-left: 0; border-top: 1px solid var(--landing-line); }
+  .landing-demo-stages button { align-items: center; min-height: 54px; padding: 9px 12px; }
+  .landing-demo-stages button > span:last-child { display: flex; align-items: center; gap: 6px; }
+  .landing-demo-stages small { display: none; }
+  .landing-demo-stages button.is-active { box-shadow: inset 3px 0 var(--landing-teal); }
+  .landing-product-source { min-height: 39px; margin-bottom: 7px; font-size: 9px; }
+  .landing-provider-logo { width: 24px; height: 24px; flex-basis: 24px; }
+  .landing-provider-logo svg { width: 18px; height: 18px; }
+  .landing-product-thread { min-height: 300px; }
+}

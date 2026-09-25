@@ -3,8 +3,8 @@
 import { useState } from "react";
 import {
   ArrowDown, ArrowRight, ArrowUpRight, Check, ChevronDown,
-  FileText, Folder, FolderOpen, HardDrive, Layers3, Link2, Menu,
-  PanelRightClose, Plus, Search, Send, ShieldCheck, Sparkles,
+  FileText, Folder, FolderOpen, Layers3, Link2, Menu,
+  ShieldCheck, Sparkles,
 } from "lucide-react";
 import "./landing.css";
 import { Brand } from "./brand";
@@ -35,38 +35,61 @@ const demoCases = [
   },
 ];
 
+type Provider = "google" | "notion" | "onedrive";
+
+function ProviderLogo({ provider }: { provider: Provider }) {
+  const labels = { google: "Google Drive", notion: "Notion", onedrive: "OneDrive" };
+  return (
+    <span className={`landing-provider-logo landing-provider-logo-${provider}`} role="img" aria-label={labels[provider]}>
+      {provider === "google" && <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#0F9D58" d="M8.1 3h5.2l7.5 13h-5.2z"/><path fill="#F4B400" d="M8.1 3 .6 16h5.2l7.5-13z"/><path fill="#4285F4" d="M5.8 16h15l-2.6 4.5h-15z"/></svg>}
+      {provider === "notion" && <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="1.5" fill="#fff" stroke="#151b18" strokeWidth="1.5"/><path fill="#151b18" d="M7 17V7.5l2.4-.3 5.7 8V8.5l-1.8-.3V7h4.8v1.2l-1.5.3V17h-2.2L8.6 8.9v6.8l1.9.3v1z"/></svg>}
+      {provider === "onedrive" && <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#1686D9" d="M9.5 7.2a5.4 5.4 0 0 1 9.8 2.2 4 4 0 0 1 .7 7.9H7.2A4.7 4.7 0 0 1 9.5 7.2Z"/><path fill="#075CAD" d="M3.9 16.9a3.8 3.8 0 0 1 4.5-6 5.3 5.3 0 0 1 7.6 4.8c0 .5-.1.9-.2 1.3Z"/></svg>}
+    </span>
+  );
+}
+
+const demoStages = [
+  ["1", "Defina o escopo", "A resposta considera somente as fontes e pastas escolhidas."],
+  ["2", "Faça a pergunta", "O Arquivio responde com base no conteúdo sincronizado."],
+  ["3", "Confira as fontes", "Os documentos utilizados ficam visíveis para conferência."],
+] as const;
+
 function ProductPreview() {
   const [activeCase, setActiveCase] = useState(0);
+  const [activeStage, setActiveStage] = useState(0);
   const demo = demoCases[activeCase];
   return (
-    <figure className="landing-preview" aria-labelledby="landing-preview-caption">
+    <figure className="landing-preview" aria-labelledby="landing-preview-caption" data-stage={activeStage + 1}>
       <div className="landing-demo-guide">
         <div><span className="landing-demo-kicker">EXPERIMENTE O FLUXO</span><h2>Faça uma pergunta. <em>Veja o caminho da resposta.</em></h2><p>Escolha uma situação para entender como o contexto e os documentos utilizados aparecem na conversa.</p></div>
-        <div className="landing-demo-options" role="group" aria-label="Escolha um exemplo da demonstração">{demoCases.map((item, index) => <button key={item.label} type="button" className={index === activeCase ? "is-active" : ""} aria-pressed={index === activeCase} onClick={() => setActiveCase(index)}><span>0{index + 1}</span>{item.label}<ArrowUpRight size={15} aria-hidden="true" /></button>)}</div>
+        <div className="landing-demo-options" role="group" aria-label="Escolha um exemplo da demonstração">{demoCases.map((item, index) => <button key={item.label} type="button" className={index === activeCase ? "is-active" : ""} aria-pressed={index === activeCase} onClick={() => { setActiveCase(index); setActiveStage(0); }}><span>0{index + 1}</span>{item.label}<ArrowUpRight size={15} aria-hidden="true" /></button>)}</div>
       </div>
+      <ol className="landing-demo-stages" aria-label="Etapas da demonstração">
+        {demoStages.map(([number, title, description], index) => <li key={title}><button type="button" className={index === activeStage ? "is-active" : ""} aria-pressed={index === activeStage} onClick={() => setActiveStage(index)}><span>{number}</span><span><strong>{title}</strong><small>{description}</small></span></button></li>)}
+      </ol>
       <div className="landing-preview-top"><span><Layers3 size={17} aria-hidden="true" /> Dentro do Arquivio</span><span className="landing-preview-label">Demonstração interativa</span></div>
       <div className="landing-product">
         <aside className="landing-product-sources" aria-label="Biblioteca ilustrativa">
-          <div className="landing-product-sidebar-heading"><div><strong>Biblioteca</strong><span>Arquivos e pastas sincronizados</span></div><Plus size={16} aria-hidden="true" /></div>
+          <div className="landing-product-sidebar-heading"><div><strong>Biblioteca</strong><span>Visualização ilustrativa</span></div><span className="landing-static-label">PRÉVIA</span></div>
           <div className="landing-product-breadcrumb">Biblioteca</div>
-          <div className="landing-product-source"><span className="landing-provider-mark landing-provider-google">G</span> Google Drive <ChevronDown size={13} aria-hidden="true" /></div>
+          <div className="landing-product-source"><ProviderLogo provider="google" /> Google Drive</div>
           <div className="landing-product-folder"><Folder size={15} aria-hidden="true" /> Projeto Aurora</div>
-          <div className="landing-product-source"><span className="landing-provider-mark landing-provider-notion">N</span> Notion <ChevronDown size={13} aria-hidden="true" /></div>
-          <div className="landing-product-source"><span className="landing-provider-mark landing-provider-onedrive"><HardDrive size={11} aria-hidden="true" /></span> OneDrive <ChevronDown size={13} aria-hidden="true" /></div>
+          <div className="landing-product-source"><ProviderLogo provider="notion" /> Notion</div>
+          <div className="landing-product-source"><ProviderLogo provider="onedrive" /> OneDrive</div>
           <div className="landing-product-scope"><ShieldCheck size={16} aria-hidden="true" /><p>A conversa usa somente o contexto escolhido em “Consultar em”.</p></div>
         </aside>
-        <section className="landing-product-chat" aria-label="Conversa ilustrativa" aria-live="polite">
-          <div className="landing-product-context"><div><strong>Consultar em</strong><span>{demo.scope} <ChevronDown size={13} aria-hidden="true" /></span><small>{activeCase === 0 ? "3 pastas disponíveis" : "1 pasta selecionada"}</small></div><PanelRightClose size={17} aria-hidden="true" /></div>
-          <div className="landing-product-thread">
+        <section className="landing-product-chat" aria-label="Conversa demonstrativa" aria-live="polite" key={activeCase}>
+          <div className="landing-product-context"><div><strong>Escopo da consulta</strong><span>{demo.scope}</span><small>{activeCase === 0 ? "3 fontes incluídas" : "1 pasta selecionada"}</small></div><span className="landing-stage-badge">ETAPA {activeStage + 1}</span></div>
+          <div className="landing-product-thread" aria-label={`Pergunta e resposta do exemplo: ${demo.label}`}>
             <div className="landing-product-question-wrap"><span>{demo.scope}</span><p className="landing-product-question">{demo.question}</p></div>
             <div className="landing-product-answer"><span className="landing-product-avatar"><Sparkles size={16} aria-hidden="true" /></span><div><p className="landing-product-answer-name">Arquivio <span>· {demo.scope}</span></p><p>{demo.answer}</p>
-              {demo.sources.length > 0 && <div className="landing-product-references" aria-label="Documentos utilizados"><strong>DOCUMENTOS UTILIZADOS</strong>{demo.sources.map(([name, provider], index) => <div key={name}><span>{index + 1}</span><FileText size={13} aria-hidden="true" /> {name} <small>{provider}</small></div>)}</div>}
+              <div className="landing-product-references" aria-label="Documentos utilizados"><strong>DOCUMENTOS UTILIZADOS</strong>{demo.sources.length > 0 ? demo.sources.map(([name, provider], index) => <div key={name}><span>{index + 1}</span><FileText size={13} aria-hidden="true" /> {name} <small>{provider}</small></div>) : <p className="landing-no-sources">Nenhum documento sustenta esta resposta.</p>}</div>
             </div></div>
           </div>
-          <div className="landing-product-composer"><span>O que você gostaria de saber?</span><span className="landing-product-send"><Send size={14} aria-hidden="true" /> Enviar</span></div>
+          <div className="landing-product-composer" aria-hidden="true"><span>Campo de pergunta no produto</span><span className="landing-product-send">ILUSTRAÇÃO</span></div>
           <p className="landing-product-disclaimer">A IA usa somente o escopo selecionado e não responde sem evidência suficiente.</p>
         </section>
-        <aside className="landing-product-library" aria-label="Consulta de arquivos ilustrativa"><div className="landing-product-library-heading">Buscar arquivos</div><p>Encontre arquivos e pastas pelo nome em todas as fontes conectadas.</p><div className="landing-product-library-search"><span>Nome de arquivo ou pasta</span><Search size={13} aria-hidden="true" /></div><small>A busca consulta somente nomes; o conteúdo permanece no escopo da conversa.</small></aside>
+        <aside className="landing-product-library" aria-label="Como interpretar a demonstração"><div className="landing-product-library-heading">O que observar</div><p>{demoStages[activeStage][2]}</p><div className="landing-demo-readout" aria-live="polite"><span>ETAPA 0{activeStage + 1}</span><strong>{demoStages[activeStage][1]}</strong></div><small>Use os controles acima para percorrer o exemplo. Os demais elementos são uma prévia visual do produto.</small></aside>
       </div>
       <figcaption id="landing-preview-caption">Explore os exemplos acima: a resposta muda com o contexto e as evidências disponíveis. <span>Dados fictícios para demonstrar a experiência.</span></figcaption>
     </figure>
@@ -90,7 +113,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
         <a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, início"><Brand /></a>
         <nav className="landing-desktop-nav" aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#para-equipes">Para sua equipe</a><a href="#perguntas">Dúvidas</a></nav>
         <div className="landing-header-actions"><button className="landing-login" onClick={onLogin}>Entrar</button><button className="landing-button landing-button-small" onClick={onSignUp}>Criar conta <ArrowUpRight size={16} aria-hidden="true" /></button></div>
-        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={23} aria-hidden="true" /></summary><nav aria-label="Navegação móvel"><a href="#como-funciona">Como funciona</a><a href="#para-equipes">Para sua equipe</a><a href="#perguntas">Dúvidas</a><button onClick={onLogin}>Entrar na minha conta</button></nav></details>
+        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={23} aria-hidden="true" /></summary><nav aria-label="Navegação móvel"><a href="#como-funciona">Como funciona</a><a href="#para-equipes">Para sua equipe</a><a href="#perguntas">Dúvidas</a><button onClick={onLogin}>Entrar na minha conta</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></nav></details>
       </header>
 
       <main id="landing-main">
