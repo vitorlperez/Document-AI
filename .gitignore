@@ -28,6 +28,10 @@ htmlcov/
 node_modules/
 dist/
 build/
+!frontend/build/
+frontend/build/*
+!frontend/build/sites-vite-plugin.ts
+!frontend/build/sites-vite-plugin.LICENSE
 .next/
 .vite/
 coverage/
