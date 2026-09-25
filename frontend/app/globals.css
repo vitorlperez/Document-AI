@@ -140,18 +140,6 @@
   }
 }
 
-.integration-catalog > section > div > .max-w-4xl > section > button > span:first-child {
-  background-image: url("https://api.iconify.design/logos:google-drive.svg");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 1.5rem;
-}
-
-.integration-catalog > section > div > .max-w-4xl > section > button > span:first-child > svg {
-  visibility: hidden;
-}
-
-
 body {
   background: var(--background);
   color: var(--foreground);
@@ -244,6 +232,48 @@ summary:focus-visible {
   background: rgb(255 241 242 / 0.8);
   color: rgb(159 18 57);
 }
+
+.state-panel {
+  display: flex;
+  min-height: 8rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 1.25rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--color-paper);
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.state-panel-error {
+  border-color: rgb(253 164 175);
+  background: rgb(255 241 242 / 0.8);
+  color: rgb(159 18 57);
+}
+
+.provider-mark {
+  display: inline-grid;
+  width: 1.6rem;
+  height: 1.6rem;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 0.35rem;
+  background: white;
+  color: #334155;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.provider-mark-sm { width: 1.15rem; height: 1.15rem; border-radius: 0.25rem; font-size: 0.5rem; }
+.provider-mark-google { color: #2458b8; }
+.provider-mark-onedrive { color: #1467a8; }
+.provider-mark-notion { color: #1f2925; }
+.provider-mark-github { color: #334155; }
+.provider-mark-teams { color: #4f46a5; }
 
 .workspace-shell > :first-child {
   display: flex;
@@ -342,6 +372,8 @@ summary:focus-visible {
 .product-header { background: #faf9f5; }
 .product-brand-button { display: inline-flex; flex-shrink: 0; padding: 4px 0; margin-right: 12px; }
 .product-app button:not(:disabled), .auth-page button:not(:disabled) { cursor: pointer; }
+.product-app :is(button, a, select), .auth-page :is(button, a, select) { min-height: 44px; }
+.product-app button:disabled, .auth-page button:disabled { cursor: not-allowed; }
 .workspace-panels { background: white; }
 .sources-panel { background: #f3f5ef; }
 .conversation-question { background: #f3f4ef; color: #243b35; border-radius: 8px 8px 0 8px; }
@@ -360,6 +392,9 @@ summary:focus-visible {
   .product-brand-button { margin-right: 0; }
   .organization-select { order: 3; width: 100%; max-width: none; }
   .conversation-panel { min-height: 620px; }
+  .page-surface { border-inline: 0; border-radius: 0; }
+  .integration-tool-card > div:last-child { align-items: flex-start; }
+  .integration-tool-card > div:last-child > .ml-auto { width: 100%; margin-left: 0; }
 }
 .workspace-frame { border-radius: 10px; box-shadow: 0 16px 36px -25px #243b3540; }
 .workspace-heading { background: #eff1e9; }

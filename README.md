@@ -4,7 +4,7 @@ An AI-powered document intelligence platform for organizations. It connects docu
 
 ## Highlights
 
-- Connect Google Drive folders and control the scope of synchronized content
+- Connect Google Drive, OneDrive, and Notion scopes and control synchronized content
 - Extract text from PDF and DOCX files and process ingestion asynchronously
 - Search company knowledge with text and semantic retrieval
 - Ask AI-assisted questions grounded in the indexed document library
@@ -19,7 +19,7 @@ An AI-powered document intelligence platform for organizations. It connects docu
 | API | Python 3.12, FastAPI, SQLAlchemy, Alembic |
 | Background processing | Celery and Redis |
 | Database | PostgreSQL 16 |
-| Integrations | Google Drive OAuth, OpenAI, WorkOS, Resend |
+| Integrations | Google Drive, OneDrive, Notion, OpenAI, WorkOS, Resend |
 
 The project is organized as a modular monolith:
 
