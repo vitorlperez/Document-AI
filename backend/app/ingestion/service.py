@@ -132,6 +132,16 @@ class IngestionService:
         folder = self.session.scalar(statement)
         if folder is None:
             raise SyncAccessDenied("workspace access denied")
+        from app.integrations.models import DataSource
+
+        source = self.session.scalar(
+            select(DataSource.id).where(
+                DataSource.id == folder.source_id,
+                DataSource.organization_id == scope.organization_id,
+            )
+        )
+        if source is None:
+            raise SyncAccessDenied("workspace source access denied")
         return folder
 
     def enqueue(
@@ -673,6 +683,15 @@ class IngestionService:
         )
         if folder is None:
             raise ValueError("workspace folder not found")
+        from app.integrations.models import DataSource
+
+        if self.session.scalar(
+            select(DataSource.id).where(
+                DataSource.id == folder.source_id,
+                DataSource.organization_id == job.organization_id,
+            )
+        ) is None:
+            raise ValueError("workspace source not found")
         return folder
 
     def _document_for(self, job: ProcessingJob, external_file_id: str) -> Document | None:

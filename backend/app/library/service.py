@@ -349,6 +349,8 @@ class LibraryService:
         This deliberately receives provider-neutral values. A new connector only
         needs to supply opaque IDs and parent relationships.
         """
+        if source.organization_id != organization_id:
+            raise SyncAccessDenied("source tenant mismatch")
         root = self._root(organization_id=organization_id, source=source)
         folder_by_id = {folder.id: folder for folder in folders}
         for remote_folder in folders:
@@ -366,6 +368,7 @@ class LibraryService:
                 .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
                 .where(
                     Document.organization_id == organization_id,
+                    WorkspaceFolder.organization_id == organization_id,
                     WorkspaceFolder.source_id == source.id,
                     Document.index_status == "indexed",
                 )

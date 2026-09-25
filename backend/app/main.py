@@ -1,9 +1,11 @@
 import logging
 import time
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api.auth import current_user
@@ -53,6 +55,31 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class CookieOriginMiddleware(BaseHTTPMiddleware):
+    """Reject browser cookie mutations outside the configured application origin."""
+
+    async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
+        settings = request.app.state.settings
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"} and settings.auth_session_cookie_name in request.cookies:
+            origin = request.headers.get("origin")
+            fetch_site = request.headers.get("sec-fetch-site")
+            expected = urlsplit(settings.public_app_url)
+            supplied = urlsplit(origin) if origin else None
+            allowed = bool(
+                supplied
+                and supplied.scheme == expected.scheme
+                and supplied.netloc == expected.netloc
+                and supplied.path in {"", "/"}
+                and not supplied.query
+                and not supplied.fragment
+            )
+            # Development supports local scripts without Origin; production
+            # requires it, including for logout and newly added routes.
+            if fetch_site == "cross-site" or (origin and not allowed) or (not origin and settings.environment != "development"):
+                return JSONResponse({"detail": "origin not allowed"}, status_code=403)
+        return await call_next(request)
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     runtime_settings = settings or get_settings()
     configure_observability()
@@ -89,6 +116,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["Content-Type", "X-Request-Id"],
     )
     app.add_middleware(RequestLogMiddleware)
+    app.add_middleware(CookieOriginMiddleware)
     app.include_router(health_router)
     app.include_router(auth_router)
     # Fail closed at the router boundary when a new private endpoint is added.
