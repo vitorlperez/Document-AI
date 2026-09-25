@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { forwardedRequestHeaders } from "../proxy-headers.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +23,7 @@ async function proxy(request: NextRequest): Promise<Response> {
   upstream.pathname = incoming.pathname.slice("/api".length);
   upstream.search = incoming.search;
 
-  const headers = new Headers();
-  for (const name of ["accept", "content-type", "cookie", "authorization", "x-request-id"]) {
-    const value = request.headers.get(name);
-    if (value) headers.set(name, value);
-  }
+  const headers = forwardedRequestHeaders(request.headers);
 
   try {
     const response = await fetch(upstream, {

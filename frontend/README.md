@@ -16,6 +16,8 @@ npm run dev
 
 O desenvolvimento portátil inicia em `http://localhost:5173`. O frontend usa `VITE_API_BASE_URL` ou `NEXT_PUBLIC_API_BASE_URL`; sem uma delas, usa `http://localhost:8000`.
 
+Em produção com `VITE_API_BASE_URL=/api`, configure `API_UPSTREAM_URL` somente no runtime do servidor. `npm start` converte essa variável em binding privado do Worker Vinext/Wrangler; ela não é incorporada ao JavaScript enviado ao navegador.
+
 ## Rotas e fluxos implementados
 
 - `/`: apresentação pública ou redirecionamento para a primeira organização autenticada

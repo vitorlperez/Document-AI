@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1790357762.535956,
-    "seen": 1790358178.676149,
+    "mtime": 1790358258.0843377,
+    "seen": 1790358551.235167,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -1134,10 +1134,10 @@
     "semantic_hash": "2d0d6dfb305d642087c59c611130e910"
   },
   "frontend/scripts/sites-env.mjs": {
-    "mtime": 1789152327.087789,
-    "seen": 1790011871.876857,
-    "ast_hash": "2734e5454c5382401aa671cb247c8679",
-    "semantic_hash": "2734e5454c5382401aa671cb247c8679"
+    "mtime": 1790358451.2988083,
+    "seen": 1790358551.235321,
+    "ast_hash": "be61030a859af3d6d47ab350c283abdc",
+    "semantic_hash": ""
   },
   "frontend/scripts/sites-env.sh": {
     "mtime": 1789152327.0872781,
@@ -1332,9 +1332,9 @@
     "semantic_hash": ""
   },
   "frontend/README.md": {
-    "mtime": 1790358140.1267025,
-    "seen": 1790358178.676325,
-    "ast_hash": "9b660ab8b336f6101e8549897b443bf7",
+    "mtime": 1790358523.826314,
+    "seen": 1790358551.235348,
+    "ast_hash": "3322ae8f82b13b98d331d6f691088d80",
     "semantic_hash": ""
   },
   "frontend/vendor/shadcn-tailwind-4.13.0.LICENSE.md": {
@@ -1980,15 +1980,15 @@
     "semantic_hash": ""
   },
   ".overclock-app/pane-session.json": {
-    "mtime": 1790358174.699975,
-    "seen": 1790358178.6761558,
-    "ast_hash": "853b91ef52af9d31827e937311f4be6d",
+    "mtime": 1790358534.6814506,
+    "seen": 1790358551.235175,
+    "ast_hash": "125ee1e88f2798070db64c8a1336f9da",
     "semantic_hash": ""
   },
   ".overclock-app/panes.json": {
-    "mtime": 1790358174.69666,
-    "seen": 1790358178.676157,
-    "ast_hash": "54cc5240affa0e85dfd0335c24cca541",
+    "mtime": 1790358534.6786482,
+    "seen": 1790358551.2351758,
+    "ast_hash": "23f82859b2f0725ff38b3fe9fad65286",
     "semantic_hash": ""
   },
   "backend/tests/api/test_csrf_origin.py": {
@@ -2004,15 +2004,33 @@
     "semantic_hash": ""
   },
   "frontend/app/api/[...path]/route.ts": {
-    "mtime": 1790308969.0612,
-    "seen": 1790358178.676236,
-    "ast_hash": "c8a99b35a3ab5c4e8842cb7821952072",
+    "mtime": 1790358451.2983243,
+    "seen": 1790358551.235255,
+    "ast_hash": "66abe81367acc4b65e41aca69302a57f",
     "semantic_hash": ""
   },
   "specs/security-hardening-followups.md": {
     "mtime": 1790357910.0320191,
     "seen": 1790358178.676335,
     "ast_hash": "8999596a4411ccbeb56ae5e75c475e48",
+    "semantic_hash": ""
+  },
+  "frontend/app/api/proxy-headers.mjs": {
+    "mtime": 1790358451.2980392,
+    "seen": 1790358551.235256,
+    "ast_hash": "abca832c1348b11df9f10e7ec709d7b1",
+    "semantic_hash": ""
+  },
+  "frontend/tests/proxy-headers.test.mjs": {
+    "mtime": 1790358451.2992504,
+    "seen": 1790358551.235323,
+    "ast_hash": "c5367688da44d8da187e13a4910a13f2",
+    "semantic_hash": ""
+  },
+  "specs/work-items/F-069.md": {
+    "mtime": 1790358523.8265564,
+    "seen": 1790358551.235399,
+    "ast_hash": "f1d113aeb7c37772eaabdc3086cbd62a",
     "semantic_hash": ""
   }
 }
