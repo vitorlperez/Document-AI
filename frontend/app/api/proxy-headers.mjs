@@ -17,3 +17,13 @@ export function forwardedRequestHeaders(incoming) {
   }
   return headers;
 }
+
+/** A missing anonymous session is data for the public landing, not an error. */
+export async function sessionProbeResponse(response) {
+  if (response.status !== 401) return response;
+  await response.body?.cancel();
+  return Response.json(null, {
+    status: 200,
+    headers: { "cache-control": "no-store" },
+  });
+}

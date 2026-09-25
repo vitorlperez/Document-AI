@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1790358258.0843377,
-    "seen": 1790358551.235167,
+    "mtime": 1790359163.5630927,
+    "seen": 1790359444.148326,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -630,9 +630,9 @@
     "semantic_hash": "eff6cca39a05262f028801e8f21d41d1"
   },
   "frontend/app/product-app.tsx": {
-    "mtime": 1790358154.0407233,
-    "seen": 1790358178.676244,
-    "ast_hash": "12ae5c78c0643fd5118c22e8fa2cb969",
+    "mtime": 1790359254.0740519,
+    "seen": 1790359444.148416,
+    "ast_hash": "a3b984d5afbe2a7d0001d9c26a505edf",
     "semantic_hash": ""
   },
   "frontend/app/staff/page.tsx": {
@@ -1980,15 +1980,15 @@
     "semantic_hash": ""
   },
   ".overclock-app/pane-session.json": {
-    "mtime": 1790358534.6814506,
-    "seen": 1790358551.235175,
-    "ast_hash": "125ee1e88f2798070db64c8a1336f9da",
+    "mtime": 1790359434.7414134,
+    "seen": 1790359444.148332,
+    "ast_hash": "685445daffccda306c818c669e3f7500",
     "semantic_hash": ""
   },
   ".overclock-app/panes.json": {
-    "mtime": 1790358534.6786482,
-    "seen": 1790358551.2351758,
-    "ast_hash": "23f82859b2f0725ff38b3fe9fad65286",
+    "mtime": 1790359434.7381814,
+    "seen": 1790359444.148333,
+    "ast_hash": "f54a67721f40683e5681b240f44b62d1",
     "semantic_hash": ""
   },
   "backend/tests/api/test_csrf_origin.py": {
@@ -2004,9 +2004,9 @@
     "semantic_hash": ""
   },
   "frontend/app/api/[...path]/route.ts": {
-    "mtime": 1790358451.2983243,
-    "seen": 1790358551.235255,
-    "ast_hash": "66abe81367acc4b65e41aca69302a57f",
+    "mtime": 1790359254.073057,
+    "seen": 1790359444.1484082,
+    "ast_hash": "71c495e8a427bf51f2def59bee80c38f",
     "semantic_hash": ""
   },
   "specs/security-hardening-followups.md": {
@@ -2016,9 +2016,9 @@
     "semantic_hash": ""
   },
   "frontend/app/api/proxy-headers.mjs": {
-    "mtime": 1790358451.2980392,
-    "seen": 1790358551.235256,
-    "ast_hash": "abca832c1348b11df9f10e7ec709d7b1",
+    "mtime": 1790359254.0727112,
+    "seen": 1790359444.1484082,
+    "ast_hash": "6eb1e0a30c266382a22a487fafbecc07",
     "semantic_hash": ""
   },
   "frontend/tests/proxy-headers.test.mjs": {
@@ -2028,9 +2028,45 @@
     "semantic_hash": ""
   },
   "specs/work-items/F-069.md": {
-    "mtime": 1790358523.8265564,
-    "seen": 1790358551.235399,
-    "ast_hash": "f1d113aeb7c37772eaabdc3086cbd62a",
+    "mtime": 1790358564.9985063,
+    "seen": 1790359444.148549,
+    "ast_hash": "be4ae2a3d7c2e80671e3c1511a5273ac",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/browser-results.json": {
+    "mtime": 1790358965.2400246,
+    "seen": 1790359444.148334,
+    "ast_hash": "1cc02b9297baa1509d66efbf1f6b9aa7",
+    "semantic_hash": ""
+  },
+  "frontend/tests/session-probe.test.mjs": {
+    "mtime": 1790359231.6686213,
+    "seen": 1790359444.148472,
+    "ast_hash": "fd12c55f0cf1e2ebd1fd044dad2494bc",
+    "semantic_hash": ""
+  },
+  "TASK/items/F-200.md": {
+    "mtime": 1790359436.014098,
+    "seen": 1790359444.148491,
+    "ast_hash": "38d6fcd389369f1248a2986c507267c5",
+    "semantic_hash": ""
+  },
+  "qa-report.md": {
+    "mtime": 1790359057.7737598,
+    "seen": 1790359444.1484978,
+    "ast_hash": "b93a300cc7bd365b6860f09b2fa764b7",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/qa-desktop-1440.png": {
+    "mtime": 1790358964.5884407,
+    "seen": 1790359444.1485498,
+    "ast_hash": "55e1c6237e24343c63318ca77621453c",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/qa-mobile-375.png": {
+    "mtime": 1790358965.2383118,
+    "seen": 1790359444.1485498,
+    "ast_hash": "de2ed9b077f9e97b0b062b3f8f4b7b66",
     "semantic_hash": ""
   }
 }

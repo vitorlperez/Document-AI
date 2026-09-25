@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { forwardedRequestHeaders } from "../proxy-headers.mjs";
+import { forwardedRequestHeaders, sessionProbeResponse } from "../proxy-headers.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -20,19 +20,21 @@ async function proxy(request: NextRequest): Promise<Response> {
   }
 
   const incoming = new URL(request.url);
-  upstream.pathname = incoming.pathname.slice("/api".length);
+  const sessionProbe = incoming.pathname === "/api/session";
+  upstream.pathname = sessionProbe ? "/me" : incoming.pathname.slice("/api".length);
   upstream.search = incoming.search;
 
   const headers = forwardedRequestHeaders(request.headers);
 
   try {
-    const response = await fetch(upstream, {
+    const upstreamResponse = await fetch(upstream, {
       method: request.method,
       headers,
       body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer(),
       redirect: "manual",
       cache: "no-store",
     });
+    const response = sessionProbe ? await sessionProbeResponse(upstreamResponse) : upstreamResponse;
 
     const responseHeaders = new Headers();
     response.headers.forEach((value, name) => {

@@ -12,6 +12,7 @@ import { Brand } from "./brand";
 import { QuestionScopePicker, contextReady, toolLabel, providerKey, type QuestionScope, type QuestionContext } from "./question-scope";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+const SESSION_PATH = API_BASE.replace(/\/$/, "") === "/api" ? "/session" : "/me";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type Role = "owner" | "admin" | "member";
@@ -124,7 +125,7 @@ export function ProductApp({ screen }: { screen: Screen }) {
   const [user, setUser] = useState<User | null>(null); const [companies, setCompanies] = useState<Company[]>([]); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState<string | null>(null); const [error, setError] = useState<string | null>(null);
     const loadSession = useCallback(async () => {
       setLoading(true); setError(null);
-    try { const [current, memberships] = await Promise.all([api<User>("/me"), api<Company[]>("/organizations")]); setUser(current); setCompanies(memberships); if (screen === "home" && memberships[0]) router.replace(companyPath(memberships[0].id)); }
+    try { const current = await api<User | null>(SESSION_PATH); setUser(current); if (!current) { setCompanies([]); return; } const memberships = await api<Company[]>("/organizations"); setCompanies(memberships); if (screen === "home" && memberships[0]) router.replace(companyPath(memberships[0].id)); }
     catch (caught) { if (!(caught instanceof ApiError && caught.status === 401)) setError(messageFor(caught)); }
     finally { setLoading(false); }
   }, [router, screen]);
