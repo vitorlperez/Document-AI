@@ -4,7 +4,7 @@ Este guia prepara o Arquivio para a Railway sem usar o `docker-compose.yml` de d
 
 ## 1. Definir os valores de produção
 
-Antes de criar recursos pagos, escolha a região dos dados, o domínio, o orçamento mensal e a política de retenção dos backups. Reserve os subdomínios `app.seudominio.com` e `api.seudominio.com` sob o **mesmo domínio registrável**: os cookies de sessão usam `SameSite=Lax`, e o navegador envia requisições autenticadas do app para a API. Separe um ambiente de homologação com banco, Redis, domínio e credenciais próprios; não copie tokens OAuth ou dados reais para ele.
+Antes de criar recursos pagos, escolha a região dos dados, os endereços públicos, o orçamento mensal e a política de retenção dos backups. Os endereços gerados pelo Railway podem ser usados para o primeiro deploy; o frontend faz proxy das requisições em `/api`, mantendo o cookie de sessão no host do frontend. Se comprar um domínio próprio, use `app.seudominio.com` e, caso a API continue pública, `api.seudominio.com`. Separe um ambiente de homologação com banco, Redis, domínio e credenciais próprios; não copie tokens OAuth ou dados reais para ele.
 
 ## 2. Criar o projeto e os serviços
 
@@ -37,13 +37,13 @@ MICROSOFT_TOKEN_ENCRYPTION_KEY=<chave Fernet estável>
 NOTION_TOKEN_ENCRYPTION_KEY=<chave Fernet estável>
 GOOGLE_OAUTH_CLIENT_ID=<client id>
 GOOGLE_OAUTH_CLIENT_SECRET=<segredo>
-GOOGLE_OAUTH_REDIRECT_URI=https://api.seudominio.com/data-sources/google/oauth/callback
+GOOGLE_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/google/oauth/callback
 MICROSOFT_OAUTH_CLIENT_ID=<client id>
 MICROSOFT_OAUTH_CLIENT_SECRET=<segredo>
-MICROSOFT_OAUTH_REDIRECT_URI=https://api.seudominio.com/data-sources/onedrive/oauth/callback
+MICROSOFT_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/onedrive/oauth/callback
 NOTION_OAUTH_CLIENT_ID=<client id>
 NOTION_OAUTH_CLIENT_SECRET=<segredo>
-NOTION_OAUTH_REDIRECT_URI=https://api.seudominio.com/data-sources/notion/oauth/callback
+NOTION_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/notion/oauth/callback
 ```
 
 A API precisa ainda de:
@@ -51,7 +51,7 @@ A API precisa ainda de:
 ```text
 WORKOS_API_KEY=<segredo>
 WORKOS_CLIENT_ID=<client id>
-WORKOS_REDIRECT_URI=https://api.seudominio.com/auth/callback
+WORKOS_REDIRECT_URI=https://app.seudominio.com/api/auth/callback
 RESEND_API_KEY=<segredo>
 INVITATION_FROM_EMAIL=convites@seudominio.com
 ```
@@ -65,21 +65,22 @@ O worker não recebe domínio público nem variáveis WorkOS/Resend. Comece com 
 Configure antes do primeiro build:
 
 ```text
-VITE_API_BASE_URL=https://api.seudominio.com
+VITE_API_BASE_URL=/api
+API_UPSTREAM_URL=https://api.seudominio.com
 ```
 
-Esse valor é público e é incorporado ao JavaScript durante o build. Qualquer troca da URL exige novo build/deploy do frontend. Nunca coloque segredos em variáveis `VITE_*`. O container escuta a porta `PORT` fornecida pela Railway e o health check usa `/`.
+`VITE_API_BASE_URL=/api` é incorporado ao JavaScript durante o build e exige novo build/deploy quando alterado. `API_UPSTREAM_URL` é lido pelo servidor do frontend em runtime e aponta para a API; nunca coloque segredos em variáveis `VITE_*`. O proxy em `/api` mantém o cookie de sessão no mesmo host do frontend. Isto é especialmente necessário com dois domínios gerados `*.up.railway.app`, que o navegador trata como sites distintos para cookies `SameSite=Lax`. O container escuta a porta `PORT` fornecida pela Railway e o health check usa `/`.
 
-Adicione os domínios públicos `app.seudominio.com` ao frontend e `api.seudominio.com` à API. Crie os registros CNAME e TXT indicados pela Railway, aguarde a emissão TLS e confirme que `https://api.seudominio.com/health/ready` retorna 200. Não gere domínio público para worker, banco ou Redis.
+Adicione os endereços públicos ao frontend e à API. Para domínio próprio, crie os registros CNAME e TXT indicados pela Railway e aguarde a emissão TLS. Confirme que `/api/health/ready` no endereço do frontend retorna 200. Não gere domínio público para worker, banco ou Redis. Se configurar `API_UPSTREAM_URL` com o endereço privado da API e a porta correta, a API pode deixar de ter domínio público após os callbacks OAuth serem transferidos para `/api` no frontend.
 
 ## 5. Atualizar os provedores externos
 
 Depois de HTTPS funcionar, cadastre os callbacks exatos:
 
-- WorkOS: redirect `https://api.seudominio.com/auth/callback`; retorno após logout `https://app.seudominio.com/login`.
-- Google Cloud OAuth: `https://api.seudominio.com/data-sources/google/oauth/callback`.
-- Microsoft Entra: `https://api.seudominio.com/data-sources/onedrive/oauth/callback` e os tipos de conta/permissões aprovados para OneDrive pessoal e corporativo.
-- Notion: `https://api.seudominio.com/data-sources/notion/oauth/callback`.
+- WorkOS: redirect `https://app.seudominio.com/api/auth/callback`; retorno após logout `https://app.seudominio.com/login`.
+- Google Cloud OAuth: `https://app.seudominio.com/api/data-sources/google/oauth/callback`.
+- Microsoft Entra: `https://app.seudominio.com/api/data-sources/onedrive/oauth/callback` e os tipos de conta/permissões aprovados para OneDrive pessoal e corporativo.
+- Notion: `https://app.seudominio.com/api/data-sources/notion/oauth/callback`.
 - Resend: verifique o domínio do remetente de convites.
 
 Se um provedor aceita apenas um callback por aplicação, use credenciais de homologação separadas para evitar substituir o callback já usado por produção.
