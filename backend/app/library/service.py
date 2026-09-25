@@ -42,6 +42,7 @@ class LibraryContext:
     name: str
     status: str
     source_id: UUID
+    source_provider: str
     query_status: str
 
 
@@ -93,6 +94,14 @@ class LibraryService:
                 .order_by(LibraryNode.name, LibraryNode.id)
             )
         )
+
+    def source_providers(self, *, scope: OrganizationScope, user_id: UUID) -> dict[UUID, str]:
+        """Return provider keys for this member's organization-scoped library roots."""
+        self.require_member(scope=scope, user_id=user_id)
+        rows = self.session.execute(
+            select(DataSource.id, DataSource.provider).where(DataSource.organization_id == scope.organization_id)
+        )
+        return {source_id: provider for source_id, provider in rows}
 
     def children(
         self, *, scope: OrganizationScope, user_id: UUID, parent_id: UUID, page: int, page_size: int
@@ -277,13 +286,17 @@ class LibraryService:
                 name=folder.name,
                 status=folder.status,
                 source_id=folder.source_id,
-                query_status="ready" if has_embeddings else "no_indexed_content" if not has_content else "no_compatible_embeddings",
+                source_provider=source.provider,
+                query_status=("not_ready" if folder.status not in {"ready", "partial_failure"}
+                              else "ready" if has_embeddings else "no_indexed_content" if not has_content
+                              else "no_compatible_embeddings"),
             )
-            for folder, has_content, has_embeddings in self.session.execute(
-                select(WorkspaceFolder, indexed_chunks.label("has_content"), compatible_embeddings.label("has_embeddings"))
+            for folder, source, has_content, has_embeddings in self.session.execute(
+                select(WorkspaceFolder, DataSource, indexed_chunks.label("has_content"), compatible_embeddings.label("has_embeddings"))
+                .join(DataSource, DataSource.id == WorkspaceFolder.source_id)
                 .where(
                     WorkspaceFolder.organization_id == scope.organization_id,
-                    WorkspaceFolder.status.in_(["ready", "partial_failure"]),
+                    DataSource.organization_id == scope.organization_id,
                 )
                 .order_by(WorkspaceFolder.name, WorkspaceFolder.id)
             ).all()
@@ -338,6 +351,15 @@ class LibraryService:
         """
         root = self._root(organization_id=organization_id, source=source)
         folder_by_id = {folder.id: folder for folder in folders}
+        for remote_folder in folders:
+            self._folder(
+                organization_id=organization_id,
+                source_id=source.id,
+                root=root,
+                external_id=remote_folder.id,
+                folder_by_id=folder_by_id,
+                visited=set(),
+            )
         indexed_ids = set(
             self.session.scalars(
                 select(Document.external_file_id)
@@ -393,7 +415,11 @@ class LibraryService:
 
     def _root(self, *, organization_id: UUID, source: DataSource) -> LibraryNode:
         root = self._by_external(source_id=source.id, external_id=SOURCE_ROOT_EXTERNAL_ID)
-        provider_name = {"google_drive": "Google Drive"}.get(source.provider, source.provider.replace("_", " ").title())
+        provider_name = {
+            "google_drive": "Google Drive",
+            "notion": "Notion",
+            "onedrive": "OneDrive",
+        }.get(source.provider, source.provider.replace("_", " ").title())
         if root is None:
             root = LibraryNode(
                 organization_id=organization_id,
@@ -441,14 +467,12 @@ class LibraryService:
         visited: set[str],
     ) -> LibraryNode:
         existing = self._by_external(source_id=source_id, external_id=external_id)
-        if existing is not None:
-            return existing
         if external_id in visited:
-            return root
+            return existing or root
         visited.add(external_id)
         remote = folder_by_id.get(external_id)
         if remote is None:
-            return root
+            return existing or root
         parent_external_id = next((item for item in remote.parent_ids if item != "root" and item not in visited), None)
         parent = (
             self._folder(
@@ -462,6 +486,10 @@ class LibraryService:
             if parent_external_id is not None
             else root
         )
+        if existing is not None:
+            existing.parent_id = parent.id
+            existing.name = remote.name
+            return existing
         node = LibraryNode(
             organization_id=organization_id,
             source_id=source_id,

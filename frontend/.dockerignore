@@ -10,3 +10,6 @@ dist
 !.env.example
 *.log
 coverage
+
+# Checkout-local Sites profile must not change the Docker runtime.
+.sites-runtime

@@ -14,6 +14,7 @@ class DataSource(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     encrypted_credentials: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(40), nullable=False, default="connected")
     account_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    provider_account_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     connected_by_user_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, String, Uuid
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, CreatedAtMixin, UUIDPrimaryKeyMixin
@@ -9,8 +9,18 @@ from app.core.models import Base, CreatedAtMixin, UUIDPrimaryKeyMixin
 
 class WorkspaceFolder(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     __tablename__ = "workspace_folders"
-    organization_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
-    source_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("data_sources.id", ondelete="CASCADE"), nullable=False, index=True)
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    source_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("data_sources.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     external_folder_id: Mapped[str] = mapped_column(String(255), nullable=False)
     name: Mapped[str] = mapped_column(String(512), nullable=False)
     uniform_access_confirmed: Mapped[bool] = mapped_column(Boolean, nullable=False)
@@ -18,7 +28,12 @@ class WorkspaceFolder(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-Index("uq_workspace_folders_source_external", WorkspaceFolder.source_id, WorkspaceFolder.external_folder_id, unique=True)
+Index(
+    "uq_workspace_folders_source_external",
+    WorkspaceFolder.source_id,
+    WorkspaceFolder.external_folder_id,
+    unique=True,
+)
 
 
 class WorkspaceFolderSelection(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
@@ -38,6 +53,7 @@ class WorkspaceFolderSelection(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     )
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
     external_folder_id: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    encrypted_delta_link: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     __table_args__ = (
         CheckConstraint(

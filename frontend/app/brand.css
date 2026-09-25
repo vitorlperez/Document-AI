@@ -1,0 +1,11 @@
+.arquivio-brand { display: inline-flex; align-items: center; gap: 10px; color: #243b35; font-family: Arial, Helvetica, sans-serif; font-size: 29px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; white-space: nowrap; }
+.arquivio-brand > svg, .arquivio-brand-period { color: #1c6052; }
+.arquivio-brand-compact { font-size: 24px; letter-spacing: -1.2px; }
+.arquivio-brand-compact > svg { width: 21px; height: 21px; }
+
+.landing-footer .arquivio-brand { font-size: 23px; }
+@media (max-width: 560px) {
+  .landing-page .arquivio-brand { font-size: 25px; gap: 7px; }
+  .landing-page .arquivio-brand > svg { width: 20px; }
+  .landing-footer .arquivio-brand { font-size: 22px; }
+}

@@ -1,0 +1,64 @@
+services:
+  - type: web
+    name: document-ai-api-pilot
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: backend
+    dockerfilePath: Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /health/ready
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: WORKOS_API_KEY
+        sync: false
+      - key: WORKOS_CLIENT_ID
+        sync: false
+      - key: WORKOS_REDIRECT_URI
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_OAUTH_REDIRECT_URI
+        sync: false
+      - key: GOOGLE_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: MICROSOFT_OAUTH_CLIENT_ID
+        sync: false
+      - key: MICROSOFT_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: MICROSOFT_OAUTH_REDIRECT_URI
+        sync: false
+      - key: MICROSOFT_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: INVITATION_FROM_EMAIL
+        sync: false
+
+  - type: web
+    name: document-ai-web-pilot
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: frontend
+    dockerfilePath: Dockerfile.production
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      # This is intentionally public and is needed during the frontend build.
+      # Render exposes non-secret service variables as Docker build arguments.
+      - key: VITE_API_BASE_URL
+        sync: false

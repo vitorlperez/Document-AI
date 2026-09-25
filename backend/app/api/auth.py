@@ -157,13 +157,10 @@ def callback(
 def logout(request: Request, session: Session = Depends(database_session)) -> Response:
     settings = request.app.state.settings
     provider_session_id = IdentityService(session).revoke_session(request.cookies.get(settings.auth_session_cookie_name))
-    redirect_url = settings.public_app_url
+    redirect_url = f"{settings.public_app_url.rstrip('/')}/login"
     if provider_session_id:
         try:
-            redirect_url = request.app.state.auth_gateway.logout_url(
-                session_id=provider_session_id,
-                return_to=settings.public_app_url,
-            )
+            request.app.state.auth_gateway.revoke_provider_session(session_id=provider_session_id)
         except AuthenticationUnavailable:
             # The local session is still revoked. A fresh AuthKit challenge on
             # the next login prevents an old provider session being reused.

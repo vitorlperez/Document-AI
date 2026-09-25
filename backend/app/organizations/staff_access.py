@@ -25,6 +25,12 @@ class GrantedCompany:
     expires_at: datetime
 
 
+@dataclass(frozen=True)
+class SupportedOrganization:
+    organization_id: UUID
+    organization_name: str
+
+
 class PlatformStaffAccessService:
     def __init__(self, session: Session):
         self.session = session
@@ -58,6 +64,31 @@ class PlatformStaffAccessService:
             )
             for grant, organization in rows
         ]
+
+    def all_organizations(self, *, user_id: UUID) -> list[SupportedOrganization]:
+        if not self.is_platform_staff(user_id=user_id):
+            raise StaffAccessDenied("platform support access denied")
+        return [
+            SupportedOrganization(organization_id=organization.id, organization_name=organization.name)
+            for organization in self.session.scalars(select(Organization).order_by(Organization.name))
+        ]
+
+    def require_organization_access(self, *, user_id: UUID, organization_id: UUID) -> SupportedOrganization:
+        if not self.is_platform_staff(user_id=user_id):
+            raise StaffAccessDenied("platform support access denied")
+        organization = self.session.get(Organization, organization_id)
+        if organization is None:
+            raise StaffAccessDenied("platform support access denied")
+        return SupportedOrganization(organization_id=organization.id, organization_name=organization.name)
+
+    def record_organization_access(self, *, user_id: UUID, organization: SupportedOrganization) -> None:
+        self._audit(
+            organization_id=organization.organization_id,
+            actor_user_id=user_id,
+            action="staff_access.metadata_viewed",
+            target_type="organization",
+            target_id=organization.organization_id,
+        )
 
     def require_metadata_access(self, *, user_id: UUID, scope: OrganizationScope) -> GrantedCompany:
         for company in self.granted_companies(user_id=user_id):
@@ -114,13 +145,15 @@ class PlatformStaffAccessService:
             target_id=company.grant_id,
         )
 
-    def _audit(self, *, organization_id: UUID, actor_user_id: UUID, action: str, target_id: UUID) -> None:
+    def _audit(
+        self, *, organization_id: UUID, actor_user_id: UUID, action: str, target_id: UUID, target_type: str = "staff_access_grant"
+    ) -> None:
         self.session.add(
             AuditLog(
                 organization_id=organization_id,
                 actor_user_id=actor_user_id,
                 action=action,
-                target_type="staff_access_grant",
+                target_type=target_type,
                 target_id=target_id,
             )
         )

@@ -24,13 +24,10 @@ def supported_companies(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed")
     return [
         {
-            "grant_id": str(company.grant_id),
             "organization_id": str(company.organization_id),
             "name": company.organization_name,
-            "reason": company.reason,
-            "expires_at": company.expires_at.isoformat(),
         }
-        for company in service.granted_companies(user_id=user.id)
+        for company in service.all_organizations(user_id=user.id)
     ]
 
 
@@ -43,17 +40,15 @@ def supported_company_overview(
     scope = OrganizationScope(organization_id)
     service = PlatformStaffAccessService(session)
     try:
-        company = service.require_metadata_access(user_id=user.id, scope=scope)
+        company = service.require_organization_access(user_id=user.id, organization_id=organization_id)
     except StaffAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
-    service.record_metadata_access(user_id=user.id, company=company)
+    service.record_organization_access(user_id=user.id, organization=company)
     folders = WorkspaceService(session).support_metadata(scope=scope)
     failure_summary = IngestionService(session).support_failure_summary(scope=scope)
     return {
         "organization_id": str(company.organization_id),
         "name": company.organization_name,
-        "reason": company.reason,
-        "expires_at": company.expires_at.isoformat(),
         "folders": [
             {
                 "id": str(folder.id),

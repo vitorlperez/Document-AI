@@ -1,3 +1,6 @@
+from collections import Counter
+from threading import Lock
+from time import sleep
 from uuid import uuid4
 
 import pytest
@@ -113,13 +116,13 @@ def test_new_chunks_are_embedded_before_the_sync_is_ready(session: Session) -> N
         scope=OrganizationScope(organization.id), workspace_folder_id=folder.id
     )
 
-    assert embedded == 2
+    assert embedded == 1
     assert job.status.value == "syncing"
     assert folder.status == "syncing"
     chunks = list(session.scalars(select(DocumentChunk).order_by(DocumentChunk.position)))
-    assert [chunk.embedding_model for chunk in chunks] == [EMBEDDING_MODEL, EMBEDDING_MODEL]
+    assert [chunk.embedding_model for chunk in chunks] == [EMBEDDING_MODEL]
     assert all(chunk.embedding is not None for chunk in chunks)
-    assert provider.calls == [[chunk.text for chunk in chunks]]
+    assert provider.calls == [[chunk.search_text for chunk in chunks]]
     completed = finish_sync(service, job.id, run_token, discovered)
     assert completed is not None and completed.status.value == "ready"
     assert folder.status == "ready"
@@ -170,7 +173,7 @@ def test_outdated_embedding_model_is_refreshed_with_the_current_model(session: S
         scope=OrganizationScope(organization.id), workspace_folder_id=folder.id
     )
 
-    assert refreshed == 1 and provider.calls == [[existing.text]]
+    assert refreshed == 1 and provider.calls == [[existing.search_text]]
     assert existing.embedding_model == EMBEDDING_MODEL
 
 
@@ -211,13 +214,16 @@ def test_embedding_rate_limit_retries_only_current_batch_and_records_usage_once(
     session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     organization, user, folder = workspace(session)
-    discovered = [document("a" * ((16 * 1200) + 1))]
+    discovered = [document(" ".join(["token"] * (16 * 500 + 1)))]
     _, _, _ = stage_sync(session, organization, user, folder, discovered)
 
     class RateLimitedOnceProvider(FakeEmbeddingProvider):
+        rate_limited = False
+
         def embed(self, *, texts: list[str]) -> list[list[float]]:
             self.calls.append(texts)
-            if len(self.calls) == 1:
+            if len(texts) == 16 and not self.rate_limited:
+                self.rate_limited = True
                 raise AIProviderRateLimited(0.25)
             return [[float(index + 1), 1.0] for index, _ in enumerate(texts)]
 
@@ -231,9 +237,38 @@ def test_embedding_rate_limit_retries_only_current_batch_and_records_usage_once(
 
     chunks = list(session.scalars(select(DocumentChunk).order_by(DocumentChunk.position)))
     usage = session.scalar(select(UsageRecord).where(UsageRecord.metric == "embedding_tokens"))
-    assert embedded == 17
-    assert [len(batch) for batch in provider.calls] == [16, 16, 1]
-    assert provider.calls[0] == provider.calls[1]
+    assert embedded == 19
+    assert sorted(len(batch) for batch in provider.calls) == [3, 16, 16]
+    assert sorted(Counter(tuple(batch) for batch in provider.calls).values()) == [1, 2]
     assert sleeps == [0.25]
     assert all(chunk.embedding is not None for chunk in chunks)
-    assert usage is not None and usage.quantity == sum((len(chunk.text) + 3) // 4 for chunk in chunks)
+    assert usage is not None and usage.quantity == sum((len(chunk.search_text) + 3) // 4 for chunk in chunks)
+
+
+def test_embedding_batches_overlap_without_sharing_the_database_session(session: Session) -> None:
+    organization, user, folder = workspace(session)
+    stage_sync(session, organization, user, folder, [document(" ".join(["token"] * (16 * 500 * 3 + 1)))])
+
+    class ConcurrentProvider(FakeEmbeddingProvider):
+        def __init__(self) -> None:
+            super().__init__()
+            self.lock = Lock()
+            self.active = 0
+            self.peak = 0
+
+        def embed(self, *, texts: list[str]) -> list[list[float]]:
+            with self.lock:
+                self.active += 1
+                self.peak = max(self.peak, self.active)
+            sleep(0.01)
+            with self.lock:
+                self.active -= 1
+            return [[1.0, 0.0] for _ in texts]
+
+    provider = ConcurrentProvider()
+    count = EmbeddingService(session, provider).embed_workspace(
+        scope=OrganizationScope(organization.id), workspace_folder_id=folder.id
+    )
+    assert count > 32
+    assert provider.peak == 3
+    assert all(chunk.embedding == [1.0, 0.0] for chunk in session.scalars(select(DocumentChunk)))

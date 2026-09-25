@@ -12,19 +12,22 @@ from app.core.config import Settings, get_settings
 from app.core.database import build_engine, build_session_factory
 from app.core.scoping import OrganizationScope
 from app.ingestion.google_drive import GoogleDriveDocumentProvider
-from app.ingestion.service import ELIGIBLE_MIME_TYPES, IngestionService
+from app.ingestion.service import DiscoveryResult, IngestionService
+from app.integrations.errors import SourceRemoteUnauthorized
 from app.integrations.google_drive import (
     CredentialCipher,
     GoogleDriveOAuthClient,
-    GoogleRemoteUnauthorized,
 )
 from app.integrations.models import DataSource
+from app.integrations.registry import IntegrationRegistry
 from app.knowledge.questions import AIProviderUnavailable, EmbeddingService, OpenAIQuestionProvider
 from app.library.service import LibraryService
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 logger = logging.getLogger("document_intelligence.ingestion")
-celery_app = Celery("document_intelligence", broker=os.getenv("REDIS_URL", "redis://localhost:6379/0"))
+celery_app = Celery(
+    "document_intelligence", broker=os.getenv("REDIS_URL", "redis://localhost:6379/0")
+)
 celery_app.conf.update(
     task_serializer="json",
     accept_content=["json"],
@@ -71,7 +74,11 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 )
             )
             if folder is None:
-                service.fail(job_id=job.id, error_code="workspace_folder_not_found", expected_run_token=run_token)
+                service.fail(
+                    job_id=job.id,
+                    error_code="workspace_folder_not_found",
+                    expected_run_token=run_token,
+                )
                 session.commit()
                 return
             source = session.scalar(
@@ -82,47 +89,65 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 )
             )
             if source is None:
-                service.fail(job_id=job.id, error_code="source_not_connected", expected_run_token=run_token)
+                service.fail(
+                    job_id=job.id, error_code="source_not_connected", expected_run_token=run_token
+                )
                 session.commit()
                 return
-            provider = GoogleDriveDocumentProvider(
-                GoogleDriveOAuthClient(
-                    client_id=settings.google_oauth_client_id,
-                    client_secret=(
-                        settings.google_oauth_client_secret.get_secret_value()
+            source_provider = getattr(source, "provider", "google_drive")
+            if source_provider == "google_drive":
+                # Keep the established injection point for Google while new
+                # providers are resolved through the registry.
+                provider = GoogleDriveDocumentProvider(
+                    GoogleDriveOAuthClient(
+                        client_id=settings.google_oauth_client_id,
+                        client_secret=settings.google_oauth_client_secret.get_secret_value()
                         if settings.google_oauth_client_secret
+                        else None,
+                        redirect_uri=settings.google_oauth_redirect_uri,
+                    ),
+                    CredentialCipher(
+                        settings.google_token_encryption_key.get_secret_value()
+                        if settings.google_token_encryption_key
                         else None
                     ),
-                    redirect_uri=settings.google_oauth_redirect_uri,
-                ),
-                CredentialCipher(
-                    settings.google_token_encryption_key.get_secret_value()
-                    if settings.google_token_encryption_key
-                    else None
-                ),
-            )
+                )
+            else:
+                provider = IntegrationRegistry(settings).get(source_provider)
             selections = list(
                 session.scalars(
                     select(WorkspaceFolderSelection)
                     .where(WorkspaceFolderSelection.workspace_folder_id == folder.id)
-                    .order_by(WorkspaceFolderSelection.kind, WorkspaceFolderSelection.external_folder_id)
+                    .order_by(
+                        WorkspaceFolderSelection.kind, WorkspaceFolderSelection.external_folder_id
+                    )
                 )
             )
             if not selections:
-                service.fail(job_id=job.id, error_code="workspace_scope_not_found", expected_run_token=run_token)
+                service.fail(
+                    job_id=job.id,
+                    error_code="workspace_scope_not_found",
+                    expected_run_token=run_token,
+                )
                 session.commit()
                 return
             discovered_documents = provider.discover(
                 encrypted_credentials=source.encrypted_credentials,
                 selections=selections,
             )
+            discovery = (
+                discovered_documents if isinstance(discovered_documents, DiscoveryResult) else None
+            )
+            document_results = discovery.documents if discovery else discovered_documents
             # Keep remote metadata and the document snapshot in the same unit
             # of work. A failed projection retries the job and never leaves a
             # ready sync that cannot be browsed from the Company Library.
             source_folders = provider.folders(encrypted_credentials=source.encrypted_credentials)
             session.refresh(source)
             if source.status != "connected":
-                service.fail(job_id=job.id, error_code="source_not_connected", expected_run_token=run_token)
+                service.fail(
+                    job_id=job.id, error_code="source_not_connected", expected_run_token=run_token
+                )
                 session.commit()
                 return
             projected_job = service.apply_reconciliation(
@@ -146,16 +171,17 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             session.refresh(source)
             if source.status != "connected":
                 session.rollback()
-                service.fail(job_id=job.id, error_code="source_not_connected", expected_run_token=run_token)
+                service.fail(
+                    job_id=job.id, error_code="source_not_connected", expected_run_token=run_token
+                )
                 session.commit()
                 return
             completed_job = service.finalize_reconciliation(
                 job_id=job.id,
                 run_token=run_token,
-                partial_failure=any(
-                    document.mime_type in ELIGIBLE_MIME_TYPES
-                    and (document.error_code is not None or not document.text or not document.text.strip())
-                    for document in discovered_documents
+                partial_failure=service.has_failed_documents(
+                    organization_id=job.organization_id,
+                    workspace_folder_id=job.workspace_folder_id,
                 ),
             )
             if completed_job is None:
@@ -164,24 +190,54 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             LibraryService(session).project_successful_sync(
                 organization_id=job.organization_id,
                 source=source,
-                documents=discovered_documents,
+                documents=document_results,
                 folders=source_folders,
             )
+            if discovery and discovery.delta_links is not None:
+                selections_by_id = {item.id: item for item in selections}
+                encrypt_delta_link = getattr(provider, "encrypt_delta_link", None)
+                for selection_id, cursor in discovery.delta_links.items():
+                    selection = selections_by_id.get(selection_id)
+                    if selection is not None:
+                        selection.encrypted_delta_link = (
+                            encrypt_delta_link(cursor)
+                            if cursor and encrypt_delta_link
+                            else None
+                        )
+            updated_credentials = getattr(provider, "updated_encrypted_credentials", None)
+            if updated_credentials:
+                source.encrypted_credentials = updated_credentials
             source.last_synced_at = completed_job.completed_at
             session.commit()
             logger.info(
                 "workspace reconciliation complete",
-                extra={"event": "ingestion_sync", "result": "complete", "provider": "google_drive", "action": "reconcile", "job_id": job_id},
+                extra={
+                    "event": "ingestion_sync",
+                    "result": "complete",
+                    "provider": source_provider,
+                    "action": "reconcile",
+                    "job_id": job_id,
+                },
             )
-        except GoogleRemoteUnauthorized:
+        except SourceRemoteUnauthorized:
             if source is not None:
                 source.status = "reauth_required"
             if run_token is not None:
-                service.fail(job_id=UUID(job_id), error_code="source_reauth_required", expected_run_token=run_token)
+                service.fail(
+                    job_id=UUID(job_id),
+                    error_code="source_reauth_required",
+                    expected_run_token=run_token,
+                )
             session.commit()
             logger.warning(
                 "workspace reconciliation requires authorization",
-                extra={"event": "ingestion_sync", "result": "reauth_required", "provider": "google_drive", "action": "reconcile", "job_id": job_id},
+                extra={
+                    "event": "ingestion_sync",
+                    "result": "reauth_required",
+                    "provider": source_provider,
+                    "action": "reconcile",
+                    "job_id": job_id,
+                },
             )
         except AIProviderUnavailable:
             if run_token is None:
@@ -190,11 +246,18 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             # surfacing a safe status, so the prior indexed snapshot remains searchable.
             session.rollback()
             if self.request.retries >= self.max_retries:
-                service.fail(job_id=UUID(job_id), error_code="embedding_failed", expected_run_token=run_token)
+                service.fail(
+                    job_id=UUID(job_id), error_code="embedding_failed", expected_run_token=run_token
+                )
                 session.commit()
                 logger.warning(
                     "workspace embedding failed",
-                    extra={"event": "ingestion_embedding", "result": "failed", "action": "embed", "job_id": job_id},
+                    extra={
+                        "event": "ingestion_embedding",
+                        "result": "failed",
+                        "action": "embed",
+                        "job_id": job_id,
+                    },
                 )
                 return
             service.release_for_retry(job_id=UUID(job_id), expected_run_token=run_token)
@@ -206,22 +269,38 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             # A limit check may follow a usage-record write. Discard every
             # uncommitted side effect before recording the terminal job state.
             session.rollback()
-            service.fail(job_id=UUID(job_id), error_code="usage_limit_exceeded", expected_run_token=run_token)
+            service.fail(
+                job_id=UUID(job_id), error_code="usage_limit_exceeded", expected_run_token=run_token
+            )
             session.commit()
             logger.warning(
                 "workspace reconciliation exceeded its organization usage limit",
-                extra={"event": "ingestion_sync", "result": "usage_limit_exceeded", "provider": "google_drive", "action": "reconcile", "job_id": job_id},
+                extra={
+                    "event": "ingestion_sync",
+                    "result": "usage_limit_exceeded",
+                    "provider": source_provider,
+                    "action": "reconcile",
+                    "job_id": job_id,
+                },
             )
         except Exception as error:
             session.rollback()
             if run_token is None:
                 raise
             if self.request.retries >= self.max_retries:
-                service.fail(job_id=UUID(job_id), error_code="sync_failed", expected_run_token=run_token)
+                service.fail(
+                    job_id=UUID(job_id), error_code="sync_failed", expected_run_token=run_token
+                )
                 session.commit()
                 logger.warning(
                     "workspace reconciliation failed",
-                    extra={"event": "ingestion_sync", "result": "failed", "provider": "google_drive", "action": "reconcile", "job_id": job_id},
+                    extra={
+                        "event": "ingestion_sync",
+                        "result": "failed",
+                        "provider": source_provider,
+                        "action": "reconcile",
+                        "job_id": job_id,
+                    },
                 )
                 return
             service.release_for_retry(job_id=UUID(job_id), expected_run_token=run_token)

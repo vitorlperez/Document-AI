@@ -17,4 +17,4 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 
 EXPOSE 3000
-CMD ["./node_modules/.bin/vinext", "start", "--hostname", "0.0.0.0", "--port", "3000"]
+CMD ["sh", "-c", "exec ./node_modules/.bin/vinext start --hostname 0.0.0.0 --port ${PORT:-3000}"]

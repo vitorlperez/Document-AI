@@ -80,8 +80,11 @@ class WorkOSAuthKitGateway:
             provider_session_id=workos_session_id(getattr(response, "access_token", None)),
         )
 
-    def logout_url(self, *, session_id: str, return_to: str) -> str:
-        return self._client().user_management.get_logout_url(session_id=session_id, return_to=return_to)
+    def revoke_provider_session(self, *, session_id: str) -> None:
+        try:
+            self._client().user_management.revoke_session(session_id=session_id)
+        except Exception as error:
+            raise AuthenticationUnavailable("authentication provider is unavailable") from error
 
 
 class IdentityService:

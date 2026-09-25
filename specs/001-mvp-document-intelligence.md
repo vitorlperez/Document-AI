@@ -1,15 +1,15 @@
 # 001 - MVP: Document Intelligence para pastas de trabalho
 
-**Status:** Draft aprovado para implementação inicial  
-**Versão:** 0.1  
-**Escopo:** MVP horizontal para equipes de serviços  
+**Status:** Draft aprovado para implementação inicial
+**Versão:** 0.1
+**Escopo:** MVP horizontal para equipes de serviços
 **Decisão de produto:** uma pasta compartilhada é a unidade de conhecimento. O produto não substitui o Google Drive.
 
 ## 1. Problema e resultado esperado
 
 Equipes de agências, consultorias, software houses e operações perdem tempo procurando a versão certa de um briefing, escopo, decisão, relatório ou proposta. A informação existe no Google Drive, mas encontrar e conferir sua origem é lento e depende de quem conhece a estrutura de pastas.
 
-O usuário deve conseguir conectar uma pasta de trabalho, fazer uma pergunta limitada a ela e receber uma resposta com evidências em menos de dois minutos, sem precisar procurar manualmente em múltiplos arquivos.
+O usuário deve conseguir conectar uma pasta de trabalho, fazer uma pergunta sobre uma pasta, ferramenta ou conjunto de fontes indexadas e receber uma resposta com evidências em menos de dois minutos, sem precisar procurar manualmente em múltiplos arquivos.
 
 ### Job to be done
 
@@ -43,19 +43,20 @@ Se a plataforma indexar uma pasta de trabalho e responder perguntas com citaçõ
 ### Incluído
 
 1. Organização, autenticação e convite de membros.
-2. Conexão somente leitura com Google Drive por administrador.
-3. Seleção explícita de uma ou mais pastas do Drive, arquivos avulsos da raiz ou todo o conteúdo acessível por organização.
-4. Sincronização de Google Docs, PDF e DOCX presentes no escopo selecionado.
+2. Conexão somente leitura com Google Drive e OneDrive Microsoft 365 por administrador.
+3. Seleção explícita de uma ou mais pastas, arquivos avulsos da raiz ou todo o conteúdo acessível pelo usuário conectado, dentro da organização.
+4. Sincronização de Google Docs, arquivos OneDrive compatíveis, PDF e DOCX presentes no escopo selecionado.
 5. Extração de texto, indexação, busca por palavra-chave e busca semântica.
-6. Perguntas em linguagem natural, sempre limitadas a uma pasta de trabalho.
-7. Resposta com documento, trecho, página quando disponível e link para a fonte no Drive.
+6. Perguntas em linguagem natural sobre uma pasta, uma ferramenta ou todas as fontes indexadas da organização (F-042).
+7. Resposta apoiada por evidências recuperadas, com lista compacta dos documentos efetivamente citados e links para as fontes originais.
 8. Estado de processamento, última sincronização e falhas por documento.
 9. Consultas salvas por usuário dentro de uma pasta.
 10. Auditoria mínima de ações sensíveis.
 
 ### Excluído
 
-- OneDrive, Dropbox, S3, e-mail e upload de arquivos.
+- Dropbox, S3, e-mail e upload de arquivos.
+- No OneDrive da primeira versão: contas pessoais, SharePoint, bibliotecas compartilhadas, drives de grupo e atalhos.
 - OCR, imagens escaneadas, PPTX, planilhas complexas e CSV/XLSX.
 - Edição, movimentação ou reorganização de arquivos no Google Drive.
 - Permissões herdadas por arquivo ou pasta do Google Drive.
@@ -67,7 +68,7 @@ Se a plataforma indexar uma pasta de trabalho e responder perguntas com citaçõ
 | Papel | Capacidades |
 | --- | --- |
 | Owner | Gerencia organização, administradores, membros e todas as pastas conectadas |
-| Admin | Conecta Drive, seleciona pastas, inicia sincronização e visualiza falhas |
+| Admin | Conecta Google Drive/OneDrive, seleciona pastas, inicia sincronização e visualiza falhas |
 | Member | Pesquisa, pergunta e salva consultas nas pastas liberadas para a organização |
 | Platform staff | Não é membro do tenant; acessa somente metadados operacionais de Companies explicitamente concedidas, com expiração e auditoria |
 
@@ -86,20 +87,31 @@ Essa limitação deve aparecer claramente durante a conexão. Pastas de RH, fina
 | Termo | Definição |
 | --- | --- |
 | Organização | Tenant que agrupa usuários, fontes, pastas e dados indexados |
-| Fonte | Integração autenticada com um Google Drive |
-| Pasta de trabalho | Pasta do Drive selecionada para indexação e consulta; pode representar cliente, projeto ou área |
+| Fonte | Integração autenticada com Google Drive ou OneDrive |
+| Pasta de trabalho | Escopo selecionado em uma fonte de arquivos para indexação e consulta; pode representar cliente, projeto ou área |
 | Documento | Arquivo elegível encontrado em uma pasta de trabalho |
 | Chunk | Trecho de texto de um documento, com localização e metadados de origem |
-| Citação | Referência exibida ao usuário contendo documento, trecho e link de origem |
+| Citação | Referência a um documento usado na resposta, com identidade da ferramenta e link de origem; o trecho de suporte permanece no contrato interno/API para verificação, sem ser exibido na conversa |
 | Consulta salva | Pergunta ou busca que um usuário deseja reutilizar em uma pasta |
 | Sincronização | Processo assíncrono que descobre mudanças, atualiza documentos e recria índices necessários |
 
 ## 6. Fluxos funcionais
 
+### Entrada pública e ativação
+
+- A identidade visual do aplicativo acompanha o exemplo da landing: marca `arquivio.` com símbolo de camadas, fundo claro, tons de verde e painéis de fontes, conversa e biblioteca. O nome em texto corrido permanece Arquivio.
+- A rota `/` apresenta a landing page Arquivio em português para visitantes, com exemplos explicitamente ilustrativos e sem promessas de integrações não disponíveis.
+- Entrar abre `/login`; criar conta inicia o fluxo de cadastro do provedor de identidade existente. Uma sessão válida encaminha o usuário à organização ou ao onboarding, sem criar um novo sistema de autenticação.
+- Falhas ao verificar a sessão apresentam mensagem compreensível e ação de tentar novamente.
+- Biblioteca e conversa mantêm navegação por pastas; listagens paginadas devem permitir acessar as páginas seguintes. Trocas de organização/contexto não podem reaproveitar resultados obsoletos de outra seleção.
+- Na conversa, a consulta de arquivos à direita pode ser ocultada e reaberta por um controle acessível; a ação de adicionar fonte fica na coluna da Biblioteca e é oferecida somente a Owner/Admin.
+- Conversa e Biblioteca reutilizam o cabeçalho, os controles de fonte e o caminho da coluna Biblioteca; os painéis à direita de ambas podem ser ocultados e reabertos por controles acessíveis.
+- A área de integrações e suas ações de conexão e gestão são restritas a Owner/Admin; todas as rotas privadas exigem sessão válida, mantendo públicos apenas os fluxos de entrada/autenticação e saúde necessários.
+
 ### F1 - Criar organização e convidar membros
 
-**Dado** que uma pessoa ainda não participa de uma organização  
-**Quando** cria uma organização  
+**Dado** que uma pessoa ainda não participa de uma organização
+**Quando** cria uma organização
 **Então** ela se torna Owner e pode convidar Admins e Members por e-mail.
 
 Critérios de aceite:
@@ -110,8 +122,8 @@ Critérios de aceite:
 
 ### F2 - Conectar Google Drive
 
-**Dado** que um Admin está autenticado  
-**Quando** autoriza o Google Drive em modo somente leitura  
+**Dado** que um Admin está autenticado
+**Quando** autoriza o Google Drive em modo somente leitura
 **Então** o sistema armazena tokens de forma criptografada e lista pastas acessíveis para seleção.
 
 Critérios de aceite:
@@ -121,10 +133,25 @@ Critérios de aceite:
 - A interface deve exibir o aviso de permissão uniforme do MVP antes da primeira sincronização.
 - Token inválido ou revogado deixa a fonte como `reauth_required` e impede novas sincronizações.
 
+### F2a - Conectar OneDrive
+
+**Dado** que um Owner/Admin autenticado usa uma conta Microsoft 365 corporativa/escolar
+**Quando** autoriza o Arquivio em modo somente leitura
+**Então** o sistema cifra tokens, identifica a conta e permite selecionar pastas do OneDrive padrão dessa conta.
+
+Critérios de aceite:
+
+- OAuth delegado com permissão de leitura mínima; nenhum acesso application-wide.
+- Somente contas corporativas/escolares e o OneDrive padrão do usuário conectado nesta versão; SharePoint e bibliotecas compartilhadas não são incluídos.
+- Listagens Graph seguem paginação; sincronizações incrementais aplicam alterações e remoções por delta sem avançar cursor se a ingestão falhar.
+- Seleções sobrepostas não apagam um documento ainda presente em outra seleção do mesmo espaço.
+- Conta revogada/expirada passa para `reauth_required`; a tela de integrações oferece reconexão.
+- Itens incompatíveis são ignorados com motivo.
+
 ### F3 - Selecionar escopo e sincronizar
 
-**Dado** que o Drive está conectado  
-**Quando** o Admin seleciona pastas de trabalho, opcionalmente arquivos avulsos da raiz, ou o modo explícito de todo o Drive e confirma a sincronização  
+**Dado** que o Drive está conectado
+**Quando** o Admin seleciona pastas de trabalho, opcionalmente arquivos avulsos da raiz, ou o modo explícito de todo o Drive e confirma a sincronização
 **Então** um job assíncrono descobre a união deduplicada dos documentos elegíveis e os processa sem bloquear a interface.
 
 Critérios de aceite:
@@ -133,6 +160,7 @@ Critérios de aceite:
 - O modo “todo o Drive acessível” é exclusivo, apresenta o impacto de privacidade/custo e exige confirmação de acesso uniforme.
 - Google Docs, PDF e DOCX são elegíveis; os demais formatos aparecem como ignorados com motivo.
 - O sistema exibe `queued`, `syncing`, `ready`, `partial_failure` ou `failed` para a pasta.
+- Enquanto a pasta estiver `queued` ou `syncing`, a interface mostra progresso acessível e atualiza o estado até a conclusão ou falha; ao falhar, o progresso termina e a mensagem de erro permanece visível.
 - Um mesmo arquivo não pode criar documentos, chunks ou embeddings duplicados dentro do mesmo espaço de trabalho, inclusive com pastas sobrepostas.
 - Documento removido do escopo deixa de aparecer em resultados após a próxima sincronização bem-sucedida.
 - Owner e Admin podem remover um documento somente do índice local ou solicitar seu reprocessamento por UUID. Nenhuma dessas ações altera o arquivo original no Google Drive; uma sincronização posterior pode reimportar um arquivo que continuar elegível no escopo.
@@ -140,23 +168,30 @@ Critérios de aceite:
 
 ### F4 - Pesquisar e fazer perguntas
 
-**Dado** que uma pasta está `ready` e possui documentos indexados  
-**Quando** um Member faz uma busca ou pergunta dentro daquela pasta  
-**Então** o sistema recupera somente chunks pertencentes à mesma organização e pasta, gera resposta baseada neles e exibe citações.
+**Dado** que o contexto selecionado contém pastas `ready` ou `partial_failure` com conteúdo indexado compatível
+**Quando** um Member faz uma pergunta sobre uma pasta, uma ferramenta ou todas as ferramentas da organização
+**Então** o sistema resolve as pastas autorizadas dentro do escopo, recupera somente chunks dessas pastas e da mesma organização, gera resposta baseada neles e exibe citações identificando ferramenta e arquivo.
+
+Chunking deve preservar fronteiras estruturais disponíveis (parágrafos, títulos, listas, tabelas e páginas), acrescentar nome do documento e seção disponível ao contexto de busca/embedding, sem alterar o trecho original usado como evidência. A seleção de evidências deve limitar repetição de chunks de um mesmo documento e permitir fontes distintas relevantes em perguntas amplas. O índice vetorial atual permanece uma decisão operacional separada e poderá evoluir após avaliação de escala.
 
 Critérios de aceite:
 
-- A pergunta não pode consultar “toda a empresa” no MVP; uma pasta é obrigatória.
+- O escopo pode ser uma pasta, todas as pastas indexadas de uma ferramenta ou todas as ferramentas da organização. Isso não realiza busca ao vivo nas ferramentas nem garante leitura exaustiva do corpus; a resposta usa as evidências relevantes recuperadas.
+- A interface informa conteúdo pendente e cobertura parcial; contextos vazios retornam evidência insuficiente. Consultas salvas continuam limitadas a uma pasta.
+- A interface mostra progresso acessível ao carregar a biblioteca e os contextos autorizados ou enquanto a resposta está sendo gerada; em falha, o progresso termina e a mensagem/ação de recuperação permanece disponível.
 - Busca textual considera título e texto extraído; busca semântica considera embeddings.
 - Resultados e contexto do LLM são filtrados por `organization_id` e `workspace_folder_id` antes de qualquer ranking ou geração.
 - A resposta deve dizer que não encontrou evidência suficiente quando a recuperação não sustentar uma resposta. O contrato deve distinguir, sem expor conteúdo, `no_indexed_content`, `no_compatible_embeddings`, `below_evidence_threshold` e `invalid_generation_output` para que a interface indique a ação adequada.
 - Cada afirmação factual relevante deve ter uma ou mais citações. Sem fonte, a resposta não deve ser apresentada como fato.
-- Citação mostra nome do documento, trecho, página quando aplicável e link para o Drive.
+- A área de fontes mostra uma lista compacta de documentos efetivamente citados, identificando nome, ferramenta e link original, sem exibir trechos de texto nem um limite numérico de citações.
+- As atribuições no texto da resposta usam apenas números da lista de documentos (`fonte 1`, `fontes 1 e 2`), sem nome ou URL do documento. A lista é numerada; quando há mais de três documentos, o controle acessível permite expandir todos em linhas separadas e recolher a lista novamente.
+- Links de origem aparecem somente na área de fontes, nunca no texto principal da resposta. O trecho de evidência continua disponível no contrato da API para verificação e compatibilidade, mas não é apresentado na conversa.
+- Na área de fontes, cópias do mesmo arquivo são consolidadas pela origem. Documentos distintos permanecem identificáveis. A seleção de evidências para o modelo respeita um orçamento de texto para limitar custo e latência, sem um corte fixo por quantidade de citações.
 
 ### F5 - Salvar consulta
 
-**Dado** que um Member realizou uma busca ou pergunta em uma pasta  
-**Quando** salva a consulta  
+**Dado** que um Member realizou uma busca ou pergunta em uma pasta
+**Quando** salva a consulta
 **Então** ela aparece na sua lista de consultas salvas daquela pasta.
 
 Critérios de aceite:
@@ -171,7 +206,7 @@ Critérios de aceite:
 
 1. Toda entidade de negócio possui `organization_id`.
 2. Nenhuma query de documento, chunk, citação, job ou consulta salva pode executar sem filtro de organização.
-3. Uma resposta só pode usar chunks da pasta selecionada.
+3. Uma resposta só pode usar chunks do conjunto de pastas autorizado e resolvido para o escopo selecionado na organização atual.
 4. Links de origem só podem ser exibidos quando o documento pertence à mesma organização.
 
 ### Segurança e privacidade
@@ -187,7 +222,7 @@ Critérios de aceite:
 
 1. O modelo nunca deve inventar uma fonte.
 2. A ausência de evidência é uma resposta válida.
-3. A interface deve diferenciar resposta gerada, trecho citado e link ao original.
+3. A interface deve diferenciar resposta gerada da lista de documentos usados e dos links aos originais.
 4. Documentos com falha de extração não entram no índice sem texto válido.
 5. Todo documento indexado possui versão de processamento, hash de conteúdo e data de indexação.
 
@@ -239,6 +274,8 @@ POST   /organizations
 POST   /organizations/{id}/members/invitations
 POST   /data-sources/google/oauth/start
 POST   /data-sources/google/oauth/callback
+GET    /data-sources/onedrive/oauth/start
+GET    /data-sources/onedrive/oauth/callback
 GET    /data-sources
 POST   /workspace-folders
 GET    /workspace-folders
@@ -336,7 +373,7 @@ Não criar serviços distribuídos no MVP. Uma extração de módulo só é cons
 | API | Python 3.12 + FastAPI + Pydantic + SQLAlchemy | Ecossistema forte para documentos/IA, contratos explícitos e processamento assíncrono |
 | Banco | PostgreSQL + pgvector + full-text search | Dados relacionais, filtros de tenant, busca textual e vetorial no mesmo sistema |
 | Jobs | Celery + Redis | Filas, retries, jobs idempotentes e workers escaláveis sem bloquear API |
-| Integração | Google Drive API com adaptador próprio | Primeiro conector isolado atrás de interface de fonte |
+| Integração | Google Drive API e Microsoft Graph por adaptadores próprios | Conectores isolados atrás de interface de fonte |
 | IA | Provedor configurável de embeddings, reranking e geração | Evita lock-in e permite trocar modelo com avaliação controlada |
 | Infraestrutura | Docker, Docker Compose local, IaC e serviços gerenciados em produção | Reprodutibilidade local e evolução segura para cloud |
 | Observabilidade | Logs estruturados, OpenTelemetry, métricas e error tracking | Medir custo, falha, latência e qualidade antes de escalar; métricas de retrieval não incluem pergunta, trecho, embedding ou segredo |

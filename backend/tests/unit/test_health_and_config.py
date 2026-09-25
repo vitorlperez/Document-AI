@@ -43,3 +43,14 @@ def test_settings_require_database_url(monkeypatch) -> None:
         assert "database_url" in str(error)
     else:
         raise AssertionError("Settings must reject a missing DATABASE_URL")
+
+
+def test_railway_postgres_url_selects_installed_psycopg_driver() -> None:
+    settings = Settings(
+        _env_file=None,
+        database_url="postgresql://user:password@postgres.railway.internal:5432/railway",
+    )
+
+    assert str(settings.database_url) == (
+        "postgresql+psycopg://user:password@postgres.railway.internal:5432/railway"
+    )

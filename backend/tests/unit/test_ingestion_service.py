@@ -17,6 +17,7 @@ from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import (
     JOB_LEASE,
     DiscoveredDocument,
+    ExtractedBlock,
     IngestionService,
     SyncAccessDenied,
     SyncAlreadyActive,
@@ -200,6 +201,29 @@ def test_reconcile_upserts_documents_and_replaces_chunks_without_duplicates(sess
     assert session.scalar(select(func.count()).select_from(Document)) == 1
     assert session.scalar(select(func.count()).select_from(DocumentChunk)) == 1
     assert session.scalar(select(DocumentChunk.text).where(DocumentChunk.document_id == document.id)) == "The revised approved scope."
+
+
+def test_structured_blocks_keep_page_and_section_context_and_overlap(session: Session) -> None:
+    organization, admin, folder = create_workspace(session)
+    service = IngestionService(session)
+    job = service.enqueue(scope=OrganizationScope(organization.id), user_id=admin.id, workspace_folder_id=folder.id)
+    paragraph = " ".join(f"term{index}" for index in range(1100))
+    discovered = DiscoveredDocument(
+        external_file_id="structured",
+        name="Operations.md",
+        mime_type="text/markdown",
+        source_url="https://drive.example.test/structured",
+        text=paragraph,
+        blocks=(ExtractedBlock(paragraph, page_number=3, section_path="Operations › Escalation"),),
+    )
+
+    service.reconcile(job_id=job.id, documents=[discovered])
+    chunks = list(session.scalars(select(DocumentChunk).order_by(DocumentChunk.position)))
+
+    assert len(chunks) >= 3
+    assert all(chunk.page_number == 3 for chunk in chunks)
+    assert all("Operations › Escalation" in chunk.search_text for chunk in chunks)
+    assert chunks[0].text.split()[-60:] == chunks[1].text.split()[:60]
 
 
 def test_active_document_limit_is_not_monthly_and_allows_reactivation_after_capacity_is_freed(session: Session) -> None:
@@ -548,7 +572,6 @@ def test_failures_are_visible_to_admin_only_and_are_tenant_scoped(session: Sessi
 
     assert {(row["name"], row["status"], row["error_code"]) for row in visible} == {
         ("Failed.pdf", "failed", "text_extraction_failed"),
-        ("Ignored.pptx", "ignored", "unsupported_file_type"),
     }
     with pytest.raises(HTTPException) as member_error:
         document_failures(

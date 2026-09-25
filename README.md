@@ -1,4 +1,4 @@
-# Document AI
+# Arquivio
 
 An AI-powered document intelligence platform for organizations. It connects document sources, ingests and indexes files, and provides a secure company library for search, retrieval, and AI-assisted questions.
 
@@ -42,27 +42,29 @@ The project is organized as a modular monolith:
 
 ```bash
 cp .env.example .env
-docker compose up --build
+docker compose up --build -d
 ```
 
-This starts PostgreSQL, Redis, database migrations, the API, Celery worker, and frontend.
+The root `docker-compose.yml` contains the entire local stack: PostgreSQL, Redis, database migrations, the API, Celery worker, and frontend. API, worker, and migrations reuse `arquivio-backend:local`; the frontend uses `arquivio-frontend:local`, built from the current source. PostgreSQL and Redis keep their official images. No separate compose files or image builds are needed.
+
+Run the same command after changing the source to rebuild the application images. The local frontend runs the development server from its image; source changes require rebuilding because the compose does not mount the source directory.
+
+Check startup with `docker compose ps -a` and follow logs with `docker compose logs -f api worker frontend`. Migrations must finish successfully before the API and worker start; PostgreSQL, Redis, and the API have health checks.
 
 - Web app: http://localhost:3000
 - API: http://localhost:8000
 - Interactive API documentation: http://localhost:8000/docs
 - Health check: http://localhost:8000/health/live
 
-Stop the stack with:
+Stop without removing containers or their existing database volume:
 
 ```bash
-docker compose down
+docker compose stop
 ```
 
-To remove local database volumes as well:
+Resume with `docker compose start`. The local database is stored in the named `postgres_data` volume. `docker compose down` removes containers but keeps that volume; use `docker compose down --volumes` only when you intentionally want to reset local data.
 
-```bash
-docker compose down --volumes
-```
+The repository is currently streamlined for local Docker development. Production and remote-worker deployment profiles are not part of the local stack.
 
 ## Configuration
 
@@ -73,6 +75,9 @@ Copy `.env.example` to `.env` and add credentials only for the integrations you 
 | `OPENAI_API_KEY` | Enables AI-assisted questions and semantic capabilities |
 | `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | Enables Google Drive connection and sync |
 | `GOOGLE_TOKEN_ENCRYPTION_KEY` | Encrypts stored Google OAuth tokens |
+| `MICROSOFT_OAUTH_CLIENT_ID` / `MICROSOFT_OAUTH_CLIENT_SECRET` | Enables delegated OneDrive connection for personal and Microsoft 365 work/school accounts; the Entra app registration must support both |
+| `MICROSOFT_OAUTH_REDIRECT_URI` | Must match the Microsoft Entra app registration callback `/data-sources/onedrive/oauth/callback` |
+| `MICROSOFT_TOKEN_ENCRYPTION_KEY` | Encrypts OneDrive OAuth tokens and Graph delta cursors |
 | `WORKOS_API_KEY` / `WORKOS_CLIENT_ID` | Enables authentication and organization identity |
 | `RESEND_API_KEY` / `INVITATION_FROM_EMAIL` | Enables email invitations |
 | `PUBLIC_APP_URL` | Public URL allowed by the API CORS policy |

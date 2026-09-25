@@ -29,7 +29,8 @@
     },
     "types": [
       "node",
-      "@cloudflare/workers-types"
+      "@cloudflare/workers-types",
+      "vite/client"
     ]
   },
   "include": [

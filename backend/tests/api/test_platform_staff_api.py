@@ -15,7 +15,6 @@ from app.identity.models import User, UserSession
 from app.integrations.models import DataSource
 from app.knowledge.models import Document
 from app.organizations.models import Organization, PlatformStaff, StaffAccessGrant
-from app.organizations.staff_access import PlatformStaffAccessService
 from app.workspaces.models import WorkspaceFolder
 
 
@@ -43,9 +42,8 @@ def platform_api(monkeypatch: pytest.MonkeyPatch) -> Generator[tuple[TestClient,
 def authenticate(client: TestClient, factory: sessionmaker[Session], *, staff: bool) -> tuple[User, Organization]:
     with factory.begin() as session:
         user = User(email="staff@example.test" if staff else "member@example.test")
-        issuer = User(email="operator@example.test")
         organization = Organization(name="Acme")
-        session.add_all([user, issuer, organization])
+        session.add_all([user, organization])
         session.flush()
         raw_secret = "a-secret-that-is-not-returned"
         session.add(
@@ -58,14 +56,6 @@ def authenticate(client: TestClient, factory: sessionmaker[Session], *, staff: b
         if staff:
             platform_staff = PlatformStaff(user_id=user.id)
             session.add(platform_staff)
-            session.flush()
-            PlatformStaffAccessService(session).grant_metadata_access(
-                platform_staff_id=platform_staff.id,
-                organization_id=organization.id,
-                granted_by_user_id=issuer.id,
-                reason="Check connector health",
-                expires_at=datetime.now(UTC) + timedelta(hours=1),
-            )
     client.cookies.set("document_intelligence_session", raw_secret)
     return user, organization
 
@@ -107,17 +97,24 @@ def add_private_document(factory: sessionmaker[Session], *, user: User, organiza
     return folder
 
 
-def test_platform_staff_lists_only_granted_companies_and_metadata(platform_api) -> None:
+def test_platform_staff_lists_all_companies_and_metadata(platform_api) -> None:
     client, factory = platform_api
     _, organization = authenticate(client, factory, staff=True)
+    with factory.begin() as session:
+        second_organization = Organization(name="Beta")
+        session.add(second_organization)
+        session.flush()
 
     companies = client.get("/platform/companies")
-    overview = client.get(f"/platform/companies/{organization.id}/overview")
+    overview = client.get(f"/platform/companies/{second_organization.id}/overview")
     me = client.get("/me")
 
     assert companies.status_code == overview.status_code == me.status_code == 200
-    assert companies.json()[0]["organization_id"] == str(organization.id)
-    assert overview.json()["organization_id"] == str(organization.id)
+    assert companies.json() == [
+        {"organization_id": str(organization.id), "name": "Acme"},
+        {"organization_id": str(second_organization.id), "name": "Beta"},
+    ]
+    assert overview.json()["organization_id"] == str(second_organization.id)
     assert overview.json()["folders"] == []
     assert me.json()["is_platform_staff"] is True
     assert client.get("/organizations").json() == []
@@ -172,12 +169,20 @@ def test_platform_staff_cannot_use_tenant_content_or_drive_apis_and_overview_red
     assert [response.status_code for response in denied] == [403] * len(denied)
 
 
-def test_expired_staff_grant_cannot_open_support_overview(platform_api) -> None:
+def test_expired_staff_grant_does_not_remove_global_support_access(platform_api) -> None:
     client, factory = platform_api
-    _, organization = authenticate(client, factory, staff=True)
+    user, organization = authenticate(client, factory, staff=True)
     with factory.begin() as session:
-        grant = session.query(StaffAccessGrant).one()
-        grant.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+        staff = session.query(PlatformStaff).filter_by(user_id=user.id).one()
+        session.add(
+            StaffAccessGrant(
+                platform_staff_id=staff.id,
+                organization_id=organization.id,
+                granted_by_user_id=user.id,
+                reason="Legacy grant",
+                expires_at=datetime.now(UTC) - timedelta(seconds=1),
+            )
+        )
 
-    assert client.get("/platform/companies").json() == []
-    assert client.get(f"/platform/companies/{organization.id}/overview").status_code == 403
+    assert client.get("/platform/companies").json() == [{"organization_id": str(organization.id), "name": "Acme"}]
+    assert client.get(f"/platform/companies/{organization.id}/overview").status_code == 200

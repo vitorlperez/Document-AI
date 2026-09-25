@@ -15,12 +15,15 @@ from app.library.service import PAGE_SIZE_MAX, LibraryService
 router = APIRouter(tags=["library"])
 
 
-def _node(*, node: LibraryNode, service: LibraryService, scope: OrganizationScope) -> dict[str, object]:
+def _node(
+    *, node: LibraryNode, service: LibraryService, scope: OrganizationScope, source_provider: str | None = None
+) -> dict[str, object]:
     documents = service.document_provenance(scope=scope, node=node)
     return {
         "id": str(node.id),
         "parent_id": str(node.parent_id) if node.parent_id else None,
         "source_id": str(node.source_id),
+        **({"source_provider": source_provider} if node.kind == "source" else {}),
         "kind": node.kind,
         "name": node.name,
         "mime_type": node.mime_type,
@@ -43,9 +46,14 @@ def library_roots(
         scope = OrganizationScope(organization_id)
         service = LibraryService(session)
         roots = service.roots(scope=scope, user_id=user.id)
+        providers = service.source_providers(scope=scope, user_id=user.id)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
-    return {"items": [_node(node=node, service=service, scope=scope) for node in roots]}
+    return {
+        "items": [
+            _node(node=node, service=service, scope=scope, source_provider=providers.get(node.source_id)) for node in roots
+        ]
+    }
 
 
 @router.get("/library/search")
@@ -85,6 +93,7 @@ def library_question_contexts(
                 "name": item.name,
                 "status": item.status,
                 "source_id": str(item.source_id),
+                "source_provider": item.source_provider,
                 "query_status": item.query_status,
             }
             for item in contexts

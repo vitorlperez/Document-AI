@@ -117,6 +117,55 @@ def test_projects_nested_drive_tree_and_merges_overlapping_syncs(session: Sessio
     assert session.query(LibraryNode).filter_by(source_id=source.id, external_id="brief").count() == 0
 
 
+def test_projection_refreshes_remote_folder_names_and_parents(session: Session) -> None:
+    organization, user, source = seed_company(session)
+    seed_document(
+        session,
+        organization=organization,
+        source=source,
+        root="campaigns",
+        external_id="brief",
+        name="Brief.pdf",
+    )
+    service = LibraryService(session)
+    service.project_successful_sync(
+        organization_id=organization.id,
+        source=source,
+        documents=[
+            DiscoveredDocument(
+                "brief",
+                "Brief.pdf",
+                "application/pdf",
+                "https://drive.example.test/brief",
+                text="content",
+                parent_ids=("campaign",),
+            )
+        ],
+        folders=[RemoteFolder("client", "Client"), RemoteFolder("campaign", "Campaign", ("client",))],
+    )
+
+    service.project_successful_sync(
+        organization_id=organization.id,
+        source=source,
+        documents=[],
+        folders=[
+            RemoteFolder("client", "Client"),
+            RemoteFolder("campaign", "Campaign archive", ("root",)),
+        ],
+    )
+
+    root = service.roots(scope=OrganizationScope(organization.id), user_id=user.id)[0]
+    top_level = service.children(
+        scope=OrganizationScope(organization.id),
+        user_id=user.id,
+        parent_id=root.id,
+        page=1,
+        page_size=100,
+    ).items
+    assert [(node.kind, node.name) for node in top_level] == [("folder", "Campaign archive")]
+    assert top_level[0].parent_id == root.id
+
+
 def test_projection_excludes_nonindexed_files_and_isolates_organizations(session: Session) -> None:
     organization, user, source = seed_company(session)
     seed_document(session, organization=organization, source=source, root="A", external_id="ready", name="Ready.pdf")

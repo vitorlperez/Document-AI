@@ -1,0 +1,51 @@
+/* Shared dimensions across all authenticated application routes. */
+.product-app, .staff-app {
+  --page-gutter: 16px;
+  --page-top-space: 10px;
+  --page-panel-space: 18px;
+}
+.product-app > .product-content {
+  max-width: none;
+  padding: var(--page-top-space) var(--page-gutter) var(--page-gutter);
+}
+.product-app .product-header-inner {
+  max-width: none;
+  padding: 10px var(--page-gutter);
+}
+.product-app .page-surface {
+  padding: var(--page-panel-space);
+  border-radius: 10px;
+}
+.product-page-heading {
+  padding: 10px var(--page-panel-space);
+  gap: 10px;
+  background: #eff1e9;
+}
+.product-page-heading h1, .product-app .page-surface h1 {
+  margin-top: 0;
+  font-size: 17px;
+  line-height: 1.5;
+}
+.product-page-heading > div:first-child > p { display: none; }
+.product-app .page-surface > .grid { gap: 18px; }
+.product-app .page-surface > .grid > section,
+.product-app .page-surface > .grid > form { padding: 18px; min-width: 0; }
+.product-app .page-surface input,
+.product-app .page-surface select { max-width: 100%; min-width: 0; }
+.staff-app > header > div {
+  max-width: none;
+  padding: 10px var(--page-gutter);
+}
+.staff-app > .grid {
+  max-width: none;
+  padding: var(--page-top-space) var(--page-gutter) var(--page-gutter);
+  gap: 18px;
+}
+.staff-app > .grid > * { min-width: 0; }
+@media (max-width: 639px) {
+  .product-app, .staff-app { --page-gutter: 6px; --page-top-space: 6px; --page-panel-space: 12px; }
+  .product-app .product-header-inner, .staff-app > header > div { padding-inline: 16px; }
+  .product-app .page-surface > .grid > section,
+  .product-app .page-surface > .grid > form { padding: 14px; }
+  .staff-app > header > div { flex-wrap: wrap; }
+}

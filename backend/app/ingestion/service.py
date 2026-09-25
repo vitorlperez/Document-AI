@@ -1,5 +1,6 @@
 """Idempotent ingestion orchestration, independent of a specific source provider."""
 
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
@@ -17,12 +18,13 @@ from app.knowledge.models import Document, DocumentChunk
 from app.organizations.models import Membership, MembershipRole, Organization
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
-PROCESSING_VERSION = "v1"
+PROCESSING_VERSION = "v2"
 JOB_LEASE = timedelta(minutes=20)
 ELIGIBLE_MIME_TYPES = {
     "application/vnd.google-apps.document",
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/markdown",
 }
 
 
@@ -49,8 +51,28 @@ class DiscoveredDocument:
     modified_at: datetime | None = None
     text: str | None = None
     page_number: int | None = None
+    blocks: tuple["ExtractedBlock", ...] = ()
     error_code: str | None = None
     parent_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class DiscoveryResult:
+    """Either a complete scope snapshot or one provider's incremental delta."""
+
+    documents: list[DiscoveredDocument]
+    removed_file_ids: tuple[str, ...] = ()
+    delta_links: dict[UUID, str | None] | None = None
+    full_snapshot: bool = True
+
+
+@dataclass(frozen=True)
+class ExtractedBlock:
+    """A structurally bounded piece of extracted text and its known location."""
+
+    text: str
+    page_number: int | None = None
+    section_path: str | None = None
 
 
 @dataclass(frozen=True)
@@ -112,9 +134,13 @@ class IngestionService:
             raise SyncAccessDenied("workspace access denied")
         return folder
 
-    def enqueue(self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID) -> ProcessingJob:
+    def enqueue(
+        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID
+    ) -> ProcessingJob:
         self.require_admin(scope=scope, user_id=user_id)
-        folder = self.require_folder(scope=scope, workspace_folder_id=workspace_folder_id, lock=True)
+        folder = self.require_folder(
+            scope=scope, workspace_folder_id=workspace_folder_id, lock=True
+        )
         active_job = self.session.scalar(
             select(ProcessingJob).where(
                 ProcessingJob.organization_id == scope.organization_id,
@@ -128,7 +154,9 @@ class IngestionService:
         job = ProcessingJob(
             organization_id=scope.organization_id,
             workspace_folder_id=workspace_folder_id,
-            idempotency_key=sha256(f"{scope.organization_id}:{workspace_folder_id}:{uuid4()}".encode()).hexdigest(),
+            idempotency_key=sha256(
+                f"{scope.organization_id}:{workspace_folder_id}:{uuid4()}".encode()
+            ).hexdigest(),
             status=ProcessingJobStatus.QUEUED,
         )
         try:
@@ -142,7 +170,9 @@ class IngestionService:
                 select(ProcessingJob).where(
                     ProcessingJob.organization_id == scope.organization_id,
                     ProcessingJob.workspace_folder_id == workspace_folder_id,
-                    ProcessingJob.status.in_([ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING]),
+                    ProcessingJob.status.in_(
+                        [ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING]
+                    ),
                 )
             )
             if active_job is not None:
@@ -170,10 +200,18 @@ class IngestionService:
         )
 
     def remove_indexed_document(
-        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID, document_id: UUID
+        self,
+        *,
+        scope: OrganizationScope,
+        user_id: UUID,
+        workspace_folder_id: UUID,
+        document_id: UUID,
     ) -> ManagedDocument:
         document, folder = self._managed_document(
-            scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id, document_id=document_id
+            scope=scope,
+            user_id=user_id,
+            workspace_folder_id=workspace_folder_id,
+            document_id=document_id,
         )
         self._require_no_active_job(scope=scope, workspace_folder_id=folder.id)
         managed = ManagedDocument(
@@ -197,10 +235,18 @@ class IngestionService:
         return managed
 
     def request_document_reprocess(
-        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID, document_id: UUID
+        self,
+        *,
+        scope: OrganizationScope,
+        user_id: UUID,
+        workspace_folder_id: UUID,
+        document_id: UUID,
     ) -> ProcessingJob:
         document, _folder = self._managed_document(
-            scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id, document_id=document_id
+            scope=scope,
+            user_id=user_id,
+            workspace_folder_id=workspace_folder_id,
+            document_id=document_id,
         )
         self._require_no_active_job(scope=scope, workspace_folder_id=workspace_folder_id)
         # The worker sees a deliberately stale hash, rebuilds this document's
@@ -224,7 +270,9 @@ class IngestionService:
     ) -> RemovedWorkspace:
         """Delete one confirmed local knowledge scope, never its Drive source."""
         self.require_admin(scope=scope, user_id=user_id)
-        folder = self.require_folder(scope=scope, workspace_folder_id=workspace_folder_id, lock=True)
+        folder = self.require_folder(
+            scope=scope, workspace_folder_id=workspace_folder_id, lock=True
+        )
         self._require_no_active_job(scope=scope, workspace_folder_id=folder.id)
         external_file_ids = tuple(
             self.session.scalars(
@@ -237,7 +285,9 @@ class IngestionService:
                 .order_by(Document.external_file_id)
             )
         )
-        removed = RemovedWorkspace(id=folder.id, source_id=folder.source_id, external_file_ids=external_file_ids)
+        removed = RemovedWorkspace(
+            id=folder.id, source_id=folder.source_id, external_file_ids=external_file_ids
+        )
         # Be explicit instead of relying on database-specific cascade settings;
         # the API is used with PostgreSQL in production and SQLite in tests.
         self.session.execute(
@@ -258,7 +308,11 @@ class IngestionService:
                 SavedQuery.workspace_folder_id == folder.id,
             )
         )
-        self.session.execute(delete(WorkspaceFolderSelection).where(WorkspaceFolderSelection.workspace_folder_id == folder.id))
+        self.session.execute(
+            delete(WorkspaceFolderSelection).where(
+                WorkspaceFolderSelection.workspace_folder_id == folder.id
+            )
+        )
         self.session.execute(
             delete(ProcessingJob).where(
                 ProcessingJob.organization_id == scope.organization_id,
@@ -319,7 +373,9 @@ class IngestionService:
         self.session.flush()
         return job
 
-    def reconcile(self, *, job_id: UUID, documents: list[DiscoveredDocument]) -> ProcessingJob | None:
+    def reconcile(
+        self, *, job_id: UUID, documents: list[DiscoveredDocument]
+    ) -> ProcessingJob | None:
         """Apply one successful full reconciliation.
 
         A source failure must call :meth:`fail` instead: only this completed
@@ -328,10 +384,17 @@ class IngestionService:
         job = self.claim(job_id=job_id)
         if job is None:
             return None
-        return self.apply_reconciliation(job_id=job.id, run_token=job.run_token, documents=documents)
+        return self.apply_reconciliation(
+            job_id=job.id, run_token=job.run_token, documents=documents
+        )
 
     def apply_reconciliation(
-        self, *, job_id: UUID, run_token: str | None, documents: list[DiscoveredDocument], finalize: bool = True
+        self,
+        *,
+        job_id: UUID,
+        run_token: str | None,
+        documents: list[DiscoveredDocument] | DiscoveryResult,
+        finalize: bool = True,
     ) -> ProcessingJob | None:
         """Persist a discovered snapshot only while this worker owns the job."""
         if run_token is None:
@@ -340,25 +403,46 @@ class IngestionService:
         if job is None:
             return None
         now = datetime.now(UTC)
-        seen_file_ids = {document.external_file_id for document in documents}
-        # Reconciliation is a complete snapshot. Free capacity from files that
-        # left the selected folder before deciding whether incoming files may
-        # become active indexed documents.
-        missing_documents = self.session.scalars(
-            select(Document).where(
-                Document.organization_id == job.organization_id,
-                Document.workspace_folder_id == job.workspace_folder_id,
-                Document.external_file_id.not_in(seen_file_ids) if seen_file_ids else True,
-            )
+        discovery = (
+            documents
+            if isinstance(documents, DiscoveryResult)
+            else DiscoveryResult(documents=documents)
         )
-        for document in missing_documents:
-            document.index_status = "removed"
-            document.error_code = None
+        current_documents = discovery.documents
+        if discovery.full_snapshot:
+            seen_file_ids = {document.external_file_id for document in current_documents}
+            # A full snapshot may safely remove any document missing from scope.
+            missing_documents = self.session.scalars(
+                select(Document).where(
+                    Document.organization_id == job.organization_id,
+                    Document.workspace_folder_id == job.workspace_folder_id,
+                    Document.external_file_id.not_in(seen_file_ids) if seen_file_ids else True,
+                )
+            )
+            for document in missing_documents:
+                document.index_status = "removed"
+                document.error_code = None
+        else:
+            changed_ids = {item.external_file_id for item in current_documents}
+            tombstones = set(discovery.removed_file_ids) - changed_ids
+            if tombstones:
+                removed_documents = self.session.scalars(
+                    select(Document).where(
+                        Document.organization_id == job.organization_id,
+                        Document.workspace_folder_id == job.workspace_folder_id,
+                        Document.external_file_id.in_(tombstones),
+                    )
+                )
+                for document in removed_documents:
+                    document.index_status = "removed"
+                    document.error_code = None
 
         failures = 0
-        for discovered in documents:
+        for discovered in current_documents:
             if discovered.mime_type not in ELIGIBLE_MIME_TYPES:
-                self._upsert_nonindexed(job, discovered, status="ignored", error_code="unsupported_file_type")
+                self._upsert_nonindexed(
+                    job, discovered, status="ignored", error_code="unsupported_file_type"
+                )
                 continue
             if discovered.error_code or not discovered.text or not discovered.text.strip():
                 self._upsert_nonindexed(
@@ -396,7 +480,9 @@ class IngestionService:
         if job is None:
             return None
         final_time = completed_at or datetime.now(UTC)
-        job.status = ProcessingJobStatus.PARTIAL_FAILURE if partial_failure else ProcessingJobStatus.READY
+        job.status = (
+            ProcessingJobStatus.PARTIAL_FAILURE if partial_failure else ProcessingJobStatus.READY
+        )
         job.completed_at = final_time
         job.error_code = None
         folder = self._folder_for_job(job)
@@ -405,12 +491,29 @@ class IngestionService:
         self.session.flush()
         return job
 
+    def has_failed_documents(self, *, organization_id: UUID, workspace_folder_id: UUID) -> bool:
+        return self.session.scalar(
+            select(Document.id)
+            .where(
+                Document.organization_id == organization_id,
+                Document.workspace_folder_id == workspace_folder_id,
+                Document.index_status == "failed",
+            )
+            .limit(1)
+        ) is not None
+
     def complete(self, *, job_id: UUID, partial_failure: bool = False) -> ProcessingJob | None:
         job = self._load_job(job_id)
-        if job.status in {ProcessingJobStatus.READY, ProcessingJobStatus.PARTIAL_FAILURE, ProcessingJobStatus.FAILED}:
+        if job.status in {
+            ProcessingJobStatus.READY,
+            ProcessingJobStatus.PARTIAL_FAILURE,
+            ProcessingJobStatus.FAILED,
+        }:
             return None
         completed_at = datetime.now(UTC)
-        job.status = ProcessingJobStatus.PARTIAL_FAILURE if partial_failure else ProcessingJobStatus.READY
+        job.status = (
+            ProcessingJobStatus.PARTIAL_FAILURE if partial_failure else ProcessingJobStatus.READY
+        )
         job.completed_at = completed_at
         folder = self._folder_for_job(job)
         folder.status = job.status.value
@@ -456,21 +559,31 @@ class IngestionService:
         return job
 
     def _has_indexed_documents(self, folder: WorkspaceFolder) -> bool:
-        return self.session.scalar(
-            select(Document.id)
-            .where(
-                Document.organization_id == folder.organization_id,
-                Document.workspace_folder_id == folder.id,
-                Document.index_status == "indexed",
+        return (
+            self.session.scalar(
+                select(Document.id)
+                .where(
+                    Document.organization_id == folder.organization_id,
+                    Document.workspace_folder_id == folder.id,
+                    Document.index_status == "indexed",
+                )
+                .limit(1)
             )
-            .limit(1)
-        ) is not None
+            is not None
+        )
 
     def _managed_document(
-        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID, document_id: UUID
+        self,
+        *,
+        scope: OrganizationScope,
+        user_id: UUID,
+        workspace_folder_id: UUID,
+        document_id: UUID,
     ) -> tuple[Document, WorkspaceFolder]:
         self.require_admin(scope=scope, user_id=user_id)
-        folder = self.require_folder(scope=scope, workspace_folder_id=workspace_folder_id, lock=True)
+        folder = self.require_folder(
+            scope=scope, workspace_folder_id=workspace_folder_id, lock=True
+        )
         document = self.session.scalar(
             select(Document).where(
                 Document.id == document_id,
@@ -483,7 +596,9 @@ class IngestionService:
             raise ManagedDocumentNotFound("indexed document not found")
         return document, folder
 
-    def _require_no_active_job(self, *, scope: OrganizationScope, workspace_folder_id: UUID) -> None:
+    def _require_no_active_job(
+        self, *, scope: OrganizationScope, workspace_folder_id: UUID
+    ) -> None:
         active = self.session.scalar(
             select(ProcessingJob.id).where(
                 ProcessingJob.organization_id == scope.organization_id,
@@ -505,19 +620,21 @@ class IngestionService:
                 .where(
                     Document.organization_id == scope.organization_id,
                     Document.workspace_folder_id == workspace_folder_id,
-                    Document.index_status.in_(["failed", "ignored"]),
+                    Document.index_status == "failed",
                 )
                 .order_by(Document.name, Document.id)
             )
         )
 
-    def support_failure_summary(self, *, scope: OrganizationScope) -> dict[UUID, list[tuple[str, int]]]:
+    def support_failure_summary(
+        self, *, scope: OrganizationScope
+    ) -> dict[UUID, list[tuple[str, int]]]:
         """Aggregate safe failure codes for platform support without exposing files."""
         rows = self.session.execute(
             select(Document.workspace_folder_id, Document.error_code, func.count(Document.id))
             .where(
                 Document.organization_id == scope.organization_id,
-                Document.index_status.in_(["failed", "ignored"]),
+                Document.index_status == "failed",
                 Document.error_code.is_not(None),
             )
             .group_by(Document.workspace_folder_id, Document.error_code)
@@ -595,14 +712,18 @@ class IngestionService:
         document.index_status = status
         document.error_code = error_code
 
-    def _upsert_indexed(self, job: ProcessingJob, discovered: DiscoveredDocument, *, indexed_at: datetime) -> None:
+    def _upsert_indexed(
+        self, job: ProcessingJob, discovered: DiscoveredDocument, *, indexed_at: datetime
+    ) -> None:
         assert discovered.text is not None
         content_hash = sha256(discovered.text.encode()).hexdigest()
         document = self._document_for(job, discovered.external_file_id)
         if document is None:
             self._require_active_document_capacity(organization_id=job.organization_id)
             UsageService(self.session).check_and_record(
-                scope=OrganizationScope(job.organization_id), metric="processed_bytes", increment=len(discovered.text.encode())
+                scope=OrganizationScope(job.organization_id),
+                metric="processed_bytes",
+                increment=len(discovered.text.encode()),
             )
             document = Document(
                 organization_id=job.organization_id,
@@ -634,7 +755,9 @@ class IngestionService:
             if document.index_status != "indexed":
                 self._require_active_document_capacity(organization_id=job.organization_id)
             UsageService(self.session).check_and_record(
-                scope=OrganizationScope(job.organization_id), metric="processed_bytes", increment=len(discovered.text.encode())
+                scope=OrganizationScope(job.organization_id),
+                metric="processed_bytes",
+                increment=len(discovered.text.encode()),
             )
             document.name = discovered.name
             document.mime_type = discovered.mime_type
@@ -645,19 +768,22 @@ class IngestionService:
             document.content_hash = content_hash
             document.indexed_at = indexed_at
             document.processing_version = PROCESSING_VERSION
-            self.session.execute(delete(DocumentChunk).where(DocumentChunk.document_id == document.id))
+            self.session.execute(
+                delete(DocumentChunk).where(DocumentChunk.document_id == document.id)
+            )
             self.session.flush()
 
-        for position, text in enumerate(_chunk_text(discovered.text)):
+        for position, block in enumerate(_chunk_document(discovered)):
+            context = "\n".join(part for part in (discovered.name, block.section_path) if part)
             self.session.add(
                 DocumentChunk(
                     organization_id=job.organization_id,
                     workspace_folder_id=job.workspace_folder_id,
                     document_id=document.id,
                     position=position,
-                    text=text,
-                    search_text=f"{discovered.name}\n{text}",
-                    page_number=discovered.page_number,
+                    text=block.text,
+                    search_text=f"{context}\n{block.text}",
+                    page_number=block.page_number,
                 )
             )
 
@@ -678,6 +804,74 @@ class IngestionService:
             raise UsageLimitExceeded("organization active document limit reached")
 
 
-def _chunk_text(text: str, *, chunk_size: int = 1200) -> list[str]:
-    normalized = " ".join(text.split())
-    return [normalized[start : start + chunk_size] for start in range(0, len(normalized), chunk_size)]
+CHUNK_TARGET_TOKENS = 500
+CHUNK_OVERLAP_TOKENS = 60
+
+
+def _chunk_document(discovered: DiscoveredDocument) -> list[ExtractedBlock]:
+    blocks = discovered.blocks or (ExtractedBlock(discovered.text or "", discovered.page_number),)
+    chunks: list[ExtractedBlock] = []
+    for block in blocks:
+        chunks.extend(_chunk_block(block))
+    return chunks
+
+
+def _chunk_block(block: ExtractedBlock) -> list[ExtractedBlock]:
+    """Pack paragraph/sentence units to a conservative word-token budget.
+
+    This avoids adding a tokenizer dependency while keeping chunks bounded and
+    respecting page/section boundaries. Embedding provider limits remain the
+    final guard for languages with unusually different tokenization.
+    """
+    units = [" ".join(unit.split()) for unit in block.text.splitlines() if unit.strip()]
+    if not units:
+        return []
+    target_words = CHUNK_TARGET_TOKENS
+    overlap_words = CHUNK_OVERLAP_TOKENS
+    result: list[ExtractedBlock] = []
+    current: list[str] = []
+    current_size = 0
+    for unit in units:
+        # Split oversized paragraphs at sentence boundaries, then at words.
+        pieces: list[list[str]] = []
+        piece: list[str] = []
+        for sentence in re.split(r"(?<=[.!?])\s+", unit):
+            sentence_words = sentence.split()
+            if len(sentence_words) > target_words:
+                if piece:
+                    pieces.append(piece)
+                    piece = []
+                first_end = min(target_words, len(sentence_words))
+                pieces.append(sentence_words[:first_end])
+                start = first_end
+                step = target_words - overlap_words
+                while start < len(sentence_words):
+                    pieces.append(sentence_words[start : start + step])
+                    start += step
+            elif piece and len(piece) + len(sentence_words) > target_words:
+                pieces.append(piece)
+                piece = sentence_words
+            else:
+                piece.extend(sentence_words)
+        if piece:
+            pieces.append(piece)
+        for words_piece in pieces:
+            piece_text = " ".join(words_piece)
+            if current and current_size + len(words_piece) > target_words:
+                result.append(
+                    ExtractedBlock(" ".join(current), block.page_number, block.section_path)
+                )
+                tail: list[str] = []
+                for prior in reversed(current):
+                    prior_words = prior.split()
+                    needed = overlap_words - len(tail)
+                    if needed <= 0:
+                        break
+                    tail = prior_words[-needed:] + tail
+                current = [" ".join(tail)] if tail else []
+                current_size = len(tail)
+            current.append(piece_text)
+            current_size += len(words_piece)
+    if current:
+        result.append(ExtractedBlock(" ".join(current), block.page_number, block.section_path))
+    return result

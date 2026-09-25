@@ -1,0 +1,40 @@
+/* The file search panel can be hidden to give the conversation more space. */
+.chat-workspace .workspace-panels { grid-template-columns: minmax(0, 1fr); min-height: 0; flex: 1; }
+.library-panels { grid-template-columns: minmax(0, 1fr); }
+.library-panels [hidden], .workspace-panels [hidden] { display: none; }
+.chat-workspace .question-scope { padding-right: 64px; }
+.chat-workspace .chat-context { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 16px; padding: 10px 24px; }
+.chat-context > div:first-child { display: none; }
+.chat-workspace .chat-context label { margin: 0; }
+.chat-workspace .chat-context select { margin: 0; max-width: 440px; padding-block: 8px; }
+.chat-workspace .chat-context > p { grid-column: 1 / -1; }
+.chat-workspace .conversation-composer { padding: 10px 24px 12px; }
+.chat-workspace .conversation-composer > div { max-width: 960px; margin-inline: auto; box-shadow: none; }
+.chat-workspace .conversation-composer > p { max-width: 960px; margin-inline: auto; font-size: 11px; }
+.chat-workspace [role="log"] { padding-block: 18px; }
+.chat-workspace [role="log"] > .max-w-3xl { max-width: 960px; }
+@media (min-width: 1024px) {
+  .library-panels { grid-template-columns: 210px minmax(0, 1fr) 275px; }
+  .library-panels.spaces-panel-collapsed { grid-template-columns: 210px minmax(0, 1fr); }
+  .library-panels > aside:first-child { border-right: 1px solid #dedfd5; border-bottom: 0; }
+  .library-panels > aside:last-child { border-left: 1px solid #dedfd5; border-top: 0; }
+  .workspace-shell > .chat-workspace { overflow: hidden; }
+  .chat-workspace .workspace-panels { grid-template-columns: 210px minmax(0, 1fr) 270px; }
+  .chat-workspace .workspace-panels.files-panel-collapsed { grid-template-columns: 210px minmax(0, 1fr); }
+  .chat-workspace .conversation-panel { min-height: 0; overflow: hidden; }
+  .chat-workspace [role="log"] { min-height: 0; overscroll-behavior: contain; }
+  .chat-workspace .sources-panel, .chat-workspace .context-panel { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .chat-workspace .sources-panel { border-right: 1px solid #dedfd5; border-bottom: 0; }
+  .chat-workspace .context-panel { border-left: 1px solid #dedfd5; border-top: 0; }
+}
+@media (max-width: 1023px) {
+  .chat-workspace .workspace-panels { display: flex; flex-direction: column; }
+  .chat-workspace .conversation-panel { min-height: 440px; flex: 1 0 auto; }
+  .chat-workspace .context-panel { order: 3; }
+  .chat-workspace .sources-panel { max-height: 260px; overflow-y: auto; flex-shrink: 0; }
+}
+@media (max-width: 639px) {
+  .chat-workspace .chat-context { grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 10px 14px; }
+  .chat-workspace .chat-context select { width: 100%; max-width: none; }
+  .chat-workspace .conversation-composer { padding: 10px 14px; }
+}

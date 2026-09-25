@@ -102,6 +102,22 @@ def test_provider_extracts_google_docs_and_docx_and_skips_unsupported_without_do
     ]
 
 
+def test_provider_removes_nul_from_extracted_text_and_blocks() -> None:
+    client = FakeGoogleDriveClient(
+        [remote_file("google-doc", GOOGLE_DOC)],
+        {"google-doc": b"Before\x00 after"},
+    )
+    cipher, credentials = encrypted_credentials()
+
+    discovered = GoogleDriveDocumentProvider(client, cipher).discover(
+        encrypted_credentials=credentials,
+        selections=[selection("folder", "root-folder")],
+    )
+
+    assert discovered[0].text == "Before after"
+    assert [block.text for block in discovered[0].blocks] == ["Before after"]
+
+
 def test_provider_retains_safe_parent_metadata_for_library_projection() -> None:
     file = RemoteFile(
         id="brief",
@@ -120,6 +136,29 @@ def test_provider_retains_safe_parent_metadata_for_library_projection() -> None:
     )
 
     assert discovered[0].parent_ids == ("campaign",)
+
+
+def test_structured_extraction_preserves_markdown_sections_and_docx_headings_tables() -> None:
+    from app.ingestion.google_drive import _extract_blocks
+
+    markdown = _extract_blocks("text/markdown", b"# Billing\n\nInvoices are due in 30 days.\n\n## Exceptions\n\nContact finance.")
+    assert [block.section_path for block in markdown] == ["Billing", "Billing › Exceptions"]
+    assert "Invoices are due" in markdown[0].text
+
+    docx = DocxDocument()
+    docx.add_heading("Policy", level=1)
+    docx.add_paragraph("Employees submit expenses monthly.")
+    table = docx.add_table(rows=2, cols=2)
+    table.cell(0, 0).text = "Category"
+    table.cell(0, 1).text = "Limit"
+    table.cell(1, 0).text = "Travel"
+    table.cell(1, 1).text = "$500"
+    output = BytesIO()
+    docx.save(output)
+    docx_blocks = _extract_blocks(DOCX, output.getvalue())
+    assert docx_blocks[0].section_path == "Policy"
+    assert docx_blocks[1].section_path == "Policy"
+    assert "Category: Travel" in docx_blocks[1].text and "Limit: $500" in docx_blocks[1].text
 
 
 def test_provider_extracts_pdf_text(monkeypatch: pytest.MonkeyPatch) -> None:

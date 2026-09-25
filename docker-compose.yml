@@ -1,6 +1,13 @@
+x-backend: &backend
+  image: arquivio-backend:local
+  build:
+    context: ./backend
+
 services:
   postgres:
     image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: document_intelligence
       POSTGRES_USER: document_intelligence
@@ -24,7 +31,7 @@ services:
       retries: 10
 
   migrate:
-    build: ./backend
+    <<: *backend
     environment: &backend_environment
       DATABASE_URL: postgresql+psycopg://document_intelligence:document_intelligence@postgres:5432/document_intelligence
       REDIS_URL: redis://redis:6379/0
@@ -35,6 +42,14 @@ services:
       GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
       GOOGLE_OAUTH_REDIRECT_URI: ${GOOGLE_OAUTH_REDIRECT_URI:-http://localhost:8000/data-sources/google/oauth/callback}
       GOOGLE_TOKEN_ENCRYPTION_KEY: ${GOOGLE_TOKEN_ENCRYPTION_KEY:-}
+      MICROSOFT_OAUTH_CLIENT_ID: ${MICROSOFT_OAUTH_CLIENT_ID:-}
+      MICROSOFT_OAUTH_CLIENT_SECRET: ${MICROSOFT_OAUTH_CLIENT_SECRET:-}
+      MICROSOFT_OAUTH_REDIRECT_URI: ${MICROSOFT_OAUTH_REDIRECT_URI:-http://localhost:8000/data-sources/onedrive/oauth/callback}
+      MICROSOFT_TOKEN_ENCRYPTION_KEY: ${MICROSOFT_TOKEN_ENCRYPTION_KEY:-}
+      NOTION_OAUTH_CLIENT_ID: ${NOTION_OAUTH_CLIENT_ID:-}
+      NOTION_OAUTH_CLIENT_SECRET: ${NOTION_OAUTH_CLIENT_SECRET:-}
+      NOTION_OAUTH_REDIRECT_URI: ${NOTION_OAUTH_REDIRECT_URI:-http://localhost:8000/data-sources/notion/oauth/callback}
+      NOTION_TOKEN_ENCRYPTION_KEY: ${NOTION_TOKEN_ENCRYPTION_KEY:-}
       WORKOS_API_KEY: ${WORKOS_API_KEY:-}
       WORKOS_CLIENT_ID: ${WORKOS_CLIENT_ID:-}
       WORKOS_REDIRECT_URI: ${WORKOS_REDIRECT_URI:-}
@@ -46,7 +61,7 @@ services:
         condition: service_healthy
 
   api:
-    build: ./backend
+    <<: *backend
     environment: *backend_environment
     ports:
       - "8000:8000"
@@ -62,7 +77,7 @@ services:
       retries: 10
 
   worker:
-    build: ./backend
+    <<: *backend
     environment: *backend_environment
     command: ["celery", "-A", "app.ingestion.tasks", "worker", "--loglevel=INFO"]
     depends_on:
@@ -72,9 +87,13 @@ services:
         condition: service_healthy
 
   frontend:
+    image: arquivio-frontend:local
     build: ./frontend
     ports:
       - "3000:3000"
     depends_on:
       api:
         condition: service_healthy
+
+volumes:
+  postgres_data:

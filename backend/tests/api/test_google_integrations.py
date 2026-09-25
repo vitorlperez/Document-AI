@@ -33,7 +33,8 @@ class FakeAuthGateway:
     def __init__(self) -> None:
         self.identities: dict[str, VerifiedIdentity] = {}
         self.authorization_calls: list[dict[str, object]] = []
-        self.logout_calls: list[dict[str, str]] = []
+        self.revoked_sessions: list[str] = []
+        self.revoke_unavailable = False
 
     def authorization_url(
         self, *, state: str, screen_hint: str | None = None, max_age: int | None = None
@@ -47,9 +48,10 @@ class FakeAuthGateway:
         except KeyError as error:
             raise AuthenticationUnavailable("invalid code") from error
 
-    def logout_url(self, *, session_id: str, return_to: str) -> str:
-        self.logout_calls.append({"session_id": session_id, "return_to": return_to})
-        return f"https://auth.example.test/logout?{urlencode({'sid': session_id, 'return_to': return_to})}"
+    def revoke_provider_session(self, *, session_id: str) -> None:
+        if self.revoke_unavailable:
+            raise AuthenticationUnavailable("provider unavailable")
+        self.revoked_sessions.append(session_id)
 
 
 class FakeGooglePort:
@@ -153,11 +155,24 @@ def test_logout_ends_the_remote_authkit_session_and_revokes_the_local_session(go
     response = client.post("/auth/logout")
 
     assert response.status_code == 200
-    assert response.json()["redirect_url"].startswith("https://auth.example.test/logout?")
-    assert auth_gateway.logout_calls == [
-        {"session_id": "session_01HXYZ", "return_to": "http://app.example.test"}
-    ]
+    assert response.json()["redirect_url"] == "http://app.example.test/login"
+    assert auth_gateway.revoked_sessions == ["session_01HXYZ"]
     assert client.get("/me").status_code == 401
+
+
+def test_logout_still_revokes_local_session_when_workos_is_unavailable(google_api) -> None:
+    client, _, auth_gateway, _ = google_api
+    login(client, auth_gateway, code="owner", email="owner@example.test", subject="owner", provider_session_id="session_01HXYZ")
+    auth_gateway.revoke_unavailable = True
+
+    response = client.post("/auth/logout")
+    next_login = client.get("/auth/login?screen_hint=sign-in", follow_redirects=False)
+
+    assert response.status_code == 200
+    assert response.json()["redirect_url"] == "http://app.example.test/login"
+    assert client.get("/me").status_code == 401
+    assert auth_gateway.authorization_calls[-1]["max_age"] == 0
+    assert next_login.status_code == 302
 
 
 def test_legacy_logout_forces_a_fresh_authentication_challenge(google_api) -> None:
@@ -167,8 +182,8 @@ def test_legacy_logout_forces_a_fresh_authentication_challenge(google_api) -> No
     response = client.post("/auth/logout")
     next_login = client.get("/auth/login?screen_hint=sign-in", follow_redirects=False)
 
-    assert response.json()["redirect_url"] == "http://app.example.test"
-    assert auth_gateway.logout_calls == []
+    assert response.json()["redirect_url"] == "http://app.example.test/login"
+    assert auth_gateway.revoked_sessions == []
     assert next_login.status_code == 302
     assert auth_gateway.authorization_calls[-1]["screen_hint"] == "sign-in"
     assert auth_gateway.authorization_calls[-1]["max_age"] == 0
@@ -280,7 +295,7 @@ def test_callback_rejects_oauth_state_when_initiating_server_session_is_no_longe
     response = client.get(f"/data-sources/google/oauth/callback?code=google-code&state={state}")
 
     assert response.status_code == 401
-    assert response.json() == {"detail": "authentication failed"}
+    assert response.json() == {"detail": "authentication required"}
     assert google_port.exchange_calls == []
     with factory() as session:
         assert session.scalar(select(func.count()).select_from(DataSource)) == 0
@@ -341,7 +356,7 @@ def test_source_list_and_folder_selection_are_tenant_scoped_and_require_confirma
     )
 
     assert sources.status_code == 200
-    assert sources.json() == [{"id": str(source_id), "provider": "google_drive", "status": "connected", "account_email": "drive-owner@example.test"}]
+    assert sources.json() == [{"id": str(source_id), "provider": "google_drive", "status": "connected", "account_email": "drive-owner@example.test", "connected_by_email": "owner@example.test"}]
     assert "credentials" not in sources.text
     assert unconfirmed.status_code == 422
     assert selected.status_code == 201
@@ -349,6 +364,31 @@ def test_source_list_and_folder_selection_are_tenant_scoped_and_require_confirma
     assert duplicate.json()["id"] == selected.json()["id"]
     with factory() as session:
         assert session.scalar(select(func.count()).select_from(WorkspaceFolder)) == 1
+
+
+def test_source_list_uses_the_connector_email_when_notion_does_not_expose_an_account_email(google_api) -> None:
+    client, factory, auth_gateway, _ = google_api
+    login(client, auth_gateway, code="owner", email="owner@example.test", subject="owner")
+    organization_id = create_organization(client)
+    with factory() as session:
+        owner = session.scalar(select(User).where(User.email == "owner@example.test"))
+        assert owner is not None
+        source = DataSource(
+            organization_id=organization_id,
+            provider="notion",
+            encrypted_credentials=None,
+            status="connected",
+            account_email=None,
+            connected_by_user_id=owner.id,
+        )
+        session.add(source)
+        session.commit()
+        source_id = source.id
+
+    listed = client.get(f"/data-sources?organization_id={organization_id}")
+
+    assert listed.status_code == 200
+    assert listed.json() == [{"id": str(source_id), "provider": "notion", "status": "connected", "account_email": None, "connected_by_email": "owner@example.test"}]
 
 
 def test_reauthorization_reuses_source_uuid_and_refreshes_authorized_account(google_api) -> None:
@@ -425,7 +465,7 @@ def test_disconnect_clears_connection_and_preserves_existing_knowledge(google_ap
     catalog = client.get(f"/data-sources/{source_id}/scope-catalog?organization_id={organization_id}")
 
     assert disconnected.status_code == 204
-    assert listed.json() == [{"id": str(source_id), "provider": "google_drive", "status": "disconnected", "account_email": None}]
+    assert listed.json() == [{"id": str(source_id), "provider": "google_drive", "status": "disconnected", "account_email": None, "connected_by_email": "owner@example.test"}]
     assert catalog.status_code == 403
     with factory() as session:
         source = session.get(DataSource, source_id)

@@ -2,10 +2,11 @@ import logging
 import time
 from uuid import uuid4
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.api.auth import current_user
 from app.api.auth import router as auth_router
 from app.api.health import router as health_router
 from app.api.ingestion import router as ingestion_router
@@ -90,11 +91,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_middleware(RequestLogMiddleware)
     app.include_router(health_router)
     app.include_router(auth_router)
-    app.include_router(platform_router)
-    app.include_router(integrations_router)
-    app.include_router(saved_queries_router)
-    app.include_router(ingestion_router)
-    app.include_router(library_router)
+    # Fail closed at the router boundary when a new private endpoint is added.
+    # FastAPI caches the shared dependency for handlers that also need the user.
+    authenticated = [Depends(current_user)]
+    app.include_router(platform_router, dependencies=authenticated)
+    app.include_router(integrations_router, dependencies=authenticated)
+    app.include_router(saved_queries_router, dependencies=authenticated)
+    app.include_router(ingestion_router, dependencies=authenticated)
+    app.include_router(library_router, dependencies=authenticated)
     return app
 
 

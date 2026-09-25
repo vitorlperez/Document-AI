@@ -23,7 +23,7 @@ from app.workspaces.models import WorkspaceFolder
 
 
 class FakeAuthGateway:
-    def authorization_url(self, *, state: str) -> str:
+    def authorization_url(self, *, state: str, screen_hint: str | None = None, max_age: int | None = None) -> str:
         return f"https://auth.example.test/login?state={state}"
 
     def exchange_code(self, *, code: str) -> VerifiedIdentity:

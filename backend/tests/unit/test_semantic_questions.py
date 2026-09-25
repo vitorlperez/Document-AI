@@ -18,7 +18,6 @@ from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.questions import (
     ANSWER_MODEL,
     EMBEDDING_MODEL,
-    MAX_CITATIONS,
     MAX_SEMANTIC_CANDIDATES,
     RETRIEVAL_STATUS_BELOW_THRESHOLD,
     RETRIEVAL_STATUS_INVALID_GENERATION,
@@ -124,6 +123,108 @@ def test_supported_answer_has_only_scoped_citations_and_never_logs_question_or_c
     assert secret not in caplog.text and "When is launch?" not in caplog.text and evidence_text not in caplog.text
 
 
+def test_evidence_selection_limits_repeated_chunks_from_one_document(session: Session) -> None:
+    org, user, folder = context(session)
+    other_folder = WorkspaceFolder(organization_id=org.id, source_id=folder.source_id, external_folder_id=str(uuid4()), name="Other", uniform_access_confirmed=True, status="ready")
+    session.add(other_folder); session.flush()
+    texts = [f"Evidence passage number {index} about the project deadline." for index in range(4)]
+    chunks = [chunk(session, org, folder, name="Long-plan.pdf", text=text) for text in texts[:3]]
+    other = chunk(session, org, other_folder, name="Independent-plan.pdf", text=texts[3])
+    provider = FakeProvider({**{text: [1, 0] for text in texts}, "What is the project deadline?": [1, 0]})
+
+    result = QuestionService(session, provider).ask(
+        scope=OrganizationScope(org.id), user_id=user.id,
+        workspace_folder_ids=[folder.id, other_folder.id], question="What is the project deadline?",
+    )
+
+    cited_ids = [item.chunk_id for item in result.citations]
+    assert len(cited_ids) == len(set(cited_ids))
+    assert sum(item.document_id == chunks[0].document_id for item in result.citations) <= 2
+    assert other.id in cited_ids
+
+
+def test_retrieval_quality_fixture_covers_mixed_topics_and_abstention(session: Session) -> None:
+    """Deterministic miniature eval: relevant topics, cross-file coverage, and hard negative."""
+    org, user, folder = context(session)
+    unrelated = chunk(session, org, folder, name="HR-handbook.pdf", text="Vacation policy and onboarding.", embedding=[0, 1])
+    launch = chunk(session, org, folder, name="Launch-plan.pdf", text="Project Atlas launches in September.", embedding=[1, 0])
+    budget_folder = WorkspaceFolder(organization_id=org.id, source_id=folder.source_id, external_folder_id=str(uuid4()), name="Finance", uniform_access_confirmed=True, status="ready")
+    session.add(budget_folder); session.flush()
+    budget = chunk(session, org, budget_folder, name="Atlas-budget.pdf", text="Project Atlas has an approved budget of $40,000.", embedding=[0.95, 0.05])
+
+    question = "When does Project Atlas launch and what budget was approved?"
+    provider = FakeProvider({question: [1, 0], launch.text: [1, 0], budget.text: [0.95, 0.05], unrelated.text: [0, 1]}, citations=[1, 2])
+    result = QuestionService(session, provider).ask(
+        scope=OrganizationScope(org.id), user_id=user.id,
+        workspace_folder_ids=[folder.id, budget_folder.id], question=question,
+    )
+    assert {item.chunk_id for item in result.citations} == {launch.id, budget.id}
+    assert unrelated.id not in {item.chunk_id for item in result.citations}
+
+    unsupported_question = "What color is the moon of Kepler-999?"
+    unsupported_provider = FakeProvider({unsupported_question: [0, 0], launch.text: [1, 0], budget.text: [0.95, 0.05], unrelated.text: [0, 1]})
+    unsupported = QuestionService(session, unsupported_provider).ask(
+        scope=OrganizationScope(org.id), user_id=user.id, workspace_folder_ids=[folder.id, budget_folder.id],
+        question=unsupported_question,
+    )
+    assert unsupported.retrieval_status == RETRIEVAL_STATUS_BELOW_THRESHOLD
+    assert unsupported.citations == []
+
+
+@pytest.mark.parametrize("question", [
+    "What is Vitor Perez's birth date?",
+    "What is Vitor Perez's birthday?",
+    "What year was Vitor Perez born?",
+])
+def test_exact_entity_match_does_not_answer_fact_absent_from_that_document(session: Session, question: str) -> None:
+    org, user, folder = context(session)
+    profile = chunk(session, org, folder, name="Vitor-profile.pdf", text="Vitor Perez is a product engineer.", embedding=[0, 1])
+    provider = FakeProvider({question: [1, 0], profile.text: [0, 1]})
+
+    result = ask(session, provider, org, user, folder, question)
+
+    assert result.retrieval_status == RETRIEVAL_STATUS_BELOW_THRESHOLD
+    assert result.citations == []
+    assert provider.answer_calls == []
+
+
+def test_question_can_combine_multiple_workspace_folders_and_labels_source_provider(session: Session) -> None:
+    org, user, first_folder = context(session)
+    first_text = "Google Drive contains the launch plan."
+    first_chunk = chunk(session, org, first_folder, name="Launch-plan.pdf", text=first_text)
+    second_source = DataSource(
+        organization_id=org.id,
+        provider="onedrive",
+        encrypted_credentials="cipher",
+        status="connected",
+        connected_by_user_id=user.id,
+    )
+    session.add(second_source)
+    session.flush()
+    second_folder = WorkspaceFolder(
+        organization_id=org.id,
+        source_id=second_source.id,
+        external_folder_id=str(uuid4()),
+        name="HR",
+        uniform_access_confirmed=True,
+        status="ready",
+    )
+    session.add(second_folder)
+    session.commit()
+    second_text = "OneDrive contains the onboarding checklist."
+    second_chunk = chunk(session, org, second_folder, name="Onboarding.md", text=second_text, embedding=[0.9, 0.1])
+    provider = FakeProvider({"What is documented?": [1, 0], first_text: [1, 0], second_text: [0.9, 0.1]}, citations=[1, 2])
+    result = QuestionService(session, provider).ask(
+        scope=OrganizationScope(org.id),
+        user_id=user.id,
+        workspace_folder_ids=[first_folder.id, second_folder.id],
+        question="What is documented?",
+    )
+
+    assert {citation.document_id for citation in result.citations} == {first_chunk.document_id, second_chunk.document_id}
+    assert {citation.source_provider for citation in result.citations} == {"google", "onedrive"}
+
+
 def test_no_indexed_content_returns_explicit_safe_status_without_provider_calls(session: Session) -> None:
     org, user, folder = context(session)
     provider = FakeProvider({"Question?": [1, 0]})
@@ -218,7 +319,7 @@ def test_document_inventory_uses_one_scoped_evidence_per_document_without_questi
     )
     session.add(other_folder); session.flush()
     foreign_to_scope = chunk(session, org, other_folder, name="Private.pdf", text="Do not expose this document.")
-    provider = FakeProvider({}, answer="The context contains the two cited files.", citations=[1, 2])
+    provider = FakeProvider({}, answer="The context contains the two cited files [1][2].", citations=[1, 2])
 
     result = ask(session, provider, org, user, folder, "Quais arquivos estão neste contexto?")
 
@@ -226,22 +327,99 @@ def test_document_inventory_uses_one_scoped_evidence_per_document_without_questi
     assert provider.embed_calls == []
     assert [item.document_name for item in provider.answer_calls[0][1]] == ["Discovery notes.pdf", "Profile.pdf"]
     assert {item.document_id for item in result.citations} == {first.document_id, second.document_id}
+    assert "(fontes 1 e 2)" in result.answer
     assert foreign_to_scope.document_id not in {item.document_id for item in provider.answer_calls[0][1]}
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Quais arquivos temos nesse contexto?",
+        "Quais arquivos ele tem acesso?",
+    ],
+)
+def test_document_inventory_recognizes_context_and_access_wording(
+    session: Session, question: str
+) -> None:
+    org, user, folder = context(session)
+    chunk(session, org, folder, name="Notion page.md", text="Indexed Notion page.")
+    provider = FakeProvider({}, answer="O contexto contém Notion page.md.", citations=[1])
+
+    result = ask(session, provider, org, user, folder, question)
+
+    assert result.retrieval_status == RETRIEVAL_STATUS_SUFFICIENT
+    assert provider.embed_calls == []
+    assert [item.document_name for item in provider.answer_calls[0][1]] == ["Notion page.md"]
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Quais documentos sobre acesso?",
+        "Quais arquivos sobre consultas?",
+        "Quais arquivos mencionam projectatlas?",
+    ],
+)
+def test_topical_markers_override_generic_inventory_wording(question: str) -> None:
+    from app.knowledge.questions import _is_document_inventory_question
+
+    assert not _is_document_inventory_question(question)
 
 
 def test_document_inventory_is_bounded_and_deterministic(session: Session) -> None:
     org, user, folder = context(session)
-    for index in reversed(range(MAX_CITATIONS + 2)):
+    for index in reversed(range(7)):
         chunk(session, org, folder, name=f"Document {index}.pdf", text=f"Content {index}.")
-    provider = FakeProvider({}, answer="Listed files.", citations=list(range(1, MAX_CITATIONS + 1)))
+    provider = FakeProvider({}, answer="Listed files.", citations=list(range(1, 8)))
 
     result = ask(session, provider, org, user, folder, "Liste os documentos disponíveis")
 
-    assert len(provider.answer_calls[0][1]) == MAX_CITATIONS
+    assert len(provider.answer_calls[0][1]) == 7
     assert [item.document_name for item in provider.answer_calls[0][1]] == [
-        "Document 0.pdf", "Document 1.pdf", "Document 2.pdf", "Document 3.pdf", "Document 4.pdf"
+        *(f"Document {index}.pdf" for index in range(7))
     ]
-    assert len(result.citations) == MAX_CITATIONS
+    assert len(result.citations) == 7
+    assert "até 5" not in result.answer
+
+
+def test_document_inventory_respects_text_budget_without_a_document_count_cap(
+    session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("app.knowledge.questions.MAX_EVIDENCE_CONTEXT_CHARS", 120)
+    org, user, folder = context(session)
+    for index in range(8):
+        chunk(session, org, folder, name=f"Document {index}.pdf", text=f"Content {index}.")
+    provider = FakeProvider({}, answer="Listed files.")
+
+    ask(session, provider, org, user, folder, "Liste os documentos disponíveis")
+
+    selected = provider.answer_calls[0][1]
+    assert 0 < len(selected) < 8
+    assert sum(len(item.document_name) + len(item.source_provider or "unknown") + len(item.excerpt) + 40 for item in selected) <= 120
+
+
+def test_semantic_evidence_can_include_more_than_five_distinct_documents(session: Session) -> None:
+    org, user, folder = context(session)
+    documents = [chunk(session, org, folder, name=f"Plan {index}.pdf", text=f"Launch milestone {index}.")
+                 for index in range(7)]
+    provider = FakeProvider({"launch": [1, 0]}, citations=list(range(1, 8)))
+
+    result = ask(session, provider, org, user, folder, "launch")
+
+    assert len(provider.answer_calls[0][1]) == 7
+    assert {item.document_id for item in result.citations} == {item.document_id for item in documents}
+
+
+def test_identical_excerpts_from_distinct_documents_remain_available_for_citation(session: Session) -> None:
+    org, user, folder = context(session)
+    first = chunk(session, org, folder, name="Plan A.pdf", text="Shared launch statement.")
+    second = chunk(session, org, folder, name="Plan B.pdf", text="Shared launch statement.")
+    provider = FakeProvider({"launch": [1, 0]}, citations=[1, 2])
+
+    result = ask(session, provider, org, user, folder, "launch")
+
+    assert {item.document_id for item in provider.answer_calls[0][1]} == {first.document_id, second.document_id}
+    assert {item.document_id for item in result.citations} == {first.document_id, second.document_id}
 
 
 def test_distinctive_exact_name_rescues_evidence_with_generic_question_terms(session: Session) -> None:
@@ -445,3 +623,105 @@ def test_openai_adapter_exposes_a_bounded_rate_limit_delay(
         OpenAIQuestionProvider("test-key").embed(texts=["authorized chunk"])
 
     assert error.value.retry_after_seconds == expected_delay
+
+
+def test_multifolder_authorization_rejects_any_foreign_folder_before_model_calls(session: Session) -> None:
+    org, user, folder = context(session)
+    other_org, _other_user, other_folder = context(session)
+    chunk(session, org, folder, name="Authorized.pdf", text="Authorized launch data")
+    chunk(session, other_org, other_folder, name="Foreign.pdf", text="FOREIGN_SECRET")
+    provider = FakeProvider({"launch": [1, 0]})
+    with pytest.raises(GoogleAccessDenied):
+        QuestionService(session, provider).ask(
+            scope=OrganizationScope(org.id), user_id=user.id,
+            workspace_folder_ids=[folder.id, other_folder.id], question="launch",
+        )
+    assert provider.embed_calls == provider.answer_calls == []
+
+
+def test_overlapping_index_copies_do_not_displace_another_relevant_source(session: Session) -> None:
+    org, user, folder = context(session)
+    copies = []
+    for index in range(6):
+        overlap = WorkspaceFolder(
+            organization_id=org.id, source_id=folder.source_id, external_folder_id=str(uuid4()),
+            name=f"Overlap {index}", uniform_access_confirmed=True, status="ready",
+        )
+        session.add(overlap); session.flush()
+        copied = chunk(session, org, overlap, name="A plan.pdf", text="Launch is approved.")
+        document = session.get(Document, copied.document_id)
+        document.external_file_id = "same-provider-file"
+        copies.append(overlap.id)
+    session.commit()
+    other = chunk(session, org, folder, name="Z budget.pdf", text="Launch budget is approved.", embedding=[0.9, 0.1])
+    provider = FakeProvider({"launch": [1, 0]}, citations=[1, 2])
+    result = QuestionService(session, provider).ask(
+        scope=OrganizationScope(org.id), user_id=user.id,
+        workspace_folder_ids=[folder.id, *copies], question="launch",
+    )
+    assert len(provider.answer_calls[0][1]) == 2
+    assert other.document_id in {item.document_id for item in result.citations}
+    assert [item.document_name for item in result.citations].count("A plan.pdf") == 1
+
+
+def test_external_file_ids_from_distinct_sources_are_not_deduplicated(session: Session) -> None:
+    org, user, folder = context(session)
+    first = chunk(session, org, folder, name="Drive.pdf", text="Launch plan")
+    source = DataSource(organization_id=org.id, provider="onedrive", encrypted_credentials="cipher",
+                        status="connected", connected_by_user_id=user.id)
+    session.add(source); session.flush()
+    second_folder = WorkspaceFolder(organization_id=org.id, source_id=source.id, external_folder_id=str(uuid4()),
+                                    name="Other", uniform_access_confirmed=True, status="ready")
+    session.add(second_folder); session.flush()
+    second = chunk(session, org, second_folder, name="OneDrive.pdf", text="Launch budget")
+    session.get(Document, first.document_id).external_file_id = "same-opaque-id"
+    session.get(Document, second.document_id).external_file_id = "same-opaque-id"
+    session.commit()
+    provider = FakeProvider({"launch": [1, 0]}, citations=[1, 2])
+    result = QuestionService(session, provider).ask_scope(
+        scope=OrganizationScope(org.id), user_id=user.id, question="launch", question_scope="organization",
+    )
+    assert {item.document_id for item in result.citations} == {first.document_id, second.document_id}
+    assert {item.source_provider for item in result.citations} == {"google", "onedrive"}
+
+
+def test_topical_document_request_uses_relevance_instead_of_alphabetic_inventory(session: Session) -> None:
+    org, user, folder = context(session)
+    for index in range(6):
+        chunk(session, org, folder, name=f"A unrelated {index}.pdf", text="Other subject", embedding=[0, 1])
+    target = chunk(session, org, folder, name="Z project.pdf", text="projectatlas has an approved budget")
+    question = "Quais arquivos mencionam projectatlas?"
+    provider = FakeProvider({question: [1, 0]})
+    result = ask(session, provider, org, user, folder, question)
+    assert provider.embed_calls == [[question]]
+    assert result.citations[0].document_id == target.document_id
+
+
+def test_openai_evidence_includes_tool_and_file_provenance(monkeypatch: pytest.MonkeyPatch) -> None:
+    requests = []
+    provider = OpenAIQuestionProvider("test-key")
+    def post(path, body):
+        requests.append(body)
+        return {"output": [{"content": [{"type": "output_text", "text": '{"answer":"Supported.","citations":[1]}'}]}]}
+    monkeypatch.setattr(provider, "_post", post)
+    source = Evidence(
+        uuid4(), "Brief.pdf", uuid4(), "Supported excerpt", None,
+        "https://example.test/brief", 0.9, "google_drive",
+    )
+    provider.answer(question="Where?", evidence=[source])
+    assert "tool: google_drive" in requests[0]["input"]
+    assert "Brief.pdf" in requests[0]["input"]
+    assert source.source_url not in requests[0]["input"]
+    assert "not an exhaustive inventory" in requests[0]["instructions"]
+
+
+def test_broad_scope_empty_context_authorizes_membership_before_returning_empty(session: Session) -> None:
+    org, _user, _folder = context(session)
+    _other_org, outsider, _other_folder = context(session)
+    provider = FakeProvider({})
+    with pytest.raises(GoogleAccessDenied):
+        QuestionService(session, provider).ask_scope(
+            scope=OrganizationScope(org.id), user_id=outsider.id, question="Question?",
+            question_scope="provider", provider="unavailable_tool",
+        )
+    assert provider.embed_calls == provider.answer_calls == []
