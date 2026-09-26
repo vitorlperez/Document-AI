@@ -119,7 +119,7 @@
 }
 
 .integration-tool-grid {
-  grid-auto-rows: 10.5rem;
+  grid-auto-rows: minmax(10.5rem, auto);
 }
 
 .integration-tool-grid > .integration-tool-card,
@@ -288,7 +288,7 @@ summary:focus-visible {
 
 .page-surface > .grid > section,
 .page-surface > .grid > form {
-  border-color: #dedfd5;
+  border-color: #eceee7;
   border-radius: 1rem;
   background: #f3f5ef;
   box-shadow: none;
