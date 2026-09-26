@@ -25,7 +25,7 @@ const demoCases = [
     scope: "Pasta · Projeto Aurora",
     question: "Qual é o prazo da apresentação?",
     answer: <>A apresentação dos conceitos visuais está prevista para <strong>18 de outubro</strong>, após a revisão do diagnóstico pela equipe.</>,
-    sources: [["Cronograma Aurora.docx", "OneDrive"]],
+    sources: [["Cronograma Aurora.docx", "Google Drive"]],
   },
   {
     label: "Sem evidência",
@@ -65,7 +65,7 @@ function ProductPreview() {
           </div>
           <div className="landing-product-composer" aria-hidden="true"><span>O que você gostaria de saber?</span><span className="landing-product-send"><ArrowRight size={14} /></span></div>
         </section>
-        <aside className="landing-product-library" aria-label="Busca de arquivos ilustrativa"><div className="landing-product-library-heading">Buscar arquivos</div><p>Encontre arquivos e pastas pelo nome.</p><div className="landing-product-library-search"><span>Nome do arquivo ou pasta</span><Search size={14} aria-hidden="true" /></div><div className="landing-product-document"><FileText size={16} aria-hidden="true" /><div><p>Escopo do projeto.pdf</p><span>Google Drive</span></div></div><div className="landing-product-document"><FileText size={16} aria-hidden="true" /><div><p>Cronograma Aurora.docx</p><span>OneDrive</span></div></div></aside>
+        <aside className="landing-product-library" aria-label="Busca de arquivos ilustrativa"><div className="landing-product-library-heading">Buscar arquivos</div><p>Encontre arquivos e pastas pelo nome.</p><div className="landing-product-library-search"><span>Nome do arquivo ou pasta</span><Search size={14} aria-hidden="true" /></div><div className="landing-product-document"><FileText size={16} aria-hidden="true" /><div><p>Escopo do projeto.pdf</p><span>Google Drive</span></div></div><div className="landing-product-document"><FileText size={16} aria-hidden="true" /><div><p>Cronograma Aurora.docx</p><span>Google Drive</span></div></div></aside>
       </div>
       <figcaption id="landing-preview-caption">A resposta muda com o contexto e as evidências disponíveis. <span>Exemplos fictícios.</span></figcaption>
     </figure>

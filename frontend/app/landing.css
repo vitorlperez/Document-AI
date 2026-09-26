@@ -521,7 +521,7 @@
   .landing-product-library { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
   .landing-product-library-heading, .landing-product-library > p { grid-column: 1 / -1; }
   .landing-product-library-search { grid-column: 1 / -1; grid-row: auto; }
-  .landing-product-library .landing-product-document { grid-column: auto; }
+  .landing-product-library .landing-product-document { grid-column: 1 / -1; }
   .landing-benefits { padding-block: 85px 75px; }
   .landing-workflow { padding-block: 68px 42px; }
   .landing-audiences { padding-block: 66px; }
