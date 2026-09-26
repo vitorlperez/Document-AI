@@ -20,6 +20,7 @@ from app.integrations.google_drive import (
 )
 from app.integrations.models import DataSource
 from app.integrations.registry import IntegrationRegistry
+from app.knowledge.models import Document
 from app.knowledge.questions import AIProviderUnavailable, EmbeddingService, OpenAIQuestionProvider
 from app.library.service import LibraryService
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
@@ -131,10 +132,22 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 )
                 session.commit()
                 return
-            discovered_documents = provider.discover(
-                encrypted_credentials=source.encrypted_credentials,
-                selections=selections,
-            )
+            discover_kwargs = {
+                "encrypted_credentials": source.encrypted_credentials,
+                "selections": selections,
+            }
+            if source_provider == "notion":
+                known_documents = {
+                    document.external_file_id: (document.modified_at, document.index_status)
+                    for document in session.scalars(
+                        select(Document).where(
+                            Document.organization_id == job.organization_id,
+                            Document.workspace_folder_id == job.workspace_folder_id,
+                        )
+                    )
+                }
+                discover_kwargs["known_documents"] = known_documents
+            discovered_documents = provider.discover(**discover_kwargs)
             discovery = (
                 discovered_documents if isinstance(discovered_documents, DiscoveryResult) else None
             )

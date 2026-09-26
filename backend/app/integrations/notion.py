@@ -21,6 +21,7 @@ from app.identity.models import UserSession
 from app.integrations.google_drive import GoogleCredentials, GoogleRemoteUnauthorized, RemoteFolder
 from app.integrations.models import DataSource, OAuthConnectionState
 from app.organizations.models import Membership, MembershipRole
+from app.ingestion.service import DiscoveryResult
 
 NOTION_READ_SCOPE = ""
 MAX_PAGE_WORKERS = 2
@@ -240,7 +241,13 @@ class NotionDocumentProvider:
         pages = self.client.list_pages(credentials=self.cipher.decrypt(encrypted_credentials or ""))
         return [RemoteFolder(page.id, page.title) for page in pages]
 
-    def discover(self, *, encrypted_credentials: str | None, selections) -> list:
+    def discover(
+        self,
+        *,
+        encrypted_credentials: str | None,
+        selections,
+        known_documents: dict[str, tuple[datetime | None, str]] | None = None,
+    ) -> DiscoveryResult:
         credentials = self.cipher.decrypt(encrypted_credentials or "")
         pages = {page.id: page for page in self.client.list_pages(credentials=credentials)}
         selected_ids = (
@@ -250,6 +257,19 @@ class NotionDocumentProvider:
         )
         from app.ingestion.service import DiscoveredDocument
         selected_pages = [pages[page_id] for page_id in sorted(selected_ids) if page_id in pages]
+
+        known_documents = known_documents or {}
+        known_ids = set(known_documents)
+        changed_pages = [
+            page
+            for page in selected_pages
+            if not (
+                (known := known_documents.get(page.id))
+                and known[1] == "indexed"
+                and page.last_edited_time is not None
+                and known[0] == page.last_edited_time
+            )
+        ]
 
         def read_page(page: NotionPage) -> DiscoveredDocument | None:
             text = _blocks_to_text(self.client.page_blocks(credentials=credentials, page_id=page.id))
@@ -268,8 +288,13 @@ class NotionDocumentProvider:
                 text=text,
             )
 
-        with ThreadPoolExecutor(max_workers=min(MAX_PAGE_WORKERS, len(selected_pages) or 1)) as executor:
-            return [document for document in executor.map(read_page, selected_pages) if document is not None]
+        with ThreadPoolExecutor(max_workers=min(MAX_PAGE_WORKERS, len(changed_pages) or 1)) as executor:
+            documents = [document for document in executor.map(read_page, changed_pages) if document is not None]
+        return DiscoveryResult(
+            documents=documents,
+            removed_file_ids=tuple(sorted(known_ids - selected_ids)),
+            full_snapshot=not bool(known_ids),
+        )
 
 
 def _blocks_to_text(blocks: list[dict[str, object]]) -> str:
