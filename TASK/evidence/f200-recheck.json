@@ -1,0 +1,36 @@
+[
+  {
+    "mode": "401",
+    "documentStatus": 200,
+    "title": "Arquivio — O conhecimento da sua equipe, com fontes",
+    "landingHeading": 1,
+    "retryButton": 0,
+    "serviceUnavailableText": false,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "apiResponses": [
+      {
+        "path": "/api/session",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "mode": "503",
+    "documentStatus": 200,
+    "title": "Arquivio — O conhecimento da sua equipe, com fontes",
+    "landingHeading": 1,
+    "retryButton": 1,
+    "serviceUnavailableText": true,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ],
+    "pageErrors": [],
+    "apiResponses": [
+      {
+        "path": "/api/session",
+        "status": 503
+      }
+    ]
+  }
+]

@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1790359163.5630927,
-    "seen": 1790359444.148326,
+    "mtime": 1790455403.9696279,
+    "seen": 1790455563.778027,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -234,9 +234,9 @@
     "semantic_hash": "baa8b670cd6b2c595662d3da093fb1af"
   },
   "backend/app/ingestion/google_drive.py": {
-    "mtime": 1790266649.327272,
-    "seen": 1790266955.095875,
-    "ast_hash": "184226d8788e7f1b0a9f91108a87a536",
+    "mtime": 1790450642.283924,
+    "seen": 1790450693.016416,
+    "ast_hash": "c3e9fb7b5426c135b74deb714c9565b6",
     "semantic_hash": ""
   },
   "backend/app/ingestion/models.py": {
@@ -252,9 +252,9 @@
     "semantic_hash": ""
   },
   "backend/app/ingestion/tasks.py": {
-    "mtime": 1790299762.916591,
-    "seen": 1790358178.676188,
-    "ast_hash": "fae495151843eb8cc401ed4bb604613d",
+    "mtime": 1790450821.7465894,
+    "seen": 1790451002.915214,
+    "ast_hash": "dc31034a756777f092972c5161ad6831",
     "semantic_hash": ""
   },
   "backend/app/integrations/__init__.py": {
@@ -264,9 +264,9 @@
     "semantic_hash": "b3d7a275682c30e24674b661e78d9a7a"
   },
   "backend/app/integrations/google_drive.py": {
-    "mtime": 1790196641.095351,
-    "seen": 1790198633.920345,
-    "ast_hash": "0fe742ecce6935d51c1ed2918eaf4956",
+    "mtime": 1790450892.7150068,
+    "seen": 1790451002.9153101,
+    "ast_hash": "da45dd241d298261916cf3049a2f3d2f",
     "semantic_hash": ""
   },
   "backend/app/integrations/models.py": {
@@ -456,15 +456,15 @@
     "semantic_hash": ""
   },
   "backend/tests/unit/test_google_drive_connection.py": {
-    "mtime": 1789407726.3727813,
-    "seen": 1790011871.8767512,
-    "ast_hash": "89d96672f2fc5e0512c88702b3cc7c76",
-    "semantic_hash": "89d96672f2fc5e0512c88702b3cc7c76"
+    "mtime": 1790451066.3541923,
+    "seen": 1790451237.5525959,
+    "ast_hash": "5807913b16eb9993af4f576fc7dc2a97",
+    "semantic_hash": ""
   },
   "backend/tests/unit/test_google_drive_ingestion.py": {
-    "mtime": 1790266605.479312,
-    "seen": 1790266955.095936,
-    "ast_hash": "fa0bf0803c97a5d7905ce9308d0f4266",
+    "mtime": 1790451126.481231,
+    "seen": 1790451237.552597,
+    "ast_hash": "b10b56b55407e64c7c937eed2963a926",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_health_and_config.py": {
@@ -498,10 +498,10 @@
     "semantic_hash": ""
   },
   "backend/tests/unit/test_ingestion_tasks.py": {
-    "mtime": 1789407565.4095426,
-    "seen": 1790011871.876757,
-    "ast_hash": "da63b8017f53a94aeab98defc8d5cd0f",
-    "semantic_hash": "da63b8017f53a94aeab98defc8d5cd0f"
+    "mtime": 1790450959.7545,
+    "seen": 1790451002.916696,
+    "ast_hash": "9e9aef7969869acf1758de472a04fc61",
+    "semantic_hash": ""
   },
   "backend/tests/unit/test_invitation_service.py": {
     "mtime": 1789079264.0307171,
@@ -606,9 +606,9 @@
     "semantic_hash": "4e31dade4749ba890710908cfaadc40c"
   },
   "frontend/app/landing-page.tsx": {
-    "mtime": 1790269546.742686,
-    "seen": 1790269757.005793,
-    "ast_hash": "a276818d4e3f882890ee0dc814d57b11",
+    "mtime": 1790455606.5893931,
+    "seen": 1790455619.183512,
+    "ast_hash": "b3649a0ad93a87eb27b17f1fc60aeaf9",
     "semantic_hash": ""
   },
   "frontend/app/layout.tsx": {
@@ -630,9 +630,9 @@
     "semantic_hash": "eff6cca39a05262f028801e8f21d41d1"
   },
   "frontend/app/product-app.tsx": {
-    "mtime": 1790359254.0740519,
-    "seen": 1790359444.148416,
-    "ast_hash": "a3b984d5afbe2a7d0001d9c26a505edf",
+    "mtime": 1790455606.5888581,
+    "seen": 1790455619.1835148,
+    "ast_hash": "033d3cd855abb9971eecba4a9ec4413c",
     "semantic_hash": ""
   },
   "frontend/app/staff/page.tsx": {
@@ -1368,9 +1368,9 @@
     "semantic_hash": ""
   },
   "specs/adr/0003-pilot-sync-ai-and-usage.md": {
-    "mtime": 1789102115.0305016,
-    "seen": 1790012794.0376582,
-    "ast_hash": "878f2aef500f5a3871e52657e665f5db",
+    "mtime": 1790449970.0802073,
+    "seen": 1790449976.2481768,
+    "ast_hash": "ecac68cd54a2b30ee1c873965f057698",
     "semantic_hash": ""
   },
   "specs/adr/0004-platform-staff-access.md": {
@@ -1710,21 +1710,21 @@
     "semantic_hash": ""
   },
   "backend/app/integrations/notion.py": {
-    "mtime": 1790299762.9172504,
-    "seen": 1790358178.676194,
-    "ast_hash": "e93c416ca0df483223215de06e457e2b",
+    "mtime": 1790450770.9608824,
+    "seen": 1790450784.401959,
+    "ast_hash": "5cd477e5aa1ca08762a6a3dddfb0aa85",
     "semantic_hash": ""
   },
   "backend/app/integrations/registry.py": {
-    "mtime": 1790197859.467257,
-    "seen": 1790198633.9203498,
-    "ast_hash": "31d14cc32d805be0420dd20c85bd6a3d",
+    "mtime": 1790450704.9248526,
+    "seen": 1790450784.401962,
+    "ast_hash": "de0558a4a8de08d9e6150fba533cb72e",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_notion_integration.py": {
-    "mtime": 1790299763.2075372,
-    "seen": 1790358178.676227,
-    "ast_hash": "14d9c62dcafcec77bb35c40010822952",
+    "mtime": 1790450872.1166496,
+    "seen": 1790451002.916786,
+    "ast_hash": "ad46b2714a114d66cba0cede3872a317",
     "semantic_hash": ""
   },
   "specs/work-items/F-043.md": {
@@ -1872,9 +1872,9 @@
     "semantic_hash": ""
   },
   "specs/adr/ADR-0008-onedrive-connector.md": {
-    "mtime": 1790263204.8918784,
-    "seen": 1790263420.510205,
-    "ast_hash": "09ea34efebbbf02b1c17545d4fa80cb7",
+    "mtime": 1790450730.8086169,
+    "seen": 1790450784.409478,
+    "ast_hash": "49e815bc870fb5edb5688086da35c603",
     "semantic_hash": ""
   },
   "specs/work-items/F-063.md": {
@@ -1896,9 +1896,9 @@
     "semantic_hash": ""
   },
   "backend/app/integrations/onedrive.py": {
-    "mtime": 1790263161.966973,
-    "seen": 1790263420.509954,
-    "ast_hash": "7102fc37bc96212f5ccc3099a17c9010",
+    "mtime": 1790451254.6755028,
+    "seen": 1790452484.647108,
+    "ast_hash": "7fcfc9396d67371f7fe2e66605078d34",
     "semantic_hash": ""
   },
   "backend/tests/api/test_onedrive_integration.py": {
@@ -1908,15 +1908,15 @@
     "semantic_hash": ""
   },
   "backend/tests/unit/test_onedrive.py": {
-    "mtime": 1790263331.1718478,
-    "seen": 1790263420.510016,
-    "ast_hash": "d6bdb132f28cf4cf1d5caf71c099dfa4",
+    "mtime": 1790451135.2382936,
+    "seen": 1790451237.552953,
+    "ast_hash": "1eabafa640a158dcae95e41dce3019d9",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_onedrive_ingestion_task.py": {
-    "mtime": 1790199223.391747,
-    "seen": 1790199260.6767821,
-    "ast_hash": "83d0e6677fc1cce23ec9d9d072465e92",
+    "mtime": 1790450897.4544616,
+    "seen": 1790451002.916852,
+    "ast_hash": "451b9deca27020e497832da665748796",
     "semantic_hash": ""
   },
   "backend/alembic/versions/20260923_0016_onedrive_account_binding.py": {
@@ -1971,24 +1971,6 @@
     "mtime": 1790273428.2032697,
     "seen": 1790358178.676379,
     "ast_hash": "8c6bf9ead5c457edaf0efaa3654e4650",
-    "semantic_hash": ""
-  },
-  ".overclock-app/dismissed.json": {
-    "mtime": 1790357239.0500448,
-    "seen": 1790358178.6761549,
-    "ast_hash": "d5638a8b5c9a2c5f35fa1f61c2022996",
-    "semantic_hash": ""
-  },
-  ".overclock-app/pane-session.json": {
-    "mtime": 1790359434.7414134,
-    "seen": 1790359444.148332,
-    "ast_hash": "685445daffccda306c818c669e3f7500",
-    "semantic_hash": ""
-  },
-  ".overclock-app/panes.json": {
-    "mtime": 1790359434.7381814,
-    "seen": 1790359444.148333,
-    "ast_hash": "f54a67721f40683e5681b240f44b62d1",
     "semantic_hash": ""
   },
   "backend/tests/api/test_csrf_origin.py": {
@@ -2046,15 +2028,15 @@
     "semantic_hash": ""
   },
   "TASK/items/F-200.md": {
-    "mtime": 1790359436.014098,
-    "seen": 1790359444.148491,
-    "ast_hash": "38d6fcd389369f1248a2986c507267c5",
+    "mtime": 1790372841.7837644,
+    "seen": 1790435607.681591,
+    "ast_hash": "b475db21ca288d91ac4054a7eb75c267",
     "semantic_hash": ""
   },
   "qa-report.md": {
-    "mtime": 1790359057.7737598,
-    "seen": 1790359444.1484978,
-    "ast_hash": "b93a300cc7bd365b6860f09b2fa764b7",
+    "mtime": 1790435971.1392095,
+    "seen": 1790437219.3078122,
+    "ast_hash": "04d79ca04ebe8a2ee64358cfc839d3d2",
     "semantic_hash": ""
   },
   "TASK/evidence/qa-desktop-1440.png": {
@@ -2067,6 +2049,96 @@
     "mtime": 1790358965.2383118,
     "seen": 1790359444.1485498,
     "ast_hash": "de2ed9b077f9e97b0b062b3f8f4b7b66",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/f200-proxy-status.json": {
+    "mtime": 1790372823.7374425,
+    "seen": 1790435607.681292,
+    "ast_hash": "c750dee6eda2808e0f219bd8cd1006bd",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/f200-recheck.json": {
+    "mtime": 1790364462.129279,
+    "seen": 1790435607.681293,
+    "ast_hash": "7f1a4c3e69f0a2ba3d70be6f29f6f730",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/qa-a177143-results.json": {
+    "mtime": 1790376109.6073163,
+    "seen": 1790435607.681294,
+    "ast_hash": "dd421b1ffd96f9c04c21049ea40b5112",
+    "semantic_hash": ""
+  },
+  "frontend/app/provider-logo.tsx": {
+    "mtime": 1790435509.6997476,
+    "seen": 1790435607.681449,
+    "ast_hash": "990a7c814b3eb075215eac04c2049b5d",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/f200-verified.png": {
+    "mtime": 1790364461.4293194,
+    "seen": 1790435607.6817012,
+    "ast_hash": "55e1c6237e24343c63318ca77621453c",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/qa-a177143-desktop.png": {
+    "mtime": 1790376106.2431514,
+    "seen": 1790435607.6817029,
+    "ast_hash": "57108d52579f6592ae1882223f2c44a9",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/qa-a177143-mobile.png": {
+    "mtime": 1790376107.766433,
+    "seen": 1790435607.681704,
+    "ast_hash": "1c9a9088bc014f737a74018e5f2aabef",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/qa-a21138a-results.json": {
+    "mtime": 1790435892.0146692,
+    "seen": 1790437219.299697,
+    "ast_hash": "c5126e3552b07045c063c2006a5632a3",
+    "semantic_hash": ""
+  },
+  "specs/work-items/ui-integrations-disconnect-borders.md": {
+    "mtime": 1790437678.4659147,
+    "seen": 1790439449.3403158,
+    "ast_hash": "613e28f4d885b921c22f4a7bf30cfef1",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/qa-a21138a-desktop.png": {
+    "mtime": 1790435891.9414608,
+    "seen": 1790437219.3101099,
+    "ast_hash": "59a1663c7dfa83d3b1350d5a5697a808",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/qa-a21138a-mobile.png": {
+    "mtime": 1790435892.01375,
+    "seen": 1790437219.310111,
+    "ast_hash": "6e51e625a41887767a41fb81cddb0437",
+    "semantic_hash": ""
+  },
+  "backend/tests/api/test_workspace_folder_management_api.py": {
+    "mtime": 1790439278.810143,
+    "seen": 1790439449.332184,
+    "ast_hash": "8ca5cbc74dfb4411105a0a0fcf905d54",
+    "semantic_hash": ""
+  },
+  "specs/work-items/library-ux-folder-actions.md": {
+    "mtime": 1790450687.2249033,
+    "seen": 1790450693.02897,
+    "ast_hash": "82abafb73a4f8fddfd65f0575f2d5148",
+    "semantic_hash": ""
+  },
+  "specs/work-items/F-070.md": {
+    "mtime": 1790451301.700915,
+    "seen": 1790452484.647277,
+    "ast_hash": "d2366c869e2f8a4909543a8967b04829",
+    "semantic_hash": ""
+  },
+  "specs/work-items/google-drive-incremental-resync.md": {
+    "mtime": 1790451516.476565,
+    "seen": 1790452484.647277,
+    "ast_hash": "c3fd11a90d82f4856df1a6290d35c271",
     "semantic_hash": ""
   }
 }

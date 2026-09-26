@@ -9,6 +9,86 @@
             "command": "/Users/vitorperez/Documents/Document-AI/.tools/graphify/bin/graphify hook-check"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/vitorperez/.overclock-app/soft-status.mjs",
+            "timeout": 5,
+            "statusMessage": "Overclock soft status"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/vitorperez/.overclock-app/soft-status.mjs",
+            "timeout": 5,
+            "statusMessage": "Overclock soft status"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/vitorperez/.overclock-app/soft-status.mjs",
+            "timeout": 5,
+            "statusMessage": "Overclock soft status"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/vitorperez/.overclock-app/soft-status.mjs",
+            "timeout": 5,
+            "statusMessage": "Overclock soft status"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/vitorperez/.overclock-app/soft-status.mjs",
+            "timeout": 5,
+            "statusMessage": "Overclock soft status"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/vitorperez/.overclock-app/soft-status.mjs",
+            "timeout": 5,
+            "statusMessage": "Overclock soft status"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/vitorperez/.overclock-app/handoff-deliver.mjs",
+            "timeout": 5,
+            "statusMessage": "Overclock handoff delivery"
+          }
+        ]
       }
     ]
   }

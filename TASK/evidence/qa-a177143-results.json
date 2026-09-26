@@ -1,0 +1,832 @@
+{
+  "base": "http://127.0.0.1:5174",
+  "desktop": {
+    "title": "Arquivio — O conhecimento da sua equipe, com fontes",
+    "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+    "scenarios": [
+      {
+        "scenario": "Entrega do projeto",
+        "pressed": "true",
+        "expectedPresent": [
+          {
+            "item": "Todas as ferramentas",
+            "present": true
+          },
+          {
+            "item": "O que ficou definido para a primeira entrega?",
+            "present": true
+          },
+          {
+            "item": "Escopo do projeto.pdf",
+            "present": true
+          },
+          {
+            "item": "Reunião de alinhamento",
+            "present": true
+          }
+        ]
+      },
+      {
+        "scenario": "Só nesta pasta",
+        "pressed": "true",
+        "expectedPresent": [
+          {
+            "item": "Pasta · Projeto Aurora",
+            "present": true
+          },
+          {
+            "item": "Qual é o prazo da apresentação?",
+            "present": true
+          },
+          {
+            "item": "Cronograma Aurora.docx",
+            "present": true
+          }
+        ]
+      },
+      {
+        "scenario": "Sem evidência",
+        "pressed": "true",
+        "expectedPresent": [
+          {
+            "item": "Pasta · Projeto Aurora",
+            "present": true
+          },
+          {
+            "item": "Qual foi o orçamento aprovado para mídia?",
+            "present": true
+          },
+          {
+            "item": "Nenhum documento sustenta esta resposta.",
+            "present": true
+          }
+        ]
+      }
+    ],
+    "stages": [
+      {
+        "stage": "Defina o escopo",
+        "pressed": "true",
+        "dataStage": "1",
+        "readout": "ETAPA 01\nDefina o escopo"
+      },
+      {
+        "stage": "Faça a pergunta",
+        "pressed": "true",
+        "dataStage": "2",
+        "readout": "ETAPA 02\nFaça a pergunta"
+      },
+      {
+        "stage": "Confira as fontes",
+        "pressed": "true",
+        "dataStage": "3",
+        "readout": "ETAPA 03\nConfira as fontes"
+      }
+    ],
+    "links": [
+      {
+        "text": "Pular para o conteúdo",
+        "href": "#landing-main"
+      },
+      {
+        "text": "arquivio.",
+        "href": "#landing-main"
+      },
+      {
+        "text": "Como funciona",
+        "href": "#como-funciona"
+      },
+      {
+        "text": "Para sua equipe",
+        "href": "#para-equipes"
+      },
+      {
+        "text": "Dúvidas",
+        "href": "#perguntas"
+      },
+      {
+        "text": "Como funciona",
+        "href": "#como-funciona"
+      },
+      {
+        "text": "Para sua equipe",
+        "href": "#para-equipes"
+      },
+      {
+        "text": "Dúvidas",
+        "href": "#perguntas"
+      },
+      {
+        "text": "Testar a demonstração",
+        "href": "#demonstracao"
+      },
+      {
+        "text": "arquivio.",
+        "href": "#landing-main"
+      },
+      {
+        "text": "Sobre acesso e privacidade",
+        "href": "#perguntas"
+      }
+    ],
+    "fragments": [
+      {
+        "href": "#landing-main",
+        "targetExists": true
+      },
+      {
+        "href": "#landing-main",
+        "targetExists": true
+      },
+      {
+        "href": "#como-funciona",
+        "targetExists": true
+      },
+      {
+        "href": "#para-equipes",
+        "targetExists": true
+      },
+      {
+        "href": "#perguntas",
+        "targetExists": true
+      },
+      {
+        "href": "#como-funciona",
+        "targetExists": true
+      },
+      {
+        "href": "#para-equipes",
+        "targetExists": true
+      },
+      {
+        "href": "#perguntas",
+        "targetExists": true
+      },
+      {
+        "href": "#demonstracao",
+        "targetExists": true
+      },
+      {
+        "href": "#landing-main",
+        "targetExists": true
+      },
+      {
+        "href": "#perguntas",
+        "targetExists": true
+      }
+    ],
+    "logos": [
+      {
+        "label": "Google Drive",
+        "fills": [
+          "#0F9D58",
+          "#F4B400",
+          "#4285F4"
+        ]
+      },
+      {
+        "label": "Notion",
+        "fills": [
+          "#fff",
+          "#151b18"
+        ]
+      },
+      {
+        "label": "OneDrive",
+        "fills": [
+          "#1686D9",
+          "#075CAD"
+        ]
+      }
+    ],
+    "labels": {
+      "preview": 1,
+      "illustration": 1,
+      "illustrativeLibrary": 1,
+      "demo": 1,
+      "fictitious": 1
+    },
+    "mobileMenu": null,
+    "overflow": {
+      "document": false,
+      "body": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440
+    },
+    "interactiveCount": 31,
+    "interactive": [
+      {
+        "tag": "A",
+        "text": "Pular para o conteúdo",
+        "name": null,
+        "href": "#landing-main"
+      },
+      {
+        "tag": "A",
+        "text": "arquivio.",
+        "name": "Arquivio, início",
+        "href": "#landing-main"
+      },
+      {
+        "tag": "A",
+        "text": "Como funciona",
+        "name": null,
+        "href": "#como-funciona"
+      },
+      {
+        "tag": "A",
+        "text": "Para sua equipe",
+        "name": null,
+        "href": "#para-equipes"
+      },
+      {
+        "tag": "A",
+        "text": "Dúvidas",
+        "name": null,
+        "href": "#perguntas"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Entrar",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar conta",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "",
+        "name": "Abrir navegação",
+        "href": null
+      },
+      {
+        "tag": "A",
+        "text": "Como funciona",
+        "name": null,
+        "href": "#como-funciona"
+      },
+      {
+        "tag": "A",
+        "text": "Para sua equipe",
+        "name": null,
+        "href": "#para-equipes"
+      },
+      {
+        "tag": "A",
+        "text": "Dúvidas",
+        "name": null,
+        "href": "#perguntas"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Entrar na minha conta",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar conta",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Começar com o Arquivio",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "A",
+        "text": "Testar a demonstração",
+        "name": null,
+        "href": "#demonstracao"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "01Entrega do projeto",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "02Só nesta pasta",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "03Sem evidência",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "1Defina o escopoA resposta considera somente as fontes e pastas escolhidas.",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "2Faça a perguntaO Arquivio responde com base no conteúdo sincronizado.",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "3Confira as fontesOs documentos utilizados ficam visíveis para conferência.",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "O Arquivio substitui minhas ferramentas?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Que conteúdo posso consultar?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Quem pode acessar o conteúdo conectado?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "E se não houver informação suficiente para responder?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Os documentos ficam disponíveis imediatamente?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Como o conteúdo é usado pela IA?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar minha conta",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Entrar no Arquivio",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "A",
+        "text": "arquivio.",
+        "name": "Arquivio, voltar ao início",
+        "href": "#landing-main"
+      },
+      {
+        "tag": "A",
+        "text": "Sobre acesso e privacidade",
+        "name": null,
+        "href": "#perguntas"
+      }
+    ],
+    "contentLength": 4748,
+    "content": "Pular para o conteúdo\narquivio.\nComo funciona\nPara sua equipe\nDúvidas\nEntrar\nCriar conta\n\nSEU CONHECIMENTO, COM CONTEXTO\n\nA resposta está nos arquivos.\nAgora você sabe onde.\n\nBriefings, decisões e escopos espalhados pelo Google Drive, OneDrive e Notion. Pergunte ao Arquivio e confira os documentos por trás de cada resposta.\n\nComeçar com o Arquivio\nTestar a demonstração\n\nConexões de leitura\n·\nSeus originais continuam nas ferramentas conectadas\n\nEXPERIMENTE O FLUXO\nFaça uma pergunta. Veja o caminho da resposta.\n\nEscolha uma situação para entender como o contexto e os documentos utilizados aparecem na conversa.\n\n01\nEntrega do projeto\n02\nSó nesta pasta\n03\nSem evidência\n1\nDefina o escopo\nA resposta considera somente as fontes e pastas escolhidas.\n2\nFaça a pergunta\nO Arquivio responde com base no conteúdo sincronizado.\n3\nConfira as fontes\nOs documentos utilizados ficam visíveis para conferência.\nDentro do Arquivio\nDemonstração interativa\nBiblioteca\nVisualização ilustrativa\nPRÉVIA\nBiblioteca\nGoogle Drive\nProjeto Aurora\nNotion\nOneDrive\n\nA conversa usa somente o contexto escolhido em “Consultar em”.\n\nEscopo da consulta\nPasta · Projeto Aurora\n1 pasta selecionada\nETAPA 3\nPasta · Projeto Aurora\n\nQual foi o orçamento aprovado para mídia?\n\nArquivio · Pasta · Projeto Aurora\n\nNão encontrei evidência suficiente nos documentos desta pasta para confirmar um orçamento de mídia. Confira a fonte original ou amplie o contexto da consulta.\n\nDOCUMENTOS UTILIZADOS\n\nNenhum documento sustenta esta resposta.\n\nCampo de pergunta no produto\nILUSTRAÇÃO\n\nA IA usa somente o escopo selecionado e não responde sem evidência suficiente.\n\nO que observar\n\nOs documentos utilizados ficam visíveis para conferência.\n\nETAPA 03\nConfira as fontes\nUse os controles acima para percorrer o exemplo. Os demais elementos são uma prévia visual do produto.\nExplore os exemplos acima: a resposta muda com o contexto e as evidências disponíveis.\nDados fictícios para demonstrar a experiência.\n\nMENOS PROCURA. MAIS CLAREZA.\n\nA informação já existe.\nAgora ela participa da conversa.\n\nDo briefing à última decisão do projeto, dê à sua equipe um caminho direto até o conhecimento que está nos documentos.\n\nPergunte do seu jeito\n\nFaça perguntas em linguagem natural sobre o conteúdo sincronizado, sem abrir arquivo por arquivo.\n\nUma resposta, com origem\n\nVeja os documentos utilizados na resposta e abra os originais para conferir os detalhes.\n\nO contexto é você quem escolhe\n\nConsulte todas as ferramentas, uma ferramenta ou uma pasta específica. Cada pergunta usa o escopo selecionado.\n\nDAS FERRAMENTAS À RESPOSTA\n\nSeu conhecimento.\nUm novo jeito de acessar.\n\nComece com os documentos e páginas que a sua equipe já usa. O Arquivio conecta as informações à próxima pergunta.\n\n01\nConecte e escolha\n\nUm administrador conecta as ferramentas e seleciona o conteúdo que toda a organização pode consultar.\n\nGoogle Drive · OneDrive · Notion\n02\nAcompanhe a preparação\n\nDocumentos e páginas são processados em segundo plano. Veja o que está pronto e o que precisa de atenção.\n\nGoogle Docs · PDF · DOCX · Notion\n03\nPergunte e confira\n\nEscolha todas as ferramentas, uma ferramenta ou uma pasta; depois confira os documentos utilizados na resposta.\n\nRespostas ligadas às fontes\n\nConhecimento compartilhado exige uma escolha consciente. Todos os membros da organização têm acesso ao conteúdo sincronizado. Selecione apenas materiais que possam ser vistos por toda a equipe.\n\nFEITO PARA O TRABALHO EM EQUIPE\n\nO próximo passo começa\ncom uma boa pergunta.\n\nPara quem transforma informação em entregas, recomendações e decisões todos os dias.\n\n01 /\nAgências e marketing\n\nBriefings, escopos e decisões de campanha no contexto do cliente.\n\n“Quais entregas estão previstas no briefing?”\n02 /\nConsultorias\n\nPropostas, diagnósticos e relatórios para retomar o que foi documentado.\n\n“O que o diagnóstico recomenda para esta etapa?”\n03 /\nEquipes de software\n\nRequisitos e registros de projeto disponíveis para a próxima conversa.\n\n“Qual foi o escopo definido para esta entrega?”\n\nPerguntas ilustrativas. As respostas dependem das evidências nos documentos conectados.\n\nANTES DE COMEÇAR\n\nClareza desde\na primeira pergunta.\n\nO que o Arquivio faz, como funciona e o que considerar ao conectar sua equipe.\n\nO Arquivio substitui minhas ferramentas?\nQue conteúdo posso consultar?\nQuem pode acessar o conteúdo conectado?\nE se não houver informação suficiente para responder?\nOs documentos ficam disponíveis imediatamente?\nComo o conteúdo é usado pela IA?\n\nMENOS ARQUIVOS ABERTOS. MAIS CONTEXTO.\n\nSua próxima resposta\npode estar nas ferramentas que você já usa.\nCriar minha conta\n\nJá tem um espaço de trabalho? Entrar no Arquivio\n\narquivio.\n\nConhecimento que encontra o seu contexto.\n\nSobre acesso e privacidade"
+  },
+  "mobile": {
+    "title": "Arquivio — O conhecimento da sua equipe, com fontes",
+    "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+    "scenarios": [
+      {
+        "scenario": "Entrega do projeto",
+        "pressed": "true",
+        "expectedPresent": [
+          {
+            "item": "Todas as ferramentas",
+            "present": true
+          },
+          {
+            "item": "O que ficou definido para a primeira entrega?",
+            "present": true
+          },
+          {
+            "item": "Escopo do projeto.pdf",
+            "present": true
+          },
+          {
+            "item": "Reunião de alinhamento",
+            "present": true
+          }
+        ]
+      },
+      {
+        "scenario": "Só nesta pasta",
+        "pressed": "true",
+        "expectedPresent": [
+          {
+            "item": "Pasta · Projeto Aurora",
+            "present": true
+          },
+          {
+            "item": "Qual é o prazo da apresentação?",
+            "present": true
+          },
+          {
+            "item": "Cronograma Aurora.docx",
+            "present": true
+          }
+        ]
+      },
+      {
+        "scenario": "Sem evidência",
+        "pressed": "true",
+        "expectedPresent": [
+          {
+            "item": "Pasta · Projeto Aurora",
+            "present": true
+          },
+          {
+            "item": "Qual foi o orçamento aprovado para mídia?",
+            "present": true
+          },
+          {
+            "item": "Nenhum documento sustenta esta resposta.",
+            "present": true
+          }
+        ]
+      }
+    ],
+    "stages": [
+      {
+        "stage": "Defina o escopo",
+        "pressed": "true",
+        "dataStage": "1",
+        "readout": "ETAPA 01\nDefina o escopo"
+      },
+      {
+        "stage": "Faça a pergunta",
+        "pressed": "true",
+        "dataStage": "2",
+        "readout": "ETAPA 02\nFaça a pergunta"
+      },
+      {
+        "stage": "Confira as fontes",
+        "pressed": "true",
+        "dataStage": "3",
+        "readout": "ETAPA 03\nConfira as fontes"
+      }
+    ],
+    "links": [
+      {
+        "text": "Pular para o conteúdo",
+        "href": "#landing-main"
+      },
+      {
+        "text": "arquivio.",
+        "href": "#landing-main"
+      },
+      {
+        "text": "Como funciona",
+        "href": "#como-funciona"
+      },
+      {
+        "text": "Para sua equipe",
+        "href": "#para-equipes"
+      },
+      {
+        "text": "Dúvidas",
+        "href": "#perguntas"
+      },
+      {
+        "text": "Como funciona",
+        "href": "#como-funciona"
+      },
+      {
+        "text": "Para sua equipe",
+        "href": "#para-equipes"
+      },
+      {
+        "text": "Dúvidas",
+        "href": "#perguntas"
+      },
+      {
+        "text": "Testar a demonstração",
+        "href": "#demonstracao"
+      },
+      {
+        "text": "arquivio.",
+        "href": "#landing-main"
+      },
+      {
+        "text": "Sobre acesso e privacidade",
+        "href": "#perguntas"
+      }
+    ],
+    "fragments": [
+      {
+        "href": "#landing-main",
+        "targetExists": true
+      },
+      {
+        "href": "#landing-main",
+        "targetExists": true
+      },
+      {
+        "href": "#como-funciona",
+        "targetExists": true
+      },
+      {
+        "href": "#para-equipes",
+        "targetExists": true
+      },
+      {
+        "href": "#perguntas",
+        "targetExists": true
+      },
+      {
+        "href": "#como-funciona",
+        "targetExists": true
+      },
+      {
+        "href": "#para-equipes",
+        "targetExists": true
+      },
+      {
+        "href": "#perguntas",
+        "targetExists": true
+      },
+      {
+        "href": "#demonstracao",
+        "targetExists": true
+      },
+      {
+        "href": "#landing-main",
+        "targetExists": true
+      },
+      {
+        "href": "#perguntas",
+        "targetExists": true
+      }
+    ],
+    "logos": [
+      {
+        "label": "Google Drive",
+        "fills": [
+          "#0F9D58",
+          "#F4B400",
+          "#4285F4"
+        ]
+      },
+      {
+        "label": "Notion",
+        "fills": [
+          "#fff",
+          "#151b18"
+        ]
+      },
+      {
+        "label": "OneDrive",
+        "fills": [
+          "#1686D9",
+          "#075CAD"
+        ]
+      }
+    ],
+    "labels": {
+      "preview": 1,
+      "illustration": 1,
+      "illustrativeLibrary": 1,
+      "demo": 1,
+      "fictitious": 1
+    },
+    "mobileMenu": {
+      "open": "",
+      "login": 1,
+      "signup": 1,
+      "links": 3
+    },
+    "overflow": {
+      "document": false,
+      "body": false,
+      "scrollWidth": 375,
+      "clientWidth": 375
+    },
+    "interactiveCount": 31,
+    "interactive": [
+      {
+        "tag": "A",
+        "text": "Pular para o conteúdo",
+        "name": null,
+        "href": "#landing-main"
+      },
+      {
+        "tag": "A",
+        "text": "arquivio.",
+        "name": "Arquivio, início",
+        "href": "#landing-main"
+      },
+      {
+        "tag": "A",
+        "text": "Como funciona",
+        "name": null,
+        "href": "#como-funciona"
+      },
+      {
+        "tag": "A",
+        "text": "Para sua equipe",
+        "name": null,
+        "href": "#para-equipes"
+      },
+      {
+        "tag": "A",
+        "text": "Dúvidas",
+        "name": null,
+        "href": "#perguntas"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Entrar",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar conta",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "",
+        "name": "Abrir navegação",
+        "href": null
+      },
+      {
+        "tag": "A",
+        "text": "Como funciona",
+        "name": null,
+        "href": "#como-funciona"
+      },
+      {
+        "tag": "A",
+        "text": "Para sua equipe",
+        "name": null,
+        "href": "#para-equipes"
+      },
+      {
+        "tag": "A",
+        "text": "Dúvidas",
+        "name": null,
+        "href": "#perguntas"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Entrar na minha conta",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar conta",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Começar com o Arquivio",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "A",
+        "text": "Testar a demonstração",
+        "name": null,
+        "href": "#demonstracao"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "01Entrega do projeto",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "02Só nesta pasta",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "03Sem evidência",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "1Defina o escopoA resposta considera somente as fontes e pastas escolhidas.",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "2Faça a perguntaO Arquivio responde com base no conteúdo sincronizado.",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "3Confira as fontesOs documentos utilizados ficam visíveis para conferência.",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "O Arquivio substitui minhas ferramentas?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Que conteúdo posso consultar?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Quem pode acessar o conteúdo conectado?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "E se não houver informação suficiente para responder?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Os documentos ficam disponíveis imediatamente?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Como o conteúdo é usado pela IA?",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar minha conta",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Entrar no Arquivio",
+        "name": null,
+        "href": null
+      },
+      {
+        "tag": "A",
+        "text": "arquivio.",
+        "name": "Arquivio, voltar ao início",
+        "href": "#landing-main"
+      },
+      {
+        "tag": "A",
+        "text": "Sobre acesso e privacidade",
+        "name": null,
+        "href": "#perguntas"
+      }
+    ],
+    "contentLength": 4375,
+    "content": "Pular para o conteúdo\narquivio.\n\nSEU CONHECIMENTO, COM CONTEXTO\n\nA resposta está nos arquivos.\nAgora você sabe onde.\n\nBriefings, decisões e escopos espalhados pelo Google Drive, OneDrive e Notion. Pergunte ao Arquivio e confira os documentos por trás de cada resposta.\n\nComeçar com o Arquivio\nTestar a demonstração\n\nConexões de leitura\n·\nSeus originais continuam nas ferramentas conectadas\n\nEXPERIMENTE O FLUXO\nFaça uma pergunta. Veja o caminho da resposta.\n\nEscolha uma situação para entender como o contexto e os documentos utilizados aparecem na conversa.\n\n01\nEntrega do projeto\n02\nSó nesta pasta\n03\nSem evidência\n1\nDefina o escopo\n2\nFaça a pergunta\n3\nConfira as fontes\nDentro do Arquivio\nDemonstração interativa\nBiblioteca\nGoogle Drive\nNotion\nOneDrive\nEscopo da consulta\nPasta · Projeto Aurora\nETAPA 3\nPasta · Projeto Aurora\n\nQual foi o orçamento aprovado para mídia?\n\nArquivio · Pasta · Projeto Aurora\n\nNão encontrei evidência suficiente nos documentos desta pasta para confirmar um orçamento de mídia. Confira a fonte original ou amplie o contexto da consulta.\n\nDOCUMENTOS UTILIZADOS\n\nNenhum documento sustenta esta resposta.\n\nCampo de pergunta no produto\nILUSTRAÇÃO\n\nA IA usa somente o escopo selecionado e não responde sem evidência suficiente.\n\nO que observar\n\nOs documentos utilizados ficam visíveis para conferência.\n\nETAPA 03\nConfira as fontes\nUse os controles acima para percorrer o exemplo. Os demais elementos são uma prévia visual do produto.\nExplore os exemplos acima: a resposta muda com o contexto e as evidências disponíveis.\nDados fictícios para demonstrar a experiência.\n\nMENOS PROCURA. MAIS CLAREZA.\n\nA informação já existe.\nAgora ela participa da conversa.\n\nDo briefing à última decisão do projeto, dê à sua equipe um caminho direto até o conhecimento que está nos documentos.\n\nPergunte do seu jeito\n\nFaça perguntas em linguagem natural sobre o conteúdo sincronizado, sem abrir arquivo por arquivo.\n\nUma resposta, com origem\n\nVeja os documentos utilizados na resposta e abra os originais para conferir os detalhes.\n\nO contexto é você quem escolhe\n\nConsulte todas as ferramentas, uma ferramenta ou uma pasta específica. Cada pergunta usa o escopo selecionado.\n\nDAS FERRAMENTAS À RESPOSTA\n\nSeu conhecimento.\nUm novo jeito de acessar.\n\nComece com os documentos e páginas que a sua equipe já usa. O Arquivio conecta as informações à próxima pergunta.\n\n01\nConecte e escolha\n\nUm administrador conecta as ferramentas e seleciona o conteúdo que toda a organização pode consultar.\n\nGoogle Drive · OneDrive · Notion\n02\nAcompanhe a preparação\n\nDocumentos e páginas são processados em segundo plano. Veja o que está pronto e o que precisa de atenção.\n\nGoogle Docs · PDF · DOCX · Notion\n03\nPergunte e confira\n\nEscolha todas as ferramentas, uma ferramenta ou uma pasta; depois confira os documentos utilizados na resposta.\n\nRespostas ligadas às fontes\n\nConhecimento compartilhado exige uma escolha consciente. Todos os membros da organização têm acesso ao conteúdo sincronizado. Selecione apenas materiais que possam ser vistos por toda a equipe.\n\nFEITO PARA O TRABALHO EM EQUIPE\n\nO próximo passo começa\ncom uma boa pergunta.\n\nPara quem transforma informação em entregas, recomendações e decisões todos os dias.\n\n01 /\nAgências e marketing\n\nBriefings, escopos e decisões de campanha no contexto do cliente.\n\n“Quais entregas estão previstas no briefing?”\n02 /\nConsultorias\n\nPropostas, diagnósticos e relatórios para retomar o que foi documentado.\n\n“O que o diagnóstico recomenda para esta etapa?”\n03 /\nEquipes de software\n\nRequisitos e registros de projeto disponíveis para a próxima conversa.\n\n“Qual foi o escopo definido para esta entrega?”\n\nPerguntas ilustrativas. As respostas dependem das evidências nos documentos conectados.\n\nANTES DE COMEÇAR\n\nClareza desde\na primeira pergunta.\n\nO que o Arquivio faz, como funciona e o que considerar ao conectar sua equipe.\n\nO Arquivio substitui minhas ferramentas?\nQue conteúdo posso consultar?\nQuem pode acessar o conteúdo conectado?\nE se não houver informação suficiente para responder?\nOs documentos ficam disponíveis imediatamente?\nComo o conteúdo é usado pela IA?\n\nMENOS ARQUIVOS ABERTOS. MAIS CONTEXTO.\n\nSua próxima resposta\npode estar nas ferramentas que você já usa.\nCriar minha conta\n\nJá tem um espaço de trabalho? Entrar no Arquivio\n\narquivio.\n\nConhecimento que encontra o seu contexto.\n\nSobre acesso e privacidade"
+  },
+  "auth": {
+    "login": {
+      "url": "http://127.0.0.1:5174/login",
+      "heading": "Sua equipe sabe.\nEncontre a resposta.",
+      "loginButton": 1,
+      "signupButton": 1
+    },
+    "signup": {
+      "request": "http://127.0.0.1:5174/api/auth/login?screen_hint=sign-up"
+    }
+  },
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": []
+}

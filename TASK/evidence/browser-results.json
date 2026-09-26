@@ -1,0 +1,98 @@
+[
+  {
+    "name": "desktop-public",
+    "status": 200,
+    "url": "http://127.0.0.1:5174/",
+    "title": "Arquivio — O conhecimento da sua equipe, com fontes",
+    "bodyText": "Pular para o conteúdo\narquivio.\nComo funciona\nPara sua equipe\nDúvidas\nEntrar\nCriar conta\n\nSEU CONHECIMENTO, COM CONTEXTO\n\nO que sua equipe sabe,\nao alcance de uma pergunta.\n\nConecte Google Drive, OneDrive e Notion para transformar documentos em respostas com fontes.\nEncontre o que importa, entenda o contexto e confira de onde veio.\n\nComeçar com o Arquivio\nConhecer o produto\n\nConexões de leitura\n·\nSeus originais continuam nas ferramentas conectadas\n\nSeu espaço de conhecimento\nExemplo ilustrativo\nBiblioteca\nArquivos e pastas sincronizados\nBiblioteca\nG\nGoogle Drive\nProjeto Aurora\nN\nNotion\nOneDrive\n\nA conversa usa somente o contexto escolhido em “Consultar em”.\n\nConsultar em\nTodas as ferramentas · conteúdo indexado\n3 pastas disponíveis\nTodas as ferramentas\n\nO que ficou definido para a primeira entrega?\n\nArquivio · Todas as ferramentas\n\nA primeira entrega reúne o diagnóstico de marca e a proposta de posicionamento. O alinhamento também confirmou a apresentação dos conceitos visuais nesta etapa.\n\nDOCUMENTOS UTILIZADOS\n1\nEscopo do projeto.pdf\nGoogle Drive\n2\nReunião de alinhamento\nNotion\nO que você gostaria de saber?\nEnviar\n\nA IA usa somente o escopo selecionado e não responde sem evidência suficiente.\n\nBuscar arquivos\n\nEncontre arquivos e pastas pelo nome em todas as fontes conectadas.\n\nNome de arquivo ou pasta\nA busca consulta somente nomes; o conteúdo permanece no escopo da conversa.\nConverse com o conteúdo das ferramentas conectadas e confira os documentos utilizados.\nDados fictícios para demonstrar a experiência.\n\nMENOS PROCURA. MAIS CLAREZA.\n\nA informação já existe.\nAgora ela participa da conversa.\n\nDo briefing à última decisão do projeto, dê à sua equipe um caminho direto até o conhecimento que está nos documentos.\n\nPergunte do seu jeito\n\nFaça perguntas em linguagem natural sobre o conteúdo sincronizado, sem abrir arquivo por arquivo.\n\nUma resposta, com origem\n\nVeja os documentos utilizados na resposta e abra os originais para conferir os detalhes.\n\nO contexto é você quem escolhe\n\nConsulte todas as ferramentas, uma ferramenta ou uma pasta específica. Cada pergunta usa o escopo selecionado.\n\nDAS FERRAMENTAS À RESPOSTA\n\nSeu conhecimento.\nUm novo jeito de acessar.\n\nComece com os documentos e páginas que a sua equipe já usa. O Arquivio conecta as informações à próxima pergunta.\n\n01\nConecte e escolha\n\nUm administrador conecta as ferramentas e seleciona o conteúdo que toda a organização pode consultar.\n\nGoogle Drive · OneDrive · Notion\n02\nAcompanhe a preparação\n\nDocumentos e páginas são processados em segundo plano. Veja o que está pronto e o que precisa de atenção.\n\nGoogle Docs · PDF · DOCX · Notion\n03\nPergunte e confira\n\nEscolha todas as ferramentas, uma ferramenta ou uma pasta; depois confira os documentos utilizados na resposta.\n\nRespostas ligadas às fontes\n\nConhecimento compartilhado exige uma escolha consciente. Todos os membros da organização têm acesso ao conteúdo sincronizado. Selecione apenas materiais que possam ser vistos por toda a equipe.\n\nFEITO PARA O TRABALHO EM EQUIPE\n\nO próximo passo começa\ncom uma boa pergunta.\n\nPara quem transforma informação em entregas, recomendações e decisões todos os dias.\n\n01 /\nAgências e marketing\n\nBriefings, escopos e decisões de campanha no contexto do cliente.\n\n“Quais entregas estão previstas no briefing?”\n02 /\nConsultorias\n\nPropostas, diagnósticos e relatórios para retomar o que foi documentado.\n\n“O que o diagnóstico recomenda para esta etapa?”\n03 /\nEquipes de software\n\nRequisitos e registros de projeto disponíveis para a próxima conversa.\n\n“Qual foi o escopo definido para esta entrega?”\n\nPerguntas ilustrativas. As respostas dependem das evidências nos documentos conectados.\n\nANTES DE COMEÇAR\n\nClareza desde\na primeira pergunta.\n\nO que o Arquivio faz, como funciona e o que considerar ao conectar sua equipe.\n\nO Arquivio substitui minhas ferramentas?\nQue conteúdo posso consultar?\nQuem pode acessar o conteúdo conectado?\nE se não houver informação suficiente para responder?\nOs documentos ficam disponíveis imediatamente?\nComo o conteúdo é usado pela IA?\n\nMENOS ARQUIVOS ABERTOS. MAIS CONTEXTO.\n\nSua próxima resposta\npode estar nas ferramentas que você já usa.\nCriar minha conta\n\nJá tem um espaço de trabalho? Entrar no Arquivio\n\narquivio.\n\nConhecimento que encontra o seu contexto.\n\nSobre acesso e privacidade",
+    "links": [
+      {
+        "text": "Pular para o conteúdo",
+        "href": "#landing-main"
+      },
+      {
+        "text": "arquivio.",
+        "href": "#landing-main"
+      },
+      {
+        "text": "Como funciona",
+        "href": "#como-funciona"
+      },
+      {
+        "text": "Para sua equipe",
+        "href": "#para-equipes"
+      },
+      {
+        "text": "Dúvidas",
+        "href": "#perguntas"
+      },
+      {
+        "text": "Conhecer o produto",
+        "href": "#como-funciona"
+      },
+      {
+        "text": "arquivio.",
+        "href": "#landing-main"
+      },
+      {
+        "text": "Sobre acesso e privacidade",
+        "href": "#perguntas"
+      }
+    ],
+    "buttons": [
+      "Entrar",
+      "Criar conta ",
+      "Começar com o Arquivio ",
+      "Criar minha conta ",
+      "Entrar no Arquivio"
+    ],
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ],
+    "pageErrors": [],
+    "failedRequests": [],
+    "overflow": {
+      "width": 1440,
+      "viewport": 1440,
+      "overflow": false
+    }
+  },
+  {
+    "name": "mobile-library-empty",
+    "status": 200,
+    "url": "http://127.0.0.1:5174/companies/11111111-1111-4111-8111-111111111111/library",
+    "title": "Arquivio — O conhecimento da sua equipe, com fontes",
+    "bodyText": "arquivio.\nOrganização QA\n\nBiblioteca\n\nArquivos e pastas sincronizados\n\nBiblioteca\n\nNenhum item neste nível.\n\nTodas as fontes\n\nClique em uma pasta para navegar. Clique em um arquivo para abrir a origem.\n\n0 itens\nBuscar arquivos e pastas por nome\nSua biblioteca começa aqui\n\nConecte uma fonte e escolha as pastas que sua equipe pode consultar.\n\nConectar uma fonte\n\nEspaços sincronizados\n\nAções aplicam-se ao índice local do escopo.\n\nNenhum espaço sincronizado.",
+    "links": [],
+    "buttons": [
+      "arquivio.",
+      "Navegar",
+      "",
+      "",
+      "",
+      "Biblioteca",
+      "",
+      "",
+      "Conectar uma fonte",
+      ""
+    ],
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failedRequests": [],
+    "overflow": {
+      "width": 375,
+      "viewport": 375,
+      "overflow": false
+    }
+  },
+  {
+    "name": "tablet-library-error",
+    "alerts": [
+      "O serviço está temporariamente indisponível. Tente novamente em instantes.Tentar novamente"
+    ],
+    "retryButtons": 1,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ]
+  }
+]

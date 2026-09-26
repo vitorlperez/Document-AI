@@ -1,0 +1,13 @@
+{
+  "tested_at": "2026-09-25",
+  "commit": "de2a3e6e9417be248761662731a06d434216a091",
+  "runtime": "Vinext/Wrangler local com upstream controlado",
+  "cases": [
+    { "path": "/api/session", "upstream_status": 401, "proxy_status": 200, "body": null },
+    { "path": "/api/me", "upstream_status": 401, "proxy_status": 401, "body": { "detail": "authentication required" } },
+    { "path": "/api/session", "upstream_status": 503, "proxy_status": 503, "body": { "detail": "upstream unavailable" } },
+    { "path": "/api/me", "upstream_status": 503, "proxy_status": 503, "body": { "detail": "upstream unavailable" } },
+    { "path": "/api/session", "upstream_status": 200, "proxy_status": 200, "body": { "id": "33333333-3333-4333-8333-333333333333", "email": "qa@example.test", "is_platform_staff": false } },
+    { "path": "/api/organizations", "upstream_status": 200, "proxy_status": 200, "body": [{ "id": "11111111-1111-4111-8111-111111111111", "membership_id": "22222222-2222-4222-8222-222222222222", "name": "Organização QA", "role": "owner" }] }
+  ]
+}

@@ -1,0 +1,280 @@
+{
+  "http": {},
+  "landing": {
+    "title": "A resposta está nos arquivos.\nAgora você sabe onde.",
+    "logos": [
+      {
+        "label": "Google Drive",
+        "hidden": null,
+        "role": "img",
+        "classes": "provider-logo provider-logo-google landing-provider-logo",
+        "rect": {
+          "width": 25,
+          "height": 25
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "svg": {
+          "x": 148,
+          "y": 1202.1875,
+          "width": 19,
+          "height": 19,
+          "top": 1202.1875,
+          "right": 167,
+          "bottom": 1221.1875,
+          "left": 148
+        },
+        "fills": [
+          "#0F9D58",
+          "#F4B400",
+          "#4285F4"
+        ]
+      },
+      {
+        "label": "Notion",
+        "hidden": null,
+        "role": "img",
+        "classes": "provider-logo provider-logo-notion landing-provider-logo",
+        "rect": {
+          "width": 25,
+          "height": 25
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "svg": {
+          "x": 148,
+          "y": 1283.1875,
+          "width": 19,
+          "height": 19,
+          "top": 1283.1875,
+          "right": 167,
+          "bottom": 1302.1875,
+          "left": 148
+        },
+        "fills": [
+          "#fff",
+          "#151b18"
+        ]
+      },
+      {
+        "label": "OneDrive",
+        "hidden": null,
+        "role": "img",
+        "classes": "provider-logo provider-logo-onedrive landing-provider-logo",
+        "rect": {
+          "width": 25,
+          "height": 25
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "svg": {
+          "x": 148,
+          "y": 1332.1875,
+          "width": 19,
+          "height": 19,
+          "top": 1332.1875,
+          "right": 167,
+          "bottom": 1351.1875,
+          "left": 148
+        },
+        "fills": [
+          "#1686D9",
+          "#075CAD"
+        ]
+      }
+    ],
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "errors": []
+  },
+  "library": {
+    "text": "arquivio.\nQA Arquivio\nResponsável\nqa@example.com\nNavegar\n\nBiblioteca\n\nArquivos e pastas sincronizados\n\nBiblioteca\nGoogle Drive\nOneDrive\nNotion\n\nTodas as fontes\n\nClique em uma pasta para navegar. Clique em um arquivo para abrir a origem.\n\n3 itens\nBuscar arquivos e pastas por nome\nGoogle Drive\nIntegração\nOneDrive\nIntegração\nNotion\nIntegração\n\nEspaços sincronizados\n\nAções aplicam-se ao índice local do escopo.\n\nNenhum espaço sincronizado.",
+    "logos": [
+      {
+        "classes": "provider-logo provider-logo-google",
+        "hidden": "true",
+        "rect": {
+          "width": 18,
+          "height": 18
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "fills": [
+          "#0F9D58",
+          "#F4B400",
+          "#4285F4"
+        ]
+      },
+      {
+        "classes": "provider-logo provider-logo-onedrive",
+        "hidden": "true",
+        "rect": {
+          "width": 18,
+          "height": 18
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "fills": [
+          "#1686D9",
+          "#075CAD"
+        ]
+      },
+      {
+        "classes": "provider-logo provider-logo-notion",
+        "hidden": "true",
+        "rect": {
+          "width": 18,
+          "height": 18
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "fills": [
+          "#fff",
+          "#151b18"
+        ]
+      },
+      {
+        "classes": "provider-logo provider-logo-google",
+        "hidden": "true",
+        "rect": {
+          "width": 26,
+          "height": 26
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "fills": [
+          "#0F9D58",
+          "#F4B400",
+          "#4285F4"
+        ]
+      },
+      {
+        "classes": "provider-logo provider-logo-onedrive",
+        "hidden": "true",
+        "rect": {
+          "width": 26,
+          "height": 26
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "fills": [
+          "#1686D9",
+          "#075CAD"
+        ]
+      },
+      {
+        "classes": "provider-logo provider-logo-notion",
+        "hidden": "true",
+        "rect": {
+          "width": 26,
+          "height": 26
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "fills": [
+          "#fff",
+          "#151b18"
+        ]
+      }
+    ],
+    "errors": []
+  },
+  "integrations": {
+    "text": "arquivio.\nQA Arquivio\nResponsável\nqa@example.com\nNavegar\n\nIntegrações da organização\n\nFontes de conhecimento\n\nConecte ferramentas que alimentam a base de conhecimento da sua organização.\n\nConectadas\n\nGerencie as ferramentas que já fazem parte da base de conhecimento.\n\nGoogle Drive\nConfira a conexão, adicione pastas e faça re-sync dos espaços existentes.\nConectado\n· google@example.com\nGerenciar\nOneDrive\nConecte uma conta Microsoft pessoal, corporativa ou escolar, escolha pastas e sincronize os arquivos.\nConectado\n· onedrive@example.com\nDesconectar\nGerenciar\nNotion\nConfira a conexão, sincronize páginas e faça re-sync dos espaços existentes.\nConectado\n· notion@example.com\nGerenciar\nArquivos\n\nArmazene e sincronize documentos e pastas da equipe.\n\nDocumentação\n\nCentralize documentação técnica e conhecimento estruturado.\n\nGitHub Markdown\nIndexe README, docs e arquivos Markdown versionados por repositório.\nEm breve\nComunicação\n\nPesquise decisões e conversas relevantes da equipe.\n\nSlack e Microsoft Teams\nIntegrações de comunicação serão adicionadas depois das fontes documentais.\nEm breve",
+    "logos": [
+      {
+        "classes": "provider-logo provider-logo-google",
+        "hidden": "true",
+        "rect": {
+          "width": 26,
+          "height": 26
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "fills": [
+          "#0F9D58",
+          "#F4B400",
+          "#4285F4"
+        ]
+      },
+      {
+        "classes": "provider-logo provider-logo-onedrive",
+        "hidden": "true",
+        "rect": {
+          "width": 26,
+          "height": 26
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "fills": [
+          "#1686D9",
+          "#075CAD"
+        ]
+      },
+      {
+        "classes": "provider-logo provider-logo-notion",
+        "hidden": "true",
+        "rect": {
+          "width": 26,
+          "height": 26
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "fills": [
+          "#fff",
+          "#151b18"
+        ]
+      },
+      {
+        "classes": "provider-logo provider-logo-github",
+        "hidden": "true",
+        "rect": {
+          "width": 26,
+          "height": 26
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "fills": [
+          "#24292F"
+        ]
+      },
+      {
+        "classes": "provider-logo provider-logo-teams",
+        "hidden": "true",
+        "rect": {
+          "width": 26,
+          "height": 26
+        },
+        "opacity": "1",
+        "overflow": "visible",
+        "fills": [
+          "#5059C9",
+          "#7B83EB",
+          "#7B83EB",
+          "#4B53BC",
+          "#fff"
+        ]
+      }
+    ],
+    "errors": [],
+    "googleDialog": {
+      "title": "Google Drive",
+      "logoCount": 1
+    },
+    "dialogClosed": true,
+    "mobileOverflow": {
+      "scrollWidth": 375,
+      "clientWidth": 375
+    }
+  },
+  "errors": [
+    "console: [vinext] RSC prefetch setup error: TypeError: p is not a function\n    at http://127.0.0.1:8787/_next/static/chunks/product-app-C0eG4WFZ.js:2:11174"
+  ],
+  "auth": {
+    "url": "http://127.0.0.1:8787/login",
+    "heading": "Sua equipe sabe.\nEncontre a resposta.",
+    "errors": [
+      "console: [vinext] RSC prefetch setup error: TypeError: p is not a function\n    at http://127.0.0.1:8787/_next/static/chunks/product-app-C0eG4WFZ.js:2:11174"
+    ]
+  }
+}
