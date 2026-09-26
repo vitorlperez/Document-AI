@@ -95,7 +95,6 @@
 .landing-benefits { padding-block: 104px 92px; }
 .landing-page h2 { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(32px, 3.2vw, 43px); font-weight: 400; line-height: 1.2; letter-spacing: -1.3px; margin-bottom: 22px; }
 .landing-section-intro { max-width: 590px; }
-.landing-section-intro > p:last-child { font-size: 14px; color: var(--landing-muted); max-width: 470px; line-height: 1.8; }
 .landing-benefit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; margin-top: 49px; }
 .landing-benefit-grid article { border-top: 1px solid var(--landing-line); padding-top: 25px; }
 .landing-feature-icon { display: inline-flex; color: var(--landing-teal); margin-bottom: 16px; }
@@ -127,7 +126,6 @@
 .landing-audience-list > article > svg { color: #819376; }
 .landing-audience-note { font-size: 10px; color: var(--landing-muted); margin: 17px 0 0; }
 .landing-faq { display: grid; grid-template-columns: 1fr 1.3fr; gap: 80px; padding-block: 18px 94px; }
-.landing-faq > div > p:last-child { font-size: 13px; color: var(--landing-muted); max-width: 280px; line-height: 1.85; }
 .landing-faq-list { border-top: 1px solid var(--landing-line); }
 .landing-faq-list details { border-bottom: 1px solid var(--landing-line); }
 .landing-faq-list summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 19px 0; font-size: 13px; font-weight: 500; }
@@ -193,7 +191,6 @@
   .landing-audience-list article > svg { display: none; }
   .landing-audience-list blockquote { font-size: 16px; }
   .landing-faq { grid-template-columns: 1fr; gap: 20px; padding-bottom: 70px; }
-  .landing-faq > div > p:last-child { max-width: 400px; }
   .landing-footer { flex-wrap: wrap; }
   .landing-footer p { order: 3; width: 100%; }
 }
@@ -241,7 +238,6 @@
   .landing-preview figcaption { flex-direction: column; gap: 4px; font-size: 9px; margin-top: 13px; }
   .landing-benefits { padding-block: 65px 58px; }
   .landing-page h2 { font-size: 33px; letter-spacing: -1px; }
-  .landing-section-intro > p:last-child { font-size: 13px; }
   .landing-benefit-grid { grid-template-columns: 1fr; gap: 25px; margin-top: 31px; }
   .landing-benefit-grid article { position: relative; padding-left: 42px; padding-top: 23px; }
   .landing-feature-icon { position: absolute; left: 0; top: 25px; }
@@ -432,4 +428,102 @@
   .landing-product-source { min-height: 39px; margin-bottom: 7px; font-size: 9px; }
   .landing-provider-logo { --provider-logo-size: 24px !important; }
   .landing-product-thread { min-height: 300px; }
+}
+
+/* The preview shows the same three workspace areas as the product. */
+.landing-page { font-family: Arial, Helvetica, sans-serif; }
+.landing-hero { padding-top: clamp(54px, 7vw, 104px); }
+.landing-hero > h1 { max-width: 1020px; }
+.landing-hero-description { max-width: 480px; line-height: 1.6; }
+.landing-hero-note { margin-bottom: clamp(82px, 10vw, 130px); }
+.landing-demo-guide { grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: end; padding-bottom: 22px; }
+.landing-demo-guide h2 { max-width: 690px; margin-bottom: 0; }
+.landing-demo-options { display: flex; align-items: center; gap: 4px; border: 0; border-bottom: 1px solid var(--landing-line); }
+.landing-demo-options button { width: auto; min-height: 44px; padding: 9px 13px; border: 0; border-bottom: 2px solid transparent; white-space: nowrap; color: var(--landing-muted); font-size: 12px; }
+.landing-demo-options button:hover { background: transparent; color: var(--landing-teal); }
+.landing-demo-options button.is-active { background: transparent; box-shadow: none; border-bottom-color: var(--landing-teal); color: var(--landing-ink); }
+.landing-preview-top { border-radius: 9px 9px 0 0; }
+.landing-product { display: grid; grid-template-columns: 198px minmax(0, 1fr) 205px; max-width: none; min-height: 410px; border-radius: 0 0 9px 9px; }
+.landing-product-sources { display: flex; }
+.landing-product-chat { min-height: 0; padding: 0 0 14px; }
+.landing-product-context { padding: 16px 22px; background: #f7f8f3; }
+.landing-product-context strong { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--landing-muted); }
+.landing-product-context div > span { font-size: 11px; }
+.landing-product-thread { width: 100%; min-height: 260px; margin: 0 auto; padding: 25px 22px 20px; }
+.landing-product-question { font-size: 12px; padding: 10px 13px; margin-bottom: 22px; }
+.landing-product-answer { gap: 10px; font-size: 12px; line-height: 1.65; }
+.landing-product-avatar { width: 28px; height: 28px; }
+.landing-product-answer-name { font-size: 11px; line-height: 28px; }
+.landing-product-answer p { margin-bottom: 11px; }
+.landing-product-references { margin-top: 16px; padding-top: 12px; }
+.landing-product-references > strong { font-size: 9px; margin-bottom: 6px; }
+.landing-product-references > div { font-size: 10px; padding: 5px 0; }
+.landing-product-references small { font-size: 9px; }
+.landing-product-composer { margin: auto 22px 0; min-height: 39px; border-style: solid; }
+.landing-product-send { width: 25px; padding: 0; color: #fff; background: var(--landing-teal); }
+.landing-product-library { display: block; padding: 19px 15px; }
+.landing-product-library-heading { font-size: 12px; margin-bottom: 4px; }
+.landing-product-library > p { font-size: 10px; margin-bottom: 14px; }
+.landing-product-library-search { min-height: 34px; font-size: 9px; }
+.landing-product-document { min-width: 0; }
+.landing-product-document > div { min-width: 0; }
+.landing-product-document p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.landing-preview-organization { color: var(--landing-muted); font-weight: 400; }
+.landing-product-source { margin-top: 6px; }
+.landing-product-sidebar-heading { padding-bottom: 16px; }
+.landing-provider-logo { padding: 2px; }
+.landing-preview figcaption { margin-top: 12px; }
+.landing-benefits { padding-block: clamp(78px, 8vw, 112px); }
+.landing-benefit-grid { margin-top: 40px; }
+.landing-workflow { padding-block: 82px 56px; }
+.landing-steps { margin-block: 40px; }
+.landing-steps p { max-width: 250px; margin-bottom: 0; }
+.landing-audiences { padding-block: 82px 74px; }
+.landing-section-intro > p:last-child { max-width: 540px; font-size: 13px; color: var(--landing-muted); line-height: 1.7; }
+.landing-faq { padding-block: 80px; }
+.landing-closing { padding-block: 70px; }
+@media (max-width: 1050px) {
+  .landing-product { grid-template-columns: 170px minmax(0, 1fr) 180px; }
+  .landing-product-sources { padding-inline: 0; }
+  .landing-product-library { padding-inline: 12px; }
+}
+@media (max-width: 900px) {
+  .landing-demo-guide { grid-template-columns: 1fr; gap: 19px; }
+  .landing-demo-options { justify-content: flex-start; width: max-content; max-width: 100%; }
+}
+@media (max-width: 800px) {
+  .landing-product { grid-template-columns: 165px minmax(0, 1fr); }
+  .landing-product-library { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; padding: 15px 18px; }
+  .landing-product-library-heading, .landing-product-library > p { grid-column: 1 / -1; }
+  .landing-product-library .landing-product-document { grid-column: 2; }
+  .landing-product-library-search { grid-row: 3 / 5; align-self: start; }
+}
+@media (max-width: 560px) {
+  .landing-hero > h1 { font-size: clamp(36px, 9.4vw, 49px); }
+  .landing-hero-note { margin-bottom: 58px; }
+  .landing-demo-options { display: flex; width: 100%; gap: 0; border-top: 0; }
+  .landing-demo-options button { flex: 1; width: auto; min-height: 44px; padding: 8px 4px; border: 0; border-bottom: 2px solid transparent; text-align: center; font-size: 10px; }
+  .landing-demo-options button.is-active { border-bottom-color: var(--landing-teal); }
+  .landing-preview-organization { display: none; }
+  .landing-product { grid-template-columns: minmax(0, 1fr); }
+  .landing-product-sources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-right: 0; }
+  .landing-product-sidebar-heading { grid-column: 1 / -1; padding: 12px 14px 4px; }
+  .landing-product-sidebar-heading span, .landing-product-breadcrumb, .landing-product-folder { display: none; }
+  .landing-product-source { margin: 0; min-height: 42px; justify-content: center; padding: 6px 3px; font-size: 9px; }
+  .landing-provider-logo { --provider-logo-size: 20px !important; }
+  .landing-product-context { padding: 15px; }
+  .landing-product-thread { padding: 24px 15px 18px; min-height: 0; }
+  .landing-product-question { font-size: 12px; margin-bottom: 25px; }
+  .landing-product-answer { font-size: 12px; }
+  .landing-product-references > div { gap: 5px; font-size: 10px; }
+  .landing-product-references small { width: 100%; margin-left: 20px; }
+  .landing-product-composer { margin: 10px 15px 0; }
+  .landing-product-library { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .landing-product-library-heading, .landing-product-library > p { grid-column: 1 / -1; }
+  .landing-product-library-search { grid-column: 1 / -1; grid-row: auto; }
+  .landing-product-library .landing-product-document { grid-column: auto; }
+  .landing-benefits { padding-block: 85px 75px; }
+  .landing-workflow { padding-block: 68px 42px; }
+  .landing-audiences { padding-block: 66px; }
+  .landing-faq { padding-block: 78px; }
 }
