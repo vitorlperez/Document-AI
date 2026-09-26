@@ -3,6 +3,7 @@
 import re
 from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
+from uuid import UUID
 from zipfile import BadZipFile
 
 from docx import Document as DocxDocument
@@ -14,10 +15,16 @@ from docx.text.paragraph import Paragraph
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
-from app.ingestion.service import ELIGIBLE_MIME_TYPES, DiscoveredDocument, ExtractedBlock
+from app.ingestion.service import (
+    ELIGIBLE_MIME_TYPES,
+    DiscoveredDocument,
+    DiscoveryResult,
+    ExtractedBlock,
+)
 from app.integrations.google_drive import (
     CredentialCipher,
     GoogleCredentials,
+    GoogleCursorInvalid,
     GoogleDriveOAuthClient,
     GoogleRemoteUnauthorized,
     RemoteFile,
@@ -47,15 +54,108 @@ class GoogleDriveDocumentProvider:
         *,
         encrypted_credentials: str,
         selections: list[WorkspaceFolderSelection],
-    ) -> list[DiscoveredDocument]:
+    ) -> DiscoveryResult:
         credentials = self.cipher.decrypt(encrypted_credentials)
+        links: dict[UUID, str | None] = {}
+        # The first run (or a newly added selection) takes a complete snapshot.
+        # Capture cursors first so edits during enumeration are picked up next run.
+        if any(not selection.encrypted_delta_link for selection in selections):
+            for selection in selections:
+                links[selection.id] = self.client.start_page_token(credentials=credentials)
+            return DiscoveryResult(
+                documents=self._snapshot(credentials, selections),
+                delta_links=links,
+                full_snapshot=True,
+            )
+
+        try:
+            folders = self.client.list_folders(credentials=credentials)
+            descendants: dict[str, set[str]] = {}
+            children: dict[str, set[str]] = {}
+            for folder in folders:
+                for parent_id in folder.parent_ids:
+                    children.setdefault(parent_id, set()).add(folder.id)
+            for selection in selections:
+                if selection.kind != "folder":
+                    continue
+                included = {selection.external_folder_id}
+                pending = [selection.external_folder_id]
+                while pending:
+                    parent_id = pending.pop()
+                    for child_id in children.get(parent_id, set()) - included:
+                        included.add(child_id)
+                        pending.append(child_id)
+                descendants[selection.external_folder_id] = included
+
+            changes_by_id: dict[str, RemoteFile] = {}
+            removed: set[str] = set()
+            folder_changed = False
+            for selection in selections:
+                cursor = self.cipher.decrypt_cursor(selection.encrypted_delta_link)
+                page = self.client.changes(credentials=credentials, page_token=cursor)
+                links[selection.id] = page.new_start_page_token
+                for change in page.changes:
+                    file_id = str(change.get("fileId") or "")
+                    item = change.get("file")
+                    if not file_id:
+                        continue
+                    if change.get("removed") or not isinstance(item, dict) or item.get("trashed"):
+                        removed.add(file_id)
+                        changes_by_id.pop(file_id, None)
+                        continue
+                    remote_file = self.client._remote_file(item)
+                    if remote_file.mime_type == "application/vnd.google-apps.folder":
+                        folder_changed = True
+                        continue
+                    in_scope = any(
+                        selection.kind == "all_accessible"
+                        or (selection.kind == "root_files" and "root" in remote_file.parent_ids)
+                        or (
+                            selection.kind == "folder"
+                            and bool(descendants.get(selection.external_folder_id, set()) & set(remote_file.parent_ids))
+                        )
+                        for selection in selections
+                    )
+                    if in_scope:
+                        changes_by_id[file_id] = remote_file
+                        removed.discard(file_id)
+                    else:
+                        removed.add(file_id)
+            if folder_changed:
+                # Changes to folder ancestry can affect every descendant; a
+                # full reconciliation safely handles moves into and out of scope.
+                links = {
+                    selection.id: self.client.start_page_token(credentials=credentials)
+                    for selection in selections
+                }
+                return DiscoveryResult(
+                    documents=self._snapshot(credentials, selections),
+                    delta_links=links,
+                    full_snapshot=True,
+                )
+            result = self._extract_files(credentials, changes_by_id.values())
+            return DiscoveryResult(
+                documents=result,
+                removed_file_ids=tuple(sorted(removed)),
+                delta_links=links,
+                full_snapshot=False,
+            )
+        except GoogleCursorInvalid:
+            links = {
+                selection.id: self.client.start_page_token(credentials=credentials)
+                for selection in selections
+            }
+            return DiscoveryResult(
+                documents=self._snapshot(credentials, selections),
+                delta_links=links,
+                full_snapshot=True,
+            )
+
+    def _snapshot(self, credentials: GoogleCredentials, selections: list[WorkspaceFolderSelection]) -> list[DiscoveredDocument]:
         remote_files: dict[str, RemoteFile] = {}
         for selection in selections:
             if selection.kind == "folder":
-                found = self.client.list_folder_files(
-                    credentials=credentials,
-                    root_folder_id=selection.external_folder_id,
-                )
+                found = self.client.list_folder_files(credentials=credentials, root_folder_id=selection.external_folder_id)
             elif selection.kind == "root_files":
                 found = self.client.list_root_files(credentials=credentials)
             elif selection.kind == "all_accessible":
@@ -64,9 +164,10 @@ class GoogleDriveDocumentProvider:
                 raise ValueError("unsupported workspace selection")
             for remote_file in found:
                 remote_files.setdefault(remote_file.id, remote_file)
-        # A Drive response does not promise an implicit ordering. Stable IDs
-        # make repeated full snapshots and the concurrent projection predictable.
-        files = sorted(remote_files.values(), key=lambda remote_file: remote_file.id)
+        return self._extract_files(credentials, remote_files.values())
+
+    def _extract_files(self, credentials: GoogleCredentials, remote_files) -> list[DiscoveredDocument]:
+        files = sorted(remote_files, key=lambda remote_file: remote_file.id)
         if not files:
             return []
         # Only remote reads and parsing happen on threads. The caller keeps all
@@ -86,6 +187,9 @@ class GoogleDriveDocumentProvider:
         provider credentials and does not browse Drive during a user request.
         """
         return self.client.list_folders(credentials=self.cipher.decrypt(encrypted_credentials))
+
+    def encrypt_delta_link(self, value: str) -> str:
+        return self.cipher.encrypt_cursor(value)
 
     def _extract(self, *, credentials: GoogleCredentials, remote_file: RemoteFile) -> DiscoveredDocument:
         base = {

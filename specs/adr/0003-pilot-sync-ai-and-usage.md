@@ -2,8 +2,11 @@
 
 **Status:** aprovado em 2026-09-11
 
-- Sincronização é manual e faz reconciliação completa de uma pasta e subpastas;
-  não há polling nem Changes API no piloto.
+- Sincronização é manual. Google Drive usa uma fotografia completa inicial e
+  a API Changes nas execuções seguintes. Cursores cifrados avançam somente
+  após ingestão bem-sucedida; cursor expirado ou mudança em pastas que possa
+  alterar a ancestralidade do escopo exige nova fotografia completa. OneDrive
+  usa o delta do Microsoft Graph. Não há polling agendado.
 - F-006 usa OpenAI via adaptadores próprios: `text-embedding-3-small` para
   embeddings e Responses API com `gpt-5-mini` para respostas. `store=false`;
   nenhum arquivo é enviado à API, somente chunks já autorizados.

@@ -41,6 +41,16 @@ class GoogleRemoteUnauthorized(SourceRemoteUnauthorized):
     pass
 
 
+class GoogleCursorInvalid(GoogleOAuthInvalid):
+    """The Drive Changes page token expired and needs a fresh snapshot."""
+
+
+@dataclass(frozen=True)
+class GoogleChangesPage:
+    changes: list[dict[str, object]]
+    new_start_page_token: str
+
+
 logger = logging.getLogger("document_intelligence.integration")
 
 
@@ -153,6 +163,55 @@ class GoogleDriveOAuthClient:
             page_token = data.get("nextPageToken")
             if page_token is None:
                 return folders
+
+    def start_page_token(self, *, credentials: GoogleCredentials) -> str:
+        response = httpx.get(
+            "https://www.googleapis.com/drive/v3/changes/startPageToken",
+            params={"supportsAllDrives": "true"},
+            headers={"Authorization": f"Bearer {credentials.access_token}"},
+            timeout=20,
+        )
+        if response.status_code in {401, 403}:
+            raise GoogleRemoteUnauthorized()
+        response.raise_for_status()
+        token = response.json().get("startPageToken")
+        if not isinstance(token, str) or not token:
+            raise GoogleOAuthInvalid("Google Drive change token is invalid")
+        return token
+
+    def changes(self, *, credentials: GoogleCredentials, page_token: str) -> GoogleChangesPage:
+        changes: list[dict[str, object]] = []
+        while True:
+            response = httpx.get(
+                "https://www.googleapis.com/drive/v3/changes",
+                params={
+                    "pageToken": page_token,
+                    "pageSize": 1000,
+                    "spaces": "drive",
+                    "includeItemsFromAllDrives": "true",
+                    "supportsAllDrives": "true",
+                    "fields": "nextPageToken,newStartPageToken,changes(fileId,removed,file(id,name,mimeType,modifiedTime,webViewLink,parents,trashed))",
+                },
+                headers={"Authorization": f"Bearer {credentials.access_token}"},
+                timeout=20,
+            )
+            if response.status_code in {401, 403}:
+                raise GoogleRemoteUnauthorized()
+            if response.status_code in {400, 410}:
+                raise GoogleCursorInvalid("Google Drive change cursor expired")
+            response.raise_for_status()
+            payload = response.json()
+            page_changes = payload.get("changes", [])
+            if isinstance(page_changes, list):
+                changes.extend(item for item in page_changes if isinstance(item, dict))
+            next_token = payload.get("nextPageToken")
+            if isinstance(next_token, str):
+                page_token = next_token
+                continue
+            new_token = payload.get("newStartPageToken")
+            if isinstance(new_token, str) and new_token:
+                return GoogleChangesPage(changes, new_token)
+            raise GoogleOAuthInvalid("Google Drive change response is incomplete")
 
     def list_folder_files(
         self, *, credentials: GoogleCredentials, root_folder_id: str
@@ -309,6 +368,19 @@ class CredentialCipher:
         return GoogleCredentials(
             access, refresh or None, datetime.fromisoformat(expires) if expires else None
         )
+
+    def encrypt_cursor(self, value: str) -> str:
+        if not self.key:
+            raise GoogleOAuthUnavailable("Google token encryption is not configured")
+        return Fernet(self.key.encode()).encrypt(value.encode()).decode()
+
+    def decrypt_cursor(self, value: str) -> str:
+        if not self.key:
+            raise GoogleOAuthUnavailable("Google token encryption is not configured")
+        try:
+            return Fernet(self.key.encode()).decrypt(value.encode()).decode()
+        except (InvalidToken, ValueError) as error:
+            raise GoogleCursorInvalid("change cursor unavailable") from error
 
 
 class GoogleConnectionService:
