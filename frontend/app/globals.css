@@ -254,26 +254,16 @@ summary:focus-visible {
   color: rgb(159 18 57);
 }
 
-.provider-mark {
+.provider-logo {
   display: inline-grid;
-  width: 1.6rem;
-  height: 1.6rem;
+  width: var(--provider-logo-size);
+  height: var(--provider-logo-size);
+  flex: 0 0 var(--provider-logo-size);
   place-items: center;
-  border: 1px solid currentColor;
-  border-radius: 0.35rem;
-  background: white;
-  color: #334155;
-  font-size: 0.65rem;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.04em;
+  overflow: visible;
+  opacity: 1;
 }
-.provider-mark-sm { width: 1.15rem; height: 1.15rem; border-radius: 0.25rem; font-size: 0.5rem; }
-.provider-mark-google { color: #2458b8; }
-.provider-mark-onedrive { color: #1467a8; }
-.provider-mark-notion { color: #1f2925; }
-.provider-mark-github { color: #334155; }
-.provider-mark-teams { color: #4f46a5; }
+.provider-logo svg { display: block; width: 100%; height: 100%; overflow: visible; }
 
 .workspace-shell > :first-child {
   display: flex;

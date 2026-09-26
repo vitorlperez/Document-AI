@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import "./landing.css";
 import { Brand } from "./brand";
+import { ProviderLogo } from "./provider-logo";
 
 type LandingPageProps = { onLogin: () => void; onSignUp: () => void };
 
@@ -35,19 +36,6 @@ const demoCases = [
   },
 ];
 
-type Provider = "google" | "notion" | "onedrive";
-
-function ProviderLogo({ provider }: { provider: Provider }) {
-  const labels = { google: "Google Drive", notion: "Notion", onedrive: "OneDrive" };
-  return (
-    <span className={`landing-provider-logo landing-provider-logo-${provider}`} role="img" aria-label={labels[provider]}>
-      {provider === "google" && <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#0F9D58" d="M8.1 3h5.2l7.5 13h-5.2z"/><path fill="#F4B400" d="M8.1 3 .6 16h5.2l7.5-13z"/><path fill="#4285F4" d="M5.8 16h15l-2.6 4.5h-15z"/></svg>}
-      {provider === "notion" && <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="1.5" fill="#fff" stroke="#151b18" strokeWidth="1.5"/><path fill="#151b18" d="M7 17V7.5l2.4-.3 5.7 8V8.5l-1.8-.3V7h4.8v1.2l-1.5.3V17h-2.2L8.6 8.9v6.8l1.9.3v1z"/></svg>}
-      {provider === "onedrive" && <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#1686D9" d="M9.5 7.2a5.4 5.4 0 0 1 9.8 2.2 4 4 0 0 1 .7 7.9H7.2A4.7 4.7 0 0 1 9.5 7.2Z"/><path fill="#075CAD" d="M3.9 16.9a3.8 3.8 0 0 1 4.5-6 5.3 5.3 0 0 1 7.6 4.8c0 .5-.1.9-.2 1.3Z"/></svg>}
-    </span>
-  );
-}
-
 const demoStages = [
   ["1", "Defina o escopo", "A resposta considera somente as fontes e pastas escolhidas."],
   ["2", "Faça a pergunta", "O Arquivio responde com base no conteúdo sincronizado."],
@@ -72,10 +60,10 @@ function ProductPreview() {
         <aside className="landing-product-sources" aria-label="Biblioteca ilustrativa">
           <div className="landing-product-sidebar-heading"><div><strong>Biblioteca</strong><span>Visualização ilustrativa</span></div><span className="landing-static-label">PRÉVIA</span></div>
           <div className="landing-product-breadcrumb">Biblioteca</div>
-          <div className="landing-product-source"><ProviderLogo provider="google" /> Google Drive</div>
+          <div className="landing-product-source"><ProviderLogo provider="google" size={25} decorative={false} className="landing-provider-logo" /> Google Drive</div>
           <div className="landing-product-folder"><Folder size={15} aria-hidden="true" /> Projeto Aurora</div>
-          <div className="landing-product-source"><ProviderLogo provider="notion" /> Notion</div>
-          <div className="landing-product-source"><ProviderLogo provider="onedrive" /> OneDrive</div>
+          <div className="landing-product-source"><ProviderLogo provider="notion" size={25} decorative={false} className="landing-provider-logo" /> Notion</div>
+          <div className="landing-product-source"><ProviderLogo provider="onedrive" size={25} decorative={false} className="landing-provider-logo" /> OneDrive</div>
           <div className="landing-product-scope"><ShieldCheck size={16} aria-hidden="true" /><p>A conversa usa somente o contexto escolhido em “Consultar em”.</p></div>
         </aside>
         <section className="landing-product-chat" aria-label="Conversa demonstrativa" aria-live="polite" key={activeCase}>
