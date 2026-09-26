@@ -34,6 +34,15 @@ def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) ->
         external_folder_id="folder-1",
         encrypted_delta_link="old-cursor",
     )
+    failed_document = SimpleNamespace(
+        external_file_id="failed-file", index_status="failed", content_hash=""
+    )
+    reprocess_document = SimpleNamespace(
+        external_file_id="manual-file", index_status="indexed", content_hash=""
+    )
+    clean_document = SimpleNamespace(
+        external_file_id="clean-file", index_status="indexed", content_hash="known-hash"
+    )
     discovery = DiscoveryResult(
         documents=[],
         delta_links={selection_id: "https://graph.microsoft.com/v1.0/delta?new=cursor"},
@@ -44,6 +53,7 @@ def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) ->
         def __init__(self) -> None:
             self.committed_cursors: list[str | None] = []
             self.scalar_values = iter([folder, source])
+            self.scalars_calls = 0
 
         def __enter__(self):
             return self
@@ -64,7 +74,12 @@ def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) ->
             return next(self.scalar_values)
 
         def scalars(self, _: object):
-            return [selection]
+            self.scalars_calls += 1
+            return (
+                [selection]
+                if self.scalars_calls == 1
+                else [failed_document, reprocess_document, clean_document]
+            )
 
     session = FakeSession()
 
@@ -88,8 +103,10 @@ def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) ->
 
     class FakeProvider:
         updated_encrypted_credentials = "new-credentials"
+        force_file_ids: set[str] | None = None
 
         def discover(self, **_: object) -> DiscoveryResult:
+            self.force_file_ids = _["force_file_ids"]
             return discovery
 
         def folders(self, **_: object) -> list[object]:
@@ -140,4 +157,5 @@ def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) ->
         == "encrypted:https://graph.microsoft.com/v1.0/delta?new=cursor"
     )
     assert source.encrypted_credentials == "new-credentials"
+    assert provider.force_file_ids == {"failed-file", "manual-file"}
     assert session.committed_cursors == ["old-cursor", selection.encrypted_delta_link]

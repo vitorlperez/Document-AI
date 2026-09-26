@@ -132,19 +132,29 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 )
                 session.commit()
                 return
+            known_rows = list(
+                session.scalars(
+                    select(Document).where(
+                        Document.organization_id == job.organization_id,
+                        Document.workspace_folder_id == job.workspace_folder_id,
+                    )
+                )
+            )
+            force_file_ids = {
+                document.external_file_id
+                for document in known_rows
+                if document.index_status == "failed"
+                or (document.index_status == "indexed" and document.content_hash == "")
+            }
             discover_kwargs = {
                 "encrypted_credentials": source.encrypted_credentials,
                 "selections": selections,
+                "force_file_ids": force_file_ids,
             }
             if source_provider == "notion":
                 known_documents = {
                     document.external_file_id: (document.modified_at, document.index_status)
-                    for document in session.scalars(
-                        select(Document).where(
-                            Document.organization_id == job.organization_id,
-                            Document.workspace_folder_id == job.workspace_folder_id,
-                        )
-                    )
+                    for document in known_rows
                 }
                 discover_kwargs["known_documents"] = known_documents
             discovered_documents = provider.discover(**discover_kwargs)

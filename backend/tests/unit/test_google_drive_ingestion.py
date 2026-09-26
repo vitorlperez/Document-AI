@@ -9,7 +9,9 @@ from docx import Document as DocxDocument
 from app.ingestion.google_drive import GoogleDriveDocumentProvider
 from app.integrations.google_drive import (
     CredentialCipher,
+    GoogleChangesPage,
     GoogleCredentials,
+    GoogleCursorInvalid,
     GoogleDriveOAuthClient,
     GoogleRemoteUnauthorized,
     RemoteFile,
@@ -30,6 +32,9 @@ class FakeGoogleDriveClient:
         self.list_calls: list[str] = []
         self.read_calls: list[str] = []
         self.read_error: Exception | None = None
+
+    def start_page_token(self, *, credentials: GoogleCredentials) -> str:
+        return "initial-cursor"
 
     def list_folder_files(self, *, credentials: GoogleCredentials, root_folder_id: str) -> list[RemoteFile]:
         self.list_calls.append(root_folder_id)
@@ -93,9 +98,11 @@ def test_provider_extracts_google_docs_and_docx_and_skips_unsupported_without_do
         selections=[selection("folder", "root-folder")],
     )
 
+    assert discovered.full_snapshot is True
+    assert discovered.delta_links
     assert client.list_calls == ["root-folder"]
     assert set(client.read_calls) == {"google-doc", "word-doc"}
-    assert [(document.external_file_id, document.text, document.error_code) for document in discovered] == [
+    assert [(document.external_file_id, document.text, document.error_code) for document in discovered.documents] == [
         ("google-doc", "Approved marketing scope", None),
         ("slides", None, None),
         ("word-doc", "Approved consulting scope", None),
@@ -114,8 +121,8 @@ def test_provider_removes_nul_from_extracted_text_and_blocks() -> None:
         selections=[selection("folder", "root-folder")],
     )
 
-    assert discovered[0].text == "Before after"
-    assert [block.text for block in discovered[0].blocks] == ["Before after"]
+    assert discovered.documents[0].text == "Before after"
+    assert [block.text for block in discovered.documents[0].blocks] == ["Before after"]
 
 
 def test_provider_retains_safe_parent_metadata_for_library_projection() -> None:
@@ -135,7 +142,7 @@ def test_provider_retains_safe_parent_metadata_for_library_projection() -> None:
         selections=[selection("folder", "root-folder")],
     )
 
-    assert discovered[0].parent_ids == ("campaign",)
+    assert discovered.documents[0].parent_ids == ("campaign",)
 
 
 def test_structured_extraction_preserves_markdown_sections_and_docx_headings_tables() -> None:
@@ -179,8 +186,8 @@ def test_provider_extracts_pdf_text(monkeypatch: pytest.MonkeyPatch) -> None:
         selections=[selection("folder", "root-folder")],
     )
 
-    assert discovered[0].text == "PDF source evidence"
-    assert discovered[0].error_code is None
+    assert discovered.documents[0].text == "PDF source evidence"
+    assert discovered.documents[0].error_code is None
 
 
 def test_remote_file_authorization_error_becomes_a_document_failure() -> None:
@@ -193,7 +200,7 @@ def test_remote_file_authorization_error_becomes_a_document_failure() -> None:
         selections=[selection("folder", "root-folder")],
     )
 
-    assert discovered[0].error_code == "source_file_unavailable"
+    assert discovered.documents[0].error_code == "source_file_unavailable"
 
 
 def test_provider_unions_overlapping_folder_selections_before_downloading() -> None:
@@ -208,7 +215,7 @@ def test_provider_unions_overlapping_folder_selections_before_downloading() -> N
 
     assert client.list_calls == ["parent", "child"]
     assert client.read_calls == ["shared-doc"]
-    assert [item.external_file_id for item in discovered] == ["shared-doc"]
+    assert [item.external_file_id for item in discovered.documents] == ["shared-doc"]
 
 
 def test_provider_combines_direct_root_files_without_traversing_root_folders() -> None:
@@ -227,7 +234,7 @@ def test_provider_combines_direct_root_files_without_traversing_root_folders() -
     )
 
     assert client.list_calls == ["project", "root"]
-    assert {item.external_file_id for item in discovered} == {"folder-doc", "root-doc"}
+    assert {item.external_file_id for item in discovered.documents} == {"folder-doc", "root-doc"}
 
 
 def test_provider_all_accessible_uses_one_complete_listing() -> None:
@@ -241,7 +248,7 @@ def test_provider_all_accessible_uses_one_complete_listing() -> None:
     )
 
     assert client.list_calls == ["all"]
-    assert [item.external_file_id for item in discovered] == ["anywhere"]
+    assert [item.external_file_id for item in discovered.documents] == ["anywhere"]
 
 
 def test_provider_extracts_with_bounded_concurrency_and_stable_order() -> None:
@@ -277,7 +284,7 @@ def test_provider_extracts_with_bounded_concurrency_and_stable_order() -> None:
             GoogleDriveDocumentProvider(client, cipher, extraction_workers=100).discover(
                 encrypted_credentials=credentials,
                 selections=[selection("all_accessible")],
-            )
+            ).documents
         )
     )
 
@@ -320,7 +327,7 @@ def test_concurrent_extraction_keeps_per_file_failures_without_cancelling_siblin
         selections=[selection("all_accessible")],
     )
 
-    assert [(item.external_file_id, item.text, item.error_code) for item in discovered] == [
+    assert [(item.external_file_id, item.text, item.error_code) for item in discovered.documents] == [
         ("bad", None, "text_extraction_failed"),
         ("good-a", "Good A", None),
         ("good-b", "Good B", None),
@@ -364,3 +371,112 @@ def test_google_client_lists_direct_root_files_with_pagination(monkeypatch: pyte
     assert calls[0]["pageToken"] is None
     assert calls[1]["pageToken"] == "next"
     assert calls[0]["supportsAllDrives"] == "true"
+
+
+def test_google_incremental_downloads_only_changed_file_in_selected_root() -> None:
+    unchanged = remote_file("unchanged", GOOGLE_DOC)
+    changed = remote_file("changed", GOOGLE_DOC)
+
+    class Client(FakeGoogleDriveClient):
+        def changes(self, *, credentials: GoogleCredentials, page_token: str) -> GoogleChangesPage:
+            assert page_token == "previous"
+            return GoogleChangesPage(
+                changes=[{"fileId": "changed", "file": {
+                    "id": "changed", "name": "changed.document", "mimeType": GOOGLE_DOC,
+                    "parents": ["actual-root-id"],
+                }}],
+                new_start_page_token="next",
+            )
+
+        _remote_file = staticmethod(GoogleDriveOAuthClient._remote_file)
+
+    client = Client([unchanged, changed], {"changed": b"Changed text"})
+    cipher, credentials = encrypted_credentials()
+    scope = selection("root_files")
+    scope.encrypted_delta_link = cipher.encrypt_cursor("previous")
+
+    result = GoogleDriveDocumentProvider(client, cipher).discover(
+        encrypted_credentials=credentials, selections=[scope]
+    )
+
+    assert result.full_snapshot is False
+    assert [document.external_file_id for document in result.documents] == ["changed"]
+    assert client.read_calls == ["changed"]
+    assert result.delta_links == {scope.id: "next"}
+
+
+def test_google_removed_item_reconciles_full_scope_for_deleted_subtrees() -> None:
+    retained = remote_file("retained", GOOGLE_DOC)
+
+    class Client(FakeGoogleDriveClient):
+        def changes(self, *, credentials: GoogleCredentials, page_token: str) -> GoogleChangesPage:
+            return GoogleChangesPage(
+                changes=[{"fileId": "removed-folder", "removed": True}],
+                new_start_page_token="next",
+            )
+
+        def list_folders(self, *, credentials: GoogleCredentials) -> list:
+            return []
+
+    client = Client([retained], {"retained": b"Retained text"})
+    cipher, credentials = encrypted_credentials()
+    scope = selection("folder", "selected-folder")
+    scope.encrypted_delta_link = cipher.encrypt_cursor("previous")
+
+    result = GoogleDriveDocumentProvider(client, cipher).discover(
+        encrypted_credentials=credentials, selections=[scope]
+    )
+
+    assert result.full_snapshot is True
+    assert [document.external_file_id for document in result.documents] == ["retained"]
+    assert client.list_calls == ["selected-folder"]
+
+
+def test_google_manual_reprocess_forces_remote_read_without_delta_change() -> None:
+    item = remote_file("manual", GOOGLE_DOC)
+
+    class Client(FakeGoogleDriveClient):
+        def changes(self, *, credentials: GoogleCredentials, page_token: str) -> GoogleChangesPage:
+            return GoogleChangesPage(changes=[], new_start_page_token="next")
+
+        def get_file(self, *, credentials: GoogleCredentials, file_id: str) -> RemoteFile | None:
+            assert file_id == "manual"
+            return item
+
+    client = Client([item], {"manual": b"Reprocessed text"})
+    cipher, credentials = encrypted_credentials()
+    scope = selection("all_accessible")
+    scope.encrypted_delta_link = cipher.encrypt_cursor("previous")
+
+    result = GoogleDriveDocumentProvider(client, cipher).discover(
+        encrypted_credentials=credentials,
+        selections=[scope],
+        force_file_ids={"manual"},
+    )
+
+    assert [document.external_file_id for document in result.documents] == ["manual"]
+    assert client.read_calls == ["manual"]
+
+
+def test_google_expired_cursor_falls_back_to_snapshot_and_replaces_cursor() -> None:
+    item = remote_file("snapshot-item", GOOGLE_DOC)
+
+    class Client(FakeGoogleDriveClient):
+        def changes(self, *, credentials: GoogleCredentials, page_token: str) -> GoogleChangesPage:
+            raise GoogleCursorInvalid("expired")
+
+        def list_folders(self, *, credentials: GoogleCredentials) -> list:
+            return []
+
+    client = Client([item], {"snapshot-item": b"Snapshot text"})
+    cipher, credentials = encrypted_credentials()
+    scope = selection("folder", "selected-folder")
+    scope.encrypted_delta_link = cipher.encrypt_cursor("expired")
+
+    result = GoogleDriveDocumentProvider(client, cipher).discover(
+        encrypted_credentials=credentials, selections=[scope]
+    )
+
+    assert result.full_snapshot is True
+    assert result.delta_links == {scope.id: "initial-cursor"}
+    assert [document.external_file_id for document in result.documents] == ["snapshot-item"]

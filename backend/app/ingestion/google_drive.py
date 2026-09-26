@@ -54,6 +54,7 @@ class GoogleDriveDocumentProvider:
         *,
         encrypted_credentials: str,
         selections: list[WorkspaceFolderSelection],
+        force_file_ids: set[str] | None = None,
     ) -> DiscoveryResult:
         credentials = self.cipher.decrypt(encrypted_credentials)
         links: dict[UUID, str | None] = {}
@@ -69,7 +70,16 @@ class GoogleDriveDocumentProvider:
             )
 
         try:
-            folders = self.client.list_folders(credentials=credentials)
+            folders = (
+                self.client.list_folders(credentials=credentials)
+                if any(selection.kind == "folder" for selection in selections)
+                else []
+            )
+            root_file_ids = (
+                {item.id for item in self.client.list_root_files(credentials=credentials)}
+                if any(selection.kind == "root_files" for selection in selections)
+                else set()
+            )
             descendants: dict[str, set[str]] = {}
             children: dict[str, set[str]] = {}
             for folder in folders:
@@ -87,6 +97,20 @@ class GoogleDriveDocumentProvider:
                         pending.append(child_id)
                 descendants[selection.external_folder_id] = included
 
+            def in_scope(file_id: str, remote_file: RemoteFile) -> bool:
+                return any(
+                    selection.kind == "all_accessible"
+                    or (selection.kind == "root_files" and file_id in root_file_ids)
+                    or (
+                        selection.kind == "folder"
+                        and bool(
+                            descendants.get(selection.external_folder_id, set())
+                            & set(remote_file.parent_ids)
+                        )
+                    )
+                    for selection in selections
+                )
+
             changes_by_id: dict[str, RemoteFile] = {}
             removed: set[str] = set()
             folder_changed = False
@@ -100,6 +124,9 @@ class GoogleDriveDocumentProvider:
                     if not file_id:
                         continue
                     if change.get("removed") or not isinstance(item, dict) or item.get("trashed"):
+                        # A removed folder may contain indexed descendants that
+                        # are absent from the change feed. Reconcile the scope.
+                        folder_changed = True
                         removed.add(file_id)
                         changes_by_id.pop(file_id, None)
                         continue
@@ -107,20 +134,19 @@ class GoogleDriveDocumentProvider:
                     if remote_file.mime_type == "application/vnd.google-apps.folder":
                         folder_changed = True
                         continue
-                    in_scope = any(
-                        selection.kind == "all_accessible"
-                        or (selection.kind == "root_files" and "root" in remote_file.parent_ids)
-                        or (
-                            selection.kind == "folder"
-                            and bool(descendants.get(selection.external_folder_id, set()) & set(remote_file.parent_ids))
-                        )
-                        for selection in selections
-                    )
-                    if in_scope:
+                    if in_scope(file_id, remote_file):
                         changes_by_id[file_id] = remote_file
                         removed.discard(file_id)
                     else:
                         removed.add(file_id)
+            for file_id in force_file_ids or set():
+                if file_id in removed or file_id in changes_by_id:
+                    continue
+                remote_file = self.client.get_file(credentials=credentials, file_id=file_id)
+                if remote_file is None or not in_scope(file_id, remote_file):
+                    removed.add(file_id)
+                    continue
+                changes_by_id[file_id] = remote_file
             if folder_changed:
                 # Changes to folder ancestry can affect every descendant; a
                 # full reconciliation safely handles moves into and out of scope.

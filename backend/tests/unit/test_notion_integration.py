@@ -123,7 +123,7 @@ def test_notion_discover_skips_empty_metadata_pages() -> None:
         selections=[type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()],
     )
 
-    assert [(document.external_file_id, document.name) for document in documents] == [("content", "Runbook")]
+    assert [(document.external_file_id, document.name) for document in documents.documents] == [("content", "Runbook")]
 
 
 def test_notion_discover_reads_pages_concurrently_with_stable_order() -> None:
@@ -154,8 +154,127 @@ def test_notion_discover_reads_pages_concurrently_with_stable_order() -> None:
         encrypted_credentials="encrypted",
         selections=[type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()],
     )
-    assert [document.external_file_id for document in documents] == ["1", "2", "3", "4", "5"]
+    assert [document.external_file_id for document in documents.documents] == ["1", "2", "3", "4", "5"]
     assert client.peak == 2
+
+
+def test_notion_incremental_reads_only_changed_pages_and_reconciles_removals() -> None:
+    edited = datetime.now(UTC)
+
+    class Cipher:
+        def decrypt(self, value: str) -> GoogleCredentials:
+            return GoogleCredentials("token", None, None)
+
+    class Client:
+        def __init__(self) -> None:
+            self.read_ids: list[str] = []
+
+        def list_pages(self, *, credentials: GoogleCredentials) -> list[NotionPage]:
+            return [
+                NotionPage("unchanged", "Unchanged", "", edited),
+                NotionPage("changed", "Changed", "", edited),
+                NotionPage("new", "New", "", edited),
+                NotionPage("failed", "Failed before", "", edited),
+            ]
+
+        def page_blocks(self, *, credentials: GoogleCredentials, page_id: str) -> list[dict[str, object]]:
+            self.read_ids.append(page_id)
+            return [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": page_id}]}}]
+
+    client = Client()
+    discovery = NotionDocumentProvider(client, Cipher()).discover(
+        encrypted_credentials="encrypted",
+        selections=[type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()],
+        known_documents={
+            "unchanged": (edited, "indexed"),
+            "changed": (edited - timedelta(seconds=1), "indexed"),
+            "failed": (edited, "failed"),
+            "removed": (edited, "indexed"),
+        },
+    )
+
+    assert discovery.full_snapshot is False
+    assert [document.external_file_id for document in discovery.documents] == ["changed", "failed", "new"]
+    assert sorted(client.read_ids) == ["changed", "failed", "new"]
+    assert discovery.removed_file_ids == ("removed",)
+
+
+def test_notion_missing_selected_page_is_reported_removed() -> None:
+    class Cipher:
+        def decrypt(self, value: str) -> GoogleCredentials:
+            return GoogleCredentials("token", None, None)
+
+    class Client:
+        def list_pages(self, *, credentials: GoogleCredentials) -> list[NotionPage]:
+            return []
+
+        def page_blocks(self, *, credentials: GoogleCredentials, page_id: str) -> list[dict[str, object]]:
+            raise AssertionError("missing page must not be read")
+
+    discovery = NotionDocumentProvider(Client(), Cipher()).discover(
+        encrypted_credentials="encrypted",
+        selections=[type("Selection", (), {"kind": "folder", "external_folder_id": "missing"})()],
+        known_documents={"missing": (datetime.now(UTC), "indexed")},
+    )
+
+    assert discovery.full_snapshot is False
+    assert discovery.documents == []
+    assert discovery.removed_file_ids == ("missing",)
+
+
+def test_notion_page_edited_to_empty_content_is_removed_from_index() -> None:
+    edited = datetime.now(UTC)
+
+    class Cipher:
+        def decrypt(self, value: str) -> GoogleCredentials:
+            return GoogleCredentials("token", None, None)
+
+    class Client:
+        def list_pages(self, *, credentials: GoogleCredentials) -> list[NotionPage]:
+            return [NotionPage("page", "Page", "", edited)]
+
+        def page_blocks(self, *, credentials: GoogleCredentials, page_id: str) -> list[dict[str, object]]:
+            return []
+
+    discovery = NotionDocumentProvider(Client(), Cipher()).discover(
+        encrypted_credentials="encrypted",
+        selections=[type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()],
+        known_documents={"page": (edited - timedelta(seconds=1), "indexed")},
+    )
+
+    assert discovery.full_snapshot is False
+    assert discovery.documents == []
+    assert discovery.removed_file_ids == ("page",)
+
+
+def test_notion_manual_reprocess_forces_page_read_when_timestamp_is_unchanged() -> None:
+    edited = datetime.now(UTC)
+
+    class Cipher:
+        def decrypt(self, value: str) -> GoogleCredentials:
+            return GoogleCredentials("token", None, None)
+
+    class Client:
+        def __init__(self) -> None:
+            self.read_ids: list[str] = []
+
+        def list_pages(self, *, credentials: GoogleCredentials) -> list[NotionPage]:
+            return [NotionPage("page", "Page", "", edited)]
+
+        def page_blocks(self, *, credentials: GoogleCredentials, page_id: str) -> list[dict[str, object]]:
+            self.read_ids.append(page_id)
+            return [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "body"}]}}]
+
+    client = Client()
+    discovery = NotionDocumentProvider(client, Cipher()).discover(
+        encrypted_credentials="encrypted",
+        selections=[type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()],
+        known_documents={"page": (edited, "indexed")},
+        force_file_ids={"page"},
+    )
+
+    assert client.read_ids == ["page"]
+    assert [document.external_file_id for document in discovery.documents] == ["page"]
 
 
 def test_notion_oauth_cannot_reconnect_a_google_source() -> None:

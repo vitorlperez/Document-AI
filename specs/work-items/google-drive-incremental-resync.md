@@ -1,6 +1,6 @@
 # google-drive-incremental-resync - Google Drive incremental resync
 
-**Status:** validating
+**Status:** done
 
 ## Source and outcome
 
@@ -36,24 +36,26 @@
 
 | Criterion | Test layer | Evidence |
 | --- | --- | --- |
-| Given a selection without a cursor, when resync runs, then it captures a start token and indexes a complete snapshot | Unit | Pending |
-| Given a valid cursor, when files change, then only in-scope changed files are fetched and removals are reconciled | Unit | Pending |
-| Given a moved folder, invalid cursor, or expired cursor, when resync runs, then it safely falls back to a complete snapshot | Unit | Pending |
+| Given a selection without a cursor, when resync runs, then it captures a start token and indexes a complete snapshot | Unit | covered in Google provider tests; complete suite passed |
+| Given a valid cursor, when files change, then only in-scope changed files are fetched and removals are reconciled | Unit | Changed-file, selected-root, and removed-subtree tests |
+| Given a moved folder, invalid cursor, or expired cursor, when resync runs, then it safely falls back to a complete snapshot | Unit | Removed-subtree and expired-cursor snapshot tests |
+| Given a failed or manually requested document reprocess, when no remote change event exists, then only that document is fetched again | Unit/task | Forced-ID discovery and task propagation tests |
 | Given any indexing/projection failure, when the task rolls back, then the old cursor remains committed | Task integration | Existing shared ingestion behavior |
 
 ## Commands and results
 
 | Command | Result | Run by | Independent rerun |
 | --- | --- | --- | --- |
-| `python -m compileall -q backend/app/integrations/google_drive.py backend/app/ingestion/google_drive.py backend/app/integrations/registry.py` | Passed | Implementation owner | Pending |
-| `git diff --check -- backend/app/integrations/google_drive.py backend/app/ingestion/google_drive.py backend/app/integrations/registry.py specs/adr/0003-pilot-sync-ai-and-usage.md specs/work-items/google-drive-incremental-resync.md` | Passed | Implementation owner | Pending |
-| `.tools/graphify/bin/graphify update .` | Passed; 3173 nodes, 8176 edges, 241 communities | Implementation owner | Not applicable |
-| Google Drive sync unit tests | Not run | Implementation owner | Pending |
+| `backend/.venv/bin/pytest -q` (cwd `backend/`) | 293 passed, 6 skipped | pane-58 | independent review approved |
+| Focused provider suite (`test_google_drive_ingestion`, `test_google_drive_connection`, `test_notion_integration`, `test_onedrive`, `test_onedrive_ingestion_task`, `test_ingestion_service`) | 77 passed | pane-52 | Fresh rerun |
+| `backend/.venv/bin/ruff check ...` (affected modules/tests) | Passed | pane-58 | fresh focused rerun passed |
+| `git diff --check` | Passed | pane-58 | fresh rerun passed |
+| `.tools/graphify/bin/graphify update .` | Passed; 3208 nodes, 8270 edges, 234 communities before final test additions | Implementation owner | Rerun pending |
 
 ## Validator report
 
-- Blocking: independent validation and sync unit-test evidence pending.
-- Important: none recorded.
-- Suggestions: add Google Changes API and provider unit tests, including overlap and folder fallback.
-- Independent evidence: pending.
-- Gate decision: not yet complete.
+- Blocking: none.
+- Important: none.
+- Suggestions: retain coverage for Changes pagination, cursor expiry, scope filtering, and folder ancestry fallback.
+- Independent evidence: pane-58 reports four review findings corrected with no residual; backend suite 293 passed/6 skipped, lint and graphify passed. Pane-52 independently reran 77 focused provider tests and Ruff.
+- Gate decision: approved.

@@ -16,6 +16,7 @@ from app.integrations.google_drive import (
     GoogleAccessDenied,
     GoogleConnectionService,
     GoogleCredentials,
+    GoogleCursorInvalid,
     GoogleDriveOAuthClient,
     GoogleOAuthInvalid,
     GoogleOAuthUnavailable,
@@ -237,3 +238,46 @@ def test_google_client_marks_unauthorized_account_metadata_as_remote_unauthorize
 
     with pytest.raises(GoogleRemoteUnauthorized):
         client.account_email(credentials=GoogleCredentials("access-token", None, None))
+
+
+def test_google_changes_api_follows_pages_and_returns_latest_start_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, object]] = []
+    responses = [
+        {"changes": [{"fileId": "one"}], "nextPageToken": "page-2"},
+        {"changes": [{"fileId": "two"}], "newStartPageToken": "latest"},
+    ]
+
+    def get(url: str, **kwargs: object) -> httpx.Response:
+        calls.append({"url": url, **kwargs})
+        return httpx.Response(
+            200, json=responses.pop(0), request=httpx.Request("GET", url)
+        )
+
+    monkeypatch.setattr("app.integrations.google_drive.httpx.get", get)
+    client = GoogleDriveOAuthClient(client_id="id", client_secret="secret", redirect_uri="https://example.test/callback")
+
+    page = client.changes(
+        credentials=GoogleCredentials("access-token", None, None), page_token="page-1"
+    )
+
+    assert [item["fileId"] for item in page.changes] == ["one", "two"]
+    assert page.new_start_page_token == "latest"
+    assert calls[0]["params"]["pageToken"] == "page-1"
+    assert calls[1]["params"]["pageToken"] == "page-2"
+
+
+def test_google_changes_api_marks_expired_page_token_for_snapshot_recovery(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def get(url: str, **_: object) -> httpx.Response:
+        return httpx.Response(410, request=httpx.Request("GET", url))
+
+    monkeypatch.setattr("app.integrations.google_drive.httpx.get", get)
+    client = GoogleDriveOAuthClient(client_id="id", client_secret="secret", redirect_uri="https://example.test/callback")
+
+    with pytest.raises(GoogleCursorInvalid):
+        client.changes(
+            credentials=GoogleCredentials("access-token", None, None), page_token="expired"
+        )

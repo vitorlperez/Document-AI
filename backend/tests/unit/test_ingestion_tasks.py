@@ -36,6 +36,7 @@ def test_exhausted_embedding_rate_limit_rolls_back_and_marks_job_failed(
             self.commit_calls = 0
             self.rollback_calls = 0
             self.scalar_values = iter([folder, source])
+            self.scalars_calls = 0
 
         def __enter__(self):
             return self
@@ -56,7 +57,8 @@ def test_exhausted_embedding_rate_limit_rolls_back_and_marks_job_failed(
             return next(self.scalar_values)
 
         def scalars(self, _: object):
-            return [selection]
+            self.scalars_calls += 1
+            return [selection] if self.scalars_calls == 1 else []
 
     session = FakeSession()
 

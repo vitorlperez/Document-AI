@@ -18,10 +18,10 @@ from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
 from app.identity.auth import hash_secret
 from app.identity.models import UserSession
+from app.ingestion.service import DiscoveryResult
 from app.integrations.google_drive import GoogleCredentials, GoogleRemoteUnauthorized, RemoteFolder
 from app.integrations.models import DataSource, OAuthConnectionState
 from app.organizations.models import Membership, MembershipRole
-from app.ingestion.service import DiscoveryResult
 
 NOTION_READ_SCOPE = ""
 MAX_PAGE_WORKERS = 2
@@ -247,13 +247,18 @@ class NotionDocumentProvider:
         encrypted_credentials: str | None,
         selections,
         known_documents: dict[str, tuple[datetime | None, str]] | None = None,
+        force_file_ids: set[str] | None = None,
     ) -> DiscoveryResult:
         credentials = self.cipher.decrypt(encrypted_credentials or "")
         pages = {page.id: page for page in self.client.list_pages(credentials=credentials)}
         selected_ids = (
             set(pages)
             if any(selection.kind == "all_accessible" for selection in selections)
-            else {selection.external_folder_id for selection in selections if selection.kind == "folder"}
+            else {
+                selection.external_folder_id
+                for selection in selections
+                if selection.kind == "folder" and selection.external_folder_id in pages
+            }
         )
         from app.ingestion.service import DiscoveredDocument
         selected_pages = [pages[page_id] for page_id in sorted(selected_ids) if page_id in pages]
@@ -266,20 +271,21 @@ class NotionDocumentProvider:
             if not (
                 (known := known_documents.get(page.id))
                 and known[1] == "indexed"
+                and page.id not in (force_file_ids or set())
                 and page.last_edited_time is not None
                 and known[0] == page.last_edited_time
             )
         ]
 
-        def read_page(page: NotionPage) -> DiscoveredDocument | None:
+        def read_page(page: NotionPage) -> tuple[str, DiscoveredDocument | None]:
             text = _blocks_to_text(self.client.page_blocks(credentials=credentials, page_id=page.id))
             # Notion search also returns empty metadata pages (for example a
             # person/profile page). They are valid remote objects, but there
             # is no content to embed or cite. Skipping them keeps the sync
             # ready while still indexing every page with actual blocks.
             if not text.strip():
-                return None
-            return DiscoveredDocument(
+                return page.id, None
+            return page.id, DiscoveredDocument(
                 external_file_id=page.id,
                 name=page.title,
                 mime_type="text/markdown",
@@ -289,10 +295,12 @@ class NotionDocumentProvider:
             )
 
         with ThreadPoolExecutor(max_workers=min(MAX_PAGE_WORKERS, len(changed_pages) or 1)) as executor:
-            documents = [document for document in executor.map(read_page, changed_pages) if document is not None]
+            outcomes = list(executor.map(read_page, changed_pages))
+        empty_ids = {page_id for page_id, document in outcomes if document is None}
+        documents = [document for _, document in outcomes if document is not None]
         return DiscoveryResult(
             documents=documents,
-            removed_file_ids=tuple(sorted(known_ids - selected_ids)),
+            removed_file_ids=tuple(sorted((known_ids - selected_ids) | empty_ids)),
             full_snapshot=not bool(known_ids),
         )
 

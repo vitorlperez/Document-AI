@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from uuid import UUID
 
 import httpx
@@ -178,6 +178,23 @@ class GoogleDriveOAuthClient:
         if not isinstance(token, str) or not token:
             raise GoogleOAuthInvalid("Google Drive change token is invalid")
         return token
+
+    def get_file(self, *, credentials: GoogleCredentials, file_id: str) -> RemoteFile | None:
+        response = httpx.get(
+            f"https://www.googleapis.com/drive/v3/files/{quote(file_id, safe='')}",
+            params={"fields": "id,name,mimeType,modifiedTime,webViewLink,parents,trashed", "supportsAllDrives": "true"},
+            headers={"Authorization": f"Bearer {credentials.access_token}"},
+            timeout=20,
+        )
+        if response.status_code == 404:
+            return None
+        if response.status_code in {401, 403}:
+            raise GoogleRemoteUnauthorized()
+        response.raise_for_status()
+        item = response.json()
+        if item.get("trashed") or not item.get("id") or not item.get("mimeType"):
+            return None
+        return self._remote_file(item)
 
     def changes(self, *, credentials: GoogleCredentials, page_token: str) -> GoogleChangesPage:
         changes: list[dict[str, object]] = []
