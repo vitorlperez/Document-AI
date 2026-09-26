@@ -335,6 +335,15 @@ class MicrosoftGraphClient:
             return response.content
         raise RuntimeError("Microsoft Graph throttling limit reached")
 
+    def get_item(self, *, credentials: OneDriveCredentials, item_id: str) -> dict[str, Any] | None:
+        url = f"{GRAPH_ROOT}/me/drive/items/{quote(item_id, safe='')}?$select=id,name,file,folder,parentReference,webUrl,lastModifiedDateTime,deleted"
+        try:
+            return self._get_json(url, credentials=credentials)
+        except httpx.HTTPStatusError as error:
+            if error.response.status_code == 404:
+                return None
+            raise
+
     def _all_pages(
         self, url: str, *, credentials: OneDriveCredentials | None = None
     ) -> list[dict[str, Any]]:
@@ -438,7 +447,11 @@ class OneDriveDocumentProvider:
         return self.client.folders(credentials=self._credentials(encrypted_credentials))
 
     def discover(
-        self, *, encrypted_credentials: str | None, selections: list[WorkspaceFolderSelection]
+        self,
+        *,
+        encrypted_credentials: str | None,
+        selections: list[WorkspaceFolderSelection],
+        force_file_ids: set[str] | None = None,
     ) -> DiscoveryResult:
         credentials = self._credentials(encrypted_credentials)
         changes: dict[str, dict[str, Any]] = {}
@@ -497,17 +510,52 @@ class OneDriveDocumentProvider:
                 fresh_snapshot_required = True
         if fresh_snapshot_required:
             files: dict[str, dict[str, Any]] = {}
-            for selection in selections:
-                for item in self.client.list_files(credentials=credentials, selection=selection):
-                    files[self.client._external_id(item, fallback_drive_id=None)] = item
-                links[selection.id] = None
+            if delta_expired:
+                # A new delta request is itself the complete snapshot and also
+                # returns the replacement checkpoint. This avoids replaying the
+                # entire drive again on the next manual sync after cursor expiry.
+                for selection in selections:
+                    page = self.client.delta(
+                        credentials=credentials, selection=selection, cursor=None
+                    )
+                    links[selection.id] = page.delta_link
+                    for item in page.items:
+                        if isinstance(item.get("folder"), dict) or "deleted" in item:
+                            continue
+                        parent = item.get("parentReference") or {}
+                        is_root_item = isinstance(parent, dict) and (
+                            parent.get("id") == root_id
+                            or self.client._parent_ids(parent) == ("root",)
+                        )
+                        if selection.kind == "root_files" and not is_root_item:
+                            continue
+                        files[self.client._external_id(item, fallback_drive_id=None)] = item
+            else:
+                for selection in selections:
+                    for item in self.client.list_files(
+                        credentials=credentials, selection=selection
+                    ):
+                        files[self.client._external_id(item, fallback_drive_id=None)] = item
             changes = files
             removals.clear()
             full_snapshot = True
         else:
             full_snapshot = all(not item.encrypted_delta_link for item in selections)
-        if delta_expired:
-            links = {selection.id: None for selection in selections}
+        pending_force = (force_file_ids or set()) - set(changes) - removals
+        if pending_force:
+            scoped_items: dict[str, dict[str, Any]] = {}
+            for selection in selections:
+                for item in self.client.list_files(credentials=credentials, selection=selection):
+                    item_id = self.client._external_id(item, fallback_drive_id=None)
+                    if item_id in pending_force:
+                        scoped_items[item_id] = item
+            for item_id in pending_force:
+                item = scoped_items.get(item_id)
+                if item is None:
+                    removals.add(item_id)
+                else:
+                    changes[item_id] = item
+                    removals.discard(item_id)
         extracted = self._read_changed(credentials, changes)
         return DiscoveryResult(
             documents=extracted,

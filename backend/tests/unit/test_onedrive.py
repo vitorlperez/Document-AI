@@ -501,6 +501,75 @@ def test_folder_delta_reenumerates_scope_when_a_folder_changes() -> None:
     )
 
     assert result.full_snapshot is True
-    assert result.delta_links == {selection.id: None}
+    assert result.delta_links == {
+        selection.id: "https://graph.microsoft.com/v1.0/delta/selected-folder-latest"
+    }
     assert result.removed_file_ids == ()
     assert enumerated_files == {"new-descendant": nested_file}
+
+
+def test_expired_delta_cursor_reestablishes_checkpoint_during_full_snapshot() -> None:
+    cipher = OneDriveCipher(Fernet.generate_key().decode())
+    credentials = OneDriveCredentials("access", "refresh", datetime.now(UTC) + timedelta(hours=1))
+    selection = type(
+        "Selection",
+        (),
+        {
+            "id": uuid4(),
+            "kind": "all_accessible",
+            "external_folder_id": "",
+            "encrypted_delta_link": cipher.encrypt_cursor(
+                "https://graph.microsoft.com/v1.0/cursor/expired"
+            ),
+        },
+    )()
+    snapshot = {
+        "new-file": {
+            "id": "new-file",
+            "name": "Current.pdf",
+            "file": {"mimeType": "application/pdf"},
+            "parentReference": {"id": "folder"},
+        }
+    }
+
+    class Client:
+        _external_id = staticmethod(MicrosoftGraphClient._external_id)
+        _parent_ids = staticmethod(MicrosoftGraphClient._parent_ids)
+
+        def __init__(self) -> None:
+            self.cursors: list[str | None] = []
+
+        def delta(self, *, credentials, selection, cursor):
+            self.cursors.append(cursor)
+            if cursor is not None:
+                raise OneDriveDeltaExpired()
+            return DeltaPage(
+                items=list(snapshot.values()),
+                delta_link="https://graph.microsoft.com/v1.0/delta/fresh-checkpoint",
+            )
+
+        def list_files(self, *, credentials, selection):
+            raise AssertionError("expired cursor recovery should use one complete delta snapshot")
+
+    class Cipher:
+        def decrypt_credentials(self, value: str) -> OneDriveCredentials:
+            return credentials
+
+        def decrypt_cursor(self, value: str) -> str:
+            return cipher.decrypt_cursor(value)
+
+    client = Client()
+    provider = OneDriveDocumentProvider(client, Cipher())
+    read_items: dict[str, dict[str, object]] = {}
+    provider._read_changed = lambda _credentials, files: read_items.update(files) or []
+
+    result = provider.discover(
+        encrypted_credentials="encrypted-credentials", selections=[selection]
+    )
+
+    assert result.full_snapshot is True
+    assert result.delta_links == {
+        selection.id: "https://graph.microsoft.com/v1.0/delta/fresh-checkpoint"
+    }
+    assert client.cursors == ["https://graph.microsoft.com/v1.0/cursor/expired", None]
+    assert read_items == snapshot
