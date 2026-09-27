@@ -2,32 +2,25 @@
 
 import { useState } from "react";
 import {
-  ArrowDown, ArrowRight, ArrowUpRight, Check, ChevronDown,
-  FileText, FolderOpen, Layers3, Link2, Menu,
-  ShieldCheck, Sparkles,
+  ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight,
+  FileText, Folder, Menu, Send, ShieldCheck, Sparkles,
 } from "lucide-react";
 import "./landing.css";
 import { Brand } from "./brand";
+import { ProviderLogo } from "./provider-logo";
 
 type LandingPageProps = { onLogin: () => void; onSignUp: () => void };
 
 const demoCases = [
   {
-    label: "Entrega do projeto",
-    scope: "Todas as ferramentas",
+    label: "Resposta com fontes",
+    scope: "Todas as ferramentas · conteúdo indexado",
     question: "O que ficou definido para a primeira entrega?",
     answer: <>A primeira entrega inclui o <strong>diagnóstico de marca</strong> e a <strong>proposta de posicionamento</strong>.</>,
     sources: [["Escopo do projeto.pdf", "Google Drive"], ["Reunião de alinhamento", "Notion"]],
   },
   {
-    label: "Nesta pasta",
-    scope: "Pasta · Projeto Aurora",
-    question: "Qual é o prazo da apresentação?",
-    answer: <>A apresentação dos conceitos visuais está prevista para <strong>18 de outubro</strong>.</>,
-    sources: [["Cronograma Aurora.docx", "Google Drive"]],
-  },
-  {
-    label: "Sem resposta",
+    label: "Sem evidência suficiente",
     scope: "Pasta · Projeto Aurora",
     question: "Qual foi o orçamento aprovado para mídia?",
     answer: <>Não encontrei evidência nesta pasta para confirmar o orçamento de mídia.</>,
@@ -40,34 +33,64 @@ function ProductPreview() {
   const demo = demoCases[activeCase];
   return (
     <figure className="landing-preview" aria-labelledby="landing-preview-caption">
-      <div className="landing-demo-guide">
-        <div><span className="landing-demo-kicker">VEJA NA PRÁTICA</span><h2>Uma pergunta. <em>Uma resposta com origem.</em></h2></div>
-        <div className="landing-demo-options" role="group" aria-label="Escolha um exemplo da demonstração">{demoCases.map((item, index) => <button key={item.label} type="button" className={index === activeCase ? "is-active" : ""} aria-pressed={index === activeCase} onClick={() => setActiveCase(index)}>{item.label}</button>)}</div>
+      <div className="landing-preview-heading">
+        <p className="landing-eyebrow">VEJA A EXPERIÊNCIA</p>
+        <h2>Converse com seus documentos.<br /><em>Confira a origem.</em></h2>
       </div>
-      <div className="landing-preview-top"><span><Layers3 size={17} aria-hidden="true" /> arquivio. <span className="landing-preview-organization">/ Estúdio Aurora</span></span><span className="landing-preview-label">Prévia ilustrativa</span></div>
-      <div className="landing-product">
-        <section className="landing-product-chat" aria-label="Conversa demonstrativa" aria-live="polite" key={activeCase}>
-          <div className="landing-product-context"><div><strong>Contexto</strong><span>{demo.scope}</span></div></div>
-          <div className="landing-product-thread" aria-label={`Pergunta e resposta do exemplo: ${demo.label}`}>
-            <p className="landing-product-question">{demo.question}</p>
-            <div className="landing-product-answer"><span className="landing-product-avatar"><Sparkles size={16} aria-hidden="true" /></span><div><p className="landing-product-answer-name">Arquivio</p><p>{demo.answer}</p>
-              <div className="landing-product-references" aria-label="Documentos utilizados"><strong>Fontes</strong>{demo.sources.length > 0 ? demo.sources.map(([name, provider]) => <div key={name}><FileText size={15} aria-hidden="true" /><span>{name}</span><small>{provider}</small></div>) : <p className="landing-no-sources">Nenhuma fonte encontrada.</p>}</div>
-            </div></div>
-          </div>
-        </section>
+      <div className="landing-demo-options" role="group" aria-label="Escolha um exemplo da demonstração">
+        {demoCases.map((item, index) => <button key={item.label} type="button" aria-pressed={activeCase === index} onClick={() => setActiveCase(index)}>{item.label}</button>)}
       </div>
-      <figcaption id="landing-preview-caption">A resposta depende do contexto e das fontes. <span>Exemplos fictícios.</span></figcaption>
+
+      <div className="landing-app-shell">
+        <div className="landing-app-bar">
+          <Brand compact />
+          <span className="landing-app-company">Estúdio Aurora <ChevronDown size={12} aria-hidden="true" /></span>
+          <span className="landing-preview-label">Prévia ilustrativa</span>
+        </div>
+
+        <div className="landing-app-workspace">
+          <aside className="landing-app-sources" aria-label="Biblioteca ilustrativa">
+            <div className="landing-panel-title"><strong>Biblioteca</strong><span>Arquivos sincronizados</span></div>
+            <div className="landing-app-breadcrumb">Biblioteca</div>
+            <div className="landing-source-row"><ProviderLogo provider="google" size={22} /> <span>Google Drive</span><ChevronRight size={13} /></div>
+            <div className="landing-folder-row"><Folder size={14} aria-hidden="true" /><span>Projeto Aurora</span></div>
+            <div className="landing-source-row"><ProviderLogo provider="notion" size={22} /> <span>Notion</span><ChevronRight size={13} /></div>
+            <div className="landing-source-row"><ProviderLogo provider="onedrive" size={22} /> <span>OneDrive</span><ChevronRight size={13} /></div>
+            <p className="landing-scope-note"><ShieldCheck size={14} />Somente o contexto escolhido.</p>
+          </aside>
+
+          <section className="landing-app-chat" aria-label="Exemplo de conversa com documentos">
+            <div className="landing-app-context"><span>Consultar em</span><strong>{demo.scope}</strong></div>
+            <div className="landing-app-thread" aria-live="polite" key={activeCase}>
+              <div className="landing-user-message"><p>{demo.question}</p></div>
+              <article className="landing-answer">
+                <div className="landing-answer-author"><span><Sparkles size={15} /></span><div><strong>Arquivio</strong></div></div>
+                <p>{demo.answer}</p>
+                {demo.sources.length > 0 && <div className="landing-answer-sources" aria-label="Documentos utilizados">
+                  <strong>Documentos utilizados</strong>
+                  {demo.sources.map(([name, provider], index) => <div key={name}><span>{index + 1}.</span><FileText size={14} /><b>{name}</b><small>{provider}</small></div>)}
+                </div>}
+              </article>
+            </div>
+            <div className="landing-composer" aria-hidden="true">
+              <span className="landing-composer-input">O que você gostaria de saber?</span>
+              <span className="landing-composer-actions"><small>0/1000</small><span className="landing-send"><Send size={13} />Enviar</span></span>
+            </div>
+          </section>
+        </div>
+      </div>
+      <figcaption id="landing-preview-caption">Prévia da área de consultas do Arquivio. <span>Exemplos fictícios.</span></figcaption>
     </figure>
   );
 }
 
 const questions = [
-  ["O Arquivio altera meus arquivos?", "Não. Os originais continuam no Google Drive, OneDrive ou Notion. O Arquivio usa conexões de leitura."],
-  ["Que conteúdo posso consultar?", "Documentos Google, PDFs com texto, DOCX, páginas do Notion e Markdown do escopo conectado. Imagens escaneadas, planilhas e apresentações ainda não são indexadas."],
-  ["Quem pode consultar os documentos?", "Todos os membros da organização podem consultar o conteúdo sincronizado. Conecte apenas materiais compartilháveis com toda a equipe."],
-  ["E se faltar informação?", "O Arquivio informa quando não há evidência suficiente. Confira sempre as fontes e os documentos originais antes de tomar uma decisão."],
-  ["Quando os documentos aparecem?", "Após a sincronização e o processamento, que acontecem em segundo plano. Alterações exigem nova sincronização."],
-  ["Como a IA usa o conteúdo?", "O texto necessário para busca e resposta é processado pelo provedor de IA configurado. Confirme que esse uso atende às políticas da sua organização."],
+  ["O Arquivio altera meus arquivos?", "Não. Os originais continuam no Google Drive, OneDrive ou Notion. As conexões são de leitura."],
+  ["Quem pode consultar os documentos?", "Todos os membros da organização podem consultar o conteúdo sincronizado. Conecte apenas materiais compartilháveis com a equipe."],
+  ["E se faltar informação?", "O Arquivio informa quando não encontra evidência suficiente e mostra os documentos usados em cada resposta."],
+  ["Que conteúdo é compatível?", "Documentos Google, PDFs com texto, DOCX, páginas do Notion e Markdown. Imagens escaneadas, planilhas e apresentações ainda não são indexadas."],
+  ["Quando os documentos ficam disponíveis?", "Depois da sincronização e do processamento em segundo plano. Alterações nos originais exigem uma nova sincronização."],
+  ["Como a IA usa o conteúdo?", "O texto necessário para busca e resposta é processado pelo provedor de IA configurado. Confira se esse uso atende às políticas da sua organização."],
 ];
 
 export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
@@ -76,46 +99,54 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
       <a className="landing-skip-link" href="#landing-main">Pular para o conteúdo</a>
       <header className="landing-header landing-container">
         <a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, início"><Brand /></a>
-        <nav className="landing-desktop-nav" aria-label="Navegação principal"><a href="#demonstracao">Demonstração</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a></nav>
-        <div className="landing-header-actions"><button className="landing-login" onClick={onLogin}>Entrar</button><button className="landing-button landing-button-small" onClick={onSignUp}>Criar conta <ArrowUpRight size={16} aria-hidden="true" /></button></div>
-        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={23} aria-hidden="true" /></summary><nav aria-label="Navegação móvel"><a href="#demonstracao">Demonstração</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a><button onClick={onLogin}>Entrar na minha conta</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></nav></details>
+        <nav className="landing-desktop-nav" aria-label="Navegação principal"><a href="#produto">Produto</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a></nav>
+        <div className="landing-header-actions"><button className="landing-login" onClick={onLogin}>Entrar</button><button className="landing-button landing-button-small" onClick={onSignUp}>Criar conta <ArrowUpRight size={16} /></button></div>
+        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={23} /></summary><nav aria-label="Navegação móvel"><a href="#produto">Produto</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a><button onClick={onLogin}>Entrar</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></nav></details>
       </header>
 
       <main id="landing-main">
         <section className="landing-hero landing-container" aria-labelledby="landing-hero-title">
           <p className="landing-eyebrow"><span className="landing-status-dot" /> SEU CONHECIMENTO, COM CONTEXTO</p>
           <h1 id="landing-hero-title">A resposta está nos arquivos.<br /><em>Agora você sabe onde.</em></h1>
-          <p className="landing-hero-description">Encontre respostas nos documentos da equipe e veja de onde vieram.</p>
-          <div className="landing-hero-actions"><button className="landing-button" onClick={onSignUp}>Começar com o Arquivio <ArrowRight size={19} aria-hidden="true" /></button><a className="landing-text-link" href="#demonstracao">Testar a demonstração <ArrowDown size={16} aria-hidden="true" /></a></div>
-          <p className="landing-hero-note"><Check size={14} aria-hidden="true" /> Conexões de leitura · originais preservados</p>
-          <div id="demonstracao"><ProductPreview /></div>
+          <p className="landing-hero-description">Pergunte ao Arquivio. Receba uma resposta direta e os documentos que a sustentam.</p>
+          <div className="landing-hero-actions"><button className="landing-button" onClick={onSignUp}>Começar com o Arquivio <ArrowRight size={18} /></button><button className="landing-login" onClick={onLogin}>Já tenho uma conta</button></div>
+          <p className="landing-hero-note"><Check size={14} /> Conexões de leitura · originais preservados</p>
         </section>
 
-        <section className="landing-benefits landing-container" aria-labelledby="landing-benefits-title">
-          <div className="landing-section-intro"><p className="landing-eyebrow">O ESSENCIAL</p><h2 id="landing-benefits-title">Menos procura.<br /><em>Mais contexto.</em></h2></div>
-          <div className="landing-benefit-grid">
-            <article><span className="landing-feature-icon"><Sparkles size={24} strokeWidth={1.5} aria-hidden="true" /></span><h3>Pergunte naturalmente</h3><p>Retome o que foi documentado sem procurar em arquivo por arquivo.</p></article>
-            <article><span className="landing-feature-icon"><Link2 size={24} strokeWidth={1.5} aria-hidden="true" /></span><h3>Confira a origem</h3><p>Veja os documentos utilizados e abra os originais para conferir detalhes.</p></article>
-            <article><span className="landing-feature-icon"><FolderOpen size={24} strokeWidth={1.5} aria-hidden="true" /></span><h3>Escolha o contexto</h3><p>Consulte toda a organização, uma ferramenta ou uma pasta específica.</p></article>
+        <section id="produto" className="landing-product-section landing-container"><ProductPreview /></section>
+
+        <section className="landing-story landing-container" aria-labelledby="landing-story-title">
+          <div className="landing-story-intro"><p className="landing-eyebrow">O QUE MUDA NA ROTINA</p><h2 id="landing-story-title">Da procura à resposta,<br /><em>sem perder o caminho.</em></h2><p>O conhecimento da equipe já está nos documentos. O Arquivio ajuda a encontrar o trecho certo e a voltar à fonte sempre que você precisar de mais detalhes.</p></div>
+          <div className="landing-story-list">
+            <article><span>01 / ENCONTRE</span><div><h3>Pergunte como você perguntaria a um colega.</h3><p>Recupere decisões, entregas e informações registradas sem abrir cada arquivo por conta própria.</p></div></article>
+            <article><span>02 / DELIMITE</span><div><h3>Escolha onde buscar.</h3><p>Consulte todo o conteúdo indexado ou restrinja a pergunta a uma ferramenta ou pasta específica.</p></div></article>
+            <article><span>03 / CONFIRA</span><div><h3>Volte aos documentos.</h3><p>Veja as fontes apresentadas com a resposta e abra os originais para verificar o contexto completo.</p></div></article>
           </div>
         </section>
 
-        <section className="landing-workflow" id="como-funciona" aria-labelledby="landing-workflow-title"><div className="landing-container">
-          <div className="landing-workflow-heading"><div><p className="landing-eyebrow">COMO FUNCIONA</p><h2 id="landing-workflow-title">Dos documentos <em>à resposta.</em></h2></div></div>
-          <ol className="landing-steps">
-            <li><span className="landing-step-number">01</span><h3>Conecte</h3><p>Escolha o conteúdo compartilhável no Google Drive, OneDrive ou Notion.</p></li>
-            <li><span className="landing-step-number">02</span><h3>Prepare</h3><p>Acompanhe a sincronização e o processamento dos documentos.</p></li>
-            <li><span className="landing-step-number">03</span><h3>Pergunte</h3><p>Defina o escopo, receba a resposta e confira as fontes.</p></li>
-          </ol>
-          <div className="landing-permission-note"><ShieldCheck size={21} aria-hidden="true" /><p>Todos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais compartilháveis com a equipe.</p></div>
+        <section className="landing-process" id="como-funciona" aria-labelledby="landing-process-title"><div className="landing-container">
+          <div className="landing-process-heading"><p className="landing-eyebrow">COMO FUNCIONA</p><h2 id="landing-process-title">Seus arquivos continuam onde estão.<br /><em>As respostas ficam mais perto.</em></h2></div>
+          <div className="landing-process-grid">
+            <article><span>01</span><h3>Conecte as fontes</h3><p>Escolha materiais compartilháveis no Google Drive, OneDrive ou Notion. As conexões são de leitura e preservam os originais.</p></article>
+            <article><span>02</span><h3>Aguarde a sincronização</h3><p>O Arquivio processa o conteúdo selecionado em segundo plano. A consulta considera o que já foi sincronizado e indexado.</p></article>
+            <article><span>03</span><h3>Pergunte com contexto</h3><p>Defina o escopo, faça sua pergunta e confira os documentos que sustentam a resposta.</p></article>
+          </div>
+          <p className="landing-process-note"><ShieldCheck size={18} aria-hidden="true" /> Todos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais compartilháveis com a equipe.</p>
         </div></section>
 
-        <section className="landing-faq landing-container" id="perguntas" aria-labelledby="landing-faq-title"><div><p className="landing-eyebrow">ANTES DE COMEÇAR</p><h2 id="landing-faq-title">Perguntas<br /><em>frequentes.</em></h2></div><div className="landing-faq-list">{questions.map(([question, answer]) => <details key={question}><summary>{question}<ChevronDown size={19} aria-hidden="true" /></summary><p>{answer}</p></details>)}</div></section>
+        <section className="landing-faq landing-container" id="perguntas" aria-labelledby="landing-faq-title">
+          <div><p className="landing-eyebrow">ANTES DE COMEÇAR</p><h2 id="landing-faq-title">O que você<br /><em>precisa saber.</em></h2></div>
+          <div className="landing-faq-list">{questions.map(([question, answer]) => <details key={question}><summary>{question}<ChevronDown size={19} /></summary><p>{answer}</p></details>)}</div>
+        </section>
 
-        <section className="landing-closing landing-container" aria-labelledby="landing-closing-title"><p className="landing-eyebrow">PRONTO PARA ENCONTRAR?</p><h2 id="landing-closing-title">O que sua equipe sabe<br /><em>está mais perto do que parece.</em></h2><button className="landing-button" onClick={onSignUp}>Criar minha conta <ArrowRight size={19} aria-hidden="true" /></button><p>Já tem um espaço de trabalho? <button className="landing-inline-button" onClick={onLogin}>Entrar no Arquivio</button></p></section>
+        <section className="landing-closing landing-container" aria-labelledby="landing-closing-title">
+          <p className="landing-eyebrow">COMECE PELOS SEUS DOCUMENTOS</p>
+          <h2 id="landing-closing-title">Menos procura.<br /><em>Mais contexto.</em></h2>
+          <button className="landing-button" onClick={onSignUp}>Criar minha conta <ArrowRight size={18} /></button>
+        </section>
       </main>
 
-      <footer className="landing-footer landing-container"><a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, voltar ao início"><Brand /></a><p>Conhecimento que encontra o seu contexto.</p><a href="#perguntas">Sobre acesso e privacidade <ArrowUpRight size={14} aria-hidden="true" /></a></footer>
+      <footer className="landing-footer landing-container"><a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, voltar ao início"><Brand /></a><p>Conhecimento que encontra o seu contexto.</p><a href="#perguntas">Acesso e privacidade <ArrowUpRight size={14} /></a></footer>
     </div>
   );
 }
