@@ -336,6 +336,7 @@ def test_document_inventory_uses_one_scoped_evidence_per_document_without_questi
     [
         "Quais arquivos temos nesse contexto?",
         "Quais arquivos ele tem acesso?",
+        "Quais arquivos existem dentro dessa pasta?",
     ],
 )
 def test_document_inventory_recognizes_context_and_access_wording(
@@ -350,6 +351,23 @@ def test_document_inventory_recognizes_context_and_access_wording(
     assert result.retrieval_status == RETRIEVAL_STATUS_SUFFICIENT
     assert provider.embed_calls == []
     assert [item.document_name for item in provider.answer_calls[0][1]] == ["Notion page.md"]
+
+
+def test_document_inventory_falls_back_to_verified_metadata_when_generation_is_invalid(
+    session: Session,
+) -> None:
+    org, user, folder = context(session)
+    first = chunk(session, org, folder, name="Briefing.pdf", text="Indexed briefing.")
+    second = chunk(session, org, folder, name="Roadmap.pdf", text="Indexed roadmap.")
+    provider = FakeProvider({}, answer="Insufficient evidence.", citations=[])
+
+    result = ask(session, provider, org, user, folder, "Quais arquivos existem dentro dessa pasta?")
+
+    assert result.retrieval_status == RETRIEVAL_STATUS_SUFFICIENT
+    assert result.confidence == "supported"
+    assert [item.document_id for item in result.citations] == [first.document_id, second.document_id]
+    assert "Briefing.pdf (fonte 1)" in result.answer
+    assert "Roadmap.pdf (fonte 2)" in result.answer
 
 
 @pytest.mark.parametrize(
@@ -713,6 +731,27 @@ def test_openai_evidence_includes_tool_and_file_provenance(monkeypatch: pytest.M
     assert "Brief.pdf" in requests[0]["input"]
     assert source.source_url not in requests[0]["input"]
     assert "not an exhaustive inventory" in requests[0]["instructions"]
+
+
+def test_openai_inventory_prompt_treats_scoped_file_names_as_authoritative(monkeypatch: pytest.MonkeyPatch) -> None:
+    requests = []
+    provider = OpenAIQuestionProvider("test-key")
+    monkeypatch.setattr(
+        provider,
+        "_post",
+        lambda path, body: requests.append(body) or {
+            "output": [{"content": [{"type": "output_text", "text": '{"answer":"Brief.pdf [1]","citations":[1]}'}]}]
+        },
+    )
+    source = Evidence(
+        uuid4(), "Brief.pdf", uuid4(), "Supported excerpt", None,
+        "https://example.test/brief", 0.9, "google_drive",
+    )
+
+    provider.answer(question="Quais arquivos existem dentro dessa pasta?", evidence=[source])
+
+    assert "document names are authoritative" in requests[0]["instructions"]
+    assert "List every supplied source exactly once" in requests[0]["instructions"]
 
 
 def test_broad_scope_empty_context_authorizes_membership_before_returning_empty(session: Session) -> None:
