@@ -154,6 +154,7 @@ class GoogleDriveDocumentProvider:
             if folder_changed:
                 # Changes to folder ancestry can affect every descendant; a
                 # full reconciliation safely handles moves into and out of scope.
+                self._folder_catalog = None
                 links = {
                     selection.id: self.client.start_page_token(credentials=credentials)
                     for selection in selections
@@ -171,6 +172,7 @@ class GoogleDriveDocumentProvider:
                 full_snapshot=False,
             )
         except GoogleCursorInvalid:
+            self._folder_catalog = None
             links = {
                 selection.id: self.client.start_page_token(credentials=credentials)
                 for selection in selections

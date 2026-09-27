@@ -15,6 +15,7 @@ from app.integrations.google_drive import (
     GoogleDriveOAuthClient,
     GoogleRemoteUnauthorized,
     RemoteFile,
+    RemoteFolder,
 )
 from app.workspaces.models import WorkspaceFolderSelection
 
@@ -425,6 +426,42 @@ def test_incremental_sync_reuses_folder_catalog_for_library_projection() -> None
     provider.discover(encrypted_credentials=credentials, selections=[scope])
     assert provider.folders(encrypted_credentials=credentials) == []
     assert client.folder_calls == 1
+
+
+@pytest.mark.parametrize("change_kind", ["folder_changed", "cursor_invalid"])
+def test_full_reconciliation_refreshes_folder_catalog(change_kind: str) -> None:
+    class Client(FakeGoogleDriveClient):
+        folder_calls = 0
+
+        def list_folders(self, *, credentials: GoogleCredentials) -> list[RemoteFolder]:
+            self.folder_calls += 1
+            name = "Before" if self.folder_calls == 1 else "After"
+            return [RemoteFolder(id="selected-folder", name=name)]
+
+        def changes(self, *, credentials: GoogleCredentials, page_token: str) -> GoogleChangesPage:
+            if change_kind == "cursor_invalid":
+                raise GoogleCursorInvalid("expired")
+            return GoogleChangesPage(
+                changes=[{"fileId": "selected-folder", "file": {
+                    "id": "selected-folder", "name": "After",
+                    "mimeType": "application/vnd.google-apps.folder",
+                }}],
+                new_start_page_token="next",
+            )
+
+        _remote_file = staticmethod(GoogleDriveOAuthClient._remote_file)
+
+    client = Client([], {})
+    cipher, credentials = encrypted_credentials()
+    scope = selection("folder", "selected-folder")
+    scope.encrypted_delta_link = cipher.encrypt_cursor("previous")
+    provider = GoogleDriveDocumentProvider(client, cipher)
+
+    result = provider.discover(encrypted_credentials=credentials, selections=[scope])
+
+    assert result.full_snapshot is True
+    assert [folder.name for folder in provider.folders(encrypted_credentials=credentials)] == ["After"]
+    assert client.folder_calls == 2
 
 
 def test_google_removed_item_reconciles_full_scope_for_deleted_subtrees() -> None:
