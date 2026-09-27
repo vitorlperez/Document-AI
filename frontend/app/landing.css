@@ -199,7 +199,7 @@
   .landing-app-context > strong { font-size: 9px; }
   .landing-app-thread { padding: 24px 15px 18px; }
   .landing-answer > p, .landing-answer-sources { margin-left: 0; }
-  .landing-answer-sources small { display: none; }
+  .landing-answer-sources small { font-size: 9px; }
   .landing-composer { margin-inline: 15px; }
   .landing-preview figcaption { font-size: 9px; }
   .landing-story-list article { grid-template-columns: 1fr; gap: 8px; }
