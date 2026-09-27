@@ -611,7 +611,9 @@ def workspace_folders(
 ) -> list[dict[str, object]]:
     try:
         workspace_service = WorkspaceService(session)
-        rows = workspace_service.folders(scope=OrganizationScope(organization_id), user_id=user.id)
+        scope = OrganizationScope(organization_id)
+        rows = workspace_service.folders(scope=scope, user_id=user.id)
+        selections = workspace_service.selections_for_folders(scope=scope, folders=rows)
     except GoogleAccessDenied as error:
         raise HTTPException(status_code=403, detail="not allowed") from error
     return [
@@ -625,18 +627,14 @@ def workspace_folders(
             "selection_kind": next(
                 (
                     item.kind
-                    for item in workspace_service.selections(
-                        scope=OrganizationScope(organization_id), workspace_folder_id=folder.id
-                    )
+                    for item in selections.get(folder.id, [])
                     if item.kind == "all_accessible"
                 ),
                 "selected",
             ),
             "selection_folder_ids": [
                 item.external_folder_id
-                for item in workspace_service.selections(
-                    scope=OrganizationScope(organization_id), workspace_folder_id=folder.id
-                )
+                for item in selections.get(folder.id, [])
                 if item.kind == "folder"
             ],
         }

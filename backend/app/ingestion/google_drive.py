@@ -48,6 +48,7 @@ class GoogleDriveDocumentProvider:
         self.client = client
         self.cipher = cipher
         self.extraction_workers = min(MAX_EXTRACTION_WORKERS, max(1, extraction_workers))
+        self._folder_catalog: tuple[str, list[RemoteFolder]] | None = None
 
     def discover(
         self,
@@ -56,6 +57,7 @@ class GoogleDriveDocumentProvider:
         selections: list[WorkspaceFolderSelection],
         force_file_ids: set[str] | None = None,
     ) -> DiscoveryResult:
+        self._folder_catalog = None
         credentials = self.cipher.decrypt(encrypted_credentials)
         links: dict[UUID, str | None] = {}
         # The first run (or a newly added selection) takes a complete snapshot.
@@ -75,6 +77,8 @@ class GoogleDriveDocumentProvider:
                 if any(selection.kind == "folder" for selection in selections)
                 else []
             )
+            if any(selection.kind == "folder" for selection in selections):
+                self._folder_catalog = (encrypted_credentials, folders)
             root_file_ids = (
                 {item.id for item in self.client.list_root_files(credentials=credentials)}
                 if any(selection.kind == "root_files" for selection in selections)
@@ -212,7 +216,11 @@ class GoogleDriveDocumentProvider:
         This is intentionally separate from extraction: the library retains no
         provider credentials and does not browse Drive during a user request.
         """
-        return self.client.list_folders(credentials=self.cipher.decrypt(encrypted_credentials))
+        if self._folder_catalog is not None and self._folder_catalog[0] == encrypted_credentials:
+            return self._folder_catalog[1]
+        folders = self.client.list_folders(credentials=self.cipher.decrypt(encrypted_credentials))
+        self._folder_catalog = (encrypted_credentials, folders)
+        return folders
 
     def encrypt_delta_link(self, value: str) -> str:
         return self.cipher.encrypt_cursor(value)

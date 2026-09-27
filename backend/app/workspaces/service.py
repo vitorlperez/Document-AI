@@ -47,6 +47,30 @@ class WorkspaceService:
     def selections(self, *, scope: OrganizationScope, workspace_folder_id: UUID) -> list[WorkspaceFolderSelection]:
         return list(self.session.scalars(select(WorkspaceFolderSelection).join(WorkspaceFolder, WorkspaceFolder.id == WorkspaceFolderSelection.workspace_folder_id).where(WorkspaceFolderSelection.workspace_folder_id == workspace_folder_id, WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolderSelection.kind, WorkspaceFolderSelection.external_folder_id)))
 
+    def selections_for_folders(
+        self, *, scope: OrganizationScope, folders: list[WorkspaceFolder]
+    ) -> dict[UUID, list[WorkspaceFolderSelection]]:
+        """Load selection metadata for a workspace listing in one tenant-scoped query."""
+        if not folders:
+            return {}
+        result: dict[UUID, list[WorkspaceFolderSelection]] = {}
+        rows = self.session.scalars(
+            select(WorkspaceFolderSelection)
+            .join(WorkspaceFolder, WorkspaceFolder.id == WorkspaceFolderSelection.workspace_folder_id)
+            .where(
+                WorkspaceFolder.organization_id == scope.organization_id,
+                WorkspaceFolderSelection.workspace_folder_id.in_([folder.id for folder in folders]),
+            )
+            .order_by(
+                WorkspaceFolderSelection.workspace_folder_id,
+                WorkspaceFolderSelection.kind,
+                WorkspaceFolderSelection.external_folder_id,
+            )
+        )
+        for item in rows:
+            result.setdefault(item.workspace_folder_id, []).append(item)
+        return result
+
     def support_metadata(self, *, scope: OrganizationScope) -> list[WorkspaceFolder]:
         """Return only operational folder metadata after platform grant authorization."""
         return list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolder.name, WorkspaceFolder.id)))

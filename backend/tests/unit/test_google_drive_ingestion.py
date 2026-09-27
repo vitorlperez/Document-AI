@@ -405,6 +405,28 @@ def test_google_incremental_downloads_only_changed_file_in_selected_root() -> No
     assert result.delta_links == {scope.id: "next"}
 
 
+def test_incremental_sync_reuses_folder_catalog_for_library_projection() -> None:
+    class Client(FakeGoogleDriveClient):
+        folder_calls = 0
+
+        def list_folders(self, *, credentials: GoogleCredentials) -> list:
+            self.folder_calls += 1
+            return []
+
+        def changes(self, *, credentials: GoogleCredentials, page_token: str) -> GoogleChangesPage:
+            return GoogleChangesPage(changes=[], new_start_page_token="next")
+
+    client = Client([], {})
+    cipher, credentials = encrypted_credentials()
+    scope = selection("folder", "selected-folder")
+    scope.encrypted_delta_link = cipher.encrypt_cursor("previous")
+    provider = GoogleDriveDocumentProvider(client, cipher)
+
+    provider.discover(encrypted_credentials=credentials, selections=[scope])
+    assert provider.folders(encrypted_credentials=credentials) == []
+    assert client.folder_calls == 1
+
+
 def test_google_removed_item_reconciles_full_scope_for_deleted_subtrees() -> None:
     retained = remote_file("retained", GOOGLE_DOC)
 

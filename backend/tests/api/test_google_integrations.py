@@ -8,7 +8,7 @@ from uuid import UUID
 import pytest
 from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import create_engine, event, func, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -613,6 +613,52 @@ def test_admin_creates_one_workspace_scope_from_multiple_folders_and_root_files(
             ("folder", "folder-2"),
             ("root_files", ""),
         ]
+
+
+def test_workspace_folder_listing_batches_selection_reads(google_api) -> None:
+    client, factory, auth_gateway, _ = google_api
+    login(client, auth_gateway, code="owner", email="owner@example.test", subject="owner")
+    organization_id = create_organization(client)
+    with factory.begin() as session:
+        user = session.scalar(select(User).where(User.email == "owner@example.test"))
+        source = DataSource(
+            organization_id=organization_id, provider="google_drive", encrypted_credentials="ciphertext",
+            status="connected", connected_by_user_id=user.id,
+        )
+        session.add(source)
+        session.flush()
+        for index in range(3):
+            folder = WorkspaceFolder(
+                organization_id=organization_id, source_id=source.id,
+                external_folder_id=f"scope:{index}", name=f"Space {index}",
+                uniform_access_confirmed=True,
+            )
+            session.add(folder)
+            session.flush()
+            session.add(WorkspaceFolderSelection(
+                workspace_folder_id=folder.id,
+                kind="all_accessible" if index == 0 else "folder",
+                external_folder_id="" if index == 0 else f"remote-{index}",
+            ))
+
+    selection_reads = 0
+
+    def count_selection_reads(_conn, _cursor, statement, _params, _context, _many):
+        nonlocal selection_reads
+        if statement.lstrip().lower().startswith("select") and "workspace_folder_selections" in statement:
+            selection_reads += 1
+
+    event.listen(factory.kw["bind"], "before_cursor_execute", count_selection_reads)
+    try:
+        response = client.get(f"/workspace-folders?organization_id={organization_id}")
+    finally:
+        event.remove(factory.kw["bind"], "before_cursor_execute", count_selection_reads)
+
+    assert response.status_code == 200
+    assert [(row["selection_kind"], row["selection_folder_ids"]) for row in response.json()] == [
+        ("all_accessible", []), ("selected", ["remote-1"]), ("selected", ["remote-2"]),
+    ]
+    assert selection_reads == 1
 
 
 def test_scope_api_rejects_empty_selected_scope_or_mixed_all_accessible_scope(google_api) -> None:
