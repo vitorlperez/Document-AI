@@ -174,6 +174,39 @@ class LibraryService:
             )
         ]
 
+    def documents_for_nodes(
+        self, *, scope: OrganizationScope, nodes: list[LibraryNode]
+    ) -> dict[UUID, list[IndexedDocumentProvenance]]:
+        """Load indexed document references for a browse page in one query."""
+        files = [node for node in nodes if node.kind == "file"]
+        if not files:
+            return {}
+        node_ids_by_source_external: dict[tuple[UUID, str], list[UUID]] = {}
+        for node in files:
+            node_ids_by_source_external.setdefault((node.source_id, node.external_id), []).append(node.id)
+        result: dict[UUID, list[IndexedDocumentProvenance]] = {}
+        rows = self.session.execute(
+            select(
+                WorkspaceFolder.source_id, Document.external_file_id,
+                Document.workspace_folder_id, Document.id,
+            )
+            .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+            .where(
+                Document.organization_id == scope.organization_id,
+                WorkspaceFolder.organization_id == scope.organization_id,
+                WorkspaceFolder.source_id.in_({node.source_id for node in files}),
+                Document.external_file_id.in_({node.external_id for node in files}),
+                Document.index_status == "indexed",
+            )
+            .order_by(Document.workspace_folder_id, Document.id)
+        )
+        for source_id, external_id, workspace_folder_id, document_id in rows:
+            for node_id in node_ids_by_source_external.get((source_id, external_id), []):
+                result.setdefault(node_id, []).append(
+                    IndexedDocumentProvenance(workspace_folder_id, document_id)
+                )
+        return result
+
     def remove_file_if_unindexed(
         self, *, scope: OrganizationScope, source_id: UUID, external_file_id: str
     ) -> None:
@@ -518,12 +551,19 @@ class LibraryService:
     def _remove_empty_folders(self, *, source_id: UUID) -> None:
         """Prune only orphaned folder metadata, never a source root."""
         while True:
+            occupied_parent_ids = set(
+                self.session.scalars(
+                    select(LibraryNode.parent_id)
+                    .where(LibraryNode.source_id == source_id, LibraryNode.parent_id.is_not(None))
+                    .distinct()
+                )
+            )
             empty = [
                 node
                 for node in self.session.scalars(
                     select(LibraryNode).where(LibraryNode.source_id == source_id, LibraryNode.kind == "folder")
                 )
-                if self.session.scalar(select(LibraryNode.id).where(LibraryNode.parent_id == node.id).limit(1)) is None
+                if node.id not in occupied_parent_ids
             ]
             if not empty:
                 return

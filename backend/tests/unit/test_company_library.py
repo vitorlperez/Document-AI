@@ -1,5 +1,5 @@
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -201,6 +201,32 @@ def test_children_are_bounded_and_stably_paged(session: Session) -> None:
     second = service.children(scope=OrganizationScope(organization.id), user_id=user.id, parent_id=root.id, page=2, page_size=100)
     assert first.total == 101 and len(first.items) == 100 and len(second.items) == 1
     assert {item.id for item in first.items}.isdisjoint({item.id for item in second.items})
+
+
+def test_empty_folder_pruning_uses_bounded_queries(session: Session) -> None:
+    organization, _, source = seed_company(session)
+    service = LibraryService(session)
+    root = service._root(organization_id=organization.id, source=source)
+    for index in range(20):
+        session.add(LibraryNode(
+            organization_id=organization.id, source_id=source.id, parent_id=root.id,
+            external_id=f"empty-{index}", kind="folder", name=f"Empty {index}",
+            mime_type=None, source_url=None,
+        ))
+    session.flush()
+    statements: list[str] = []
+
+    def count_reads(_connection, _cursor, statement, _parameters, _context, _executemany):
+        if statement.lstrip().startswith("SELECT") and "FROM library_nodes" in statement:
+            statements.append(statement)
+
+    event.listen(session.bind, "before_cursor_execute", count_reads)
+    try:
+        service._remove_empty_folders(source_id=source.id)
+    finally:
+        event.remove(session.bind, "before_cursor_execute", count_reads)
+    assert session.query(LibraryNode).filter_by(source_id=source.id).count() == 1
+    assert len(statements) <= 4
 
 
 def test_library_metadata_search_and_sync_statuses_are_member_scoped(session: Session) -> None:

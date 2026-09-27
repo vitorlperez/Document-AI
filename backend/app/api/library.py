@@ -10,15 +10,14 @@ from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.ingestion.service import SyncAccessDenied
 from app.library.models import LibraryNode
-from app.library.service import PAGE_SIZE_MAX, LibraryService
+from app.library.service import PAGE_SIZE_MAX, IndexedDocumentProvenance, LibraryService
 
 router = APIRouter(tags=["library"])
 
 
 def _node(
-    *, node: LibraryNode, service: LibraryService, scope: OrganizationScope, source_provider: str | None = None
+    *, node: LibraryNode, documents: list[IndexedDocumentProvenance], source_provider: str | None = None
 ) -> dict[str, object]:
-    documents = service.document_provenance(scope=scope, node=node)
     return {
         "id": str(node.id),
         "parent_id": str(node.parent_id) if node.parent_id else None,
@@ -28,7 +27,7 @@ def _node(
         "name": node.name,
         "mime_type": node.mime_type,
         "source_url": node.source_url,
-        "workspace_folder_ids": [str(item) for item in service.workspace_provenance(scope=scope, node=node)],
+        "workspace_folder_ids": [str(item) for item in sorted({document.workspace_folder_id for document in documents})],
         "workspace_documents": [
             {"workspace_folder_id": str(item.workspace_folder_id), "document_id": str(item.document_id)}
             for item in documents
@@ -51,7 +50,7 @@ def library_roots(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
     return {
         "items": [
-            _node(node=node, service=service, scope=scope, source_provider=providers.get(node.source_id)) for node in roots
+            _node(node=node, documents=[], source_provider=providers.get(node.source_id)) for node in roots
         ]
     }
 
@@ -71,7 +70,8 @@ def library_search(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
-    return {"items": [_node(node=node, service=service, scope=scope) for node in items]}
+    documents = service.documents_for_nodes(scope=scope, nodes=items)
+    return {"items": [_node(node=node, documents=documents.get(node.id, [])) for node in items]}
 
 
 @router.get("/library/question-contexts")
@@ -146,8 +146,9 @@ def library_children(
     except SyncAccessDenied as error:
         # A foreign UUID is intentionally indistinguishable from an absent node.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="library node not found") from error
+    documents = service.documents_for_nodes(scope=scope, nodes=result.items)
     return {
-        "items": [_node(node=node, service=service, scope=scope) for node in result.items],
+        "items": [_node(node=node, documents=documents.get(node.id, [])) for node in result.items],
         "page": result.page,
         "page_size": result.page_size,
         "total": result.total,

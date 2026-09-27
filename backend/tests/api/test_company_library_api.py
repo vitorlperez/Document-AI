@@ -5,7 +5,7 @@ from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -17,6 +17,7 @@ from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveredDocument
 from app.integrations.models import DataSource
 from app.knowledge.models import Document
+from app.library.models import LibraryNode
 from app.library.service import LibraryService
 from app.organizations.models import Organization
 from app.workspaces.models import WorkspaceFolder
@@ -112,6 +113,50 @@ def test_company_library_does_not_disclose_foreign_node(api: tuple[TestClient, s
     response = client.get(f"/library/nodes/{root['id']}/children?organization_id={outsider_org}")
     assert response.status_code == 404
     assert "Google Drive" not in response.text and "Brief.pdf" not in response.text
+
+
+def test_library_children_loads_document_provenance_in_one_query(
+    api: tuple[TestClient, sessionmaker[Session]],
+) -> None:
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = seed_library(factory, organization)
+    root = client.get(f"/library?organization_id={organization}").json()["items"][0]
+    with factory() as session:
+        workspace = session.query(WorkspaceFolder).filter_by(organization_id=UUID(organization)).one()
+        for index in range(12):
+            external_id = f"extra-{index}"
+            session.add(Document(
+                organization_id=workspace.organization_id, workspace_folder_id=workspace.id,
+                external_file_id=external_id, name=f"Extra {index}.pdf",
+                mime_type="application/pdf", source_url=f"https://drive.example.test/{external_id}",
+                content_hash="hash", processing_version="v1", index_status="indexed",
+            ))
+            session.add(LibraryNode(
+                organization_id=workspace.organization_id, source_id=UUID(source_id),
+                parent_id=UUID(root["id"]), external_id=external_id, kind="file",
+                name=f"Extra {index}.pdf", mime_type="application/pdf",
+                source_url=f"https://drive.example.test/{external_id}",
+            ))
+        session.commit()
+
+    provenance_queries: list[str] = []
+
+    def count_provenance(_connection, _cursor, statement, _parameters, _context, _executemany):
+        if "FROM documents" in statement and "JOIN workspace_folders" in statement:
+            provenance_queries.append(statement)
+
+    engine = factory.kw["bind"]
+    event.listen(engine, "before_cursor_execute", count_provenance)
+    try:
+        response = client.get(f"/library/nodes/{root['id']}/children?organization_id={organization}")
+    finally:
+        event.remove(engine, "before_cursor_execute", count_provenance)
+    assert response.status_code == 200
+    assert len(response.json()["items"]) == 13
+    assert all(len(item["workspace_documents"]) == 1 for item in response.json()["items"])
+    assert len(provenance_queries) == 1
 
 
 def test_member_can_search_library_names_and_see_own_sync_phases(api: tuple[TestClient, sessionmaker[Session]]) -> None:
