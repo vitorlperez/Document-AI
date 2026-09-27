@@ -99,9 +99,9 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
       <a className="landing-skip-link" href="#landing-main">Pular para o conteúdo</a>
       <header className="landing-header landing-container">
         <a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, início"><Brand /></a>
-        <nav className="landing-desktop-nav" aria-label="Navegação principal"><a href="#produto">Produto</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a></nav>
+        <nav className="landing-desktop-nav" aria-label="Navegação principal"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a></nav>
         <div className="landing-header-actions"><button className="landing-login" onClick={onLogin}>Entrar</button><button className="landing-button landing-button-small" onClick={onSignUp}>Criar conta <ArrowUpRight size={16} /></button></div>
-        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={23} /></summary><nav aria-label="Navegação móvel"><a href="#produto">Produto</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a><button onClick={onLogin}>Entrar</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></nav></details>
+        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={23} /></summary><nav aria-label="Navegação móvel"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a><button onClick={onLogin}>Entrar</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></nav></details>
       </header>
 
       <main id="landing-main">
@@ -114,6 +114,19 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
         </section>
 
         <section id="produto" className="landing-product-section landing-container"><ProductPreview /></section>
+
+        <section id="integracoes" className="landing-integrations landing-container" aria-labelledby="landing-integrations-title">
+          <div className="landing-integrations-intro">
+            <p className="landing-eyebrow">INTEGRAÇÕES DISPONÍVEIS</p>
+            <h2 id="landing-integrations-title"><span>3</span> fontes.<br /><em>1 lugar para perguntar.</em></h2>
+            <p>Conecte o que sua equipe já usa. Os arquivos originais permanecem nas suas ferramentas.</p>
+          </div>
+          <ul className="landing-integrations-list" aria-label="Ferramentas que você pode conectar">
+            <li><ProviderLogo provider="google" size={32} /><span>Google Drive</span></li>
+            <li><ProviderLogo provider="onedrive" size={32} /><span>OneDrive</span></li>
+            <li><ProviderLogo provider="notion" size={32} /><span>Notion</span></li>
+          </ul>
+        </section>
 
         <section className="landing-story landing-container" aria-labelledby="landing-story-title">
           <div className="landing-story-intro"><p className="landing-eyebrow">O QUE MUDA NA ROTINA</p><h2 id="landing-story-title">Da procura à resposta,<br /><em>sem perder o caminho.</em></h2><p>O conhecimento da equipe já está nos documentos. O Arquivio ajuda a encontrar o trecho certo e a voltar à fonte sempre que você precisar de mais detalhes.</p></div>
