@@ -1,6 +1,6 @@
 # Seguimento coletivo do agente após inventário de pasta
 
-**Status:** validating — implementação concluída; validação independente reservada ao piloto da Missão 19.
+**Status:** done — correção e validação independente local aprovadas.
 
 ## Fonte, escopo e aprovação
 
@@ -13,7 +13,7 @@
 
 - Causa raiz: `AgentService` já reautoriza referências persistidas por organização, provider e pasta, mas `_plural_file_reference` reconhecia somente pronomes (`eles/elas/deles/delas/ambos/ambas`). A expressão coletiva nominal “cada arquivo” não ativava esse caminho e caía no retrieval comum.
 - Decisão técnica: ampliar somente o detector existente para as formas coletivas de arquivo `cada arquivo`, `cada um dos arquivos` e `todos os arquivos`. É uma escolha de implementação coberta pelo comportamento aprovado; não altera ownership de dados, autorização, retenção, custo material ou API pública.
-- Ownership: implementação em `backend/app/knowledge/agent.py`; regressão em `backend/tests/unit/test_document_agent.py`; este dossier. O piloto executará a revisão independente sem editar durante o gate.
+- Ownership: implementação em `backend/app/knowledge/agent.py`; regressão em `backend/tests/unit/test_document_agent.py`; este dossier. Validação independente somente leitura pelo piloto pane-169, registrada em h-6o.
 
 ## Critérios de aceite e matriz de testes
 
@@ -39,9 +39,16 @@
 - Integridade do diff: `git diff --check` → exit 0.
 - Grafo: `.tools/graphify/bin/graphify update .` → exit 0; 3.525 nós e 9.385 arestas.
 
+## Validação independente e decisão do gate
+
+- Handoff `h-6o`, pane-169: **APROVADO**, sem findings abertos no escopo. O revisor examinou o diff de `9c0d105`, confirmou os quatro comportamentos positivos/negativos automatizados e a reautorização de tenant/pasta; não editou arquivos.
+- Reexecução independente: teste focal `1 passed`; `test_document_agent.py` `9 passed`; suíte backend `348 passed, 8 skipped`; Ruff e `git diff/show --check` passaram (todos exit 0; quatro avisos de depreciação na suíte).
+- Gate local desta correção: aprovado e concluído. Evidência integral e limites estão no handoff `h-6o`.
+- Produção: não validada; não houve UI/browser, deploy ou teste com dados/provedor de produção. O HTTP 503 continua não diagnosticado e não é resolvido por este dossier.
+
 ## Riscos, rollback e gate
 
 - Risco residual: o detector é lexical e intencionalmente estreito; negações com verbos fora da lista (`resuma/resumir`, `liste/listar`, `analise/analisar`, `descreva/descrever`) ainda podem ser interpretadas como coletivas. Novas paráfrases precisam de testes antes de ampliar a lista.
 - Rollback: reverter a alternativa nominal adicionada à regex; nenhuma migração ou limpeza de dados é necessária.
-- Revisão independente h-6m: bloqueou `651d5d2` porque a frase negada selecionava ambos os arquivos e `todos os arquivos` não tinha teste automatizado de ponta a ponta. Correção e cobertura atualizadas; aguardar nova revisão do piloto.
-- Gate: manter `validating` até a nova revisão independente do piloto. O 503 permanece fora deste diagnóstico e desta correção.
+- Revisão independente h-6m: bloqueou `651d5d2` porque a frase negada selecionava ambos os arquivos e `todos os arquivos` não tinha teste automatizado de ponta a ponta. A correção foi feita em `9c0d105` e h-6o aprovou os casos e a reautorização sem findings novos.
+- Pendência separada: diagnóstico e validação do HTTP 503 em produção continuam fora deste trabalho e sem resolução registrada.
