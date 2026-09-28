@@ -325,10 +325,12 @@ def test_document_inventory_uses_one_scoped_evidence_per_document_without_questi
 
     assert result.retrieval_status == RETRIEVAL_STATUS_SUFFICIENT
     assert provider.embed_calls == []
-    assert [item.document_name for item in provider.answer_calls[0][1]] == ["Discovery notes.pdf", "Profile.pdf"]
+    assert provider.answer_calls == []
+    assert [item.document_name for item in result.citations] == ["Discovery notes.pdf", "Profile.pdf"]
     assert {item.document_id for item in result.citations} == {first.document_id, second.document_id}
-    assert "(fontes 1 e 2)" in result.answer
-    assert foreign_to_scope.document_id not in {item.document_id for item in provider.answer_calls[0][1]}
+    assert "Discovery notes.pdf (fonte 1)" in result.answer
+    assert "Profile.pdf (fonte 2)" in result.answer
+    assert foreign_to_scope.document_id not in {item.document_id for item in result.citations}
 
 
 @pytest.mark.parametrize(
@@ -350,7 +352,8 @@ def test_document_inventory_recognizes_context_and_access_wording(
 
     assert result.retrieval_status == RETRIEVAL_STATUS_SUFFICIENT
     assert provider.embed_calls == []
-    assert [item.document_name for item in provider.answer_calls[0][1]] == ["Notion page.md"]
+    assert provider.answer_calls == []
+    assert [item.document_name for item in result.citations] == ["Notion page.md"]
 
 
 def test_document_inventory_falls_back_to_verified_metadata_when_generation_is_invalid(
@@ -368,6 +371,19 @@ def test_document_inventory_falls_back_to_verified_metadata_when_generation_is_i
     assert [item.document_id for item in result.citations] == [first.document_id, second.document_id]
     assert "Briefing.pdf (fonte 1)" in result.answer
     assert "Roadmap.pdf (fonte 2)" in result.answer
+
+
+def test_document_inventory_does_not_trust_cited_but_invented_answer(session: Session) -> None:
+    org, user, folder = context(session)
+    chunk(session, org, folder, name="Briefing.pdf", text="Indexed briefing.")
+    chunk(session, org, folder, name="Roadmap.pdf", text="Indexed roadmap.")
+    provider = FakeProvider({}, answer="Inventado.pdf [1][2]", citations=[1, 2])
+
+    result = ask(session, provider, org, user, folder, "Quais arquivos existem dentro dessa pasta?")
+
+    assert "Briefing.pdf (fonte 1)" in result.answer
+    assert "Roadmap.pdf (fonte 2)" in result.answer
+    assert "Inventado.pdf" not in result.answer
 
 
 @pytest.mark.parametrize(
@@ -392,8 +408,8 @@ def test_document_inventory_is_bounded_and_deterministic(session: Session) -> No
 
     result = ask(session, provider, org, user, folder, "Liste os documentos disponíveis")
 
-    assert len(provider.answer_calls[0][1]) == 7
-    assert [item.document_name for item in provider.answer_calls[0][1]] == [
+    assert provider.answer_calls == []
+    assert [item.document_name for item in result.citations] == [
         *(f"Document {index}.pdf" for index in range(7))
     ]
     assert len(result.citations) == 7
@@ -409,9 +425,9 @@ def test_document_inventory_respects_text_budget_without_a_document_count_cap(
         chunk(session, org, folder, name=f"Document {index}.pdf", text=f"Content {index}.")
     provider = FakeProvider({}, answer="Listed files.")
 
-    ask(session, provider, org, user, folder, "Liste os documentos disponíveis")
+    result = ask(session, provider, org, user, folder, "Liste os documentos disponíveis")
 
-    selected = provider.answer_calls[0][1]
+    selected = result.citations
     assert 0 < len(selected) < 8
     assert sum(len(item.document_name) + len(item.source_provider or "unknown") + len(item.excerpt) + 40 for item in selected) <= 120
 

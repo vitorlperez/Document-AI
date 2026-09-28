@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1790614364.7151725,
-    "seen": 1790614617.9503958,
+    "mtime": 1790613848.1933951,
+    "seen": 1790614016.929014,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -288,9 +288,9 @@
     "semantic_hash": "c411cac397899ce427a65461049a6cbd"
   },
   "backend/app/knowledge/questions.py": {
-    "mtime": 1790614602.9451098,
-    "seen": 1790614617.950463,
-    "ast_hash": "636a2f0e7a37d105c2114ea7cc3dc30c",
+    "mtime": 1790612902.2155516,
+    "seen": 1790613534.9499002,
+    "ast_hash": "6aef591192fa8cc15c52d65f513ebb7b",
     "semantic_hash": ""
   },
   "backend/app/knowledge/search.py": {
@@ -2184,9 +2184,9 @@
     "semantic_hash": ""
   },
   "backend/tests/unit/test_document_inventory_summary.py": {
-    "mtime": 1790614612.5278585,
-    "seen": 1790614617.950496,
-    "ast_hash": "4e0e21255928422c74cf40d477822421",
+    "mtime": 1790612793.6231196,
+    "seen": 1790613534.9499252,
+    "ast_hash": "1514fed1f104330bbaf607c1d4258a4b",
     "semantic_hash": ""
   },
   "TASK/evidence/f202-review-regression.md": {
@@ -2223,12 +2223,6 @@
     "mtime": 1790613992.830721,
     "seen": 1790614016.929203,
     "ast_hash": "1124352a938fe89d1095ecb3a549a09d",
-    "semantic_hash": ""
-  },
-  "TASK/evidence/f202-independent-final-review.md": {
-    "mtime": 1790614299.6991322,
-    "seen": 1790614617.9508202,
-    "ast_hash": "77b8fdb6da8dc22177b6a253b0f97894",
     "semantic_hash": ""
   }
 }

@@ -101,6 +101,29 @@ def library_question_contexts(
     }
 
 
+@router.get("/library/mention-candidates")
+def library_mention_candidates(
+    organization_id: UUID,
+    q: str = Query(default="", max_length=500),
+    limit: int = Query(default=20, ge=1, le=50),
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> dict[str, object]:
+    try:
+        items = LibraryService(session).mention_candidates(
+            scope=OrganizationScope(organization_id), user_id=user.id, query=q, limit=limit
+        )
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
+    return {"items": [{
+        "node_id": str(item.node.id), "kind": item.node.kind, "name": item.node.name,
+        "source_id": str(item.node.source_id), "source_provider": item.source_provider,
+        "path": item.path, "query_status": item.query_status,
+    } for item in items]}
+
+
 @router.get("/library/syncs")
 def library_syncs(
     organization_id: UUID,

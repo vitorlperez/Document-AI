@@ -55,10 +55,17 @@ class TextSearchInput(BaseModel):
     page_size: int = Field(default=20, ge=1, le=50)
 
 
+class QuestionMention(BaseModel):
+    kind: Literal["file", "folder"]
+    node_id: UUID
+
+
 class QuestionInput(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
-    scope: Literal["folder", "provider", "organization"] = "folder"
+    scope: Literal["folder", "provider", "organization", "selection"] = "folder"
     provider: str | None = Field(default=None, min_length=1, max_length=40, pattern=r"^[a-z][a-z0-9_]*$")
+    providers: list[str] | None = None
+    mentions: list[QuestionMention] | None = None
 
     @model_validator(mode="after")
     def validate_scope(self) -> "QuestionInput":
@@ -66,6 +73,21 @@ class QuestionInput(BaseModel):
             raise ValueError("provider is required")
         if self.scope != "provider" and self.provider is not None:
             raise ValueError("provider is only valid for provider scope")
+        if self.scope == "selection":
+            if not self.providers or len(self.providers) > 3:
+                raise ValueError("selection requires one or more providers")
+            normalized = ["google_drive" if item == "google" else item for item in self.providers]
+            if any(item not in {"google_drive", "notion", "onedrive"} for item in normalized):
+                raise ValueError("provider is invalid")
+            if len(set(normalized)) != len(normalized):
+                raise ValueError("providers must be distinct")
+            self.providers = normalized
+            if self.mentions is not None and (
+                len(self.mentions) > 20 or len({item.node_id for item in self.mentions}) != len(self.mentions)
+            ):
+                raise ValueError("mentions must contain at most 20 distinct nodes")
+        elif self.providers is not None or self.mentions is not None:
+            raise ValueError("providers and mentions are only valid for selection scope")
         if not self.question.strip():
             raise ValueError("question must not be blank")
         return self
@@ -310,13 +332,18 @@ def ask_organization_question(
     if payload.scope == "provider" and not payload.provider:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="provider is required")
     try:
-        result = QuestionService(session, request.app.state.semantic_provider).ask_scope(
-            scope=OrganizationScope(organization_id),
-            user_id=user.id,
-            question=payload.question,
-            question_scope=payload.scope,
-            provider=payload.provider,
-        )
+        service = QuestionService(session, request.app.state.semantic_provider)
+        if payload.scope == "selection":
+            result = service.ask_selection(
+                scope=OrganizationScope(organization_id), user_id=user.id,
+                question=payload.question, providers=payload.providers or [],
+                mentions=[(item.kind, item.node_id) for item in payload.mentions or []],
+            )
+        else:
+            result = service.ask_scope(
+                scope=OrganizationScope(organization_id), user_id=user.id,
+                question=payload.question, question_scope=payload.scope, provider=payload.provider,
+            )
     except GoogleAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
     except AIProviderUnavailable as error:
@@ -350,6 +377,8 @@ def _serialize_question_result(result: QuestionResult, *, include_provider: bool
     }
     if result.coverage is not None:
         payload["coverage"] = result.coverage
+    if result.resolved_context is not None:
+        payload["resolved_context"] = result.resolved_context
     return payload
 
 

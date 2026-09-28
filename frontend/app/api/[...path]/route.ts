@@ -37,7 +37,7 @@ async function proxy(request: NextRequest): Promise<Response> {
     const response = sessionProbe ? await sessionProbeResponse(upstreamResponse) : upstreamResponse;
 
     const responseHeaders = new Headers();
-    response.headers.forEach((value, name) => {
+    response.headers.forEach((value: string, name: string) => {
       if (!["connection", "content-encoding", "content-length", "set-cookie", "transfer-encoding"].includes(name)) {
         responseHeaders.set(name, value);
       }

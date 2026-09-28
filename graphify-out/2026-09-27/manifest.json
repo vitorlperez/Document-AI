@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1790614364.7151725,
-    "seen": 1790614617.9503958,
+    "mtime": 1790560314.6699574,
+    "seen": 1790567575.065345,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -288,9 +288,9 @@
     "semantic_hash": "c411cac397899ce427a65461049a6cbd"
   },
   "backend/app/knowledge/questions.py": {
-    "mtime": 1790614602.9451098,
-    "seen": 1790614617.950463,
-    "ast_hash": "636a2f0e7a37d105c2114ea7cc3dc30c",
+    "mtime": 1790567533.414854,
+    "seen": 1790567575.065431,
+    "ast_hash": "c72d439e41b6e0c07d3b86e538befb74",
     "semantic_hash": ""
   },
   "backend/app/knowledge/search.py": {
@@ -534,9 +534,9 @@
     "semantic_hash": "0904a4965e49c4611c910d6b5f438968"
   },
   "backend/tests/unit/test_semantic_questions.py": {
-    "mtime": 1790567773.9479008,
-    "seen": 1790567851.84166,
-    "ast_hash": "4a3cb0a2f259f242cacd9d7f81daf62c",
+    "mtime": 1790567533.4156506,
+    "seen": 1790567575.065501,
+    "ast_hash": "7ee9461ce96b625c06c1fa29d0da8a8d",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_staff_access_service.py": {
@@ -606,9 +606,9 @@
     "semantic_hash": "4e31dade4749ba890710908cfaadc40c"
   },
   "frontend/app/landing-page.tsx": {
-    "mtime": 1790613469.5921934,
-    "seen": 1790613534.949949,
-    "ast_hash": "48c40e2ab0ade3865766a208054dcc49",
+    "mtime": 1790528961.8268034,
+    "seen": 1790533773.4540591,
+    "ast_hash": "2ed581c9c5c38dd4baefe34e950ba0e3",
     "semantic_hash": ""
   },
   "frontend/app/layout.tsx": {
@@ -2178,57 +2178,9 @@
     "semantic_hash": ""
   },
   "TASK/items/F-202.md": {
-    "mtime": 1790613325.2203517,
-    "seen": 1790613534.9500349,
-    "ast_hash": "2112e62688245881d118a631cf270a98",
-    "semantic_hash": ""
-  },
-  "backend/tests/unit/test_document_inventory_summary.py": {
-    "mtime": 1790614612.5278585,
-    "seen": 1790614617.950496,
-    "ast_hash": "4e0e21255928422c74cf40d477822421",
-    "semantic_hash": ""
-  },
-  "TASK/evidence/f202-review-regression.md": {
-    "mtime": 1790613656.7942042,
-    "seen": 1790614016.9291961,
-    "ast_hash": "b5c0289655158307c06d7a8b5122a215",
-    "semantic_hash": ""
-  },
-  "frontend/app/legal-layout.tsx": {
-    "mtime": 1790613497.7905896,
-    "seen": 1790613534.94995,
-    "ast_hash": "a2fe67353e1e19d743c06f82cf55ebf4",
-    "semantic_hash": ""
-  },
-  "frontend/app/privacidade/page.tsx": {
-    "mtime": 1790613925.3098361,
-    "seen": 1790614016.929117,
-    "ast_hash": "11f6e5519c690a167ffd3f8d04cf5c04",
-    "semantic_hash": ""
-  },
-  "frontend/app/termos/page.tsx": {
-    "mtime": 1790613883.3663306,
-    "seen": 1790614016.92912,
-    "ast_hash": "c4c9c4c8a5afe4e14cbef4f9d9c29579",
-    "semantic_hash": ""
-  },
-  "frontend/public/arquivio-logo-120.png": {
-    "mtime": 1790612693.7329288,
-    "seen": 1790613534.950103,
-    "ast_hash": "c01bb2ffe0f5aad08725eba1d31340c1",
-    "semantic_hash": ""
-  },
-  "docs/operacao/sync-credenciais-retencao-recomendacao.md": {
-    "mtime": 1790613992.830721,
-    "seen": 1790614016.929203,
-    "ast_hash": "1124352a938fe89d1095ecb3a549a09d",
-    "semantic_hash": ""
-  },
-  "TASK/evidence/f202-independent-final-review.md": {
-    "mtime": 1790614299.6991322,
-    "seen": 1790614617.9508202,
-    "ast_hash": "77b8fdb6da8dc22177b6a253b0f97894",
+    "mtime": 1790558981.6606169,
+    "seen": 1790567575.065679,
+    "ast_hash": "82e6cf6550701b7be0f95ecfaee548ed",
     "semantic_hash": ""
   }
 }

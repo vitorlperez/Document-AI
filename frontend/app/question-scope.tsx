@@ -1,56 +1,49 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import "./question-scope.css";
 
-export type QuestionScope = "folder" | "provider" | "organization";
 export type QuestionContext = {
   id: string; name: string; status: string; source_id: string; source_provider: string;
   query_status: "ready" | "no_indexed_content" | "no_compatible_embeddings" | "not_ready";
 };
-
 export const providerKey = (provider: string) => provider === "google_drive" ? "google" : provider;
-
 export const toolLabel = (provider?: string | null) => ({
   google: "Google Drive", google_drive: "Google Drive", onedrive: "OneDrive",
   github: "GitHub", github_markdown: "GitHub Markdown", notion: "Notion", slack: "Slack", teams: "Microsoft Teams",
 })[provider ?? ""] ?? (provider ? provider.replaceAll("_", " ") : "Fonte indexada");
-
 export const contextReady = (context: QuestionContext) => context.query_status === "ready" && (context.status === "ready" || context.status === "partial_failure");
 
-export function QuestionScopePicker({ scope, provider, contextId, contexts, loading, disabled, error, onRetry, onChange }: {
-  scope: QuestionScope; provider: string; contextId: string; contexts: QuestionContext[];
+export function QuestionScopePicker({ all, providers, contexts, loading, disabled, error, onRetry, onChange }: {
+  all: boolean; providers: string[]; contexts: QuestionContext[];
   loading: boolean; disabled: boolean; error: string | null; onRetry: () => void;
-  onChange: (scope: QuestionScope, value: string) => void;
+  onChange: (all: boolean, providers: string[]) => void;
 }) {
-  const providers = [...new Set(contexts.map((item) => providerKey(item.source_provider)).filter(Boolean))].sort((a, b) => toolLabel(a).localeCompare(toolLabel(b), "pt-BR"));
-  const selected = contexts.filter((item) => scope === "organization" || (scope === "provider" ? providerKey(item.source_provider) === provider : item.id === contextId));
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+  const available = [...new Set(contexts.filter((item) => item.query_status === "ready" || item.query_status === "no_compatible_embeddings").map((item) => providerKey(item.source_provider)))].sort((a, b) => toolLabel(a).localeCompare(toolLabel(b), "pt-BR"));
+  const selected = contexts.filter((item) => all || providers.includes(providerKey(item.source_provider)));
   const ready = selected.filter(contextReady).length;
   const pending = selected.length - ready;
-  const partial = selected.some((item) => item.status === "partial_failure");
-  const value = scope === "organization" ? "organization" : scope === "provider" ? `provider:${provider}` : `folder:${contextId}`;
-  return <section className="question-scope" aria-label="Contexto da pergunta">
-    <div className="question-scope-row">
-      <label htmlFor="question-scope">Consultar em</label>
-      <select id="question-scope" value={value} disabled={disabled || loading || Boolean(error)} aria-describedby="question-scope-note" onChange={(event) => {
-        const selectedValue = event.target.value;
-        if (selectedValue === "organization") onChange("organization", "");
-        else if (selectedValue.startsWith("provider:")) onChange("provider", selectedValue.slice(9));
-        else onChange("folder", selectedValue.slice(7));
-      }}>
-        <option value="organization">Todas as ferramentas · conteúdo indexado</option>
-        <optgroup label="Uma ferramenta inteira">{scope === "provider" && !providers.includes(provider) && <option value={`provider:${provider}`}>Ferramenta indisponível — selecione outro contexto</option>}{providers.map((item) => <option value={`provider:${item}`} key={item}>{toolLabel(item)} · todas as pastas indexadas</option>)}</optgroup>
-        <optgroup label="Uma pasta específica">
-          {scope === "folder" && !contexts.some((item) => item.id === contextId) && <option value={`folder:${contextId}`}>Pasta indisponível — selecione outro contexto</option>}
-          {contexts.map((item) => <option key={item.id} value={`folder:${item.id}`} disabled={!contextReady(item)}>{toolLabel(item.source_provider)} / {item.name}{!contextReady(item) ? " · aguardando indexação" : ""}</option>)}
-        </optgroup>
-      </select>
-      {!loading && !error && <span className="question-scope-count">{ready} {ready === 1 ? "pasta disponível" : "pastas disponíveis"}</span>}
-    </div>
-    <p id="question-scope-note">{loading ? <span role="status" aria-live="polite" className="inline-flex items-center gap-2"><RefreshCw size={13} className="motion-safe:animate-spin" aria-hidden="true" />Carregando contextos autorizados…</span> : "Consulta apenas conteúdo já sincronizado e indexado nesta organização. Não busca arquivos novos nas ferramentas em tempo real."}</p>
-    {error ? <div role="alert" className="question-scope-warning">{error} <button type="button" onClick={onRetry}>Tentar novamente</button></div> : !loading && <>
-      {contexts.length === 0 ? <p className="question-scope-warning">Nenhuma pasta disponível. Conecte e sincronize uma fonte para começar.</p> : ready === 0 ? <p className="question-scope-warning">Este contexto ainda não tem conteúdo pronto para perguntas. Aguarde a indexação ou escolha outro contexto.</p> : null}
-      {(pending > 0 || partial) && <p className="question-scope-warning">Cobertura parcial: {pending > 0 ? `${pending} ${pending === 1 ? "pasta ainda não está disponível" : "pastas ainda não estão disponíveis"}. ` : ""}{partial ? "Há pastas com falhas de sincronização. " : ""}A resposta considera somente as evidências disponíveis.</p>}
-    </>}
-  </section>;
+  const summary = all ? "Todas as ferramentas" : providers.length ? providers.map(toolLabel).join(", ") : "Escolha uma ferramenta";
+  return <div ref={root} className="question-scope">
+    <button type="button" className="question-scope-trigger" aria-label={`Ferramentas: ${summary}`} aria-expanded={open} aria-controls="question-scope-menu" disabled={disabled || loading || Boolean(error)} onClick={() => setOpen((value) => !value)}>
+      <span className="question-scope-summary">{loading ? "Carregando ferramentas…" : summary}</span><ChevronDown size={15} aria-hidden="true" />
+    </button>
+    {open && <div id="question-scope-menu" className="question-scope-menu" role="group" aria-label="Selecionar ferramentas">
+      <button type="button" className="question-scope-option" aria-pressed={all} onClick={() => onChange(true, [])}><span className="question-scope-check">{all && <Check size={15} />}</span>Todas as ferramentas</button>
+      {available.map((item) => <button type="button" key={item} className="question-scope-option" aria-pressed={!all && providers.includes(item)} onClick={() => onChange(false, all ? [item] : providers.includes(item) ? providers.filter((value) => value !== item) : [...providers, item])}><span className="question-scope-check">{!all && providers.includes(item) && <Check size={15} />}</span>{toolLabel(item)}</button>)}
+      {available.length === 0 && <p className="question-scope-empty">Nenhuma ferramenta com conteúdo indexado.</p>}
+    </div>}
+    <span className="question-scope-count" aria-live="polite">{ready} {ready === 1 ? "pasta disponível" : "pastas disponíveis"}</span>
+    {error && <div role="alert" className="question-scope-warning">{error} <button type="button" onClick={onRetry}>Tentar novamente</button></div>}
+    {!loading && !error && (ready === 0 || pending > 0) && <p className="question-scope-warning">{ready === 0 ? "Ainda não há conteúdo pronto para perguntas nesta seleção." : `Cobertura parcial: ${pending} ${pending === 1 ? "pasta indisponível" : "pastas indisponíveis"}.`}</p>}
+  </div>;
 }

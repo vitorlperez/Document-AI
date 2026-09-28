@@ -67,6 +67,22 @@ class IndexedDocumentProvenance:
     document_id: UUID
 
 
+@dataclass(frozen=True)
+class MentionCandidate:
+    node: LibraryNode
+    source_provider: str
+    path: str
+    query_status: str
+
+
+@dataclass(frozen=True)
+class QuestionSelection:
+    folder_ids: list[UUID]
+    document_ids: set[UUID] | None
+    coverage: dict[str, int]
+    accepted_node_ids: list[UUID]
+
+
 class LibraryService:
     def __init__(self, session: Session):
         self.session = session
@@ -334,6 +350,150 @@ class LibraryService:
                 .order_by(WorkspaceFolder.name, WorkspaceFolder.id)
             ).all()
         ]
+
+    def _indexed_selection_documents(
+        self, *, scope: OrganizationScope, folder_ids: list[UUID]
+    ) -> list[tuple[UUID, UUID, str]]:
+        if not folder_ids:
+            return []
+        return list(self.session.execute(
+            select(Document.id, WorkspaceFolder.source_id, Document.external_file_id)
+            .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+            .join(DataSource, DataSource.id == WorkspaceFolder.source_id)
+            .where(
+                Document.organization_id == scope.organization_id,
+                Document.workspace_folder_id.in_(folder_ids),
+                Document.index_status == "indexed",
+                WorkspaceFolder.organization_id == scope.organization_id,
+                WorkspaceFolder.status.in_(["ready", "partial_failure"]),
+                DataSource.organization_id == scope.organization_id,
+            )
+        ))
+
+    def _selection_nodes(self, *, scope: OrganizationScope) -> dict[UUID, LibraryNode]:
+        return {node.id: node for node in self.session.scalars(
+            select(LibraryNode).join(DataSource, DataSource.id == LibraryNode.source_id).where(
+                LibraryNode.organization_id == scope.organization_id,
+                DataSource.organization_id == scope.organization_id,
+            )
+        )}
+
+    @staticmethod
+    def _node_path(node: LibraryNode, nodes: dict[UUID, LibraryNode]) -> str | None:
+        parts = [node.name]
+        visited = {node.id}
+        current = node
+        while current.parent_id is not None:
+            parent = nodes.get(current.parent_id)
+            if parent is None or parent.source_id != node.source_id or parent.id in visited:
+                return None
+            visited.add(parent.id)
+            parts.append(parent.name)
+            current = parent
+        return "/".join(reversed(parts)) if current.kind == "source" else None
+
+    @staticmethod
+    def _descends_from(node: LibraryNode, ancestor: LibraryNode, nodes: dict[UUID, LibraryNode]) -> bool:
+        current = node
+        visited: set[UUID] = set()
+        while current.id not in visited and current.source_id == ancestor.source_id:
+            if current.id == ancestor.id:
+                return True
+            visited.add(current.id)
+            if current.parent_id is None:
+                break
+            current = nodes.get(current.parent_id)
+            if current is None:
+                break
+        return False
+
+    def mention_candidates(
+        self, *, scope: OrganizationScope, user_id: UUID, query: str, limit: int = 20
+    ) -> list[MentionCandidate]:
+        self.require_member(scope=scope, user_id=user_id)
+        normalized = query.strip().casefold()
+        if len(normalized) > 500 or not 1 <= limit <= 50:
+            raise ValueError("invalid mention search")
+        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        eligible = [item.id for item in contexts if item.status in {"ready", "partial_failure"}]
+        documents = self._indexed_selection_documents(scope=scope, folder_ids=eligible)
+        indexed_files = {(source_id, external_id) for _, source_id, external_id in documents}
+        nodes = self._selection_nodes(scope=scope)
+        indexed_folder_ids: set[UUID] = set()
+        for file in nodes.values():
+            if file.kind != "file" or (file.source_id, file.external_id) not in indexed_files:
+                continue
+            current = file
+            visited = {file.id}
+            while current.parent_id is not None:
+                parent = nodes.get(current.parent_id)
+                if parent is None or parent.source_id != file.source_id or parent.id in visited:
+                    break
+                if parent.kind == "folder":
+                    indexed_folder_ids.add(parent.id)
+                visited.add(parent.id)
+                current = parent
+        providers = {item.source_id: item.source_provider for item in contexts}
+        source_statuses: dict[UUID, set[str]] = {}
+        for context in contexts:
+            source_statuses.setdefault(context.source_id, set()).add(context.query_status)
+        found: list[MentionCandidate] = []
+        for node in nodes.values():
+            if node.kind not in {"file", "folder"}:
+                continue
+            path = self._node_path(node, nodes)
+            if path is None or normalized not in path.casefold():
+                continue
+            if node.kind == "file":
+                has_index = (node.source_id, node.external_id) in indexed_files
+            else:
+                has_index = node.id in indexed_folder_ids
+            if has_index and node.source_id in providers:
+                statuses = source_statuses[node.source_id]
+                query_status = (
+                    "ready" if "ready" in statuses else
+                    "no_compatible_embeddings" if "no_compatible_embeddings" in statuses else
+                    "no_indexed_content"
+                )
+                found.append(MentionCandidate(node, providers[node.source_id], path, query_status))
+        return sorted(found, key=lambda item: (item.path.casefold(), str(item.node.id)))[:limit]
+
+    def resolve_question_selection(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]],
+    ) -> QuestionSelection:
+        self.require_member(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        selected = [item for item in contexts if
+                    ("google_drive" if item.source_provider == "google" else item.source_provider) in providers]
+        eligible = [item for item in selected if item.status in {"ready", "partial_failure"}]
+        coverage = {
+            "total_folders": len(selected), "eligible_folders": len(eligible),
+            "pending_folders": len(selected) - len(eligible),
+        }
+        folder_ids = [item.id for item in eligible]
+        if not mentions:
+            return QuestionSelection(folder_ids, None, coverage, [])
+        nodes = self._selection_nodes(scope=scope)
+        source_providers = {item.source_id: item.source_provider for item in selected}
+        documents = self._indexed_selection_documents(scope=scope, folder_ids=folder_ids)
+        document_ids: set[UUID] = set()
+        for kind, node_id in mentions:
+            node = nodes.get(node_id)
+            if node is None or node.kind != kind or node.source_id not in source_providers:
+                raise ValueError("mention is unavailable")
+            if self._node_path(node, nodes) is None:
+                raise ValueError("mention is unavailable")
+            matching_files = [node] if kind == "file" else [
+                file for file in nodes.values() if file.kind == "file" and self._descends_from(file, node, nodes)
+            ]
+            keys = {(file.source_id, file.external_id) for file in matching_files}
+            matched = {document_id for document_id, source_id, external_id in documents
+                       if (source_id, external_id) in keys}
+            if not matched:
+                raise ValueError("mention is unavailable")
+            document_ids.update(matched)
+        return QuestionSelection(folder_ids, document_ids, coverage, [node_id for _, node_id in mentions])
 
     def recent_syncs(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibrarySync]:
         self.require_member(scope=scope, user_id=user_id)

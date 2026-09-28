@@ -177,6 +177,7 @@ Chunking deve preservar fronteiras estruturais disponíveis (parágrafos, títul
 Critérios de aceite:
 
 - O escopo pode ser uma pasta, todas as pastas indexadas de uma ferramenta ou todas as ferramentas da organização. Isso não realiza busca ao vivo nas ferramentas nem garante leitura exaustiva do corpus; a resposta usa as evidências relevantes recuperadas.
+- No compositor, a pessoa pode selecionar “Todas as ferramentas” ou várias ferramentas com conteúdo indexado e restringir a pergunta por menções pesquisáveis de arquivos e pastas. Menções restringem o conjunto dentro das ferramentas selecionadas e nunca ampliam a seleção. A API da organização aceita `scope=selection` com `providers[]` e `mentions[]`, mantendo os contratos legados. IDs são revalidados por organização, associação ativa, fonte, pasta e documento antes da recuperação. Fontes desconectadas com índice retido seguem ADR-0007.
 - A interface informa conteúdo pendente e cobertura parcial; contextos vazios retornam evidência insuficiente. Consultas salvas continuam limitadas a uma pasta.
 - A interface mostra progresso acessível ao carregar a biblioteca e os contextos autorizados ou enquanto a resposta está sendo gerada; em falha, o progresso termina e a mensagem/ação de recuperação permanece disponível.
 - Busca textual considera título e texto extraído; busca semântica considera embeddings.
