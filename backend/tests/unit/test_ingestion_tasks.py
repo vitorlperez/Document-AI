@@ -86,7 +86,7 @@ def test_exhausted_embedding_rate_limit_rolls_back_and_marks_job_failed(
             return job
 
     class FakeDriveProvider:
-        def __init__(self, *_: object) -> None:
+        def __init__(self, *_: object, **__: object) -> None:
             return None
 
         def discover(self, **_: object) -> list[DiscoveredDocument]:

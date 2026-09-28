@@ -2,6 +2,7 @@
 
 import re
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from uuid import UUID
 from zipfile import BadZipFile
@@ -14,6 +15,8 @@ from docx.table import Table
 from docx.text.paragraph import Paragraph
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.ingestion.service import (
     ELIGIBLE_MIME_TYPES,
@@ -30,9 +33,11 @@ from app.integrations.google_drive import (
     RemoteFile,
     RemoteFolder,
 )
+from app.integrations.models import DataSource
 from app.workspaces.models import WorkspaceFolderSelection
 
 MAX_EXTRACTION_WORKERS = 6
+REFRESH_SAFETY_MARGIN = timedelta(minutes=2)
 
 
 class GoogleDriveDocumentProvider:
@@ -44,11 +49,17 @@ class GoogleDriveDocumentProvider:
         cipher: CredentialCipher,
         *,
         extraction_workers: int = MAX_EXTRACTION_WORKERS,
+        session: Session | None = None,
+        source_id: UUID | None = None,
     ):
         self.client = client
         self.cipher = cipher
         self.extraction_workers = min(MAX_EXTRACTION_WORKERS, max(1, extraction_workers))
+        self.session = session
+        self.source_id = source_id
         self._folder_catalog: tuple[str, list[RemoteFolder]] | None = None
+        self._credentials: GoogleCredentials | None = None
+        self.updated_encrypted_credentials: str | None = None
 
     def discover(
         self,
@@ -58,29 +69,40 @@ class GoogleDriveDocumentProvider:
         force_file_ids: set[str] | None = None,
     ) -> DiscoveryResult:
         self._folder_catalog = None
-        credentials = self.cipher.decrypt(encrypted_credentials)
         links: dict[UUID, str | None] = {}
         # The first run (or a newly added selection) takes a complete snapshot.
         # Capture cursors first so edits during enumeration are picked up next run.
         if any(not selection.encrypted_delta_link for selection in selections):
             for selection in selections:
-                links[selection.id] = self.client.start_page_token(credentials=credentials)
+                links[selection.id] = self._remote_call(
+                    encrypted_credentials,
+                    lambda credentials: self.client.start_page_token(credentials=credentials),
+                )
             return DiscoveryResult(
-                documents=self._snapshot(credentials, selections),
+                documents=self._snapshot(encrypted_credentials, selections),
                 delta_links=links,
                 full_snapshot=True,
             )
 
         try:
             folders = (
-                self.client.list_folders(credentials=credentials)
+                self._remote_call(
+                    encrypted_credentials,
+                    lambda credentials: self.client.list_folders(credentials=credentials),
+                )
                 if any(selection.kind == "folder" for selection in selections)
                 else []
             )
             if any(selection.kind == "folder" for selection in selections):
                 self._folder_catalog = (encrypted_credentials, folders)
             root_file_ids = (
-                {item.id for item in self.client.list_root_files(credentials=credentials)}
+                {
+                    item.id
+                    for item in self._remote_call(
+                        encrypted_credentials,
+                        lambda credentials: self.client.list_root_files(credentials=credentials),
+                    )
+                }
                 if any(selection.kind == "root_files" for selection in selections)
                 else set()
             )
@@ -120,7 +142,12 @@ class GoogleDriveDocumentProvider:
             folder_changed = False
             for selection in selections:
                 cursor = self.cipher.decrypt_cursor(selection.encrypted_delta_link)
-                page = self.client.changes(credentials=credentials, page_token=cursor)
+                page = self._remote_call(
+                    encrypted_credentials,
+                    lambda credentials: self.client.changes(
+                        credentials=credentials, page_token=cursor
+                    ),
+                )
                 links[selection.id] = page.new_start_page_token
                 for change in page.changes:
                     file_id = str(change.get("fileId") or "")
@@ -146,7 +173,12 @@ class GoogleDriveDocumentProvider:
             for file_id in force_file_ids or set():
                 if file_id in removed or file_id in changes_by_id:
                     continue
-                remote_file = self.client.get_file(credentials=credentials, file_id=file_id)
+                remote_file = self._remote_call(
+                    encrypted_credentials,
+                    lambda credentials: self.client.get_file(
+                        credentials=credentials, file_id=file_id
+                    ),
+                )
                 if remote_file is None or not in_scope(file_id, remote_file):
                     removed.add(file_id)
                     continue
@@ -156,15 +188,20 @@ class GoogleDriveDocumentProvider:
                 # full reconciliation safely handles moves into and out of scope.
                 self._folder_catalog = None
                 links = {
-                    selection.id: self.client.start_page_token(credentials=credentials)
+                    selection.id: self._remote_call(
+                        encrypted_credentials,
+                        lambda credentials: self.client.start_page_token(
+                            credentials=credentials
+                        ),
+                    )
                     for selection in selections
                 }
                 return DiscoveryResult(
-                    documents=self._snapshot(credentials, selections),
+                    documents=self._snapshot(encrypted_credentials, selections),
                     delta_links=links,
                     full_snapshot=True,
                 )
-            result = self._extract_files(credentials, changes_by_id.values())
+            result = self._extract_files(encrypted_credentials, changes_by_id.values())
             return DiscoveryResult(
                 documents=result,
                 removed_file_ids=tuple(sorted(removed)),
@@ -174,31 +211,47 @@ class GoogleDriveDocumentProvider:
         except GoogleCursorInvalid:
             self._folder_catalog = None
             links = {
-                selection.id: self.client.start_page_token(credentials=credentials)
+                selection.id: self._remote_call(
+                    encrypted_credentials,
+                    lambda credentials: self.client.start_page_token(credentials=credentials),
+                )
                 for selection in selections
             }
             return DiscoveryResult(
-                documents=self._snapshot(credentials, selections),
+                documents=self._snapshot(encrypted_credentials, selections),
                 delta_links=links,
                 full_snapshot=True,
             )
 
-    def _snapshot(self, credentials: GoogleCredentials, selections: list[WorkspaceFolderSelection]) -> list[DiscoveredDocument]:
+    def _snapshot(
+        self, encrypted_credentials: str, selections: list[WorkspaceFolderSelection]
+    ) -> list[DiscoveredDocument]:
         remote_files: dict[str, RemoteFile] = {}
         for selection in selections:
             if selection.kind == "folder":
-                found = self.client.list_folder_files(credentials=credentials, root_folder_id=selection.external_folder_id)
+                found = self._remote_call(
+                    encrypted_credentials,
+                    lambda credentials: self.client.list_folder_files(
+                        credentials=credentials, root_folder_id=selection.external_folder_id
+                    ),
+                )
             elif selection.kind == "root_files":
-                found = self.client.list_root_files(credentials=credentials)
+                found = self._remote_call(
+                    encrypted_credentials,
+                    lambda credentials: self.client.list_root_files(credentials=credentials),
+                )
             elif selection.kind == "all_accessible":
-                found = self.client.list_all_files(credentials=credentials)
+                found = self._remote_call(
+                    encrypted_credentials,
+                    lambda credentials: self.client.list_all_files(credentials=credentials),
+                )
             else:
                 raise ValueError("unsupported workspace selection")
             for remote_file in found:
                 remote_files.setdefault(remote_file.id, remote_file)
-        return self._extract_files(credentials, remote_files.values())
+        return self._extract_files(encrypted_credentials, remote_files.values())
 
-    def _extract_files(self, credentials: GoogleCredentials, remote_files) -> list[DiscoveredDocument]:
+    def _extract_files(self, encrypted_credentials: str, remote_files) -> list[DiscoveredDocument]:
         files = sorted(remote_files, key=lambda remote_file: remote_file.id)
         if not files:
             return []
@@ -207,7 +260,9 @@ class GoogleDriveDocumentProvider:
         with ThreadPoolExecutor(max_workers=min(self.extraction_workers, len(files))) as executor:
             return list(
                 executor.map(
-                    lambda remote_file: self._extract(credentials=credentials, remote_file=remote_file),
+                    lambda remote_file: self._extract(
+                        encrypted_credentials=encrypted_credentials, remote_file=remote_file
+                    ),
                     files,
                 )
             )
@@ -220,14 +275,19 @@ class GoogleDriveDocumentProvider:
         """
         if self._folder_catalog is not None and self._folder_catalog[0] == encrypted_credentials:
             return self._folder_catalog[1]
-        folders = self.client.list_folders(credentials=self.cipher.decrypt(encrypted_credentials))
+        folders = self._remote_call(
+            encrypted_credentials,
+            lambda credentials: self.client.list_folders(credentials=credentials),
+        )
         self._folder_catalog = (encrypted_credentials, folders)
         return folders
 
     def encrypt_delta_link(self, value: str) -> str:
         return self.cipher.encrypt_cursor(value)
 
-    def _extract(self, *, credentials: GoogleCredentials, remote_file: RemoteFile) -> DiscoveredDocument:
+    def _extract(
+        self, *, encrypted_credentials: str, remote_file: RemoteFile
+    ) -> DiscoveredDocument:
         base = {
             "external_file_id": remote_file.id,
             "name": remote_file.name,
@@ -239,7 +299,12 @@ class GoogleDriveDocumentProvider:
         if remote_file.mime_type not in ELIGIBLE_MIME_TYPES:
             return DiscoveredDocument(**base)
         try:
-            content = self.client.read_file(credentials=credentials, remote_file=remote_file)
+            content = self._remote_call(
+                encrypted_credentials,
+                lambda credentials: self.client.read_file(
+                    credentials=credentials, remote_file=remote_file
+                ),
+            )
             blocks = _extract_blocks(remote_file.mime_type, content)
         except GoogleRemoteUnauthorized:
             # A listing token can remain valid while one shared/export-restricted
@@ -261,6 +326,64 @@ class GoogleDriveDocumentProvider:
             for block in blocks
         ]
         return DiscoveredDocument(**base, text="\n\n".join(block.text for block in blocks), blocks=tuple(blocks))
+
+    @staticmethod
+    def _needs_refresh(credentials: GoogleCredentials) -> bool:
+        return (
+            credentials.expires_at is None
+            or credentials.expires_at <= datetime.now(UTC) + REFRESH_SAFETY_MARGIN
+        )
+
+    def _remote_call(self, encrypted_credentials: str, call):
+        credentials = self._current_credentials(encrypted_credentials)
+        try:
+            return call(credentials)
+        except GoogleRemoteUnauthorized:
+            return call(self._refresh_credentials(encrypted_credentials, force=True))
+
+    def _current_credentials(self, encrypted_credentials: str) -> GoogleCredentials:
+        if self._credentials is not None:
+            if self._needs_refresh(self._credentials):
+                return self._refresh_credentials(encrypted_credentials)
+            return self._credentials
+        credentials = self.cipher.decrypt(encrypted_credentials)
+        if self._needs_refresh(credentials):
+            return self._refresh_credentials(encrypted_credentials)
+        self._credentials = credentials
+        return credentials
+
+    def _refresh_credentials(
+        self, encrypted_credentials: str, *, force: bool = False
+    ) -> GoogleCredentials:
+        if self.session is not None and self.source_id is not None:
+            source = self.session.scalar(
+                select(DataSource)
+                .where(DataSource.id == self.source_id)
+                .with_for_update()
+            )
+            if source is None:
+                raise GoogleRemoteUnauthorized("Google Drive source is unavailable")
+            locked_credentials = source.encrypted_credentials
+            credentials = self.cipher.decrypt(locked_credentials)
+            if not self._needs_refresh(credentials) and (
+                not force or locked_credentials != encrypted_credentials
+            ):
+                self._credentials = credentials
+                self.updated_encrypted_credentials = locked_credentials
+                self.session.commit()
+                return credentials
+        else:
+            credentials = self.cipher.decrypt(encrypted_credentials)
+        if not credentials.refresh_token:
+            raise GoogleRemoteUnauthorized("Google Drive refresh token is unavailable")
+        refreshed = self.client.refresh_access_token(refresh_token=credentials.refresh_token)
+        encrypted_refreshed = self.cipher.encrypt(refreshed)
+        self._credentials = refreshed
+        self.updated_encrypted_credentials = encrypted_refreshed
+        if self.session is not None and self.source_id is not None:
+            source.encrypted_credentials = encrypted_refreshed
+            self.session.commit()
+        return refreshed
 
 
 def _extract_blocks(mime_type: str, content: bytes) -> list[ExtractedBlock]:

@@ -255,6 +255,8 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                         if settings.google_token_encryption_key
                         else None
                     ),
+                    session=session,
+                    source_id=source.id,
                 )
             else:
                 provider = IntegrationRegistry(settings).get(source_provider)
