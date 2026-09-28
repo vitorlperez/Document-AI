@@ -2,16 +2,20 @@
 
 import logging
 import os
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from celery import Celery
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.audit_usage.service import UsageLimitExceeded
 from app.core.config import Settings, get_settings
 from app.core.database import build_engine, build_session_factory
 from app.core.scoping import OrganizationScope
 from app.ingestion.google_drive import GoogleDriveDocumentProvider
+from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveryResult, IngestionService
 from app.integrations.errors import SourceRemoteUnauthorized
 from app.integrations.google_drive import (
@@ -42,7 +46,146 @@ celery_app.conf.update(
 
 def create_celery_app(settings: Settings) -> Celery:
     celery_app.conf.broker_url = settings.redis_url
+    celery_app.conf.beat_schedule = {
+        "schedule-connected-source-reconciliation": {
+            "task": "document_intelligence.ingestion.schedule",
+            "schedule": timedelta(minutes=settings.sync_scheduler_interval_minutes),
+        }
+    }
     return celery_app
+
+
+def schedule_connected_source_reconciliations(
+    *,
+    session: Session,
+    settings: Settings,
+    send_task: Callable[..., object],
+    now: datetime | None = None,
+) -> dict[str, int]:
+    """Queue stale connected sources while preserving the normal job lifecycle."""
+    current_time = now or datetime.now(UTC)
+    freshness_cutoff = current_time - timedelta(hours=settings.sync_freshness_hours)
+    failure_cutoff = current_time - timedelta(
+        minutes=settings.sync_scheduler_failure_cooldown_minutes
+    )
+    slo_cutoff = freshness_cutoff - timedelta(hours=settings.sync_scheduler_slo_grace_hours)
+    sources = list(
+        session.scalars(
+            select(DataSource)
+            .where(DataSource.status == "connected")
+            .order_by(DataSource.organization_id, DataSource.id)
+        )
+    )
+    sources_by_id = {source.id: source for source in sources}
+    folders = list(
+        session.scalars(
+            select(WorkspaceFolder)
+            .join(DataSource, WorkspaceFolder.source_id == DataSource.id)
+            .where(DataSource.status == "connected")
+            .order_by(WorkspaceFolder.organization_id, WorkspaceFolder.source_id, WorkspaceFolder.id)
+        )
+    )
+    counts = {"considered": len(folders), "enqueued": 0, "skipped": 0}
+    enqueued_per_organization: dict[UUID, int] = {}
+    jobs_to_dispatch: list[UUID] = []
+
+    for source in sources:
+        last_synced_at = _as_utc(source.last_synced_at)
+        if last_synced_at is None or last_synced_at < slo_cutoff:
+            logger.warning(
+                "connected source exceeds sync freshness SLO",
+                extra={
+                    "event": "ingestion_scheduler_slo_exceeded",
+                    "source_id": str(source.id),
+                    "organization_id": str(source.organization_id),
+                    "last_synced_at": source.last_synced_at.isoformat()
+                    if source.last_synced_at
+                    else None,
+                },
+            )
+
+    for folder in folders:
+        source = sources_by_id[folder.source_id]
+        last_synced_at = _as_utc(source.last_synced_at)
+        if last_synced_at is not None and last_synced_at >= freshness_cutoff:
+            counts["skipped"] += 1
+            continue
+        if (
+            enqueued_per_organization.get(folder.organization_id, 0)
+            >= settings.sync_scheduler_max_concurrent_per_org
+        ):
+            counts["skipped"] += 1
+            continue
+        active_job = session.scalar(
+            select(ProcessingJob.id).where(
+                ProcessingJob.organization_id == folder.organization_id,
+                ProcessingJob.workspace_folder_id == folder.id,
+                ProcessingJob.status.in_(
+                    [ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING]
+                ),
+            )
+        )
+        if active_job is not None:
+            counts["skipped"] += 1
+            continue
+        latest_failure = session.scalar(
+            select(ProcessingJob)
+            .where(
+                ProcessingJob.organization_id == folder.organization_id,
+                ProcessingJob.workspace_folder_id == folder.id,
+                ProcessingJob.status == ProcessingJobStatus.FAILED,
+            )
+            .order_by(ProcessingJob.completed_at.desc(), ProcessingJob.created_at.desc())
+            .limit(1)
+        )
+        failure_at = (
+            _as_utc(latest_failure.completed_at or latest_failure.created_at)
+            if latest_failure
+            else None
+        )
+        if failure_at is not None and failure_at >= failure_cutoff:
+            counts["skipped"] += 1
+            continue
+        job = IngestionService(session).enqueue_system(
+            scope=OrganizationScope(folder.organization_id),
+            workspace_folder_id=folder.id,
+        )
+        jobs_to_dispatch.append(job.id)
+        enqueued_per_organization[folder.organization_id] = (
+            enqueued_per_organization.get(folder.organization_id, 0) + 1
+        )
+        counts["enqueued"] += 1
+
+    session.commit()
+    for position, job_id in enumerate(jobs_to_dispatch):
+        send_task(
+            "document_intelligence.ingestion.reconcile",
+            args=[str(job_id)],
+            countdown=position * 5,
+        )
+    logger.info(
+        "periodic ingestion scheduling complete",
+        extra={"event": "ingestion_scheduler", **counts},
+    )
+    return counts
+
+
+def _as_utc(value: datetime | None) -> datetime | None:
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value
+
+
+@celery_app.task(name="document_intelligence.ingestion.schedule")
+def schedule_periodic_reconciliation() -> dict[str, int]:
+    settings = get_settings()
+    session_factory = build_session_factory(build_engine(settings))
+    with session_factory() as session:
+        return schedule_connected_source_reconciliations(
+            session=session,
+            settings=settings,
+            send_task=celery_app.send_task,
+        )
 
 
 @celery_app.task(
