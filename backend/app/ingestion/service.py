@@ -148,6 +148,17 @@ class IngestionService:
         self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID
     ) -> ProcessingJob:
         self.require_admin(scope=scope, user_id=user_id)
+        return self._enqueue(scope=scope, workspace_folder_id=workspace_folder_id)
+
+    def enqueue_system(
+        self, *, scope: OrganizationScope, workspace_folder_id: UUID
+    ) -> ProcessingJob:
+        """Queue a sync initiated by the trusted scheduler."""
+        return self._enqueue(scope=scope, workspace_folder_id=workspace_folder_id)
+
+    def _enqueue(
+        self, *, scope: OrganizationScope, workspace_folder_id: UUID
+    ) -> ProcessingJob:
         folder = self.require_folder(
             scope=scope, workspace_folder_id=workspace_folder_id, lock=True
         )

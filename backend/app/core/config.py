@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     microsoft_oauth_redirect_uri: str | None = None
     microsoft_token_encryption_key: SecretStr | None = None
     redis_url: str = "redis://localhost:6379/0"
+    sync_scheduler_interval_minutes: int = 15
+    sync_freshness_hours: int = 24
+    sync_scheduler_max_concurrent_per_org: int = 3
+    sync_scheduler_failure_cooldown_minutes: int = 30
+    sync_scheduler_slo_grace_hours: int = 2
     openai_api_key: SecretStr | None = None
 
 
