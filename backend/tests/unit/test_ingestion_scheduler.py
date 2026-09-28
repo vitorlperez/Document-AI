@@ -192,8 +192,17 @@ def test_slo_warning_is_logged_for_very_stale_source(
     now = datetime(2026, 9, 28, tzinfo=UTC)
     create_workspace(session, last_synced_at=now - timedelta(hours=27))
 
-    with caplog.at_level(logging.WARNING, logger="document_intelligence.ingestion"):
-        schedule(session, settings, now)
+    # Attach caplog's handler directly to this logger: another test in the
+    # suite may already have called configure_observability(), which sets
+    # propagate=False on "document_intelligence" so records never reach the
+    # root logger caplog listens on by default.
+    ingestion_logger = logging.getLogger("document_intelligence.ingestion")
+    ingestion_logger.addHandler(caplog.handler)
+    try:
+        with caplog.at_level(logging.WARNING, logger="document_intelligence.ingestion"):
+            schedule(session, settings, now)
+    finally:
+        ingestion_logger.removeHandler(caplog.handler)
 
     assert any(
         record.event == "ingestion_scheduler_slo_exceeded" for record in caplog.records
