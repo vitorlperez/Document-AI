@@ -582,10 +582,18 @@ def _ordinal_reference(question: str) -> int | None:
 
 
 def _plural_file_reference(question: str) -> bool:
+    normalized = question.casefold()
+    negated = re.search(
+        r"\b(?:não|nao)\s+(?:resuma|resumir|liste|listar|analise|analisar|descreva|descrever)\s+"
+        r"(?:todos\s+os\s+arquivos|cada\s+(?:um\s+dos\s+)?arquivos?)\b",
+        normalized,
+    )
+    if negated:
+        return False
     return bool(
         re.search(
             r"\b(?:eles|elas|deles|delas|ambos|ambas|cada\s+(?:um\s+dos\s+)?arquivos?|todos\s+os\s+arquivos)\b",
-            question.casefold(),
+            normalized,
         )
     )
 

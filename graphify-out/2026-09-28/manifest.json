@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1790622426.2257433,
-    "seen": 1790623156.313663,
+    "mtime": 1790631554.785446,
+    "seen": 1790631751.76994,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -1308,15 +1308,15 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1790622072.1923795,
-    "seen": 1790622212.79515,
-    "ast_hash": "75dda1acdb7e972c963576e52fac3d2e",
+    "mtime": 1790626403.273473,
+    "seen": 1790631751.7702909,
+    "ast_hash": "c9fd1865956dafa5031a4e3ad069136d",
     "semantic_hash": ""
   },
   "docker-compose.yml": {
-    "mtime": 1790299763.2009563,
-    "seen": 1790358178.676321,
-    "ast_hash": "7bfe6e4fde1c321ea9c26e7fc5586583",
+    "mtime": 1790626403.2721262,
+    "seen": 1790631751.770298,
+    "ast_hash": "67eeae3e7a6d0ae4165b1c294edc5a28",
     "semantic_hash": ""
   },
   "docs/deployment/free-pilot-render.md": {
@@ -2238,21 +2238,27 @@
     "semantic_hash": ""
   },
   "backend/app/knowledge/agent.py": {
-    "mtime": 1790625076.9302938,
-    "seen": 1790625125.202038,
-    "ast_hash": "9b86626f207796d2b65f649328058f89",
+    "mtime": 1790631665.946013,
+    "seen": 1790631751.770033,
+    "ast_hash": "e41cdf0c5371170d35e154b4fc2e0b76",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_document_agent.py": {
-    "mtime": 1790625119.4533474,
-    "seen": 1790625125.202063,
-    "ast_hash": "114d60c556ea268d4511b3f25de8a113",
+    "mtime": 1790631665.9468412,
+    "seen": 1790631751.770082,
+    "ast_hash": "358acd54dec7e0cd19a36d3abbef44fb",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_ingestion_scheduler.py": {
     "mtime": 1790620432.6982582,
     "seen": 1790622212.79505,
     "ast_hash": "1267fd949d50b37be75b50b24fabf499",
+    "semantic_hash": ""
+  },
+  "specs/work-items/agent-follow-up-collective-reference.md": {
+    "mtime": 1790631704.1714244,
+    "seen": 1790631751.770411,
+    "ast_hash": "ad9089fb7f9d932066c1894812d3231a",
     "semantic_hash": ""
   }
 }

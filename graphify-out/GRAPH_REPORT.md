@@ -1,17 +1,17 @@
 # Graph Report - Document-AI  (2026-09-28)
 
 ## Corpus Check
-- 361 files · ~254,781 words
+- 361 files · ~255,255 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 24 file(s) not represented in the graph (top: .css 9, (none) 8, .example 3)
 
 ## Summary
-- 3525 nodes · 9384 edges · 260 communities (205 shown, 55 thin omitted)
+- 3525 nodes · 9385 edges · 260 communities (205 shown, 55 thin omitted)
 - Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 1125 edges (avg confidence: 0.93)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2ca139f2`
+- Built from commit: `651d5d23`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

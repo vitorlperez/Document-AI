@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1790631554.785446,
-    "seen": 1790631751.76994,
+    "mtime": 1790631905.6327684,
+    "seen": 1790632271.180759,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -2178,9 +2178,9 @@
     "semantic_hash": ""
   },
   "TASK/items/F-202.md": {
-    "mtime": 1790613325.2203517,
-    "seen": 1790613534.9500349,
-    "ast_hash": "2112e62688245881d118a631cf270a98",
+    "mtime": 1790632177.1643634,
+    "seen": 1790632271.181103,
+    "ast_hash": "8f5ac7ad9b33aa1b44694aa372638c2f",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_document_inventory_summary.py": {
@@ -2238,15 +2238,15 @@
     "semantic_hash": ""
   },
   "backend/app/knowledge/agent.py": {
-    "mtime": 1790631665.946013,
-    "seen": 1790631751.770033,
-    "ast_hash": "e41cdf0c5371170d35e154b4fc2e0b76",
+    "mtime": 1790632198.456475,
+    "seen": 1790632271.1808472,
+    "ast_hash": "7e6ee3e2ec6d40849d2bdf6af47d33d5",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_document_agent.py": {
-    "mtime": 1790631665.9468412,
-    "seen": 1790631751.770082,
-    "ast_hash": "358acd54dec7e0cd19a36d3abbef44fb",
+    "mtime": 1790632211.1080236,
+    "seen": 1790632271.180894,
+    "ast_hash": "20429b21a0f0f18bbea7abaa8c8ef5ab",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_ingestion_scheduler.py": {
@@ -2256,9 +2256,9 @@
     "semantic_hash": ""
   },
   "specs/work-items/agent-follow-up-collective-reference.md": {
-    "mtime": 1790631704.1714244,
-    "seen": 1790631751.770411,
-    "ast_hash": "ad9089fb7f9d932066c1894812d3231a",
+    "mtime": 1790632261.8462636,
+    "seen": 1790632271.181217,
+    "ast_hash": "2f138dda97f1ea14dc05111d12283e66",
     "semantic_hash": ""
   }
 }

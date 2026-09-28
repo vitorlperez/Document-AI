@@ -283,6 +283,42 @@ def test_follow_up_plural_reuses_only_the_persisted_folder_inventory(
         "A Gravidade.pdf",
         "Profile.pdf",
     }
+
+    all_files, _tool_results, all_references = AgentService(
+        session, FakeProvider({}), AgentLimits()
+    ).ask(
+        scope=scope, user_id=user.id, question="Resuma todos os arquivos",
+        providers=["google_drive"], mentions=[], history=history,
+    )
+    assert "A Gravidade.pdf: Síntese extrativa" in all_files.answer
+    assert "Profile.pdf: Síntese extrativa" in all_files.answer
+    assert {reference["name"] for reference in all_references} == {
+        "A Gravidade.pdf",
+        "Profile.pdf",
+    }
+
+    singular_follow_up = "Não resuma todos os arquivos; apenas o segundo."
+    singular_provider = SummarizeSecondProvider({singular_follow_up: [1.0, 0.0]})
+    singular, _tool_results, singular_references = AgentService(
+        session, singular_provider, AgentLimits()
+    ).ask(
+        scope=scope, user_id=user.id, question=singular_follow_up,
+        providers=["google_drive"], mentions=[], history=history,
+    )
+    assert "A Gravidade.pdf" not in singular.answer
+    assert [evidence.document_name for evidence in singular_provider.answer_calls[-1][1]] == ["Profile.pdf"]
+    assert singular_references == []
+
+    positive_with_ordinal = "Resuma todos os arquivos, começando pelo segundo."
+    collective_with_ordinal, _tool_results, _references = AgentService(
+        session, FakeProvider({}), AgentLimits()
+    ).ask(
+        scope=scope, user_id=user.id, question=positive_with_ordinal,
+        providers=["google_drive"], mentions=[], history=history,
+    )
+    assert "A Gravidade.pdf: Síntese extrativa" in collective_with_ordinal.answer
+    assert "Profile.pdf: Síntese extrativa" in collective_with_ordinal.answer
+
     with pytest.raises(SyncAccessDenied):
         AgentService(session, FakeProvider({}), AgentLimits()).ask(
             scope=scope, user_id=user.id, question=follow_up,

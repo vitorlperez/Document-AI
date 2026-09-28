@@ -7016,7 +7016,7 @@
       "file_type": "code",
       "norm_label": "_request_deadline()",
       "source_file": "backend/app/knowledge/agent.py",
-      "source_location": "L593"
+      "source_location": "L601"
     },
     {
       "id": "backend_app_knowledge_questions_request_deadline",
@@ -20540,7 +20540,7 @@
       "file_type": "code",
       "norm_label": "test_inventory_applies_deadline_and_result_byte_limits()",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L425"
+      "source_location": "L461"
     },
     {
       "id": "backend_tests_unit_test_document_agent_test_inventory_includes_synchronized_nonindexed_file_and_plural_follow_up_is_per_file",
@@ -20552,7 +20552,7 @@
       "file_type": "code",
       "norm_label": "test_inventory_includes_synchronized_nonindexed_file_and_plural_follow_up_is_per_file()",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L341"
+      "source_location": "L377"
     },
     {
       "id": "backend_tests_unit_test_document_agent_test_inventory_paginates_more_than_fifty_and_keeps_all_references",
@@ -20564,7 +20564,7 @@
       "file_type": "code",
       "norm_label": "test_inventory_paginates_more_than_fifty_and_keeps_all_references()",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L298"
+      "source_location": "L334"
     },
     {
       "id": "backend_tests_unit_test_document_agent_test_tool_arguments_never_override_authorized_request_scope",
@@ -29778,7 +29778,7 @@
       "node_kind": "heading",
       "norm_label": "evidencia reproduzivel",
       "source_file": "specs/work-items/agent-follow-up-collective-reference.md",
-      "source_location": "L28"
+      "source_location": "L30"
     },
     {
       "id": "specs_work_items_agent_follow_up_collective_reference_fonte_escopo_e_aprova\u00e7\u00e3o",
@@ -29802,7 +29802,7 @@
       "node_kind": "heading",
       "norm_label": "riscos, rollback e gate",
       "source_file": "specs/work-items/agent-follow-up-collective-reference.md",
-      "source_location": "L34"
+      "source_location": "L42"
     },
     {
       "id": "specs_work_items_agent_follow_up_collective_reference_seguimento_coletivo_do_agente_ap\u00f3s_invent\u00e1rio_de_pasta",
@@ -46186,7 +46186,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/knowledge/agent.py",
-      "source_location": "L596",
+      "source_location": "L604",
       "weight": 1.0
     },
     {
@@ -53410,7 +53410,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L287",
+      "source_location": "L288",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_unit_test_document_agent_test_follow_up_plural_reuses_only_the_persisted_folder_inventory",
+      "target": "backend_tests_unit_test_document_agent_summarizesecondprovider",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/unit/test_document_agent.py",
+      "source_location": "L301",
       "weight": 1.0
     },
     {
@@ -53422,7 +53434,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L429",
+      "source_location": "L465",
       "weight": 1.0
     },
     {
@@ -53434,7 +53446,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L430",
+      "source_location": "L466",
       "weight": 1.0
     },
     {
@@ -53446,7 +53458,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L442",
+      "source_location": "L478",
       "weight": 1.0
     },
     {
@@ -53458,7 +53470,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L452",
+      "source_location": "L488",
       "weight": 1.0
     },
     {
@@ -53470,7 +53482,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L460",
+      "source_location": "L496",
       "weight": 1.0
     },
     {
@@ -53482,7 +53494,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L460",
+      "source_location": "L496",
       "weight": 1.0
     },
     {
@@ -53494,7 +53506,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L460",
+      "source_location": "L496",
       "weight": 1.0
     },
     {
@@ -53506,7 +53518,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L345",
+      "source_location": "L381",
       "weight": 1.0
     },
     {
@@ -53518,7 +53530,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L346",
+      "source_location": "L382",
       "weight": 1.0
     },
     {
@@ -53530,7 +53542,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L349",
+      "source_location": "L385",
       "weight": 1.0
     },
     {
@@ -53542,7 +53554,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L360",
+      "source_location": "L396",
       "weight": 1.0
     },
     {
@@ -53554,7 +53566,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L383",
+      "source_location": "L419",
       "weight": 1.0
     },
     {
@@ -53566,7 +53578,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L384",
+      "source_location": "L420",
       "weight": 1.0
     },
     {
@@ -53578,7 +53590,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L384",
+      "source_location": "L420",
       "weight": 1.0
     },
     {
@@ -53590,7 +53602,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L384",
+      "source_location": "L420",
       "weight": 1.0
     },
     {
@@ -53602,7 +53614,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L390",
+      "source_location": "L426",
       "weight": 1.0
     },
     {
@@ -53614,7 +53626,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L302",
+      "source_location": "L338",
       "weight": 1.0
     },
     {
@@ -53626,7 +53638,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L303",
+      "source_location": "L339",
       "weight": 1.0
     },
     {
@@ -53638,7 +53650,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L315",
+      "source_location": "L351",
       "weight": 1.0
     },
     {
@@ -53650,7 +53662,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L330",
+      "source_location": "L366",
       "weight": 1.0
     },
     {
@@ -53662,7 +53674,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L330",
+      "source_location": "L366",
       "weight": 1.0
     },
     {
@@ -53674,7 +53686,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L330",
+      "source_location": "L366",
       "weight": 1.0
     },
     {
@@ -53686,7 +53698,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L331",
+      "source_location": "L367",
       "weight": 1.0
     },
     {
@@ -74182,7 +74194,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/app/knowledge/agent.py",
-      "source_location": "L594",
+      "source_location": "L602",
       "weight": 1.0
     },
     {
@@ -102763,7 +102775,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L425",
+      "source_location": "L461",
       "weight": 1.0
     },
     {
@@ -102775,7 +102787,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L341",
+      "source_location": "L377",
       "weight": 1.0
     },
     {
@@ -102787,7 +102799,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L298",
+      "source_location": "L334",
       "weight": 1.0
     },
     {
@@ -108520,7 +108532,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/knowledge/agent.py",
-      "source_location": "L593",
+      "source_location": "L601",
       "weight": 1.0
     },
     {
@@ -111435,7 +111447,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L298",
+      "source_location": "L334",
       "weight": 1.0
     },
     {
@@ -111457,7 +111469,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L341",
+      "source_location": "L377",
       "weight": 1.0
     },
     {
@@ -111468,7 +111480,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L425",
+      "source_location": "L461",
       "weight": 1.0
     },
     {
@@ -124899,7 +124911,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "specs/work-items/agent-follow-up-collective-reference.md",
-      "source_location": "L28",
+      "source_location": "L30",
       "weight": 1.0
     },
     {
@@ -124910,7 +124922,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "specs/work-items/agent-follow-up-collective-reference.md",
-      "source_location": "L34",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -140098,7 +140110,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L409",
+      "source_location": "L445",
       "weight": 1.0
     },
     {
@@ -140914,7 +140926,7 @@
       "confidence_score": 0.95,
       "context": "SyncAccessDenied",
       "source_file": "specs/work-items/agent-follow-up-collective-reference.md",
-      "source_location": "L25",
+      "source_location": "L27",
       "weight": 1.0
     },
     {
@@ -148971,7 +148983,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L286",
+      "source_location": "L322",
       "weight": 0.8
     },
     {
@@ -148982,7 +148994,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L443",
+      "source_location": "L479",
       "weight": 0.8
     },
     {
@@ -148993,7 +149005,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L459",
+      "source_location": "L495",
       "weight": 0.8
     },
     {
@@ -149004,7 +149016,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L418",
+      "source_location": "L454",
       "weight": 0.8
     },
     {
@@ -149015,7 +149027,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/unit/test_document_agent.py",
-      "source_location": "L316",
+      "source_location": "L352",
       "weight": 0.8
     },
     {
@@ -150890,5 +150902,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "2ca139f29ac6bce8ed827a63f72894a477c666f1"
+  "built_at_commit": "651d5d23c73eb04c3bb975af1b33b67975039373"
 }
