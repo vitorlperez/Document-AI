@@ -1,5 +1,7 @@
 from io import BytesIO
+from datetime import UTC, datetime, timedelta
 from threading import Event, Lock, Thread
+from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
@@ -13,6 +15,7 @@ from app.integrations.google_drive import (
     GoogleCredentials,
     GoogleCursorInvalid,
     GoogleDriveOAuthClient,
+    GoogleRefreshTokenInvalid,
     GoogleRemoteUnauthorized,
     RemoteFile,
     RemoteFolder,
@@ -33,6 +36,15 @@ class FakeGoogleDriveClient:
         self.list_calls: list[str] = []
         self.read_calls: list[str] = []
         self.read_error: Exception | None = None
+        self.refresh_calls: list[str] = []
+
+    def refresh_access_token(self, *, refresh_token: str) -> GoogleCredentials:
+        self.refresh_calls.append(refresh_token)
+        return GoogleCredentials(
+            "refreshed-access-token",
+            refresh_token,
+            datetime.now(UTC) + timedelta(hours=1),
+        )
 
     def start_page_token(self, *, credentials: GoogleCredentials) -> str:
         return "initial-cursor"
@@ -49,6 +61,9 @@ class FakeGoogleDriveClient:
         self.list_calls.append("all")
         return self.all_files
 
+    def list_folders(self, *, credentials: GoogleCredentials) -> list[RemoteFolder]:
+        return []
+
     def read_file(self, *, credentials: GoogleCredentials, remote_file: RemoteFile) -> bytes:
         self.read_calls.append(remote_file.id)
         if self.read_error is not None:
@@ -59,6 +74,26 @@ class FakeGoogleDriveClient:
 def encrypted_credentials() -> tuple[CredentialCipher, str]:
     cipher = CredentialCipher(Fernet.generate_key().decode())
     return cipher, cipher.encrypt(GoogleCredentials("access-token", "refresh-token", None))
+
+
+def expiring_credentials(cipher: CredentialCipher) -> str:
+    return cipher.encrypt(
+        GoogleCredentials(
+            "access-token",
+            "refresh-token",
+            datetime.now(UTC) + timedelta(minutes=1),
+        )
+    )
+
+
+def fresh_credentials(cipher: CredentialCipher) -> str:
+    return cipher.encrypt(
+        GoogleCredentials(
+            "access-token",
+            "refresh-token",
+            datetime.now(UTC) + timedelta(hours=1),
+        )
+    )
 
 
 def remote_file(file_id: str, mime_type: str) -> RemoteFile:
@@ -92,7 +127,8 @@ def test_provider_extracts_google_docs_and_docx_and_skips_unsupported_without_do
             "word-doc": docx_bytes("Approved consulting scope"),
         },
     )
-    cipher, credentials = encrypted_credentials()
+    cipher, _ = encrypted_credentials()
+    credentials = fresh_credentials(cipher)
 
     discovered = GoogleDriveDocumentProvider(client, cipher).discover(
         encrypted_credentials=credentials,
@@ -108,6 +144,121 @@ def test_provider_extracts_google_docs_and_docx_and_skips_unsupported_without_do
         ("slides", None, None),
         ("word-doc", "Approved consulting scope", None),
     ]
+
+
+def test_provider_proactively_refreshes_expiring_credentials_and_exposes_ciphertext() -> None:
+    client = FakeGoogleDriveClient([], {})
+    cipher, _ = encrypted_credentials()
+    provider = GoogleDriveDocumentProvider(client, cipher)
+
+    assert provider.folders(encrypted_credentials=expiring_credentials(cipher)) == []
+
+    assert client.refresh_calls == ["refresh-token"]
+    assert provider.updated_encrypted_credentials is not None
+    refreshed = cipher.decrypt(provider.updated_encrypted_credentials)
+    assert refreshed.access_token == "refreshed-access-token"
+    assert refreshed.refresh_token == "refresh-token"
+
+
+def test_provider_retries_a_remote_unauthorized_call_once_after_refresh() -> None:
+    class Client(FakeGoogleDriveClient):
+        def __init__(self) -> None:
+            super().__init__([], {})
+            self.folder_calls = 0
+
+        def list_folders(self, *, credentials: GoogleCredentials) -> list[RemoteFolder]:
+            self.folder_calls += 1
+            if self.folder_calls == 1:
+                raise GoogleRemoteUnauthorized()
+            assert credentials.access_token == "refreshed-access-token"
+            return []
+
+    client = Client()
+    cipher, _ = encrypted_credentials()
+    credentials = fresh_credentials(cipher)
+
+    assert GoogleDriveDocumentProvider(client, cipher).folders(encrypted_credentials=credentials) == []
+    assert client.folder_calls == 2
+    assert client.refresh_calls == ["refresh-token"]
+
+
+def test_provider_propagates_invalid_refresh_token_after_one_attempt() -> None:
+    class Client(FakeGoogleDriveClient):
+        def refresh_access_token(self, *, refresh_token: str) -> GoogleCredentials:
+            self.refresh_calls.append(refresh_token)
+            raise GoogleRefreshTokenInvalid("revoked")
+
+    client = Client([], {})
+    cipher, credentials = encrypted_credentials()
+
+    with pytest.raises(GoogleRemoteUnauthorized):
+        GoogleDriveDocumentProvider(client, cipher).folders(encrypted_credentials=credentials)
+
+    assert client.refresh_calls == ["refresh-token"]
+
+
+def test_concurrent_provider_refreshes_persist_once_and_reuses_locked_source_credentials() -> None:
+    cipher, _ = encrypted_credentials()
+    source = SimpleNamespace(id=uuid4(), encrypted_credentials=expiring_credentials(cipher))
+    row_lock = Lock()
+
+    class LockedSession:
+        def __init__(self) -> None:
+            self.locked = False
+
+        def scalar(self, _: object):
+            row_lock.acquire()
+            self.locked = True
+            return source
+
+        def commit(self) -> None:
+            if self.locked:
+                self.locked = False
+                row_lock.release()
+
+    class Client(FakeGoogleDriveClient):
+        def __init__(self) -> None:
+            super().__init__([], {})
+            self.refresh_lock = Lock()
+
+        def refresh_access_token(self, *, refresh_token: str) -> GoogleCredentials:
+            with self.refresh_lock:
+                self.refresh_calls.append(refresh_token)
+            return GoogleCredentials(
+                "shared-refreshed-access-token",
+                "rotated-refresh-token",
+                datetime.now(UTC) + timedelta(hours=1),
+            )
+
+    client = Client()
+    stale_credentials = source.encrypted_credentials
+    providers = [
+        GoogleDriveDocumentProvider(client, cipher, session=LockedSession(), source_id=source.id)
+        for _ in range(2)
+    ]
+    threads = [
+        Thread(target=lambda provider=provider: provider.folders(
+            encrypted_credentials=stale_credentials
+        ))
+        for provider in providers
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=2)
+
+    assert all(not thread.is_alive() for thread in threads)
+    assert client.refresh_calls == ["refresh-token"]
+    persisted = cipher.decrypt(source.encrypted_credentials)
+    assert persisted == GoogleCredentials(
+        "shared-refreshed-access-token",
+        "rotated-refresh-token",
+        persisted.expires_at,
+    )
+    assert all(
+        provider.updated_encrypted_credentials == source.encrypted_credentials
+        for provider in providers
+    )
 
 
 def test_provider_removes_nul_from_extracted_text_and_blocks() -> None:

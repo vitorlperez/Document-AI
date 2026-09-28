@@ -41,6 +41,10 @@ class GoogleRemoteUnauthorized(SourceRemoteUnauthorized):
     pass
 
 
+class GoogleRefreshTokenInvalid(GoogleRemoteUnauthorized):
+    """The stored Google refresh token was revoked or expired."""
+
+
 class GoogleCursorInvalid(GoogleOAuthInvalid):
     """The Drive Changes page token expired and needs a fresh snapshot."""
 
@@ -131,6 +135,33 @@ class GoogleDriveOAuthClient:
         response.raise_for_status()
         data = response.json()
         return GoogleCredentials(data["access_token"], data.get("refresh_token"), None)
+
+    def refresh_access_token(self, *, refresh_token: str) -> GoogleCredentials:
+        self._configured()
+        response = httpx.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "refresh_token": refresh_token,
+                "grant_type": "refresh_token",
+            },
+            timeout=10,
+        )
+        if response.status_code == 400:
+            try:
+                error = response.json().get("error")
+            except (ValueError, TypeError):
+                error = None
+            if error == "invalid_grant":
+                raise GoogleRefreshTokenInvalid("Google refresh token is invalid")
+        response.raise_for_status()
+        data = response.json()
+        return GoogleCredentials(
+            access_token=data["access_token"],
+            refresh_token=data.get("refresh_token") or refresh_token,
+            expires_at=datetime.now(UTC) + timedelta(seconds=int(data["expires_in"])),
+        )
 
     def account_email(self, *, credentials: GoogleCredentials) -> str | None:
         response = httpx.get(

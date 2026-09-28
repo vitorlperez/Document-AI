@@ -20,6 +20,7 @@ from app.integrations.google_drive import (
     GoogleDriveOAuthClient,
     GoogleOAuthInvalid,
     GoogleOAuthUnavailable,
+    GoogleRefreshTokenInvalid,
     GoogleRemoteUnauthorized,
     RemoteFolder,
 )
@@ -238,6 +239,73 @@ def test_google_client_marks_unauthorized_account_metadata_as_remote_unauthorize
 
     with pytest.raises(GoogleRemoteUnauthorized):
         client.account_email(credentials=GoogleCredentials("access-token", None, None))
+
+
+def test_google_client_refreshes_access_token_and_preserves_original_refresh_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, object]] = []
+
+    def post(url: str, **kwargs: object) -> httpx.Response:
+        calls.append({"url": url, **kwargs})
+        return httpx.Response(
+            200,
+            json={"access_token": "new-access", "expires_in": 3600},
+            request=httpx.Request("POST", url),
+        )
+
+    monkeypatch.setattr("app.integrations.google_drive.httpx.post", post)
+    before = datetime.now(UTC)
+    credentials = GoogleDriveOAuthClient(
+        client_id="id", client_secret="secret", redirect_uri="https://example.test/callback"
+    ).refresh_access_token(refresh_token="original-refresh")
+
+    assert credentials.access_token == "new-access"
+    assert credentials.refresh_token == "original-refresh"
+    assert credentials.expires_at is not None and credentials.expires_at >= before + timedelta(seconds=3599)
+    assert calls == [{
+        "url": "https://oauth2.googleapis.com/token",
+        "data": {
+            "client_id": "id",
+            "client_secret": "secret",
+            "refresh_token": "original-refresh",
+            "grant_type": "refresh_token",
+        },
+        "timeout": 10,
+    }]
+
+
+def test_google_client_refresh_persists_rotated_refresh_token_and_maps_invalid_grant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = GoogleDriveOAuthClient(
+        client_id="id", client_secret="secret", redirect_uri="https://example.test/callback"
+    )
+
+    def rotated(url: str, **_: object) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "access_token": "new-access",
+                "refresh_token": "rotated-refresh",
+                "expires_in": 3600,
+            },
+            request=httpx.Request("POST", url),
+        )
+
+    monkeypatch.setattr("app.integrations.google_drive.httpx.post", rotated)
+    assert client.refresh_access_token(refresh_token="original-refresh").refresh_token == "rotated-refresh"
+
+    def invalid(url: str, **_: object) -> httpx.Response:
+        return httpx.Response(
+            400,
+            json={"error": "invalid_grant"},
+            request=httpx.Request("POST", url),
+        )
+
+    monkeypatch.setattr("app.integrations.google_drive.httpx.post", invalid)
+    with pytest.raises(GoogleRefreshTokenInvalid):
+        client.refresh_access_token(refresh_token="revoked-refresh")
 
 
 def test_google_changes_api_follows_pages_and_returns_latest_start_token(
