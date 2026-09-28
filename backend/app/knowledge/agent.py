@@ -582,7 +582,12 @@ def _ordinal_reference(question: str) -> int | None:
 
 
 def _plural_file_reference(question: str) -> bool:
-    return bool(re.search(r"\b(?:eles|elas|deles|delas|ambos|ambas)\b", question.casefold()))
+    return bool(
+        re.search(
+            r"\b(?:eles|elas|deles|delas|ambos|ambas|cada\s+(?:um\s+dos\s+)?arquivos?|todos\s+os\s+arquivos)\b",
+            question.casefold(),
+        )
+    )
 
 
 def _request_deadline(deadline: float):

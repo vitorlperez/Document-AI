@@ -265,22 +265,33 @@ def test_follow_up_plural_reuses_only_the_persisted_folder_inventory(
     _conversation, history = ConversationService(session).history(
         scope=scope, user_id=user.id, conversation_id=conversation.id
     )
+    follow_up = "me de um resumo bem sucinto do conteudo de cada arquivo"
     provider = FollowUpPluralProvider(
-        {"Sobre o que eles falam?": [1.0, 0.0]},
+        {follow_up: [1.0, 0.0]},
         citations=[1, 2, 3],
     )
 
-    result, _tool_results, _references = AgentService(session, provider, AgentLimits()).ask(
-        scope=scope, user_id=user.id, question="Sobre o que eles falam?",
+    result, _tool_results, follow_up_references = AgentService(session, provider, AgentLimits()).ask(
+        scope=scope, user_id=user.id, question=follow_up,
         providers=["google_drive"], mentions=[], history=history,
     )
     assert provider.answer_calls == []
     assert "A Gravidade.pdf: Síntese extrativa" in result.answer
     assert "Profile.pdf: Síntese extrativa" in result.answer
+    assert "Outro documento.pdf" not in result.answer
+    assert {reference["name"] for reference in follow_up_references} == {
+        "A Gravidade.pdf",
+        "Profile.pdf",
+    }
     with pytest.raises(SyncAccessDenied):
         AgentService(session, FakeProvider({}), AgentLimits()).ask(
-            scope=scope, user_id=user.id, question="Sobre o que eles falam?",
+            scope=scope, user_id=user.id, question=follow_up,
             providers=["notion"], mentions=[], history=history,
+        )
+    with pytest.raises(SyncAccessDenied):
+        AgentService(session, FakeProvider({}), AgentLimits()).ask(
+            scope=OrganizationScope(uuid4()), user_id=user.id, question=follow_up,
+            providers=["google_drive"], mentions=[], history=history,
         )
 
 
