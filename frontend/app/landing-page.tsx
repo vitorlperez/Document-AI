@@ -159,7 +159,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
         </section>
       </main>
 
-      <footer className="landing-footer landing-container"><a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, voltar ao início"><Brand /></a><p>Conhecimento que encontra o seu contexto.</p><a href="#perguntas">Acesso e privacidade <ArrowUpRight size={14} /></a></footer>
+      <footer className="landing-footer landing-container"><a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, voltar ao início"><Brand /></a><p>Conhecimento que encontra o seu contexto.</p><nav className="landing-legal-links" aria-label="Informações legais"><a href="/privacidade">Privacidade <ArrowUpRight size={14} /></a><a href="/termos">Termos de uso <ArrowUpRight size={14} /></a></nav></footer>
     </div>
   );
 }

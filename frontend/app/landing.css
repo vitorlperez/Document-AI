@@ -153,6 +153,8 @@
 .landing-footer .arquivio-brand { font-size: 23px; }
 .landing-footer p, .landing-footer > a:last-child { margin-bottom: 0; color: var(--landing-muted); font-size: 10px; }
 .landing-footer > a:last-child { display: inline-flex; align-items: center; gap: 6px; }
+.landing-legal-links { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+.landing-legal-links a { display: inline-flex; align-items: center; gap: 6px; color: var(--landing-muted); font-size: 11px; }
 
 @media (max-width: 960px) {
   .landing-container { width: calc(100% - 56px); }
