@@ -3,12 +3,14 @@
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
 from app.knowledge.agent import AgentLimits, AgentService, ConversationService, ToolCall
 from app.knowledge.models import Document
+from app.knowledge.questions import AIProviderUnavailable
 from app.library.models import LibraryNode
 from tests.unit.test_semantic_questions import FakeProvider, chunk, context
 from tests.unit.test_semantic_questions import session as semantic_session  # noqa: F401
@@ -27,6 +29,24 @@ class RepeatingCatalogProvider(FakeProvider):
 class SummarizeSecondProvider(FakeProvider):
     def tool_calls(self, *, question, history, tool_results):
         return [ToolCall("summarize_documents", {})] if not tool_results else []
+
+
+class FolderInventoryProvider(FakeProvider):
+    def __init__(self, *, parent_id) -> None:
+        super().__init__({})
+        self.parent_id = parent_id
+
+    def tool_calls(self, *, question, history, tool_results):
+        return (
+            [ToolCall("list_library_children", {"parent_id": str(self.parent_id)})]
+            if not tool_results
+            else []
+        )
+
+
+class FollowUpPluralProvider(FakeProvider):
+    def tool_calls(self, *, question, history, tool_results):
+        return [ToolCall("retrieve_evidence", {})] if not tool_results else []
 
 
 def test_direct_children_tool_is_paged_local_catalog_snapshot(
@@ -180,3 +200,252 @@ def test_follow_up_ordinal_uses_persisted_reference_and_reauthorizes_it(
 
     assert result.citations
     assert [item.document_name for item in provider.answer_calls[-1][1]] == ["Second.pdf"]
+
+
+def test_follow_up_plural_reuses_only_the_persisted_folder_inventory(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    organization, user, workspace = context(session)
+    first = chunk(session, organization, workspace, name="A Gravidade.pdf", text="O texto discute graça.")
+    second = chunk(session, organization, workspace, name="Profile.pdf", text="O perfil descreve experiência.")
+    foreign = chunk(session, organization, workspace, name="Outro documento.pdf", text="Conteúdo alheio.")
+    first_document = session.get(Document, first.document_id)
+    second_document = session.get(Document, second.document_id)
+    foreign_document = session.get(Document, foreign.document_id)
+    assert first_document is not None and second_document is not None and foreign_document is not None
+    root = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=None,
+        external_id="source-root", kind="source", name="Google Drive",
+    )
+    session.add(root)
+    session.flush()
+    folder = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=root.id,
+        external_id="test-document-ai", kind="folder", name="Test Document-AI",
+    )
+    session.add(folder)
+    session.flush()
+    session.add_all([
+        LibraryNode(
+            organization_id=organization.id, source_id=workspace.source_id, parent_id=folder.id,
+            external_id=document.external_file_id, kind="file", name=document.name,
+        )
+        for document in (first_document, second_document)
+    ] + [
+        LibraryNode(
+            organization_id=organization.id, source_id=workspace.source_id, parent_id=root.id,
+            external_id=foreign_document.external_file_id, kind="file", name=foreign_document.name,
+        )
+    ])
+    session.commit()
+
+    scope = OrganizationScope(organization.id)
+    inventory, _tool_results, references = AgentService(
+        session, FolderInventoryProvider(parent_id=folder.id), AgentLimits()
+    ).ask(
+        scope=scope, user_id=user.id, question="Quais arquivos temos dentro dessa pasta?",
+        providers=["google_drive"], mentions=[("folder", folder.id)], history=[],
+    )
+    assert inventory.answer == (
+        "Arquivos no catálogo autorizado "
+        "(instantâneo local; não é uma listagem ao vivo do provedor):\n"
+        "- A Gravidade.pdf (Arquivo)\n"
+        "- Profile.pdf (Arquivo)"
+    )
+
+    conversation, _ = ConversationService(session).create_or_load(
+        scope=scope, user_id=user.id, conversation_id=None, question="Quais arquivos temos dentro dessa pasta?"
+    )
+    ConversationService(session).append(
+        conversation=conversation, role="assistant", content=inventory.answer,
+        context={"references": references},
+    )
+    session.commit()
+    _conversation, history = ConversationService(session).history(
+        scope=scope, user_id=user.id, conversation_id=conversation.id
+    )
+    provider = FollowUpPluralProvider(
+        {"Sobre o que eles falam?": [1.0, 0.0]},
+        citations=[1, 2, 3],
+    )
+
+    result, _tool_results, _references = AgentService(session, provider, AgentLimits()).ask(
+        scope=scope, user_id=user.id, question="Sobre o que eles falam?",
+        providers=["google_drive"], mentions=[], history=history,
+    )
+    assert provider.answer_calls == []
+    assert "A Gravidade.pdf: Síntese extrativa" in result.answer
+    assert "Profile.pdf: Síntese extrativa" in result.answer
+    with pytest.raises(SyncAccessDenied):
+        AgentService(session, FakeProvider({}), AgentLimits()).ask(
+            scope=scope, user_id=user.id, question="Sobre o que eles falam?",
+            providers=["notion"], mentions=[], history=history,
+        )
+
+
+def test_inventory_paginates_more_than_fifty_and_keeps_all_references(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    organization, user, workspace = context(session)
+    root = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=None,
+        external_id="source-root", kind="source", name="Google Drive",
+    )
+    session.add(root)
+    session.flush()
+    folder = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=root.id,
+        external_id="briefs", kind="folder", name="Briefs",
+    )
+    session.add(folder)
+    session.flush()
+    indexed = chunk(session, organization, workspace, name="Brief 000.pdf", text="Primeiro arquivo.")
+    indexed_document = session.get(Document, indexed.document_id)
+    assert indexed_document is not None
+    session.add_all([
+        LibraryNode(
+            organization_id=organization.id, source_id=workspace.source_id, parent_id=folder.id,
+            external_id=(
+                indexed_document.external_file_id if number == 0 else f"brief-{number}"
+            ),
+            kind="file", name=f"Brief {number:03d}.pdf",
+        )
+        for number in range(51)
+    ])
+    session.commit()
+
+    result, _tool_results, references = AgentService(session, FakeProvider({}), AgentLimits()).ask(
+        scope=OrganizationScope(organization.id), user_id=user.id,
+        question="Quais arquivos temos dentro dessa pasta?",
+        providers=["google_drive"], mentions=[("folder", folder.id)], history=[],
+    )
+
+    assert "Brief 050.pdf" in result.answer
+    assert len(references) == 51
+    assert {reference["folder_id"] for reference in references} == {str(folder.id)}
+
+
+def test_inventory_includes_synchronized_nonindexed_file_and_plural_follow_up_is_per_file(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    organization, user, workspace = context(session)
+    indexed = chunk(session, organization, workspace, name="Indexed.pdf", text="O plano prioriza clientes existentes.")
+    indexed_document = session.get(Document, indexed.document_id)
+    assert indexed_document is not None
+    failed = Document(
+        organization_id=organization.id,
+        workspace_folder_id=workspace.id,
+        external_file_id="failed-file",
+        name="Not indexed.pdf",
+        mime_type="application/pdf",
+        source_url="https://drive.example.test/failed",
+        content_hash="hash",
+        processing_version="v1",
+        index_status="failed",
+    )
+    root = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=None,
+        external_id="source-root", kind="source", name="Google Drive",
+    )
+    session.add_all([failed, root])
+    session.flush()
+    folder = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=root.id,
+        external_id="briefs", kind="folder", name="Briefs",
+    )
+    session.add(folder)
+    session.flush()
+    session.add_all([
+        LibraryNode(
+            organization_id=organization.id, source_id=workspace.source_id, parent_id=folder.id,
+            external_id=indexed_document.external_file_id, kind="file", name="Indexed.pdf",
+        ),
+        LibraryNode(
+            organization_id=organization.id, source_id=workspace.source_id, parent_id=folder.id,
+            external_id=failed.external_file_id, kind="file", name="Not indexed.pdf",
+        ),
+    ])
+    session.commit()
+    scope = OrganizationScope(organization.id)
+    inventory, _tool_results, references = AgentService(session, FakeProvider({}), AgentLimits()).ask(
+        scope=scope, user_id=user.id, question="Quais arquivos temos dentro da pasta Briefs?",
+        providers=["google_drive"], mentions=[("folder", folder.id)], history=[],
+    )
+    assert "Not indexed.pdf: sem conteúdo indexado disponível." in inventory.answer
+
+    conversation, _ = ConversationService(session).create_or_load(
+        scope=scope, user_id=user.id, conversation_id=None, question="inventário"
+    )
+    ConversationService(session).append(
+        conversation=conversation, role="assistant", content=inventory.answer,
+        context={"references": references},
+    )
+    session.commit()
+    _conversation, history = ConversationService(session).history(
+        scope=scope, user_id=user.id, conversation_id=conversation.id
+    )
+    result, _tool_results, _references = AgentService(session, FakeProvider({}), AgentLimits()).ask(
+        scope=scope, user_id=user.id, question="Sobre o que eles falam?",
+        providers=["google_drive"], mentions=[], history=history,
+    )
+    assert "Indexed.pdf: Síntese extrativa do conteúdo indexado: O plano prioriza clientes existentes." in result.answer
+    assert "Not indexed.pdf: sem conteúdo indexado disponível." in result.answer
+
+    moved = session.scalar(
+        select(LibraryNode).where(
+            LibraryNode.source_id == workspace.source_id,
+            LibraryNode.external_id == indexed_document.external_file_id,
+        )
+    )
+    assert moved is not None
+    moved.parent_id = root.id
+    session.commit()
+
+    with pytest.raises(SyncAccessDenied, match="authorized selection"):
+        AgentService(session, FakeProvider({}), AgentLimits()).ask(
+            scope=scope, user_id=user.id, question="Sobre o que eles falam?",
+            providers=["google_drive"], mentions=[], history=history,
+        )
+
+
+def test_inventory_applies_deadline_and_result_byte_limits(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    organization, user, workspace = context(session)
+    root = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=None,
+        external_id="source-root", kind="source", name="Google Drive",
+    )
+    session.add(root)
+    session.flush()
+    folder = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=root.id,
+        external_id="briefs", kind="folder", name="Briefs",
+    )
+    session.add(folder)
+    session.flush()
+    indexed = chunk(session, organization, workspace, name="Brief.pdf", text="Brief content.")
+    indexed_document = session.get(Document, indexed.document_id)
+    assert indexed_document is not None
+    session.add(LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=folder.id,
+        external_id=indexed_document.external_file_id, kind="file", name="Brief.pdf",
+    ))
+    session.commit()
+
+    kwargs = {
+        "scope": OrganizationScope(organization.id),
+        "user_id": user.id,
+        "question": "Quais arquivos temos dentro dessa pasta?",
+        "providers": ["google_drive"],
+        "mentions": [("folder", folder.id)],
+        "history": [],
+    }
+    with pytest.raises(AIProviderUnavailable, match="deadline"):
+        AgentService(session, FakeProvider({}), AgentLimits(max_seconds=0)).ask(**kwargs)
+    with pytest.raises(AIProviderUnavailable, match="result exceeds"):
+        AgentService(session, FakeProvider({}), AgentLimits(max_result_bytes=1)).ask(**kwargs)

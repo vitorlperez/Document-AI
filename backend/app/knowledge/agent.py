@@ -8,6 +8,7 @@ remote URLs, credentials, or arbitrary database records.
 from __future__ import annotations
 
 import json
+import re
 import time
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
@@ -24,11 +25,14 @@ from app.knowledge.questions import (
     QuestionResult,
     QuestionService,
     SemanticProvider,
+    _is_document_inventory_question,
 )
 from app.library.service import LibraryService, SyncAccessDenied
 
 MAX_HISTORY_MESSAGES = 12
 MAX_MODEL_HISTORY_BYTES = 12_000
+INVENTORY_PAGE_SIZE = 100
+INVENTORY_MAX_ITEMS = 500
 
 
 @dataclass(frozen=True)
@@ -149,13 +153,32 @@ class LibraryToolExecutor:
             scope=scope, user_id=user_id, providers=providers, mentions=mentions,
             parent_id=parent_id, page=page, page_size=page_size,
         )
+        snapshots = {
+            snapshot.id: snapshot
+            for snapshot in LibraryService(self.session).catalog_file_snapshots(
+                scope=scope,
+                user_id=user_id,
+                providers=providers,
+                node_ids=[item.id for item in items if item.kind == "file"],
+                validate_references=False,
+            )
+        }
         return ToolResult(
             "list_library_children",
             {
                 "semantics": "direct_children_local_catalog_snapshot",
                 "items": [
-                    {"id": str(item.id), "kind": item.kind, "name": item.name,
-                     "parent_id": str(item.parent_id) if item.parent_id else None}
+                    {
+                        "id": str(item.id),
+                        "kind": item.kind,
+                        "name": item.name,
+                        "parent_id": str(item.parent_id) if item.parent_id else None,
+                        **(
+                            {"index_status": snapshots[item.id].index_status}
+                            if item.kind == "file" and item.id in snapshots
+                            else {}
+                        ),
+                    }
                     for item in items
                 ],
                 "page": page, "page_size": page_size, "total": total,
@@ -236,6 +259,24 @@ class AgentService:
         effective_mentions = self._follow_up_mentions(
             question=question, history=history, providers=providers, mentions=mentions,
         )
+        inventory_folders = [node_id for kind, node_id in effective_mentions if kind == "folder"]
+        if _is_document_inventory_question(question) and len(inventory_folders) == 1:
+            result = self._complete_inventory(
+                scope=scope, user_id=user_id, providers=providers, mentions=effective_mentions,
+                parent_id=inventory_folders[0], deadline=started + self.limits.max_seconds,
+            )
+            item = {"name": result.name, "result": result.payload}
+            if _json_size([item]) > self.limits.max_result_bytes:
+                raise AIProviderUnavailable("document agent result exceeds configured byte limit")
+            return _catalog_question_result(result), [item], _catalog_references([item])
+        if not mentions and _plural_file_reference(question):
+            references = self._follow_up_file_references(history=history)
+            if references:
+                result = self._summarize_inventory_follow_up(
+                    scope=scope, user_id=user_id, providers=providers, references=references
+                )
+                item = {"name": result.name, "result": result.payload}
+                return _catalog_question_result(result), [item], _catalog_references([item])
         for _step in range(self.limits.max_steps):
             remaining = self.limits.max_seconds - (time.monotonic() - started)
             if remaining <= 0:
@@ -285,18 +326,120 @@ class AgentService:
         if mentions:
             return mentions
         ordinal = _ordinal_reference(question)
-        if ordinal is None:
+        follow_up_all = _plural_file_reference(question)
+        if ordinal is None and not follow_up_all:
             return mentions
         for message in reversed(history):
             references = (message.context or {}).get("references")
             if not isinstance(references, list):
                 continue
             files = [item for item in references if isinstance(item, dict) and item.get("kind") == "file"]
-            if ordinal <= len(files):
+            if follow_up_all:
+                resolved: list[tuple[str, UUID]] = []
+                for item in files:
+                    raw_id = item.get("id")
+                    if not isinstance(raw_id, str):
+                        continue
+                    try:
+                        resolved.append(("file", UUID(raw_id)))
+                    except ValueError:
+                        continue
+                if resolved:
+                    return resolved
+            elif ordinal is not None and ordinal <= len(files):
                 raw_id = files[ordinal - 1].get("id")
                 if isinstance(raw_id, str):
-                    return [("file", UUID(raw_id))]
+                    try:
+                        return [("file", UUID(raw_id))]
+                    except ValueError:
+                        continue
         return mentions
+
+    def _follow_up_file_references(self, *, history: list[ConversationMessage]) -> list[tuple[UUID, UUID]]:
+        for message in reversed(history):
+            references = (message.context or {}).get("references")
+            if not isinstance(references, list):
+                continue
+            result: list[tuple[UUID, UUID]] = []
+            for item in references:
+                if not isinstance(item, dict) or item.get("kind") != "file":
+                    continue
+                raw_id, raw_folder_id = item.get("id"), item.get("folder_id")
+                if not isinstance(raw_id, str) or not isinstance(raw_folder_id, str):
+                    continue
+                try:
+                    result.append((UUID(raw_id), UUID(raw_folder_id)))
+                except ValueError:
+                    continue
+            if result:
+                return result
+        return []
+
+    def _complete_inventory(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]], parent_id: UUID, deadline: float,
+    ) -> ToolResult:
+        items: list[dict[str, object]] = []
+        page = 1
+        total = 0
+        while len(items) < INVENTORY_MAX_ITEMS:
+            if time.monotonic() >= deadline:
+                raise AIProviderUnavailable("document agent deadline exceeded")
+            with _request_deadline(deadline):
+                result = self.tools.list_library_children(
+                    scope=scope, user_id=user_id, providers=providers, mentions=mentions,
+                    parent_id=parent_id, page=page, page_size=INVENTORY_PAGE_SIZE,
+                )
+            page_items = result.payload["items"]
+            assert isinstance(page_items, list)
+            items.extend(page_items)
+            total = result.payload["total"]
+            assert isinstance(total, int)
+            if len(page_items) < INVENTORY_PAGE_SIZE or len(items) >= total:
+                break
+            page += 1
+        returned = min(len(items), INVENTORY_MAX_ITEMS)
+        return ToolResult(
+            "list_library_children",
+            {
+                "semantics": "direct_children_local_catalog_snapshot",
+                "items": items[:returned],
+                "page": 1,
+                "page_size": INVENTORY_PAGE_SIZE,
+                "total": total,
+                "returned": returned,
+                "truncated": total > returned,
+                "inventory_folder_id": str(parent_id),
+            },
+        )
+
+    def _summarize_inventory_follow_up(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        references: list[tuple[UUID, UUID]],
+    ) -> ToolResult:
+        snapshots = LibraryService(self.session).catalog_file_snapshots(
+            scope=scope,
+            user_id=user_id,
+            providers=providers,
+            node_ids=[node_id for node_id, _folder_id in references],
+            inventory_folder_ids=dict(references),
+        )
+        return ToolResult(
+            "summarize_inventory",
+            {
+                "semantics": "persisted_inventory_references_with_extractive_content",
+                "items": [
+                    {
+                        "id": str(snapshot.id),
+                        "kind": "file",
+                        "name": snapshot.name,
+                        "index_status": snapshot.index_status,
+                        "excerpt": snapshot.excerpt,
+                    }
+                    for snapshot in snapshots
+                ],
+            },
+        )
 
     def _execute(
         self, *, call: ToolCall, scope: OrganizationScope, user_id: UUID, question: str,
@@ -352,7 +495,7 @@ def _bounded_history(history: list[ConversationMessage]) -> list[dict[str, objec
                 "context": {
                     "providers": context.get("providers", []),
                     "mentions": context.get("mentions", []),
-                    "references": context.get("references", [])[:20],
+                    "references": context.get("references", [])[:INVENTORY_MAX_ITEMS],
                 },
             }
         )
@@ -369,14 +512,21 @@ def _catalog_references(results: list[dict[str, object]]) -> list[dict[str, str]
         items = payload.get("items")
         if not isinstance(items, list):
             continue
-        return [
-            {"id": item["id"], "kind": item["kind"], "name": item["name"]}
-            for item in items
-            if isinstance(item, dict)
-            and isinstance(item.get("id"), str)
-            and isinstance(item.get("kind"), str)
-            and isinstance(item.get("name"), str)
-        ][:50]
+        references: list[dict[str, str]] = []
+        for item in items:
+            if not (
+                isinstance(item, dict)
+                and isinstance(item.get("id"), str)
+                and isinstance(item.get("kind"), str)
+                and isinstance(item.get("name"), str)
+            ):
+                continue
+            reference = {"id": item["id"], "kind": item["kind"], "name": item["name"]}
+            inventory_folder_id = payload.get("inventory_folder_id")
+            if item["kind"] == "file" and isinstance(inventory_folder_id, str):
+                reference["folder_id"] = inventory_folder_id
+            references.append(reference)
+        return references
     return []
 
 
@@ -385,17 +535,42 @@ def _catalog_question_result(result: ToolResult) -> QuestionResult:
     if not isinstance(items, list):
         items = []
     rows = [
-        f"- {item['name']} ({'Arquivo' if item.get('kind') == 'file' else 'Pasta'})"
+        _catalog_item_row(item)
         for item in items
         if isinstance(item, dict) and isinstance(item.get("name"), str)
     ]
-    answer = "Nenhum item encontrado no catálogo autorizado." if not rows else (
-        "Itens encontrados no catálogo autorizado:\n" + "\n".join(rows)
+    if result.name == "summarize_inventory":
+        answer = "Conteúdo por arquivo do inventário autorizado:\n" + "\n".join(rows)
+        return QuestionResult(
+            answer=answer, confidence="supported", citations=[], retrieval_status="catalog",
+            resolved_context={"catalog_tool": result.name},
+        )
+    if result.payload.get("semantics") == "direct_children_local_catalog_snapshot":
+        prefix = (
+            "Arquivos no catálogo autorizado "
+            "(instantâneo local; não é uma listagem ao vivo do provedor):"
+        )
+    else:
+        prefix = "Itens encontrados no catálogo autorizado:"
+    suffix = (
+        f"\n\nMostrando os primeiros {result.payload['returned']} de {result.payload['total']} "
+        "itens; refine a pasta para continuar."
+        if result.payload.get("truncated") else ""
     )
+    answer = "Nenhum item encontrado no catálogo autorizado." if not rows else prefix + "\n" + "\n".join(rows) + suffix
     return QuestionResult(
         answer=answer, confidence="supported", citations=[], retrieval_status="catalog",
         resolved_context={"catalog_tool": result.name},
     )
+
+
+def _catalog_item_row(item: dict[str, object]) -> str:
+    name = item["name"]
+    if item.get("excerpt") is not None:
+        return f"- {name}: Síntese extrativa do conteúdo indexado: {item['excerpt']}"
+    if item.get("index_status") == "not_indexed":
+        return f"- {name}: sem conteúdo indexado disponível."
+    return f"- {name} ({'Arquivo' if item.get('kind') == 'file' else 'Pasta'})"
 
 
 def _ordinal_reference(question: str) -> int | None:
@@ -404,6 +579,10 @@ def _ordinal_reference(question: str) -> int | None:
         if word in normalized:
             return index
     return None
+
+
+def _plural_file_reference(question: str) -> bool:
+    return bool(re.search(r"\b(?:eles|elas|deles|delas|ambos|ambas)\b", question.casefold()))
 
 
 def _request_deadline(deadline: float):

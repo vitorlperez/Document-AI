@@ -114,7 +114,7 @@ def test_projects_nested_drive_tree_and_merges_overlapping_syncs(session: Sessio
     service.remove_file_if_unindexed(
         scope=OrganizationScope(organization.id), source_id=removed_b.source_id, external_file_id=removed_b.external_file_id
     )
-    assert session.query(LibraryNode).filter_by(source_id=source.id, external_id="brief").count() == 0
+    assert session.query(LibraryNode).filter_by(source_id=source.id, external_id="brief").count() == 1
 
 
 def test_projection_refreshes_remote_folder_names_and_parents(session: Session) -> None:
@@ -162,11 +162,36 @@ def test_projection_refreshes_remote_folder_names_and_parents(session: Session) 
         page=1,
         page_size=100,
     ).items
-    assert [(node.kind, node.name) for node in top_level] == [("folder", "Campaign archive")]
+    assert [(node.kind, node.name) for node in top_level] == [
+        ("folder", "Campaign archive"),
+        ("folder", "Client"),
+    ]
     assert top_level[0].parent_id == root.id
 
 
-def test_projection_excludes_nonindexed_files_and_isolates_organizations(session: Session) -> None:
+def test_projection_removes_nodes_missing_from_complete_remote_snapshot(session: Session) -> None:
+    organization, _user, source = seed_company(session)
+    service = LibraryService(session)
+    document = DiscoveredDocument(
+        "obsolete",
+        "Obsolete.pdf",
+        "application/pdf",
+        "https://drive.example.test/obsolete",
+        text="content",
+    )
+    service.project_successful_sync(
+        organization_id=organization.id, source=source, documents=[document], folders=[]
+    )
+    assert service._by_external(source_id=source.id, external_id=document.external_file_id) is not None
+
+    service.project_successful_sync(
+        organization_id=organization.id, source=source, documents=[], folders=[]
+    )
+
+    assert service._by_external(source_id=source.id, external_id=document.external_file_id) is None
+
+
+def test_projection_includes_synchronized_nonindexed_files_and_isolates_organizations(session: Session) -> None:
     organization, user, source = seed_company(session)
     seed_document(session, organization=organization, source=source, root="A", external_id="ready", name="Ready.pdf")
     seed_document(session, organization=organization, source=source, root="B", external_id="failed", name="Failed.pdf", status="failed")
@@ -181,7 +206,16 @@ def test_projection_excludes_nonindexed_files_and_isolates_organizations(session
         folders=[],
     )
     root = service.roots(scope=OrganizationScope(organization.id), user_id=user.id)[0]
-    assert [node.name for node in service.children(scope=OrganizationScope(organization.id), user_id=user.id, parent_id=root.id, page=1, page_size=100).items] == ["Ready.pdf"]
+    assert [
+        node.name
+        for node in service.children(
+            scope=OrganizationScope(organization.id),
+            user_id=user.id,
+            parent_id=root.id,
+            page=1,
+            page_size=100,
+        ).items
+    ] == ["Failed.pdf", "Ready.pdf"]
 
     other_org, other_user, _ = seed_company(session, email="other@example.test")
     with pytest.raises(SyncAccessDenied):

@@ -1259,77 +1259,9 @@ def _is_document_inventory_question(question: str) -> bool:
     # such as "acesso" and "consultas" are removed below.
     if terms & {"sobre", "acerca", "mencionam", "menciona", "contêm", "contem", "referentes"}:
         return False
-    generic_inventory_terms = {
-        "estão",
-        "estao",
-        "neste",
-        "nesse",
-        "contexto",
-        "disponíveis",
-        "disponiveis",
-        "todos",
-        "todas",
-        "pasta",
-        "pastas",
-        "ferramenta",
-        "ferramentas",
-        "drive",
-        "google",
-        "available",
-        "context",
-        "this",
-        "in",
-        "indexed",
-        "indexados",
-        "indexado",
-        "minha",
-        "meu",
-        "have",
-        "we",
-        "you",
-        "aqui",
-        "dentro",
-        "dessa",
-        "desse",
-        "destas",
-        "destes",
-        "daquela",
-        "daquele",
-        "naquela",
-        "naquele",
-        # These words describe the requested scope, rather than a topic to
-        # retrieve. Keep inventory questions out of embedding search even
-        # when the user phrases them as access or ownership questions.
-        "acesso",
-        "acessível",
-        "acessivel",
-        "acessar",
-        "consultar",
-        "consulta",
-        "consultas",
-        "ele",
-        "ela",
-        "eles",
-        "elas",
-        "você",
-        "voce",
-        "vocês",
-        "voces",
-        "consegue",
-        "consigo",
-    }
-    topical_terms = (
-        terms
-        - _INVENTORY_DOCUMENT_TERMS
-        - _INVENTORY_REQUEST_TERMS
-        - _QUERY_STOPWORDS
-        - _GENERIC_QUERY_TERMS
-        - generic_inventory_terms
-    )
     return (
         bool(terms & _INVENTORY_DOCUMENT_TERMS)
         and bool(terms & _INVENTORY_REQUEST_TERMS)
-        and not topical_terms
     )
 
 

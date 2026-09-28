@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import case, exists, func, select
+from sqlalchemy import case, delete, exists, func, select
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
@@ -65,6 +65,14 @@ class IndexedDocumentProvenance:
 
     workspace_folder_id: UUID
     document_id: UUID
+
+
+@dataclass(frozen=True)
+class CatalogFileSnapshot:
+    id: UUID
+    name: str
+    index_status: str
+    excerpt: str | None
 
 
 @dataclass(frozen=True)
@@ -226,62 +234,24 @@ class LibraryService:
     def remove_file_if_unindexed(
         self, *, scope: OrganizationScope, source_id: UUID, external_file_id: str
     ) -> None:
-        """Remove a projected file only after its final local index copy disappears."""
-        still_indexed = self.session.scalar(
-            select(Document.id)
-            .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
-            .where(
-                Document.organization_id == scope.organization_id,
-                WorkspaceFolder.organization_id == scope.organization_id,
-                WorkspaceFolder.source_id == source_id,
-                Document.external_file_id == external_file_id,
-                Document.index_status == "indexed",
+        """Keep provider metadata when an otherwise existing file loses its index."""
+        source = self.session.scalar(
+            select(DataSource.id).where(
+                DataSource.id == source_id,
+                DataSource.organization_id == scope.organization_id,
             )
-            .limit(1)
         )
-        if still_indexed is not None:
-            return
-        node = self._by_external(source_id=source_id, external_id=external_file_id)
-        if node is not None and node.organization_id == scope.organization_id and node.kind == "file":
-            self.session.delete(node)
-            self.session.flush()
-            self._remove_empty_folders(source_id=source_id)
-            self.session.flush()
+        if source is None:
+            raise SyncAccessDenied("source tenant mismatch")
 
     def remove_files_if_unindexed(
         self, *, scope: OrganizationScope, source_id: UUID, external_file_ids: tuple[str, ...]
     ) -> None:
-        """Prune local file nodes after a whole workspace scope is removed."""
-        if not external_file_ids:
-            return
-        still_indexed = set(
-            self.session.scalars(
-                select(Document.external_file_id)
-                .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
-                .where(
-                    Document.organization_id == scope.organization_id,
-                    WorkspaceFolder.organization_id == scope.organization_id,
-                    WorkspaceFolder.source_id == source_id,
-                    Document.external_file_id.in_(external_file_ids),
-                    Document.index_status == "indexed",
-                )
-                .distinct()
+        """Retain synchronized provider metadata after a workspace is removed."""
+        if external_file_ids:
+            self.remove_file_if_unindexed(
+                scope=scope, source_id=source_id, external_file_id=external_file_ids[0]
             )
-        )
-        stale_nodes = self.session.scalars(
-            select(LibraryNode).where(
-                LibraryNode.organization_id == scope.organization_id,
-                LibraryNode.source_id == source_id,
-                LibraryNode.kind == "file",
-                LibraryNode.external_id.in_(external_file_ids),
-            )
-        )
-        for node in stale_nodes:
-            if node.external_id not in still_indexed:
-                self.session.delete(node)
-        self.session.flush()
-        self._remove_empty_folders(source_id=source_id)
-        self.session.flush()
 
     def search_names(
         self, *, scope: OrganizationScope, user_id: UUID, query: str, limit: int = SEARCH_RESULT_LIMIT
@@ -338,6 +308,93 @@ class LibraryService:
             )
             if node.kind in {"folder", "file"} and normalized in node.name.casefold()
         ][:limit]
+
+    def catalog_file_snapshots(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str], node_ids: list[UUID],
+        validate_references: bool = True, inventory_folder_ids: dict[UUID, UUID] | None = None,
+    ) -> list[CatalogFileSnapshot]:
+        """Reauthorize persisted inventory references before reading local content."""
+        self.require_member(scope=scope, user_id=user_id)
+        if not node_ids:
+            return []
+        normalized_providers = {
+            "google_drive" if provider == "google" else provider for provider in providers
+        }
+        nodes = self._selection_nodes(scope=scope)
+        sources = {
+            source_id: provider
+            for source_id, provider in self.session.execute(
+                select(DataSource.id, DataSource.provider).where(
+                    DataSource.organization_id == scope.organization_id
+                )
+            )
+        }
+        ready_sources = set(
+            self.session.scalars(
+                select(WorkspaceFolder.source_id).where(
+                    WorkspaceFolder.organization_id == scope.organization_id,
+                    WorkspaceFolder.status.in_(["ready", "partial_failure"]),
+                )
+            )
+        )
+        files: list[LibraryNode] = []
+        for node_id in node_ids:
+            node = nodes.get(node_id)
+            inventory_folder = nodes.get(inventory_folder_ids[node_id]) if inventory_folder_ids else None
+            if validate_references and (
+                node is None
+                or node.kind != "file"
+                or node.source_id not in ready_sources
+                or ("google_drive" if sources.get(node.source_id) == "google" else sources.get(node.source_id))
+                not in normalized_providers
+                or self._node_path(node, nodes) is None
+                or (inventory_folder_ids is not None and (
+                    inventory_folder is None
+                    or inventory_folder.kind != "folder"
+                    or not self._descends_from(node, inventory_folder, nodes)
+                ))
+            ):
+                raise SyncAccessDenied("catalog file is outside the authorized selection")
+            if node is None or node.kind != "file":
+                raise SyncAccessDenied("catalog file is unavailable")
+            files.append(node)
+        rows = self.session.execute(
+            select(WorkspaceFolder.source_id, Document.external_file_id, DocumentChunk.text)
+            .select_from(Document)
+            .outerjoin(
+                DocumentChunk,
+                DocumentChunk.document_id == Document.id,
+            )
+            .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+            .where(
+                Document.organization_id == scope.organization_id,
+                WorkspaceFolder.organization_id == scope.organization_id,
+                Document.index_status == "indexed",
+                Document.external_file_id.in_({node.external_id for node in files}),
+                WorkspaceFolder.source_id.in_({node.source_id for node in files}),
+            )
+            .order_by(Document.external_file_id, Document.id, DocumentChunk.position)
+        )
+        indexed: dict[tuple[UUID, str], str | None] = {}
+        for source_id, external_file_id, text in rows:
+            indexed.setdefault(
+                (source_id, external_file_id),
+                text,
+            )
+        snapshots: list[CatalogFileSnapshot] = []
+        for node in files:
+            excerpt = indexed.get((node.source_id, node.external_id))
+            snapshots.append(
+                CatalogFileSnapshot(
+                    id=node.id,
+                    name=node.name,
+                    index_status=(
+                        "indexed" if (node.source_id, node.external_id) in indexed else "not_indexed"
+                    ),
+                    excerpt=excerpt,
+                )
+            )
+        return snapshots
 
     def question_contexts(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibraryContext]:
         self.require_member(scope=scope, user_id=user_id)
@@ -601,7 +658,7 @@ class LibraryService:
         documents: list[DiscoveredDocument],
         folders: list[RemoteFolder],
     ) -> None:
-        """Upsert only content that reconciled into the document store.
+        """Upsert the synchronized provider metadata into the local catalog.
 
         This deliberately receives provider-neutral values. A new connector only
         needs to supply opaque IDs and parent relationships.
@@ -619,21 +676,7 @@ class LibraryService:
                 folder_by_id=folder_by_id,
                 visited=set(),
             )
-        indexed_ids = set(
-            self.session.scalars(
-                select(Document.external_file_id)
-                .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
-                .where(
-                    Document.organization_id == organization_id,
-                    WorkspaceFolder.organization_id == organization_id,
-                    WorkspaceFolder.source_id == source.id,
-                    Document.index_status == "indexed",
-                )
-            )
-        )
         for document in documents:
-            if document.external_file_id not in indexed_ids:
-                continue
             parent = self._folder_parent(
                 organization_id=organization_id,
                 source_id=source.id,
@@ -661,16 +704,23 @@ class LibraryService:
                     document.mime_type,
                     document.source_url,
                 )
-        # A remote item may leave one sync scope. Keep it while any other
-        # scope of this same source still indexes it; remove it only after the
-        # last eligible copy disappears from the document store.
-        for node in self.session.scalars(
-            select(LibraryNode).where(LibraryNode.source_id == source.id, LibraryNode.kind == "file")
-        ):
-            if node.external_id not in indexed_ids:
-                self.session.delete(node)
         self.session.flush()
-        self._remove_empty_folders(source_id=source.id)
+        remote_external_ids = {
+            SOURCE_ROOT_EXTERNAL_ID,
+            *(folder.id for folder in folders),
+            *(document.external_file_id for document in documents),
+        }
+        self.session.execute(
+            delete(LibraryNode).where(
+                LibraryNode.source_id == source.id,
+                LibraryNode.external_id.not_in(remote_external_ids),
+            )
+        )
+        self.session.flush()
+        self._remove_empty_folders(
+            source_id=source.id,
+            preserved_external_ids={folder.id for folder in folders},
+        )
         self.session.flush()
 
     def _root(self, *, organization_id: UUID, source: DataSource) -> LibraryNode:
@@ -772,7 +822,9 @@ class LibraryService:
             )
         )
 
-    def _remove_empty_folders(self, *, source_id: UUID) -> None:
+    def _remove_empty_folders(
+        self, *, source_id: UUID, preserved_external_ids: set[str] | None = None,
+    ) -> None:
         """Prune only orphaned folder metadata, never a source root."""
         while True:
             occupied_parent_ids = set(
@@ -788,6 +840,7 @@ class LibraryService:
                     select(LibraryNode).where(LibraryNode.source_id == source_id, LibraryNode.kind == "folder")
                 )
                 if node.id not in occupied_parent_ids
+                and node.external_id not in (preserved_external_ids or set())
             ]
             if not empty:
                 return
