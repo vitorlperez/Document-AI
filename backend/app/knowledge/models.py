@@ -3,7 +3,18 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, Uuid
+from sqlalchemy import (
+    JSON,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, CreatedAtMixin, UUIDPrimaryKeyMixin
@@ -58,3 +69,39 @@ Index(
     Document.workspace_folder_id,
     Document.index_status,
 )
+
+
+class Conversation(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
+    """A user-owned, organization-scoped transcript of authorized question context."""
+
+    __tablename__ = "conversations"
+
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    title: Mapped[str | None] = mapped_column(String(160))
+    last_message_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
+
+
+class ConversationMessage(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
+    """Immutable messages; context contains only authorized local catalog references."""
+
+    __tablename__ = "conversation_messages"
+    __table_args__ = (UniqueConstraint("conversation_id", "position", name="uq_conversation_messages_position"),)
+
+    conversation_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    context: Mapped[dict[str, object] | None] = mapped_column(JSON)
+    response: Mapped[dict[str, object] | None] = mapped_column(JSON)
+
+
+Index("ix_conversations_organization_user_last", Conversation.organization_id, Conversation.user_id, Conversation.last_message_at)

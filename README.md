@@ -73,6 +73,8 @@ Copy `.env.example` to `.env` and add credentials only for the integrations you 
 | Variable | Purpose |
 | --- | --- |
 | `OPENAI_API_KEY` | Enables AI-assisted questions and semantic capabilities |
+| `AGENT_TOOLS_ENABLED` | Enables the bounded document-agent tool loop; defaults to `false` and keeps the existing cited question path |
+| `AGENT_MAX_STEPS` / `AGENT_MAX_TOOL_RESULT_BYTES` / `AGENT_MAX_SECONDS` | Bounds tool-loop execution; defaults are 4 steps, 48 KB of serialized results, and 25 seconds |
 | `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | Enables Google Drive connection and sync |
 | `GOOGLE_TOKEN_ENCRYPTION_KEY` | Encrypts stored Google OAuth tokens |
 | `MICROSOFT_OAUTH_CLIENT_ID` / `MICROSOFT_OAUTH_CLIENT_SECRET` | Enables delegated OneDrive connection for personal and Microsoft 365 work/school accounts; the Entra app registration must support both |

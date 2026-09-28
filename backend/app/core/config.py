@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     sync_scheduler_failure_cooldown_minutes: int = 30
     sync_scheduler_slo_grace_hours: int = 2
     openai_api_key: SecretStr | None = None
+    agent_tools_enabled: bool = False
+    agent_max_steps: int = 4
+    agent_max_tool_result_bytes: int = 48_000
+    agent_max_seconds: int = 25
 
 
 @lru_cache

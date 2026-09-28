@@ -303,6 +303,42 @@ class LibraryService:
             )
         )
 
+    def catalog_children(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]], parent_id: UUID, page: int, page_size: int,
+    ) -> tuple[list[LibraryNode], int]:
+        if not 1 <= page <= 10_000 or not 1 <= page_size <= PAGE_SIZE_MAX:
+            raise ValueError("invalid direct-child page")
+        allowed = self._authorized_catalog_nodes(
+            scope=scope, user_id=user_id, providers=providers, mentions=mentions,
+        )
+        parent = allowed.get(parent_id)
+        if parent is None or parent.kind == "file":
+            raise SyncAccessDenied("catalog node is outside the authorized selection")
+        children = sorted(
+            (node for node in allowed.values() if node.parent_id == parent_id),
+            key=lambda node: (node.kind != "folder", node.name.casefold(), str(node.id)),
+        )
+        offset = (page - 1) * page_size
+        return children[offset:offset + page_size], len(children)
+
+    def catalog_search(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]], query: str, limit: int = SEARCH_RESULT_LIMIT,
+    ) -> list[LibraryNode]:
+        normalized = query.strip().casefold()
+        if not normalized or len(normalized) > 500:
+            raise ValueError("query must contain between 1 and 500 characters")
+        return [
+            node for node in sorted(
+                self._authorized_catalog_nodes(
+                    scope=scope, user_id=user_id, providers=providers, mentions=mentions,
+                ).values(),
+                key=lambda node: (node.kind != "folder", node.name.casefold(), str(node.id)),
+            )
+            if node.kind in {"folder", "file"} and normalized in node.name.casefold()
+        ][:limit]
+
     def question_contexts(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibraryContext]:
         self.require_member(scope=scope, user_id=user_id)
         indexed_chunks = exists(
@@ -377,6 +413,34 @@ class LibraryService:
                 DataSource.organization_id == scope.organization_id,
             )
         )}
+
+    def _authorized_catalog_nodes(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]],
+    ) -> dict[UUID, LibraryNode]:
+        """Rebuild a catalog authorization set for every tool invocation."""
+        selection = self.resolve_question_selection(
+            scope=scope, user_id=user_id, providers=providers, mentions=mentions,
+        )
+        nodes = self._selection_nodes(scope=scope)
+        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        normalized_providers = {"google_drive" if provider == "google" else provider for provider in providers}
+        allowed_sources = {
+            context.source_id
+            for context in contexts
+            if ("google_drive" if context.source_provider == "google" else context.source_provider)
+            in normalized_providers
+            and context.id in selection.folder_ids
+        }
+        roots = [nodes[node_id] for node_id in selection.accepted_node_ids]
+        allowed: dict[UUID, LibraryNode] = {}
+        for node in nodes.values():
+            if node.source_id not in allowed_sources:
+                continue
+            if roots and not any(self._descends_from(node, root, nodes) for root in roots):
+                continue
+            allowed[node.id] = node
+        return allowed
 
     @staticmethod
     def _node_path(node: LibraryNode, nodes: dict[UUID, LibraryNode]) -> str | None:

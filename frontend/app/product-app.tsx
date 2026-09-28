@@ -36,8 +36,9 @@ type RemoteFolder = { id: string; name: string };
 type ScopeCatalog = { folders: RemoteFolder[]; root_files: { available: boolean; label: string }; all_accessible: { available: boolean; label: string } };
 type SavedQuery = { id: string; workspace_folder_id: string; name: string; query: string };
 type Evidence = { document_id: string; document_name: string; excerpt: string; page_number: number | null; source_url: string | null; source_provider?: string | null };
-type Answer = { answer: string | null; confidence: string; citations: Evidence[]; retrieval_status: string; coverage?: { total_folders: number; eligible_folders: number; pending_folders: number } };
+type Answer = { answer: string | null; confidence: string; citations: Evidence[]; retrieval_status: string; coverage?: { total_folders: number; eligible_folders: number; pending_folders: number }; conversation_id?: string };
 type ConversationMessage = { id: string; role: "user" | "assistant"; content: string; contextName: string; contextId?: string; mentions?: MentionCandidate[]; providers?: string[]; allTools?: boolean; answer?: Answer; pending?: boolean; error?: string };
+type PersistedConversationMessage = { id: string; role: "user" | "assistant"; content: string; context: { providers?: string[]; mentions?: MentionCandidate[] } | null; response: Answer | null };
 type StaffCompany = { organization_id: string; name: string };
 type StaffFolder = Folder & { failure_summary: { error_code: string; count: number }[] };
 type StaffOverview = { organization_id: string; name: string; folders: StaffFolder[] };
@@ -421,7 +422,10 @@ function ConversationLibraryWorkspace({ company, onConnect, setError, setNotice 
   const [mentions, setMentions] = useState<MentionCandidate[]>([]);
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [restoringConversation, setRestoringConversation] = useState(true);
   const [asking, setAsking] = useState(false);
+  const conversationEpoch = useRef(0);
   const [filesPanelOpen, setFilesPanelOpen] = useState(true);
   const [managedFile, setManagedFile] = useState<LibraryNode | null>(null);
   const [managedDocument, setManagedDocument] = useState<LibraryDocumentRef | null>(null);
@@ -429,7 +433,7 @@ function ConversationLibraryWorkspace({ company, onConnect, setError, setNotice 
   const current = path.at(-1);
   const canManage = company.role !== "member";
   const mentionsOutsideSelection = mentions.filter((item) => !allTools && !queryProviders.includes(providerKey(item.source_provider)));
-  const canAsk = !contextLoading && !contextError && mentionsOutsideSelection.length === 0 && (allTools || queryProviders.length > 0) && contexts.some((item) => contextReady(item) && (allTools || queryProviders.includes(providerKey(item.source_provider))));
+  const canAsk = !restoringConversation && !contextLoading && !contextError && mentionsOutsideSelection.length === 0 && (allTools || queryProviders.length > 0) && contexts.some((item) => contextReady(item) && (allTools || queryProviders.includes(providerKey(item.source_provider))));
 
   const loadLibrary = useCallback(() => {
     setLibraryLoading(true); setLibraryError(null);
@@ -450,6 +454,51 @@ function ConversationLibraryWorkspace({ company, onConnect, setError, setNotice 
   }, [company.id, requestContexts, requestSyncs, setError]);
   useEffect(() => { void Promise.resolve().then(loadLibrary); }, [loadLibrary]);
   useEffect(() => { void Promise.resolve().then(() => loadOperations()); }, [loadOperations]);
+  useEffect(() => {
+    const key = `arquivio:conversation:${company.id}`;
+    const stored = window.sessionStorage.getItem(key);
+    const epoch = ++conversationEpoch.current;
+    queueMicrotask(() => {
+      if (conversationEpoch.current !== epoch) return;
+      if (!stored) {
+        setConversationId(null);
+        setMessages([]);
+        setRestoringConversation(false);
+        return;
+      }
+      void api<{ id: string; messages: PersistedConversationMessage[] }>(
+        `/organizations/${company.id}/conversations/${stored}`
+      ).then((conversation) => {
+        if (conversationEpoch.current !== epoch) return;
+        setConversationId(conversation.id);
+        setMessages(conversation.messages.map((message) => {
+          const providers = message.context?.providers ?? [];
+          const contextName = providers.length > 0 ? providers.map(toolLabel).join(", ") : "Todas as ferramentas";
+          return message.role === "assistant"
+            ? { id: message.id, role: "assistant", content: message.content, contextName, answer: message.response ?? undefined }
+            : { id: message.id, role: "user", content: message.content, contextName, providers, mentions: message.context?.mentions, allTools: providers.length === 0 };
+        }));
+      }).catch(() => {
+        if (conversationEpoch.current !== epoch) return;
+        window.sessionStorage.removeItem(key);
+        setConversationId(null);
+        setMessages([]);
+      }).finally(() => {
+        if (conversationEpoch.current === epoch) setRestoringConversation(false);
+      });
+    });
+  }, [company.id]);
+  function startNewConversation() {
+    if (asking) return;
+    conversationEpoch.current += 1;
+    window.sessionStorage.removeItem(`arquivio:conversation:${company.id}`);
+    setConversationId(null);
+    setMessages([]);
+    setRestoringConversation(false);
+    setQuestion("");
+    setMentions([]);
+    composerRef.current?.focus();
+  }
   useEffect(() => {
     let aSyncFinished = false;
     for (const item of syncs) {
@@ -524,6 +573,7 @@ function ConversationLibraryWorkspace({ company, onConnect, setError, setNotice 
     const submittedQuestion = question.trim();
     if (asking || !canAsk || !submittedQuestion) return;
     const requestId = crypto.randomUUID();
+    const requestEpoch = conversationEpoch.current;
     const pendingId = `${requestId}:assistant`;
     const selectedProviders = allTools ? [...new Set(contexts.filter((item) => item.query_status === "ready" || item.query_status === "no_compatible_embeddings").map((item) => providerKey(item.source_provider)))] : [...queryProviders];
     const selectedMentions = [...mentions];
@@ -538,10 +588,16 @@ function ConversationLibraryWorkspace({ company, onConnect, setError, setNotice 
     setMentions([]);
     setAsking(true);
     try {
-      const result = await api<Answer>(`/organizations/${company.id}/questions`, { method: "POST", body: JSON.stringify({ question: submittedQuestion, scope: "selection", providers: selectedProviders, mentions: selectedMentions.map((item) => ({ kind: item.kind, node_id: item.node_id })) }) });
+      const result = await api<Answer>(`/organizations/${company.id}/questions`, { method: "POST", body: JSON.stringify({ question: submittedQuestion, scope: "selection", providers: selectedProviders, mentions: selectedMentions.map((item) => ({ kind: item.kind, node_id: item.node_id })), conversation_id: conversationId }) });
       const answer = { ...result, citations: compactCitations(result.citations) };
+      if (conversationEpoch.current !== requestEpoch) return;
+      if (result.conversation_id) {
+        setConversationId(result.conversation_id);
+        window.sessionStorage.setItem(`arquivio:conversation:${company.id}`, result.conversation_id);
+      }
       setMessages((items) => items.map((item) => item.id === pendingId ? { ...item, pending: false, answer } : item));
     } catch (caught) {
+      if (conversationEpoch.current !== requestEpoch) return;
       const error = messageFor(caught);
       setMessages((items) => items.map((item) => item.id === pendingId ? { ...item, pending: false, error } : item));
       setError(error);
@@ -559,11 +615,11 @@ function ConversationLibraryWorkspace({ company, onConnect, setError, setNotice 
         <p className="sources-scope flex gap-2 px-4 py-5 text-xs leading-5 text-muted-foreground"><ShieldCheck size={16} className="shrink-0 text-primary" />A conversa usa somente as ferramentas e menções selecionadas na mensagem.</p>
       </aside>
       <main id="consultas" className="conversation-panel relative flex min-h-[560px] min-w-0 flex-col bg-white">
-        <button type="button" onClick={() => setFilesPanelOpen((open) => !open)} aria-controls="chat-library" aria-expanded={filesPanelOpen} aria-label={filesPanelOpen ? "Ocultar consulta de arquivos" : "Mostrar consulta de arquivos"} title={filesPanelOpen ? "Ocultar consulta de arquivos" : "Mostrar consulta de arquivos"} className="absolute right-3 top-2 z-10 rounded-lg p-2 text-muted-foreground hover:bg-sage hover:text-ink">{filesPanelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}</button>
+        <div className="absolute right-3 top-2 z-10 flex items-center gap-1"><button type="button" onClick={startNewConversation} disabled={asking} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs font-medium text-muted-foreground hover:bg-sage hover:text-ink disabled:opacity-40"><Plus size={15} aria-hidden="true" />Nova conversa</button><button type="button" onClick={() => setFilesPanelOpen((open) => !open)} aria-controls="chat-library" aria-expanded={filesPanelOpen} aria-label={filesPanelOpen ? "Ocultar consulta de arquivos" : "Mostrar consulta de arquivos"} title={filesPanelOpen ? "Ocultar consulta de arquivos" : "Mostrar consulta de arquivos"} className="rounded-lg p-2 text-muted-foreground hover:bg-sage hover:text-ink">{filesPanelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}</button></div>
         <div ref={transcriptRef} role="log" aria-label="Conversa com seus documentos" aria-live="polite" className="flex-1 overflow-y-auto px-5 py-6 sm:px-7">{messages.length > 0 ? <div className="mx-auto max-w-3xl space-y-5">{messages.map((message) => message.role === "user" ? <div key={message.id} className="ml-auto max-w-[85%]"><p className="mb-1 text-right text-xs font-medium text-muted-foreground">{message.contextName}</p><div className="conversation-question px-4 py-3 text-sm leading-6">{message.content}{Boolean(message.mentions?.length) && <span className="mt-2 block text-xs">{message.mentions?.map((item) => `${item.kind === "file" ? "Arquivo" : "Pasta"}: ${item.name}`).join(" · ")}</span>}</div>{message.contextId && <button disabled={saving} onClick={() => { void saveQuestion(message); }} className="mt-1.5 block ml-auto text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-40">Salvar pergunta</button>}</div> : <article key={message.id} className="conversation-answer"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-sage-selected text-primary"><Sparkles size={15} /></span><div><p className="text-sm font-semibold text-ink">Arquivio</p><p className="text-xs text-muted-foreground">{message.contextName}</p></div></div>{message.pending ? <div className="mt-4 rounded-md bg-paper px-3 py-2.5"><LoadingIndicator label="A IA está analisando as evidências e preparando a resposta…" className="text-sm text-muted-foreground" /></div> : message.error ? <div className="mt-4 text-sm leading-6 text-rose-700"><p>Não foi possível concluir esta pergunta: {message.error}</p><button type="button" className="mt-2 min-h-11 underline" onClick={() => { setQuestion(message.content); setMentions(message.mentions ?? []); setAllTools(message.allTools ?? true); setQueryProviders(message.providers ?? []); composerRef.current?.focus(); }}>Repetir com este contexto</button></div> : message.answer ? <><p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-ink">{answerText(message.answer)}</p>{Boolean(message.answer.coverage?.pending_folders) && <p className="mt-2 text-xs text-amber-800">Cobertura parcial: {message.answer.coverage?.eligible_folders} de {message.answer.coverage?.total_folders} pastas disponíveis nesta consulta.</p>}{message.answer.citations.length > 0 && <SourceDocuments items={message.answer.citations} />}</> : null}</article>)}</div> : <div className="mx-auto flex h-full max-w-md flex-col items-center justify-center py-16 text-center"><span className="grid size-12 place-items-center rounded-lg bg-sage text-primary"><Sparkles size={22} /></span><h2 className="mt-4 text-lg font-semibold text-ink">O que você quer descobrir?</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Pergunte sobre conteúdo indexado. Se quiser restringir a pergunta, escolha ferramentas abaixo ou mencione arquivos e pastas com @ ou /.</p>{canAsk && <div className="mt-6 flex flex-wrap justify-center gap-2">{["Quais são os principais prazos?", "O que foi definido sobre as entregas?", "Quais são as responsabilidades da equipe?"].map((prompt) => <button key={prompt} onClick={() => { setQuestion(prompt); setMentions([]); composerRef.current?.focus(); }} className="rounded-md border border-line px-3 py-2 text-xs text-muted-foreground hover:border-primary hover:bg-sage">{prompt}</button>)}</div>}</div>}</div>
         <form onSubmit={(event) => { void ask(event); }} className="conversation-composer shrink-0 bg-white p-4 sm:px-7 sm:py-5">
           <div className="rounded-lg border border-line bg-white p-2 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-sage-selected">
-            <MentionComposer organizationId={company.id} value={question} onChange={setQuestion} mentions={mentions} onMentionsChange={setMentions} all={allTools} providers={queryProviders} disabled={asking} textareaRef={composerRef} onSubmit={() => composerRef.current?.form?.requestSubmit()} />
+            <MentionComposer organizationId={company.id} value={question} onChange={setQuestion} mentions={mentions} onMentionsChange={setMentions} all={allTools} providers={queryProviders} disabled={asking || restoringConversation} textareaRef={composerRef} onSubmit={() => composerRef.current?.form?.requestSubmit()} />
             <div className="composer-toolbar flex items-center justify-between gap-2 border-t border-line-soft px-2 pt-2">
               <QuestionScopePicker all={allTools} providers={queryProviders} contexts={contexts} loading={contextLoading} disabled={asking} error={contextError} onRetry={loadOperations} onChange={(all, providers) => { setAllTools(all); setQueryProviders(providers); }} />
               <div className="flex shrink-0 items-center gap-2"><span className="text-xs text-muted-foreground">{question.length}/1000</span><button disabled={!canAsk || !question.trim() || asking} className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-forest-hover disabled:cursor-not-allowed disabled:opacity-40">{asking ? <RefreshCw size={15} className="motion-safe:animate-spin" aria-hidden="true" /> : <Send size={15} />}{asking ? "Consultando…" : "Enviar"}</button></div>
@@ -629,6 +685,11 @@ function IntegrationScreen({ company, setError, setNotice }: { company: Company;
     const timer = window.setInterval(loadWorkspaceFolders, 5000);
     return () => window.clearInterval(timer);
   }, [workspaceFolders, loadWorkspaceFolders]);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("connected") === "google_drive") void Promise.resolve().then(() => setToolModalOpen(true)); }, []);
+  function connect(sourceId?: string) { const reauth = sourceId ? `&source_id=${encodeURIComponent(sourceId)}` : ""; window.location.assign(`${API_BASE}/data-sources/google/oauth/start?organization_id=${encodeURIComponent(company.id)}${reauth}`); }
+  function connectNotion(sourceId?: string) { const reauth = sourceId ? `&source_id=${encodeURIComponent(sourceId)}` : ""; window.location.assign(`${API_BASE}/data-sources/notion/oauth/start?organization_id=${encodeURIComponent(company.id)}${reauth}`); }
+  function connectOneDrive(sourceId?: string) { const reauth = sourceId ? `&source_id=${encodeURIComponent(sourceId)}` : ""; window.location.assign(`${API_BASE}/data-sources/onedrive/oauth/start?organization_id=${encodeURIComponent(company.id)}${reauth}`); }
+  const loadCatalog = useCallback(async (selected: Source) => { if (selected.status === "reauth_required") return; const selectedName = selected.provider === "notion" ? "Notion" : selected.provider === "onedrive" ? "OneDrive" : "Google Drive"; setSource(selected); setCatalog(null); setCatalogError(null); setSelectedIds([]); setIncludeRoot(false); setMode("selected"); setUniform(false); setToolModalOpen(true); try { setCatalog(await api<ScopeCatalog>(`/data-sources/${selected.id}/scope-catalog?organization_id=${company.id}`)); loadWorkspaceFolders(); } catch (caught) { setCatalogError(messageFor(caught)); if (caught instanceof ApiError && (caught.status === 409 || caught.status === 403)) { setSources((items) => items.map((item) => item.id === selected.id ? { ...item, status: "reauth_required" } : item)); setSource({ ...selected, status: "reauth_required" }); setError(`${selectedName} precisa ser reconectado para consultar as pastas disponíveis.`); } else setError(messageFor(caught)); } }, [company.id, loadWorkspaceFolders, setError]);
   useEffect(() => {
     const connectedProvider = new URLSearchParams(window.location.search).get("connected");
     if (connectedProvider !== "notion" && connectedProvider !== "onedrive") return;
@@ -640,13 +701,8 @@ function IntegrationScreen({ company, setError, setNotice }: { company: Company;
         if (connectedSource) void loadCatalog(connectedSource);
       }).catch((caught) => setError(messageFor(caught))).finally(() => setSourcesLoading(false));
     });
-  }, [company.id, setError]);
-  useEffect(() => { if (new URLSearchParams(window.location.search).get("connected") === "google_drive") void Promise.resolve().then(() => setToolModalOpen(true)); }, []);
+  }, [company.id, loadCatalog, setError]);
   if (!canManage) return <Restricted title="Responsáveis e administradores conectam fontes" description="Membros podem consultar espaços já compartilhados, mas não conectam Drive nem iniciam sincronizações." />;
-  function connect(sourceId?: string) { const reauth = sourceId ? `&source_id=${encodeURIComponent(sourceId)}` : ""; window.location.assign(`${API_BASE}/data-sources/google/oauth/start?organization_id=${encodeURIComponent(company.id)}${reauth}`); }
-  function connectNotion(sourceId?: string) { const reauth = sourceId ? `&source_id=${encodeURIComponent(sourceId)}` : ""; window.location.assign(`${API_BASE}/data-sources/notion/oauth/start?organization_id=${encodeURIComponent(company.id)}${reauth}`); }
-  function connectOneDrive(sourceId?: string) { const reauth = sourceId ? `&source_id=${encodeURIComponent(sourceId)}` : ""; window.location.assign(`${API_BASE}/data-sources/onedrive/oauth/start?organization_id=${encodeURIComponent(company.id)}${reauth}`); }
-  async function loadCatalog(selected: Source) { if (selected.status === "reauth_required") return; const selectedName = selected.provider === "notion" ? "Notion" : selected.provider === "onedrive" ? "OneDrive" : "Google Drive"; setSource(selected); setCatalog(null); setCatalogError(null); setSelectedIds([]); setIncludeRoot(false); setMode("selected"); setUniform(false); setToolModalOpen(true); try { setCatalog(await api<ScopeCatalog>(`/data-sources/${selected.id}/scope-catalog?organization_id=${company.id}`)); loadWorkspaceFolders(); } catch (caught) { setCatalogError(messageFor(caught)); if (caught instanceof ApiError && (caught.status === 409 || caught.status === 403)) { setSources((items) => items.map((item) => item.id === selected.id ? { ...item, status: "reauth_required" } : item)); setSource({ ...selected, status: "reauth_required" }); setError(`${selectedName} precisa ser reconectado para consultar as pastas disponíveis.`); } else setError(messageFor(caught)); } }
   function toggleFolder(id: string) { setMode("selected"); setSelectedIds((ids) => ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id]); }
   async function selectAndSync() { if (!source || !uniform || !hasSelectedScope) return; setBusy(true); try { const folder = await api<{ id: string }>(`/workspace-folders/selections?organization_id=${company.id}`, { method: "POST", body: JSON.stringify({ source_id: source.id, mode, folder_ids: mode === "selected" ? selectedIds : [], include_root_files: mode === "selected" && includeRoot, uniform_access_confirmed: true }) }); await api<{ job_id: string; status: string }>(`/workspace-folders/${folder.id}/sync?organization_id=${company.id}`, { method: "POST" }); await Promise.resolve(loadWorkspaceFolders()); setNotice("Sincronização iniciada. O conteúdo será indexado somente dentro deste espaço de conhecimento."); } catch (caught) { setError(messageFor(caught)); } finally { setBusy(false); } }
   async function resyncFolder(folder: Folder) { setBusy(true); setError(null); try { await api<{ job_id: string; status: string }>(`/workspace-folders/${folder.id}/sync?organization_id=${company.id}`, { method: "POST" }); setNotice(`Re-sync de “${folder.name}” iniciado.`); loadWorkspaceFolders(); } catch (caught) { setError(messageFor(caught)); } finally { setBusy(false); } }

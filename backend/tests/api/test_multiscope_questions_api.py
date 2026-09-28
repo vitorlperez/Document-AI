@@ -302,6 +302,24 @@ def test_provider_alias_includes_legacy_google_sources(corpus):
     assert provider.answers[0][0].document_name == "google_drive campaign.pdf"
 
 
+def test_selection_conversation_persists_and_cannot_be_reloaded_by_another_user(corpus):
+    client, _, gateway, organization_id, _, _ = corpus
+    response = ask(
+        client, organization_id, scope="selection", providers=["google_drive"], mentions=[]
+    )
+    assert response.status_code == 200
+    conversation_id = response.json()["conversation_id"]
+
+    reloaded = client.get(f"/organizations/{organization_id}/conversations/{conversation_id}")
+    assert reloaded.status_code == 200
+    assert [item["role"] for item in reloaded.json()["messages"]] == ["user", "assistant"]
+    assert reloaded.json()["messages"][0]["context"]["providers"] == ["google_drive"]
+
+    login(client, gateway, code="other-user", email="other@example.test", subject="other-user")
+    denied = client.get(f"/organizations/{organization_id}/conversations/{conversation_id}")
+    assert denied.status_code == 404
+
+
 def test_partial_coverage_counts_pending_folders_and_only_sends_ready_evidence(corpus):
     client, factory, _, organization_id, folders, provider = corpus
     with factory.begin() as session:

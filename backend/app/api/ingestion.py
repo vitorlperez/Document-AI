@@ -1,6 +1,7 @@
 """Admin synchronization and member document-listing HTTP boundaries."""
 
 import re
+from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -20,6 +21,8 @@ from app.ingestion.service import (
     SyncAlreadyActive,
 )
 from app.integrations.google_drive import GoogleAccessDenied
+from app.knowledge.agent import AgentLimits, AgentService, ConversationService
+from app.knowledge.models import ConversationMessage
 from app.knowledge.questions import AIProviderUnavailable, QuestionResult, QuestionService
 from app.knowledge.search import SearchUnavailable, TextSearchService
 from app.library.service import LibraryService
@@ -66,6 +69,7 @@ class QuestionInput(BaseModel):
     provider: str | None = Field(default=None, min_length=1, max_length=40, pattern=r"^[a-z][a-z0-9_]*$")
     providers: list[str] | None = None
     mentions: list[QuestionMention] | None = None
+    conversation_id: UUID | None = None
 
     @model_validator(mode="after")
     def validate_scope(self) -> "QuestionInput":
@@ -332,28 +336,115 @@ def ask_organization_question(
     if payload.scope == "provider" and not payload.provider:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="provider is required")
     try:
+        scope = OrganizationScope(organization_id)
         service = QuestionService(session, request.app.state.semantic_provider)
+        conversation_service = ConversationService(session)
+        conversation, history = conversation_service.create_or_load(
+            scope=scope, user_id=user.id, conversation_id=payload.conversation_id, question=payload.question
+        )
+        request_context = {
+            "scope": payload.scope,
+            "provider": payload.provider,
+            "providers": payload.providers or [],
+            "mentions": [
+                {"kind": item.kind, "node_id": str(item.node_id)} for item in payload.mentions or []
+            ],
+        }
+        conversation_service.append(
+            conversation=conversation, role="user", content=payload.question, context=request_context
+        )
         if payload.scope == "selection":
-            result = service.ask_selection(
-                scope=OrganizationScope(organization_id), user_id=user.id,
-                question=payload.question, providers=payload.providers or [],
-                mentions=[(item.kind, item.node_id) for item in payload.mentions or []],
-            )
+            mentions = [(item.kind, item.node_id) for item in payload.mentions or []]
+            if request.app.state.settings.agent_tools_enabled:
+                result, tool_results, references = AgentService(
+                    session=session,
+                    provider=request.app.state.semantic_provider,
+                    limits=AgentLimits(
+                        max_steps=request.app.state.settings.agent_max_steps,
+                        max_result_bytes=request.app.state.settings.agent_max_tool_result_bytes,
+                        max_seconds=request.app.state.settings.agent_max_seconds,
+                    ),
+                ).ask(
+                    scope=scope,
+                    user_id=user.id,
+                    question=payload.question,
+                    providers=payload.providers or [],
+                    mentions=mentions,
+                    history=history,
+                )
+            else:
+                result = service.ask_selection(
+                    scope=scope, user_id=user.id, question=payload.question,
+                    providers=payload.providers or [], mentions=mentions,
+                )
+                tool_results = []
+                references = []
         else:
             result = service.ask_scope(
-                scope=OrganizationScope(organization_id), user_id=user.id,
+                scope=scope, user_id=user.id,
                 question=payload.question, question_scope=payload.scope, provider=payload.provider,
             )
-    except GoogleAccessDenied as error:
+            tool_results = []
+            references = []
+        serialized = _serialize_question_result(result, include_provider=True)
+        conversation_service.append(
+            conversation=conversation,
+            role="assistant",
+            content=result.answer or "",
+            context={
+                "resolved_context": result.resolved_context,
+                "tool_results": tool_results,
+                "references": references,
+            },
+            response=serialized,
+        )
+        conversation.last_message_at = datetime.now(UTC)
+        session.commit()
+    except (GoogleAccessDenied, SyncAccessDenied) as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
     except AIProviderUnavailable as error:
+        # The question quota is recorded before the provider call. Commit that
+        # auditable attempt even when the provider cannot answer.
+        session.commit()
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI provider unavailable") from error
     except UsageLimitExceeded as error:
         session.rollback()
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="organization usage limit reached") from error
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
-    return _serialize_question_result(result, include_provider=True)
+    response = _serialize_question_result(result, include_provider=True)
+    response["conversation_id"] = str(conversation.id)
+    return response
+
+
+@router.get("/organizations/{organization_id}/conversations/{conversation_id}")
+def get_conversation(
+    organization_id: UUID,
+    conversation_id: UUID,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> dict[str, object]:
+    try:
+        conversation, messages = ConversationService(session).history(
+            scope=OrganizationScope(organization_id), user_id=user.id, conversation_id=conversation_id
+        )
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="conversation not found") from error
+    return {
+        "id": str(conversation.id),
+        "messages": [_serialize_conversation_message(message) for message in messages],
+    }
+
+
+def _serialize_conversation_message(message: ConversationMessage) -> dict[str, object]:
+    return {
+        "id": str(message.id),
+        "role": message.role,
+        "content": message.content,
+        "context": message.context,
+        "response": message.response,
+        "created_at": message.created_at.isoformat(),
+    }
 
 
 def _serialize_question_result(result: QuestionResult, *, include_provider: bool) -> dict[str, object]:

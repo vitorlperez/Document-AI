@@ -1,7 +1,9 @@
 import os
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 
 import pytest
 from sqlalchemy import create_engine, inspect, text
@@ -11,7 +13,8 @@ from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.integrations.models import DataSource
-from app.knowledge.models import Document, DocumentChunk
+from app.knowledge.agent import ConversationService
+from app.knowledge.models import Conversation, Document, DocumentChunk
 from app.knowledge.search import TextSearchService
 from app.organizations.models import Membership, MembershipRole, Organization
 from app.workspaces.models import WorkspaceFolder
@@ -59,6 +62,8 @@ def test_foundation_migration_applies_and_reverts_on_disposable_postgres(test_da
             "usage_records",
             "platform_staff",
             "staff_access_grants",
+            "conversations",
+            "conversation_messages",
         } <= set(inspector.get_table_names())
         membership_indexes = {index["name"] for index in inspector.get_indexes("memberships")}
         assert "uq_memberships_active_org_user" in membership_indexes
@@ -99,6 +104,12 @@ def test_foundation_migration_applies_and_reverts_on_disposable_postgres(test_da
         assert {"id", "platform_staff_id", "organization_id", "reason", "expires_at", "revoked_at"} <= grant_columns
         grant_indexes = {index["name"] for index in inspector.get_indexes("staff_access_grants")}
         assert "ix_staff_access_grants_staff_org_active" in grant_indexes
+        conversation_columns = {column["name"] for column in inspector.get_columns("conversation_messages")}
+        assert {"conversation_id", "position", "role", "content", "context", "response"} <= conversation_columns
+        conversation_constraints = {
+            constraint["name"] for constraint in inspector.get_unique_constraints("conversation_messages")
+        }
+        assert "uq_conversation_messages_position" in conversation_constraints
         assert {foreign_key["referred_table"] for foreign_key in inspector.get_foreign_keys("processing_jobs")} == {
             "organizations",
             "workspace_folders",
@@ -208,6 +219,49 @@ def test_foundation_migration_applies_and_reverts_on_disposable_postgres(test_da
                 query="September",
             )
             assert [hit.document_name for hit in hits.items] == ["Campaign scope.pdf"]
+        with Session(engine) as session:
+            organization = Organization(name="Conversation organization")
+            member = User(email="conversation-member@example.test")
+            session.add_all([organization, member])
+            session.flush()
+            session.add(
+                Membership(
+                    organization_id=organization.id,
+                    user_id=member.id,
+                    role=MembershipRole.MEMBER,
+                    is_active=True,
+                )
+            )
+            conversation = Conversation(organization_id=organization.id, user_id=member.id, title="Concurrent")
+            session.add(conversation)
+            session.commit()
+            organization_id, member_id, conversation_id = organization.id, member.id, conversation.id
+
+        barrier = Barrier(3)
+
+        def append_concurrently(content: str) -> int:
+            barrier.wait()
+            with Session(engine) as session:
+                conversation = session.get(Conversation, conversation_id)
+                assert conversation is not None
+                position = ConversationService(session).append(
+                    conversation=conversation, role="user", content=content
+                ).position
+                session.commit()
+                return position
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            first = executor.submit(append_concurrently, "first")
+            second = executor.submit(append_concurrently, "second")
+            barrier.wait()
+            assert sorted((first.result(), second.result())) == [1, 2]
+
+        with Session(engine) as session:
+            _conversation, transcript = ConversationService(session).history(
+                scope=OrganizationScope(organization_id), user_id=member_id, conversation_id=conversation_id
+            )
+            assert [message.position for message in transcript] == [1, 2]
+            assert {message.content for message in transcript} == {"first", "second"}
         engine.dispose()
     finally:
         run_alembic("downgrade", "base", database_url=test_database_url)
