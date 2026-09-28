@@ -443,6 +443,7 @@ class QuestionService:
             except AIProviderUnavailable:
                 generated = GeneratedAnswer(text="", citation_indexes=[])
                 provider_unavailable = True
+            generated = _validated_document_summaries(generated, summary_evidence)
             generated_citations = _validate_citations(generated.citation_indexes, summary_evidence)
             usable_generation = bool(
                 generated.text
@@ -950,6 +951,75 @@ def _validate_citations(indexes: list[int], evidence: list[Evidence]) -> list[Ev
 
 _EVIDENCE_MARKER_GROUP = re.compile(r"\[\d+\](?:\s*[,;]?\s*\[\d+\])*")
 _EVIDENCE_MARKER = re.compile(r"\[(\d+)\]")
+_SUMMARY_SENTENCE_BOUNDARY = re.compile(
+    r"(?<=[.!?])\s+(?=(?:[-*]\s+)?[A-ZÀ-ÖØ-Þ0-9])"
+)
+
+
+def _validated_document_summaries(
+    generated: GeneratedAnswer, evidence: list[Evidence]
+) -> GeneratedAnswer:
+    """Keep only document-named claims with effective, declared evidence markers.
+
+    The provider's top-level citation list is metadata supplied by the model. It
+    cannot establish that a document was actually summarized. A summary claim is
+    accepted only when the same sentence names the document, includes one of its
+    in-range evidence markers, and contains substantive text beyond the name.
+    """
+    declared_indexes = {
+        index
+        for index in generated.citation_indexes
+        if type(index) is int and 1 <= index <= len(evidence)
+    }
+    if not generated.text or not declared_indexes:
+        return GeneratedAnswer(text="", citation_indexes=[])
+
+    accepted_units: list[str] = []
+    accepted_indexes: list[int] = []
+    for line in generated.text.splitlines():
+        for unit in _SUMMARY_SENTENCE_BOUNDARY.split(line):
+            named_document_ids = {
+                item.document_id
+                for item in evidence
+                if item.document_name.casefold() in unit.casefold()
+            }
+            effective_indexes = list(dict.fromkeys(
+                int(match.group(1))
+                for match in _EVIDENCE_MARKER.finditer(unit)
+                if int(match.group(1)) in declared_indexes
+                and evidence[int(match.group(1)) - 1].document_id in named_document_ids
+                and evidence[int(match.group(1)) - 1].excerpt.strip()
+            ))
+            if not effective_indexes or not _has_substantive_summary(unit, effective_indexes, evidence):
+                continue
+            effective_set = set(effective_indexes)
+            cleaned = _EVIDENCE_MARKER.sub(
+                lambda match, indexes=effective_set: match.group(0)
+                if int(match.group(1)) in indexes
+                else "",
+                unit,
+            )
+            cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", cleaned).strip()
+            if cleaned:
+                accepted_units.append(cleaned)
+                accepted_indexes.extend(effective_indexes)
+    return GeneratedAnswer(
+        text="\n".join(accepted_units),
+        citation_indexes=list(dict.fromkeys(accepted_indexes)),
+    )
+
+
+def _has_substantive_summary(
+    unit: str, indexes: list[int], evidence: list[Evidence]
+) -> bool:
+    remainder = _EVIDENCE_MARKER.sub("", unit)
+    document_ids = {evidence[index - 1].document_id for index in indexes}
+    for item in evidence:
+        if item.document_id in document_ids:
+            remainder = re.sub(
+                re.escape(item.document_name), "", remainder, flags=re.IGNORECASE
+            )
+    return len(_QUERY_TOKEN.findall(remainder)) >= 2
 
 
 def _source_key(item: Evidence) -> str:

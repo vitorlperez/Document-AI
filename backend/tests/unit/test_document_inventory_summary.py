@@ -81,6 +81,150 @@ def test_compound_inventory_summary_keeps_useful_partial_answer_and_names_missin
     assert "Cobertura da síntese: 1 de 2 arquivos" in result.answer
 
 
+def test_compound_inventory_summary_ignores_declared_index_without_supported_claim(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    org, user, folder = context(session)
+    chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
+    chunk(session, org, folder, name="Profile.pdf", text="Vitor is a software engineer in Manaus.")
+    provider = FakeProvider(
+        {},
+        answer=(
+            "Faith notes.pdf descreve um impacto comunitário [1]. "
+            "Profile.pdf afirma que Vitor fundou uma empresa."
+        ),
+        citations=[1, 2],
+    )
+
+    result = ask(
+        session,
+        provider,
+        org,
+        user,
+        folder,
+        "Liste os arquivos e resuma as principais informações deles",
+    )
+
+    assert "Faith notes.pdf descreve um impacto comunitário (fonte 1)" in result.answer
+    assert "fundou uma empresa" not in result.answer
+    assert "Profile.pdf (fonte 2)" in result.answer
+    assert "Cobertura da síntese: 1 de 2 arquivos" in result.answer
+
+
+def test_compound_inventory_summary_does_not_count_a_title_only_citation_as_summary(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    org, user, folder = context(session)
+    chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
+    chunk(session, org, folder, name="Profile.pdf", text="Vitor is a software engineer in Manaus.")
+    provider = FakeProvider(
+        {},
+        answer="Faith notes.pdf descreve um impacto comunitário [1]. Profile.pdf [2].",
+        citations=[1, 2],
+    )
+
+    result = ask(
+        session,
+        provider,
+        org,
+        user,
+        folder,
+        "Liste os arquivos e resuma as principais informações deles",
+    )
+
+    assert "Principais informações" in result.answer
+    summary_section = result.answer.split(
+        "Principais informações encontradas nos trechos consultados:", maxsplit=1
+    )[1].split("Sem síntese verificável", maxsplit=1)[0]
+    assert "Profile.pdf" not in summary_section
+    assert "Cobertura da síntese: 1 de 2 arquivos" in result.answer
+
+
+def test_compound_inventory_summary_filters_invalid_and_duplicate_declared_indexes(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    org, user, folder = context(session)
+    chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
+    chunk(session, org, folder, name="Profile.pdf", text="Vitor is a software engineer in Manaus.")
+    provider = FakeProvider(
+        {},
+        answer="Faith notes.pdf descreve um impacto comunitário [1]. Profile.pdf [99].",
+        citations=[1, 1, 99, 2],
+    )
+
+    result = ask(
+        session,
+        provider,
+        org,
+        user,
+        folder,
+        "Liste os arquivos e resuma as principais informações deles",
+    )
+
+    assert "Faith notes.pdf descreve um impacto comunitário (fonte 1)" in result.answer
+    assert "[99]" not in result.answer
+    assert "Cobertura da síntese: 1 de 2 arquivos" in result.answer
+
+
+def test_compound_inventory_summary_rejects_citation_from_a_different_document(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    org, user, folder = context(session)
+    chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
+    chunk(session, org, folder, name="Profile.pdf", text="Vitor is a software engineer in Manaus.")
+    provider = FakeProvider(
+        {},
+        answer="Profile.pdf afirma que Vitor fundou uma empresa [1].",
+        citations=[1],
+    )
+
+    result = ask(
+        session,
+        provider,
+        org,
+        user,
+        folder,
+        "Liste os arquivos e resuma as principais informações deles",
+    )
+
+    assert "fundou uma empresa" not in result.answer
+    assert "Cobertura da síntese: 0 de 2 arquivos" in result.answer
+
+
+def test_compound_inventory_summary_does_not_verify_claim_from_empty_excerpt(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    org, user, folder = context(session)
+    chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
+    chunk(session, org, folder, name="Empty.pdf", text="")
+    provider = FakeProvider(
+        {},
+        answer=(
+            "Faith notes.pdf descreve um impacto comunitário [2]. "
+            "Empty.pdf descreve uma aquisição milionária [1]."
+        ),
+        citations=[1, 2],
+    )
+
+    result = ask(
+        session,
+        provider,
+        org,
+        user,
+        folder,
+        "Liste os arquivos e resuma as principais informações deles",
+    )
+
+    assert "aquisição milionária" not in result.answer
+    assert "Empty.pdf (fonte 1)" in result.answer
+    assert "Cobertura da síntese: 1 de 2 arquivos" in result.answer
+
+
 def test_compound_inventory_summary_returns_verified_inventory_when_generation_is_invalid(
     semantic_session: Session,  # noqa: F811
 ) -> None:
