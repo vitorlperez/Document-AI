@@ -63,3 +63,45 @@ usado como prova de cobertura integral.
 Limitação observada: o provedor, nessa execução, não produziu uma síntese válida
 e citada para `Profile.pdf`. O sistema não inventou um resumo nem elevou a
 cobertura para `2 de 2`.
+
+## Segunda correção após revisão h-3r
+
+A revisão do commit `4ddb9f0` mostrou três defeitos adicionais: bullets sob um
+cabeçalho de documento eram descartados, uma afirmação inventada podia passar
+somente por apontar para uma citação do documento correto e uma ressalva podia
+contar como cobertura. As três regressões foram escritas primeiro e produziram
+`3 failed, 10 passed`.
+
+O provedor agora usa um contrato JSON estruturado por documento. Cada afirmação
+traz referências compostas de índice e citação literal curta; o backend confere
+que a citação existe no excerto do mesmo documento, rejeita ressalvas como
+afirmações e exige sobreposição lexical substancial entre afirmação e evidência.
+A renderização e a cobertura derivam somente das afirmações retidas. O parser
+legado continua aceitando listas sob cabeçalhos, mas passa pelos mesmos filtros.
+
+Limite explícito: a sobreposição lexical e a ocorrência literal do excerto são
+checagens conservadoras de fundamentação, não uma garantia geral de verdade ou
+entailment semântico. Por isso o prompt estruturado pede síntese extrativa no
+idioma do trecho. O caso específico `Vitor fundou uma empresa milionária` com
+uma referência válida ao trecho `Vitor é engenheiro de software em Manaus` foi
+rejeitado tanto no contrato legado quanto no estruturado e não contou cobertura.
+
+Validação pós-correção:
+
+- suíte backend no workspace compartilhado: `328 passed, 8 skipped`;
+- commit F-202 isolado em worktree limpo: `317 passed, 8 skipped` na suíte
+  completa e `62 passed` nas regressões focadas de síntese + semântica;
+- Ruff e `git diff --check`: sem erros;
+- serviço `api` reconstruído/recriado isoladamente; PostgreSQL, Redis e seus
+  volumes foram preservados; `/health/ready` retornou `{"status":"ready"}`;
+- reprodução direta no backend Docker, com membro, organização, pasta lógica e
+  os dois IDs de documentos autorizados: `sufficient_evidence`, referências para
+  os dois nomes e `Cobertura da síntese: 2 de 2 arquivos`.
+
+Conteúdo efetivamente observado na resposta real: o primeiro documento reteve
+afirmações sobre Jesus tratar o pecado de impureza com vigor, temor/reverência e
+graça de Deus; `Profile.pdf` reteve contato/LinkedIn, cinco anos de experiência
+Full Stack com Python/Django, integração de LLMs e arquitetura multi-tenant,
+tecnologias (Python, Django, Fast API, AWS, bancos e testes) e experiência com
+Flask/MySQL/MariaDB. Assim a prova verifica conteúdo dos dois resumos, não apenas
+status, contagem ou presença de referências.

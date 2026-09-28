@@ -6,6 +6,9 @@ from app.knowledge.questions import (
     RETRIEVAL_STATUS_SUFFICIENT,
     AIProviderUnavailable,
     GeneratedAnswer,
+    GeneratedDocumentSummary,
+    GeneratedEvidenceReference,
+    GeneratedSummaryClaim,
     _is_document_inventory_summary_question,
 )
 from tests.unit.test_semantic_questions import (
@@ -22,13 +25,13 @@ def test_compound_inventory_summary_uses_each_scoped_document_without_query_embe
 ) -> None:
     session = semantic_session
     org, user, folder = context(session)
-    first = chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
-    second = chunk(session, org, folder, name="Profile.pdf", text="Vitor is a software engineer in Manaus.")
+    first = chunk(session, org, folder, name="Faith notes.pdf", text="A impureza causa impacto comunitário.")
+    second = chunk(session, org, folder, name="Profile.pdf", text="Vitor é engenheiro de software em Manaus.")
     provider = FakeProvider(
         {},
         answer=(
-            "Faith notes.pdf explica efeitos comunitários [1]. "
-            "Profile.pdf apresenta a atuação profissional de Vitor [2]."
+            "Faith notes.pdf explica o impacto comunitário [1]. "
+            "Profile.pdf apresenta Vitor como engenheiro de software em Manaus [2]."
         ),
         citations=[1, 2],
     )
@@ -59,7 +62,7 @@ def test_compound_inventory_summary_keeps_useful_partial_answer_and_names_missin
 ) -> None:
     session = semantic_session
     org, user, folder = context(session)
-    chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
+    chunk(session, org, folder, name="Faith notes.pdf", text="A impureza causa impacto comunitário.")
     chunk(session, org, folder, name="Profile.pdf", text="Vitor is a software engineer in Manaus.")
     provider = FakeProvider(
         {}, answer="Faith notes.pdf descreve um impacto comunitário [1].", citations=[1]
@@ -86,7 +89,7 @@ def test_compound_inventory_summary_ignores_declared_index_without_supported_cla
 ) -> None:
     session = semantic_session
     org, user, folder = context(session)
-    chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
+    chunk(session, org, folder, name="Faith notes.pdf", text="A impureza causa impacto comunitário.")
     chunk(session, org, folder, name="Profile.pdf", text="Vitor is a software engineer in Manaus.")
     provider = FakeProvider(
         {},
@@ -117,7 +120,7 @@ def test_compound_inventory_summary_does_not_count_a_title_only_citation_as_summ
 ) -> None:
     session = semantic_session
     org, user, folder = context(session)
-    chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
+    chunk(session, org, folder, name="Faith notes.pdf", text="A impureza causa impacto comunitário.")
     chunk(session, org, folder, name="Profile.pdf", text="Vitor is a software engineer in Manaus.")
     provider = FakeProvider(
         {},
@@ -147,7 +150,7 @@ def test_compound_inventory_summary_filters_invalid_and_duplicate_declared_index
 ) -> None:
     session = semantic_session
     org, user, folder = context(session)
-    chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
+    chunk(session, org, folder, name="Faith notes.pdf", text="A impureza causa impacto comunitário.")
     chunk(session, org, folder, name="Profile.pdf", text="Vitor is a software engineer in Manaus.")
     provider = FakeProvider(
         {},
@@ -174,7 +177,7 @@ def test_compound_inventory_summary_rejects_citation_from_a_different_document(
 ) -> None:
     session = semantic_session
     org, user, folder = context(session)
-    chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
+    chunk(session, org, folder, name="Faith notes.pdf", text="A impureza causa impacto comunitário.")
     chunk(session, org, folder, name="Profile.pdf", text="Vitor is a software engineer in Manaus.")
     provider = FakeProvider(
         {},
@@ -200,7 +203,7 @@ def test_compound_inventory_summary_does_not_verify_claim_from_empty_excerpt(
 ) -> None:
     session = semantic_session
     org, user, folder = context(session)
-    chunk(session, org, folder, name="Faith notes.pdf", text="Impurity harms the whole community.")
+    chunk(session, org, folder, name="Faith notes.pdf", text="A impureza causa impacto comunitário.")
     chunk(session, org, folder, name="Empty.pdf", text="")
     provider = FakeProvider(
         {},
@@ -223,6 +226,165 @@ def test_compound_inventory_summary_does_not_verify_claim_from_empty_excerpt(
     assert "aquisição milionária" not in result.answer
     assert "Empty.pdf (fonte 1)" in result.answer
     assert "Cobertura da síntese: 1 de 2 arquivos" in result.answer
+
+
+def test_compound_inventory_summary_preserves_bullets_under_a_document_heading(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    org, user, folder = context(session)
+    chunk(
+        session,
+        org,
+        folder,
+        name="Profile.pdf",
+        text="Vitor é engenheiro de software em Manaus e trabalha com Python.",
+    )
+    provider = FakeProvider(
+        {},
+        answer=(
+            "Profile.pdf:\n"
+            "- Vitor é engenheiro de software em Manaus [1].\n"
+            "- Trabalha com Python [1]."
+        ),
+        citations=[1],
+    )
+
+    result = ask(
+        session,
+        provider,
+        org,
+        user,
+        folder,
+        "Liste os arquivos e resuma as principais informações deles",
+    )
+
+    assert "Vitor é engenheiro de software em Manaus" in result.answer
+    assert "Trabalha com Python" in result.answer
+    assert "Cobertura da síntese: 1 de 1 arquivos" in result.answer
+
+
+def test_compound_inventory_summary_rejects_invented_claim_with_valid_same_document_citation(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    org, user, folder = context(session)
+    chunk(
+        session,
+        org,
+        folder,
+        name="Profile.pdf",
+        text="Vitor é engenheiro de software em Manaus.",
+    )
+    provider = FakeProvider(
+        {},
+        answer="Profile.pdf informa que Vitor fundou uma empresa milionária [1].",
+        citations=[1],
+    )
+
+    result = ask(
+        session,
+        provider,
+        org,
+        user,
+        folder,
+        "Liste os arquivos e resuma as principais informações deles",
+    )
+
+    assert "fundou uma empresa milionária" not in result.answer
+    assert "Cobertura da síntese: 0 de 1 arquivos" in result.answer
+
+
+def test_compound_inventory_summary_does_not_count_a_limitation_as_document_coverage(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    org, user, folder = context(session)
+    chunk(session, org, folder, name="Profile.pdf", text="Vitor é engenheiro de software.")
+    provider = FakeProvider(
+        {},
+        answer="Profile.pdf não possui informações suficientes nos trechos consultados [1].",
+        citations=[1],
+    )
+
+    result = ask(
+        session,
+        provider,
+        org,
+        user,
+        folder,
+        "Liste os arquivos e resuma as principais informações deles",
+    )
+
+    assert "Cobertura da síntese: 0 de 1 arquivos" in result.answer
+    assert "Sem síntese verificável nesta resposta" in result.answer
+
+
+def test_compound_inventory_summary_accepts_structured_claims_with_verbatim_evidence(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    org, user, folder = context(session)
+    chunk(session, org, folder, name="Notes.pdf", text="A impureza causa impacto comunitário.")
+    chunk(session, org, folder, name="Profile.pdf", text="Vitor é engenheiro de software em Manaus.")
+    provider = FakeProvider({})
+    provider.answer = lambda **_kwargs: GeneratedAnswer(  # type: ignore[method-assign]
+        "",
+        [],
+        [
+            GeneratedDocumentSummary(
+                "Notes.pdf",
+                [GeneratedSummaryClaim(
+                    "A impureza causa impacto comunitário.",
+                    [GeneratedEvidenceReference(1, "A impureza causa impacto comunitário")],
+                )],
+            ),
+            GeneratedDocumentSummary(
+                "Profile.pdf",
+                [GeneratedSummaryClaim(
+                    "Vitor é engenheiro de software em Manaus.",
+                    [GeneratedEvidenceReference(2, "Vitor é engenheiro de software em Manaus")],
+                )],
+            ),
+        ],
+    )
+
+    result = ask(
+        session, provider, org, user, folder,
+        "Liste os arquivos e resuma as principais informações deles",
+    )
+
+    assert "A impureza causa impacto comunitário" in result.answer
+    assert "Vitor é engenheiro de software em Manaus" in result.answer
+    assert "Cobertura da síntese: 2 de 2 arquivos" in result.answer
+
+
+def test_structured_summary_rejects_invented_claim_even_with_a_valid_verbatim_quote(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    org, user, folder = context(session)
+    chunk(session, org, folder, name="Profile.pdf", text="Vitor é engenheiro de software em Manaus.")
+    provider = FakeProvider({})
+    provider.answer = lambda **_kwargs: GeneratedAnswer(  # type: ignore[method-assign]
+        "",
+        [],
+        [GeneratedDocumentSummary(
+            "Profile.pdf",
+            [GeneratedSummaryClaim(
+                "Vitor fundou uma empresa milionária.",
+                [GeneratedEvidenceReference(1, "Vitor é engenheiro de software em Manaus")],
+            )],
+        )],
+    )
+
+    result = ask(
+        session, provider, org, user, folder,
+        "Liste os arquivos e resuma as principais informações deles",
+    )
+
+    assert "empresa milionária" not in result.answer
+    assert "Cobertura da síntese: 0 de 1 arquivos" in result.answer
 
 
 def test_compound_inventory_summary_returns_verified_inventory_when_generation_is_invalid(
