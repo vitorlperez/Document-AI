@@ -105,3 +105,57 @@ Full Stack com Python/Django, integração de LLMs e arquitetura multi-tenant,
 tecnologias (Python, Django, Fast API, AWS, bancos e testes) e experiência com
 Flask/MySQL/MariaDB. Assim a prova verifica conteúdo dos dois resumos, não apenas
 status, contagem ou presença de referências.
+
+## Terceira correção após revisão pane-118
+
+A revisão do commit `49fc51b` demonstrou que a validação ainda não era semântica:
+uma citação literal válida e 35% de sobreposição lexical aprovavam negação e fatos
+adicionados a uma frase verdadeira. Também havia colisão no dicionário indexado
+por nome quando dois documentos autorizados tinham o mesmo nome.
+
+Três regressões foram adicionadas antes da correção e falharam (`3 failed`):
+
+- `Vitor não é engenheiro de software em Manaus` era aceito contra o trecho
+  afirmativo `Vitor é engenheiro de software em Manaus`;
+- `Vitor é engenheiro ... e fundou uma empresa milionária` era aceito usando a
+  mesma citação, embora o fato adicional não estivesse no texto-fonte;
+- dois documentos distintos chamados `Profile.pdf` faziam o resumo válido do
+  primeiro desaparecer.
+
+O limite implementado não tenta inferir entailment. Para a pergunta composta de
+inventário e informações principais, o backend deixou de chamar o gerador e
+renderiza os chunks autorizados selecionados como citações em bloco sob o rótulo
+`Trechos relevantes do conteúdo indexado (extração literal; não é resumo
+semântico)`. Agrupamento, cobertura e numeração dessa modalidade usam
+`Document.id`; o nome serve somente para exibição. Documentos continuam listados
+quando não há trecho não vazio, e a cobertura passa a declarar explicitamente
+`evidência extrativa`, não síntese.
+
+Validação adversarial e local:
+
+- antes: regressões de negação, fato adicional e nome repetido: `3 failed`;
+- depois: `backend/tests/unit/test_document_inventory_summary.py`: `9 passed`;
+- suíte backend completa: `322 passed, 8 skipped`;
+- patch F-202 isolado das mudanças paralelas do workspace: `311 passed, 8 skipped`;
+- Ruff nos arquivos alterados e `git diff --check`: sem erros;
+- `graphify query ...` e `graphify update .` não puderam rodar porque o binário
+  `graphify` não está instalado no ambiente (`command not found`, exit 127).
+
+Diagnóstico do 401, sem expor credenciais: `docker-compose.yml` injeta
+`OPENAI_API_KEY` em `api`; a chave estava presente no `.env` e no container, com
+mesmo comprimento e fingerprint SHA-256 abreviado. O código aponta para
+`https://api.openai.com`; uma chamada autenticada atual a `/v1/models` retornou
+HTTP 200. Nenhuma chave, conta ou cobrança foi alterada. O 401 observado pelo
+revisor não se repetiu, mas ele não é usado como prova desta correção: o novo
+caminho extrativo não depende do provedor.
+
+Replay Docker atual: a primeira tentativa de build foi interrompida sem alterar
+o serviço, pois o BuildKit ficou preso na consulta de metadados do registry. O
+builder local concluiu o build, e somente `api` foi recriado com `--no-deps`;
+PostgreSQL, Redis e volumes foram preservados. `/health/ready` retornou
+`{"status":"ready"}`. A pasta lógica `Test Document-AI` resolveu pelos IDs
+autorizados para exatamente os dois documentos esperados e 40 chunks indexados.
+A execução retornou `sufficient_evidence`, `extractive_evidence_complete`, oito
+chunks citados e `Cobertura da evidência extrativa: 2 de 2 arquivos`. A resposta
+literal de 2.572 caracteres teve SHA-256
+`9fdf1b04fdde27671caecc9406f852072ecfb090c40950f146b301e17b5f5d7a`.
