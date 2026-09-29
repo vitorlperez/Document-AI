@@ -55,11 +55,14 @@ class Settings(BaseSettings):
     agent_max_steps: int = 4
     agent_max_tool_result_bytes: int = 48_000
     agent_max_seconds: int = 25
-    # Multi-step planner -> tools -> one synthesis call. Off by default; it only
-    # runs inside the agent (AGENT_TOOLS_ENABLED) and falls back to it on failure.
+    # Small-model intent classifier -> tools -> one grounded synthesis call. Off by
+    # default until measured; it only runs inside the agent (AGENT_TOOLS_ENABLED)
+    # and falls back to keyword routing when the classifier fails.
     agent_planner_enabled: bool = False
     agent_planner_model: str = "gpt-5-nano"
     agent_synthesis_model: str = "gpt-5-mini"
+    # Seconds the small intent classifier may take before the keyword fallback decides.
+    agent_intent_timeout_seconds: float = 4.0
 
 
 @lru_cache

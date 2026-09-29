@@ -368,6 +368,7 @@ def ask_organization_question(
                         enabled=request.app.state.settings.agent_planner_enabled,
                         planner_model=request.app.state.settings.agent_planner_model,
                         synthesis_model=request.app.state.settings.agent_synthesis_model,
+                        intent_timeout_seconds=request.app.state.settings.agent_intent_timeout_seconds,
                     ),
                 ).ask(
                     scope=scope,
