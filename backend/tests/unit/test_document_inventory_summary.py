@@ -204,3 +204,57 @@ def test_topical_information_lookup_is_not_misclassified_as_inventory_summary() 
     assert not _is_document_inventory_summary_question(
         "Quais arquivos têm informações sobre Vitor?"
     )
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Estruture melhor o resumo do conteudo do arquivo",
+        "Faça um resumo desse documento",
+    ],
+)
+def test_file_scoped_summary_follow_up_does_not_depend_on_semantic_threshold(
+    semantic_session: Session,  # noqa: F811
+    question: str,
+) -> None:
+    # Second message of the reported chat: a file mention (Profile.pdf) plus a
+    # summary request without listing words. The question is about the file,
+    # not a topic, so its embedding never clears the relevance threshold.
+    from app.core.scoping import OrganizationScope
+    from app.knowledge.questions import QuestionService
+
+    session = semantic_session
+    org, user, folder = context(session)
+    chunk(session, org, folder, name="A Gravidade do pecado de impuresa", text="Texto sobre impureza.")
+    profile = chunk(
+        session,
+        org,
+        folder,
+        name="Profile.pdf",
+        text="Vitor tem cinco anos de experiência Full Stack com Python e Django.",
+        embedding=[0.0, 1.0],
+    )
+    provider = SummaryProvider(
+        claims=lambda e: [claim(e, 1, "O perfil relata cinco anos de experiência Full Stack com Python e Django.")],
+        assessments=[{"claim_index": 1, "verdict": "supported"}],
+    )
+    provider.vectors = {question: [1.0, 0.0]}
+    result = QuestionService(session, provider).ask(
+        scope=OrganizationScope(org.id),
+        user_id=user.id,
+        workspace_folder_ids=[folder.id],
+        document_ids={profile.document_id},
+        question=question,
+    )
+    assert result.retrieval_status == RETRIEVAL_STATUS_SUFFICIENT
+    assert result.answer and "cinco anos de experiência Full Stack" in result.answer
+    assert {item.document_id for item in result.citations} == {profile.document_id}
+    assert "impureza" not in result.answer
+
+
+def test_file_scoped_fact_question_still_uses_relevance() -> None:
+    from app.knowledge.questions import _is_selection_summary_question
+
+    assert _is_selection_summary_question("Estruture melhor o resumo do conteudo do arquivo")
+    assert not _is_selection_summary_question("Qual o principal cliente citado no arquivo?")
+    assert not _is_selection_summary_question("Quando foi o resumo de vendas publicado? Qual a data?")

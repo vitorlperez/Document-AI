@@ -205,7 +205,7 @@ def test_follow_up_ordinal_uses_persisted_reference_and_reauthorizes_it(
     )
 
     assert result.citations
-    assert [item.document_name for item in provider.answer_calls[-1][1]] == ["Second.pdf"]
+    assert {item.document_name for item in result.citations} == {"Second.pdf"}
 
 
 def test_follow_up_plural_reuses_only_the_persisted_folder_inventory(
@@ -312,7 +312,7 @@ def test_follow_up_plural_reuses_only_the_persisted_folder_inventory(
         providers=["google_drive"], mentions=[], history=history,
     )
     assert "A Gravidade.pdf" not in singular.answer
-    assert [evidence.document_name for evidence in singular_provider.answer_calls[-1][1]] == ["Profile.pdf"]
+    assert {evidence.document_name for evidence in singular.citations} == {"Profile.pdf"}
     assert singular_references == []
 
     positive_with_ordinal = "Resuma todos os arquivos, começando pelo segundo."
@@ -544,3 +544,46 @@ def test_inventory_applies_deadline_and_result_byte_limits(
 )
 def test_inventory_summary_request_detection(question: str, expected: bool) -> None:
     assert _is_inventory_summary_request(question) is expected
+
+
+def test_file_mention_restructure_summary_answers_instead_of_insufficient_evidence(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    # Reported chat, second turn: "Estruture melhor o resumo do conteudo do arquivo"
+    # with the file Profile.pdf mentioned came back with answer=None
+    # (below_evidence_threshold), shown as "Não encontrei evidência suficiente".
+    session = semantic_session
+    organization, user, workspace = context(session)
+    chunk(session, organization, workspace, name="A Gravidade.pdf", text="O texto discute graça.")
+    profile = chunk(
+        session, organization, workspace, name="Profile.pdf",
+        text="Software Engineer com cinco anos de experiência em Python, Django e FastAPI.",
+        embedding=[0.0, 1.0],
+    )
+    profile_document = session.get(Document, profile.document_id)
+    assert profile_document is not None
+    root = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=None,
+        external_id="source-root", kind="source", name="Google Drive",
+    )
+    session.add(root)
+    session.flush()
+    profile_node = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=root.id,
+        external_id=profile_document.external_file_id, kind="file", name="Profile.pdf",
+    )
+    session.add(profile_node)
+    session.commit()
+    question = "Estruture melhor o resumo do conteudo do arquivo"
+    provider = FollowUpPluralProvider({question: [1.0, 0.0]})
+
+    result, _tool_results, _references = AgentService(session, provider, AgentLimits()).ask(
+        scope=OrganizationScope(organization.id), user_id=user.id, question=question,
+        providers=["google_drive"], mentions=[("file", profile_node.id)], history=[],
+    )
+
+    assert result.answer
+    assert result.retrieval_status == "sufficient_evidence"
+    assert "cinco anos de experiência em Python" in result.answer
+    assert {item.document_name for item in result.citations} == {"Profile.pdf"}
+    assert all(item.source_url for item in result.citations)

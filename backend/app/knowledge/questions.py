@@ -972,7 +972,9 @@ class QuestionService:
                 indexed_chunk_count=indexed_chunk_count,
             )
         scoped_rows = _deduplicate_indexed_copies(scoped_rows, source_metadata)
-        if _is_document_inventory_summary_question(normalized_question):
+        if _is_document_inventory_summary_question(normalized_question) or (
+            document_ids is not None and _is_selection_summary_question(normalized_question)
+        ):
             inventory_evidence = _all_document_inventory_evidence(scoped_rows, source_providers)
             summary_evidence = _document_summary_evidence(
                 scoped_rows, source_providers, normalized_question
@@ -1402,6 +1404,20 @@ def _is_document_inventory_summary_question(question: str) -> bool:
         terms & _INVENTORY_DOCUMENT_TERMS
         and terms & _INVENTORY_REQUEST_TERMS
         and terms & _SUMMARY_REQUEST_TERMS
+    )
+
+
+def _is_selection_summary_question(question: str) -> bool:
+    """True when a question over explicitly mentioned files asks to summarize them.
+
+    "Estruture melhor o resumo do arquivo" names no topic, so its embedding
+    rarely clears MIN_EVIDENCE_SCORE; the mention already fixed which documents
+    to read, so the per-document summary path applies instead of relevance.
+    """
+    terms = {token.casefold() for token in _QUERY_TOKEN.findall(question)}
+    # "principal" alone is a fact lookup ("qual o principal cliente?"), not a summary.
+    return bool(terms & (_SUMMARY_REQUEST_TERMS - {"principal", "principais"})) and not (
+        terms & _FACT_REQUEST_TERMS
     )
 
 

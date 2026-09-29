@@ -48,6 +48,12 @@ class FakeProvider:
         self.answer_calls.append((question, evidence))
         return GeneratedAnswer(self.answer_text, self.citations)
 
+    def summarize_documents(self, *, question: str, evidence: list[Evidence]) -> list[dict]:
+        return []
+
+    def assess_summary(self, *, claims: list[dict], evidence: list[Evidence]) -> list[dict]:
+        return []
+
 
 @pytest.fixture()
 def session() -> Session:
