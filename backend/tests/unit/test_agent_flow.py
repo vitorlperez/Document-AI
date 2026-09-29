@@ -185,6 +185,28 @@ def _run(session, provider, scope, user, question, *, mentions, history=(), mode
     )
 
 
+def test_unmentioned_profile_question_keeps_sources_when_answer_provider_times_out(
+    semantic_session: Session, monkeypatch: pytest.MonkeyPatch,  # noqa: F811
+) -> None:
+    scope, user, _profile_node, profile_document = _profile_library(semantic_session)
+    provider = IntentProvider(
+        intent=_intent("ask_content", target="library", tool="retrieve_evidence"),
+        vectors={"O que sabemos sobre o Vitor?": [0.0, 1.0]},
+    )
+
+    def timed_out_answer(*, question, evidence):
+        raise AIProviderUnavailable("AI provider is unavailable")
+
+    monkeypatch.setattr(provider, "answer", timed_out_answer)
+    result, _tools, _references = _run(
+        semantic_session, provider, scope, user, "O que sabemos sobre o Vitor?", mentions=[],
+    )
+
+    assert result.answer and "Software Engineer" in result.answer
+    assert "síntese" in result.answer.casefold()
+    assert _linked(result) == [("Profile.pdf", profile_document.source_url)]
+
+
 def test_classifier_decides_inventory_with_summaries_and_synthesizes_with_sources(
     semantic_session: Session,  # noqa: F811
 ) -> None:

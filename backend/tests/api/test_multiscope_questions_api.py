@@ -259,8 +259,15 @@ def test_provider_failures_are_safe_and_count_one_attempt_like_folder_questions(
     client, factory, _, organization_id, _, _ = corpus
     client.app.state.semantic_provider = RecordingProvider(fail_at=fail_at)
     response = ask(client, organization_id, scope="organization")
-    assert response.status_code == 503
-    assert response.json() == {"detail": "AI provider unavailable"}
+    if fail_at == "embed":
+        assert response.status_code == 503
+        assert response.json() == {"detail": "AI provider unavailable"}
+    else:
+        assert response.status_code == 200
+        payload = response.json()
+        assert "síntese automática ficou indisponível" in payload["answer"].casefold()
+        assert payload["citations"]
+        assert all(item["source_url"] for item in payload["citations"])
     # Preserve existing question-attempt accounting when the upstream model fails.
     with factory() as session:
         assert (

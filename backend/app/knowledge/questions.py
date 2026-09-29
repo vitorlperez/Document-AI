@@ -1249,7 +1249,37 @@ class QuestionService:
                 lexical_candidate_count=len(lexical_candidates),
                 top_score=top_score,
             )
-        generated = self.provider.answer(question=normalized_question, evidence=supported)
+        try:
+            generated = self.provider.answer(question=normalized_question, evidence=supported)
+        except AIProviderUnavailable:
+            # Retrieval has already selected authorized evidence. A slow final model
+            # must not erase those sources or turn a partially completed answer into 503.
+            excerpts = supported[:4]
+            cited_indexes = list(range(1, len(excerpts) + 1))
+            extracted = "\n".join(
+                f"- {item.document_name} [{index}]: “{item.excerpt}”"
+                for index, item in enumerate(excerpts, 1)
+            )
+            return self._complete(
+                QuestionResult(
+                    answer=(
+                        "A síntese automática ficou indisponível. Estes são trechos indexados "
+                        "relevantes, sem interpretação adicional:\n"
+                        + _number_answer_sources(extracted, cited_indexes, excerpts, excerpts)
+                    ),
+                    confidence="supported",
+                    citations=excerpts,
+                    retrieval_status=RETRIEVAL_STATUS_SUFFICIENT,
+                ),
+                started_at=started_at,
+                indexed_chunk_count=indexed_chunk_count,
+                compatible_embedding_count=len(scoped_rows),
+                semantic_candidate_count=len(semantic_candidates),
+                lexical_candidate_count=len(lexical_candidates),
+                selected_candidate_count=len(supported),
+                top_score=top_score,
+                provider_outcome="provider_unavailable_extractive_fallback",
+            )
         cited_evidence = _validate_citations(generated.citation_indexes, supported)
         if (
             not generated.text
