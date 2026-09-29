@@ -76,6 +76,13 @@ class CatalogFileSnapshot:
     document_id: UUID | None = None
     source_url: str | None = None
     source_provider: str | None = None
+    # Leading indexed (embedded) chunks of the file, in document order; the input of a per-file summary.
+    chunks: tuple[str, ...] = ()
+
+
+# Bounds on the chunks a catalog snapshot carries for a per-file summary.
+SNAPSHOT_MAX_CHUNKS = 6
+SNAPSHOT_MAX_CHUNK_CHARS = 6000
 
 
 @dataclass(frozen=True)
@@ -382,11 +389,17 @@ class LibraryService:
             .order_by(Document.external_file_id, Document.id, DocumentChunk.position)
         )
         indexed: dict[tuple[UUID, str], tuple[UUID, str, str | None]] = {}
+        chunks: dict[tuple[UUID, str], list[str]] = {}
         for source_id, external_file_id, document_id, source_url, text in rows:
-            indexed.setdefault(
-                (source_id, external_file_id),
-                (document_id, source_url, text),
-            )
+            key = (source_id, external_file_id)
+            first = indexed.setdefault(key, (document_id, source_url, text))
+            collected = chunks.setdefault(key, [])
+            if (
+                first[0] == document_id and text and text.strip()
+                and len(collected) < SNAPSHOT_MAX_CHUNKS
+                and (not collected or sum(map(len, collected)) + len(text) <= SNAPSHOT_MAX_CHUNK_CHARS)
+            ):
+                collected.append(text)
         snapshots: list[CatalogFileSnapshot] = []
         for node in files:
             document = indexed.get((node.source_id, node.external_id))
@@ -399,6 +412,7 @@ class LibraryService:
                     document_id=document[0] if document is not None else None,
                     source_url=(document[1] if document is not None else None) or node.source_url,
                     source_provider=sources.get(node.source_id),
+                    chunks=tuple(chunks.get((node.source_id, node.external_id), ())),
                 )
             )
         return snapshots

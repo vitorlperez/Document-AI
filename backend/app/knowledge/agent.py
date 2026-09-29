@@ -93,6 +93,9 @@ class ToolResult:
     # Indexed files behind a catalog answer. Kept out of the payload so source
     # URLs never reach the model; they only become the answer's citations.
     citations: tuple[Evidence, ...] = ()
+    # (item id, leading indexed chunks) per file whose content was asked for; kept out of the
+    # payload so the byte-bounded tool results stay small. Input of the per-file summaries.
+    file_chunks: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
 
 @runtime_checkable
@@ -113,6 +116,26 @@ class IntentSynthesisAdapter(Protocol):
         self, *, question: str, intent: str, sources: list[Evidence], catalog: list[dict[str, object]],
         model: str = ..., previous_answer: str = ...,
     ) -> GeneratedAnswer: ...
+
+
+@runtime_checkable
+class FileSummaryAdapter(Protocol):
+    def summarize_file_briefs(
+        self, *, question: str, files: list[dict[str, object]], target_chars: int, model: str = ...,
+    ) -> dict[int, str]: ...
+
+
+@dataclass(frozen=True)
+class FileSummaries:
+    """Per-file summaries of a catalog answer: one batched call to a cheap model.
+
+    The length is a target written into the prompt, never a hard cut; when the call
+    fails or times out each file falls back to its leading indexed text, ended at a sentence.
+    """
+
+    target_chars: int = 350
+    model: str = PLANNER_MODEL
+    timeout_seconds: float = 8.0
 
 
 @dataclass(frozen=True)
@@ -273,6 +296,9 @@ class LibraryToolExecutor:
             citations=_snapshot_citations(
                 snapshots[item.id] for item in items if item.id in snapshots
             ),
+            file_chunks=tuple(
+                (str(item.id), snapshots[item.id].chunks) for item in items if item.id in snapshots
+            ) if include_excerpts else (),
         )
 
     def search_library(
@@ -334,10 +360,11 @@ class AgentService:
 
     def __init__(
         self, session: Session, provider: SemanticProvider, limits: AgentLimits,
-        planned: PlannedFlow | None = None,
+        planned: PlannedFlow | None = None, file_summaries: FileSummaries | None = None,
     ):
         self.session, self.provider, self.limits = session, provider, limits
         self.planned = planned or PlannedFlow()
+        self.file_summaries = file_summaries or FileSummaries()
         self.tools = LibraryToolExecutor(session, provider)
 
     def ask(
@@ -395,7 +422,8 @@ class AgentService:
             item = {"name": result.name, "result": result.payload}
             if _json_size([item]) > self.limits.max_result_bytes:
                 raise AIProviderUnavailable("document agent result exceeds configured byte limit")
-            return _catalog_question_result(result), [item], _catalog_references([item])
+            answer = self._catalog_answer(result, question=question, deadline=started + self.limits.max_seconds)
+            return answer, [item], _catalog_references([item])
         if not mentions and _plural_file_reference(question):
             references = self._follow_up_file_references(history=history)
             if references:
@@ -403,7 +431,8 @@ class AgentService:
                     scope=scope, user_id=user_id, providers=providers, references=references
                 )
                 item = {"name": result.name, "result": result.payload}
-                return _catalog_question_result(result), [item], _catalog_references([item])
+                answer = self._catalog_answer(result, question=question, deadline=started + self.limits.max_seconds)
+                return answer, [item], _catalog_references([item])
         for _step in range(self.limits.max_steps):
             remaining = self.limits.max_seconds - (time.monotonic() - started)
             if remaining <= 0:
@@ -442,7 +471,9 @@ class AgentService:
             final = (
                 question_results[-1]
                 if question_results
-                else _catalog_question_result(catalog_results[-1])
+                else self._catalog_answer(
+                    catalog_results[-1], question=question, deadline=started + self.limits.max_seconds,
+                )
                 if catalog_results
                 else self.tools.retrieve_evidence(
                     scope=scope, user_id=user_id, question=question, providers=providers, mentions=effective_mentions
@@ -590,7 +621,9 @@ class AgentService:
             if not with_summaries:
                 return run.finish(extractive)
             synthesized = self._synthesize(question=question, intent=intent, run=run, deadline=deadline)
-            return run.finish(synthesized or extractive)
+            return run.finish(
+                synthesized or self._catalog_answer(listing, question=question, deadline=deadline)
+            )
 
         if intent == "summarize_files":
             if not targets:
@@ -691,6 +724,50 @@ class AgentService:
             retrieval_status="catalog" if only_catalog else RETRIEVAL_STATUS_SUFFICIENT,
         )
 
+    def _catalog_answer(self, result: ToolResult, *, question: str, deadline: float) -> QuestionResult:
+        return _catalog_question_result(result, self._file_summaries(result, question=question, deadline=deadline))
+
+    def _file_summaries(self, result: ToolResult, *, question: str, deadline: float) -> dict[str, str]:
+        """Summary row text per file id whose content was asked for; none of it is invented."""
+        items = result.payload.get("items", [])
+        requested = [
+            item for item in (items if isinstance(items, list) else [])
+            if isinstance(item, dict) and "excerpt" in item and isinstance(item.get("id"), str)
+            and isinstance(item.get("name"), str)
+        ]
+        if not requested:
+            return {}
+        chunks = dict(result.file_chunks)
+        batch: list[tuple[str, str, list[str]]] = []
+        for item in requested:
+            texts = list(chunks.get(item["id"], ())) or (
+                [item["excerpt"]] if isinstance(item.get("excerpt"), str) else []
+            )
+            texts = [text for text in texts if text.strip()]
+            if texts:
+                batch.append((item["id"], item["name"], texts))
+        target = self.file_summaries.target_chars
+        summaries = {item_id: _extractive_row(texts[0], target) for item_id, _name, texts in batch}
+        adapter = self.provider
+        if not batch or not isinstance(adapter, FileSummaryAdapter):
+            return summaries
+        call_deadline = min(deadline, time.monotonic() + self.file_summaries.timeout_seconds)
+        try:
+            with _observed_phase("file_summaries", call_deadline), _request_deadline(call_deadline):
+                generated = adapter.summarize_file_briefs(
+                    question=question,
+                    files=[{"name": name, "chunks": texts} for _item_id, name, texts in batch],
+                    target_chars=target, model=self.file_summaries.model,
+                )
+        except (AIProviderUnavailable, TypeError, ValueError, AttributeError):
+            return summaries
+        for index, (item_id, _name, _texts) in enumerate(batch, 1):
+            text = generated.get(index) if isinstance(generated, dict) else None
+            complete = _complete_summary(text, target) if isinstance(text, str) else ""
+            if complete:
+                summaries[item_id] = complete
+        return summaries
+
     def _file_snapshots(
         self, *, scope: OrganizationScope, user_id: UUID, providers: list[str], files: list[UUID],
     ) -> ToolResult:
@@ -710,6 +787,7 @@ class AgentService:
                 ],
             },
             citations=_snapshot_citations(snapshots),
+            file_chunks=tuple((str(snapshot.id), snapshot.chunks) for snapshot in snapshots),
         )
 
     def _honest_insufficient(
@@ -819,6 +897,7 @@ class AgentService:
     ) -> ToolResult:
         items: list[dict[str, object]] = []
         citations: list[Evidence] = []
+        file_chunks: list[tuple[str, tuple[str, ...]]] = []
         page = 1
         total = 0
         while len(items) < INVENTORY_MAX_ITEMS:
@@ -834,6 +913,7 @@ class AgentService:
             assert isinstance(page_items, list)
             items.extend(page_items)
             citations.extend(result.citations)
+            file_chunks.extend(result.file_chunks)
             total = result.payload["total"]
             assert isinstance(total, int)
             if len(page_items) < INVENTORY_PAGE_SIZE or len(items) >= total:
@@ -853,6 +933,7 @@ class AgentService:
                 "inventory_folder_id": str(parent_id),
             },
             citations=tuple(citations),
+            file_chunks=tuple(file_chunks),
         )
 
     def _summarize_inventory_follow_up(
@@ -882,6 +963,7 @@ class AgentService:
                 ],
             },
             citations=_snapshot_citations(snapshots),
+            file_chunks=tuple((str(snapshot.id), snapshot.chunks) for snapshot in snapshots),
         )
 
     def _execute(
@@ -1081,12 +1163,13 @@ def _catalog_references(results: list[dict[str, object]]) -> list[dict[str, str]
     return []
 
 
-def _catalog_question_result(result: ToolResult) -> QuestionResult:
+def _catalog_question_result(result: ToolResult, summaries: dict[str, str] | None = None) -> QuestionResult:
     items = result.payload.get("items", [])
     if not isinstance(items, list):
         items = []
+    summaries = summaries or {}
     rows = [
-        _catalog_item_row(item)
+        _catalog_item_row(item, summaries.get(str(item.get("id"))))
         for item in items
         if isinstance(item, dict) and isinstance(item.get("name"), str)
     ]
@@ -1133,23 +1216,57 @@ def _snapshot_citations(snapshots: Iterable[CatalogFileSnapshot]) -> tuple[Evide
     )
 
 
-_CATALOG_EXCERPT_CHARS = 280
+_SENTENCE_END = re.compile(r"[.!?…][\"')\]»”]*(?=\s|$)")
 
 
-def _short_excerpt(text: object) -> str:
-    """One-line preview of an indexed excerpt so a catalog row never becomes a wall of raw text."""
-    flat = " ".join(str(text).split())
-    if len(flat) <= _CATALOG_EXCERPT_CHARS:
+def _sentence_preview(text: str, target: int) -> str:
+    """Leading indexed text ended at a sentence near the target; never cut inside a word."""
+    flat = " ".join(text.split())
+    if len(flat) <= target:
         return flat
-    return flat[:_CATALOG_EXCERPT_CHARS].rsplit(" ", 1)[0].rstrip(" ,;:-") + "…"
+    ends = [match.end() for match in _SENTENCE_END.finditer(flat)]
+    within = [end for end in ends if end <= target]
+    if within and within[-1] >= target // 3:
+        return flat[:within[-1]]
+    beyond = [end for end in ends if target < end <= target * 2]
+    if beyond:
+        return flat[:beyond[0]]
+    if within:
+        return flat[:within[-1]]
+    return flat[:target].rsplit(" ", 1)[0].rstrip(" ,;:-|") + "…"
 
 
-def _catalog_item_row(item: dict[str, object]) -> str:
+def _extractive_row(text: str, target: int) -> str:
+    return f"Síntese extrativa do conteúdo indexado: {_sentence_preview(text, target)}"
+
+
+def _complete_summary(text: str, target: int) -> str:
+    """A model summary as one line ending in a full sentence; empty when it cannot be one."""
+    flat = " ".join(text.split())
+    if not flat:
+        return ""
+    ends = [match.end() for match in _SENTENCE_END.finditer(flat)]
+    if not ends:
+        return ""
+    if ends[-1] != len(flat):
+        flat = flat[:ends[-1]]
+    # The target is an instruction; only a runaway answer is brought back to sentence bounds.
+    return _sentence_preview(flat, target * 2) if len(flat) > target * 3 else flat
+
+
+_NO_INDEXED_TEXT = "não há conteúdo indexado suficiente para resumir este arquivo."
+
+
+def _catalog_item_row(item: dict[str, object], summary: str | None = None) -> str:
     name = item["name"]
-    if item.get("excerpt") is not None:
-        return f"- {name}: Síntese extrativa do conteúdo indexado: {_short_excerpt(item['excerpt'])}"
+    if summary:
+        return f"- {name}: {summary}"
+    if isinstance(item.get("excerpt"), str) and item["excerpt"].strip():
+        return f"- {name}: {_extractive_row(item['excerpt'], FileSummaries().target_chars)}"
     if item.get("index_status") == "not_indexed":
         return f"- {name}: sem conteúdo indexado disponível."
+    if "excerpt" in item:
+        return f"- {name}: {_NO_INDEXED_TEXT}"
     return f"- {name} ({'Arquivo' if item.get('kind') == 'file' else 'Pasta'})"
 
 

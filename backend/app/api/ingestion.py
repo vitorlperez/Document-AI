@@ -21,7 +21,13 @@ from app.ingestion.service import (
     SyncAlreadyActive,
 )
 from app.integrations.google_drive import GoogleAccessDenied
-from app.knowledge.agent import AgentLimits, AgentService, ConversationService, PlannedFlow
+from app.knowledge.agent import (
+    AgentLimits,
+    AgentService,
+    ConversationService,
+    FileSummaries,
+    PlannedFlow,
+)
 from app.knowledge.models import ConversationMessage
 from app.knowledge.questions import AIProviderUnavailable, QuestionResult, QuestionService
 from app.knowledge.search import SearchUnavailable, TextSearchService
@@ -369,6 +375,11 @@ def ask_organization_question(
                         planner_model=request.app.state.settings.agent_planner_model,
                         synthesis_model=request.app.state.settings.agent_synthesis_model,
                         intent_timeout_seconds=request.app.state.settings.agent_intent_timeout_seconds,
+                    ),
+                    file_summaries=FileSummaries(
+                        target_chars=request.app.state.settings.agent_file_summary_chars,
+                        model=request.app.state.settings.agent_file_summary_model,
+                        timeout_seconds=request.app.state.settings.agent_file_summary_timeout_seconds,
                     ),
                 ).ask(
                     scope=scope,
