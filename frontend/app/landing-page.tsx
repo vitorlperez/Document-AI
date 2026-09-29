@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight,
-  FileText, Folder, Menu, Send, ShieldCheck, Sparkles,
+  FileText, Folder, Menu, PanelRightClose, Plus, Search, Send, ShieldCheck, Sparkles,
 } from "lucide-react";
 import "./landing.css";
 import { Brand } from "./brand";
@@ -14,17 +14,30 @@ type LandingPageProps = { onLogin: () => void; onSignUp: () => void };
 const demoCases = [
   {
     label: "Resposta com fontes",
-    scope: "Todas as ferramentas · conteúdo indexado",
+    scope: "Todas as ferramentas",
     question: "O que ficou definido para a primeira entrega?",
+    mentions: "",
     answer: <>A primeira entrega inclui o <strong>diagnóstico de marca</strong> e a <strong>proposta de posicionamento</strong>.</>,
-    sources: [["Escopo do projeto.pdf", "Google Drive"], ["Reunião de alinhamento", "Notion"]],
+    sources: [["Escopo do projeto.pdf", "Google Drive"], ["Reunião de alinhamento", "Notion"], ["Cronograma de entregas", "OneDrive"]],
+    extra: 2,
+  },
+  {
+    label: "Com menção @",
+    scope: "Google Drive",
+    question: "Quais são os prazos previstos neste documento?",
+    mentions: "Arquivo: Escopo do projeto.pdf",
+    answer: <>O documento prevê o <strong>diagnóstico de marca</strong> na primeira etapa e a <strong>proposta de posicionamento</strong> na etapa seguinte.</>,
+    sources: [["Escopo do projeto.pdf", "Google Drive"]],
+    extra: 0,
   },
   {
     label: "Sem evidência suficiente",
-    scope: "Pasta · Projeto Aurora",
+    scope: "Notion",
     question: "Qual foi o orçamento aprovado para mídia?",
-    answer: <>Não encontrei evidência nesta pasta para confirmar o orçamento de mídia.</>,
+    mentions: "",
+    answer: <>Não encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia.</>,
     sources: [],
+    extra: 0,
   },
 ];
 
@@ -56,27 +69,42 @@ function ProductPreview() {
             <div className="landing-folder-row"><Folder size={14} aria-hidden="true" /><span>Projeto Aurora</span></div>
             <div className="landing-source-row"><ProviderLogo provider="notion" size={22} /> <span>Notion</span><ChevronRight size={13} /></div>
             <div className="landing-source-row"><ProviderLogo provider="onedrive" size={22} /> <span>OneDrive</span><ChevronRight size={13} /></div>
-            <p className="landing-scope-note"><ShieldCheck size={14} />Somente o contexto escolhido.</p>
+            <p className="landing-scope-note"><ShieldCheck size={14} />A conversa usa somente as ferramentas e menções selecionadas na mensagem.</p>
           </aside>
 
           <section className="landing-app-chat" aria-label="Exemplo de conversa com documentos">
-            <div className="landing-app-context"><span>Consultar em</span><strong>{demo.scope}</strong></div>
+            <div className="landing-app-toolbar" aria-hidden="true"><span><Plus size={13} />Nova conversa</span><PanelRightClose size={16} /></div>
             <div className="landing-app-thread" aria-live="polite" key={activeCase}>
-              <div className="landing-user-message"><p>{demo.question}</p></div>
+              <div className="landing-user-message">
+                <small>{demo.scope}</small>
+                <p>{demo.question}{demo.mentions && <span className="landing-mention-line">{demo.mentions}</span>}</p>
+              </div>
               <article className="landing-answer">
-                <div className="landing-answer-author"><span><Sparkles size={15} /></span><div><strong>Arquivio</strong></div></div>
+                <div className="landing-answer-author"><span><Sparkles size={15} /></span><div><strong>Arquivio</strong><small>{demo.scope}</small></div></div>
                 <p>{demo.answer}</p>
                 {demo.sources.length > 0 && <div className="landing-answer-sources" aria-label="Documentos utilizados">
                   <strong>Documentos utilizados</strong>
                   {demo.sources.map(([name, provider], index) => <div key={name}><span>{index + 1}.</span><FileText size={14} /><b>{name}</b><small>{provider}</small></div>)}
+                  {demo.extra > 0 && <p className="landing-sources-more">Ver mais {demo.extra} documentos <ChevronDown size={13} aria-hidden="true" /></p>}
                 </div>}
               </article>
             </div>
             <div className="landing-composer" aria-hidden="true">
-              <span className="landing-composer-input">O que você gostaria de saber?</span>
-              <span className="landing-composer-actions"><small>0/1000</small><span className="landing-send"><Send size={13} />Enviar</span></span>
+              <span className="landing-composer-input">O que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta</span>
+              <span className="landing-composer-actions">
+                <span className="landing-scope-trigger">{demo.scope}<ChevronDown size={12} /></span>
+                <span className="landing-composer-send"><small>0/1000</small><span className="landing-send"><Send size={13} />Enviar</span></span>
+              </span>
             </div>
+            <p className="landing-composer-hint">Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.</p>
           </section>
+
+          <aside className="landing-app-search" aria-label="Busca de arquivos ilustrativa">
+            <strong>Buscar arquivos</strong>
+            <p>Encontre arquivos e pastas pelo nome em todas as fontes conectadas.</p>
+            <div className="landing-search-controls"><span className="landing-search-field">Nome de arquivo ou pasta</span><span className="landing-search-button"><Search size={14} /></span></div>
+            <small>A busca consulta somente nomes; o conteúdo permanece no escopo da conversa.</small>
+          </aside>
         </div>
       </div>
       <figcaption id="landing-preview-caption">Prévia da área de consultas do Arquivio. <span>Exemplos fictícios.</span></figcaption>

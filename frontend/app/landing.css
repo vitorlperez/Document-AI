@@ -59,7 +59,7 @@
 .landing-app-bar .arquivio-brand { font-size: 20px; }
 .landing-app-company { display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--landing-line); border-radius: 7px; background: #fff; font-size: 11px; font-weight: 600; }
 .landing-preview-label { margin-left: auto; color: var(--landing-muted); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.landing-app-workspace { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 440px; }
+.landing-app-workspace { display: grid; grid-template-columns: 210px minmax(0, 1fr) 250px; min-height: 440px; }
 
 .landing-app-sources { display: flex; flex-direction: column; border-right: 1px solid var(--landing-line); background: #f3f5ef; }
 .landing-panel-title { display: grid; padding: 19px 16px 13px; }
@@ -98,7 +98,14 @@
 .landing-composer-actions { display: flex; align-items: center; justify-content: space-between; padding: 7px 2px 0; border-top: 1px solid #eceee7; }
 .landing-composer-actions small { font-size: 8px; }
 .landing-send { display: inline-flex; min-height: 27px; align-items: center; justify-content: center; gap: 5px; padding: 5px 8px; border-radius: 5px; background: var(--landing-teal); color: #fff; font-size: 9px; font-weight: 600; }
-.landing-composer { margin-bottom: 20px; }
+.landing-composer { margin-bottom: 8px; }
+.landing-app-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 8px 14px 0; color: var(--landing-muted); font-size: 10px; font-weight: 600; }
+.landing-app-toolbar span { display: inline-flex; align-items: center; gap: 4px; }
+.landing-mention-line { display: block; margin-top: 6px; color: var(--landing-muted); font-size: 10px; }
+.landing-sources-more { display: flex; align-items: center; gap: 4px; margin: 0; padding: 7px 0 0; border-top: 1px solid #f0f1ec; color: var(--landing-teal); font-size: 10px; font-weight: 600; }
+.landing-scope-trigger { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1px solid var(--landing-line); border-radius: 6px; color: var(--landing-ink); font-size: 9px; font-weight: 600; }
+.landing-composer-send { display: inline-flex; align-items: center; gap: 8px; }
+.landing-composer-hint { margin: 0 22px 16px; color: var(--landing-muted); font-size: 9px; }
 
 .landing-app-search { padding: 20px 16px; border-left: 1px solid var(--landing-line); }
 .landing-app-search > strong { font-size: 12px; }
