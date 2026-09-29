@@ -73,6 +73,9 @@ class CatalogFileSnapshot:
     name: str
     index_status: str
     excerpt: str | None
+    document_id: UUID | None = None
+    source_url: str | None = None
+    source_provider: str | None = None
 
 
 @dataclass(frozen=True)
@@ -359,7 +362,10 @@ class LibraryService:
                 raise SyncAccessDenied("catalog file is unavailable")
             files.append(node)
         rows = self.session.execute(
-            select(WorkspaceFolder.source_id, Document.external_file_id, DocumentChunk.text)
+            select(
+                WorkspaceFolder.source_id, Document.external_file_id, Document.id,
+                Document.source_url, DocumentChunk.text,
+            )
             .select_from(Document)
             .outerjoin(
                 DocumentChunk,
@@ -375,23 +381,24 @@ class LibraryService:
             )
             .order_by(Document.external_file_id, Document.id, DocumentChunk.position)
         )
-        indexed: dict[tuple[UUID, str], str | None] = {}
-        for source_id, external_file_id, text in rows:
+        indexed: dict[tuple[UUID, str], tuple[UUID, str, str | None]] = {}
+        for source_id, external_file_id, document_id, source_url, text in rows:
             indexed.setdefault(
                 (source_id, external_file_id),
-                text,
+                (document_id, source_url, text),
             )
         snapshots: list[CatalogFileSnapshot] = []
         for node in files:
-            excerpt = indexed.get((node.source_id, node.external_id))
+            document = indexed.get((node.source_id, node.external_id))
             snapshots.append(
                 CatalogFileSnapshot(
                     id=node.id,
                     name=node.name,
-                    index_status=(
-                        "indexed" if (node.source_id, node.external_id) in indexed else "not_indexed"
-                    ),
-                    excerpt=excerpt,
+                    index_status="indexed" if document is not None else "not_indexed",
+                    excerpt=document[2] if document is not None else None,
+                    document_id=document[0] if document is not None else None,
+                    source_url=(document[1] if document is not None else None) or node.source_url,
+                    source_provider=sources.get(node.source_id),
                 )
             )
         return snapshots

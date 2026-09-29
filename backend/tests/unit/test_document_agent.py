@@ -8,7 +8,13 @@ from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
-from app.knowledge.agent import AgentLimits, AgentService, ConversationService, ToolCall
+from app.knowledge.agent import (
+    AgentLimits,
+    AgentService,
+    ConversationService,
+    ToolCall,
+    _is_inventory_summary_request,
+)
 from app.knowledge.models import Document
 from app.knowledge.questions import AIProviderUnavailable
 from app.library.models import LibraryNode
@@ -422,6 +428,29 @@ def test_inventory_includes_synchronized_nonindexed_file_and_plural_follow_up_is
         providers=["google_drive"], mentions=[("folder", folder.id)], history=[],
     )
     assert "Not indexed.pdf: sem conteúdo indexado disponível." in inventory.answer
+    assert [(item.document_name, item.source_url) for item in inventory.citations] == [
+        ("Indexed.pdf", indexed_document.source_url)
+    ]
+    assert "Indexed.pdf (Arquivo)" in inventory.answer
+    assert "Síntese extrativa" not in inventory.answer
+
+    summarized_inventory, _tool_results, summarized_references = AgentService(
+        session, FakeProvider({}), AgentLimits()
+    ).ask(
+        scope=scope, user_id=user.id,
+        question="Quais arquivos temos nessa pasta e me de uma explicacao resumida sobre o conteudo de cada arquivo",
+        providers=["google_drive"], mentions=[("folder", folder.id)], history=[],
+    )
+    assert summarized_inventory.retrieval_status == "catalog"
+    assert (
+        "Indexed.pdf: Síntese extrativa do conteúdo indexado: O plano prioriza clientes existentes."
+        in summarized_inventory.answer
+    )
+    assert "Not indexed.pdf: sem conteúdo indexado disponível." in summarized_inventory.answer
+    assert [(item.document_id, item.source_url) for item in summarized_inventory.citations] == [
+        (indexed_document.id, indexed_document.source_url)
+    ]
+    assert summarized_references == references
 
     conversation, _ = ConversationService(session).create_or_load(
         scope=scope, user_id=user.id, conversation_id=None, question="inventário"
@@ -440,6 +469,9 @@ def test_inventory_includes_synchronized_nonindexed_file_and_plural_follow_up_is
     )
     assert "Indexed.pdf: Síntese extrativa do conteúdo indexado: O plano prioriza clientes existentes." in result.answer
     assert "Not indexed.pdf: sem conteúdo indexado disponível." in result.answer
+    assert [(item.document_id, item.source_url) for item in result.citations] == [
+        (indexed_document.id, indexed_document.source_url)
+    ]
 
     moved = session.scalar(
         select(LibraryNode).where(
@@ -496,3 +528,19 @@ def test_inventory_applies_deadline_and_result_byte_limits(
         AgentService(session, FakeProvider({}), AgentLimits(max_seconds=0)).ask(**kwargs)
     with pytest.raises(AIProviderUnavailable, match="result exceeds"):
         AgentService(session, FakeProvider({}), AgentLimits(max_result_bytes=1)).ask(**kwargs)
+
+
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    [
+        ("Quais arquivos temos nessa pasta e me de uma explicacao resumida sobre o conteudo de cada arquivo", True),
+        ("Liste os arquivos da pasta com um resumo de cada", True),
+        ("Quais documentos há na pasta e do que se trata cada um?", True),
+        ("Quais arquivos temos dentro da pasta Briefs?", False),
+        ("Liste os arquivos da pasta, não resuma", False),
+        ("Quais arquivos falam sobre o contrato?", False),
+        ("Resuma o contrato", False),
+    ],
+)
+def test_inventory_summary_request_detection(question: str, expected: bool) -> None:
+    assert _is_inventory_summary_request(question) is expected

@@ -96,7 +96,7 @@ function useLatestRequest<T>() {
 }
 const companyPath = (companyId: string, suffix = "") => `/companies/${companyId}${suffix}`;
 const retrievalMessage = (status: string) => status === "no_indexed_content" ? "Ainda não há conteúdo consultável neste escopo. Aguarde a sincronização ou escolha outra pasta." : status === "no_compatible_embeddings" ? "O conteúdo foi encontrado, mas a indexação de IA ainda não terminou. Tente novamente em alguns instantes." : status === "invalid_generation_output" ? "Encontrei trechos relevantes, mas não foi possível produzir uma resposta verificável. Tente novamente." : "Não encontrei evidência suficiente neste escopo para responder com segurança.";
-const answerText = (answer: Answer) => cleanAnswerForDisplay(answer.answer) || (answer.answer === null ? retrievalMessage(answer.retrieval_status) : "Confira os documentos utilizados abaixo.");
+const answerText = (answer: Answer) => cleanAnswerForDisplay(answer.answer) || (answer.answer === null ? retrievalMessage(answer.retrieval_status) : "Confira as fontes abaixo.");
 const citationSourceKey = (citation: Evidence) => {
   if (!citation.source_url?.trim()) return `document:${citation.document_id}`;
   try {
@@ -475,7 +475,7 @@ function ConversationLibraryWorkspace({ company, onConnect, setError, setNotice 
           const providers = message.context?.providers ?? [];
           const contextName = providers.length > 0 ? providers.map(toolLabel).join(", ") : "Todas as ferramentas";
           return message.role === "assistant"
-            ? { id: message.id, role: "assistant", content: message.content, contextName, answer: message.response ?? undefined }
+            ? { id: message.id, role: "assistant", content: message.content, contextName, answer: message.response ? { ...message.response, citations: compactCitations(message.response.citations ?? []) } : undefined }
             : { id: message.id, role: "user", content: message.content, contextName, providers, mentions: message.context?.mentions, allTools: providers.length === 0 };
         }));
       }).catch(() => {
@@ -650,7 +650,7 @@ function SourceDocuments({ items }: { items: Evidence[] }) {
   const [expanded, setExpanded] = useState(false);
   const remainingCount = Math.max(items.length - 3, 0);
   return <section className="mt-5 border-t border-line pt-4" aria-label="Documentos utilizados como fonte">
-    <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Documentos utilizados</h3>
+    <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fontes</h3>
     <ol>{items.slice(0, expanded ? undefined : 3).map((item, index) => <SourceDocumentRow key={citationSourceKey(item)} item={item} number={index + 1} />)}</ol>
     {remainingCount > 0 && <button type="button" onClick={() => setExpanded((open) => !open)} aria-expanded={expanded} className="flex items-center gap-1 border-t border-line-soft py-2 text-xs font-semibold text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
       {expanded ? "Mostrar menos" : `Ver mais ${remainingCount} ${remainingCount === 1 ? "documento" : "documentos"}`}
