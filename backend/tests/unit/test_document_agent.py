@@ -13,6 +13,7 @@ from app.knowledge.agent import (
     AgentService,
     ConversationService,
     ToolCall,
+    _catalog_item_row,
     _is_inventory_summary_request,
 )
 from app.knowledge.models import Document
@@ -587,3 +588,12 @@ def test_file_mention_restructure_summary_answers_instead_of_insufficient_eviden
     assert "cinco anos de experiência em Python" in result.answer
     assert {item.document_name for item in result.citations} == {"Profile.pdf"}
     assert all(item.source_url for item in result.citations)
+
+
+def test_catalog_row_previews_long_excerpt_instead_of_dumping_it() -> None:
+    excerpt = "Contact me\n\n" + "Key Strengths: - AI & Innovation: building systems. " * 30
+    row = _catalog_item_row({"name": "Profile.pdf", "kind": "file", "excerpt": excerpt})
+
+    assert row.startswith("- Profile.pdf: Síntese extrativa do conteúdo indexado: Contact me Key")
+    assert "\n" not in row and row.endswith("…")
+    assert len(row) < 360

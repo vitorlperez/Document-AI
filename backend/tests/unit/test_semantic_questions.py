@@ -16,6 +16,7 @@ from app.integrations.google_drive import GoogleAccessDenied
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.questions import (
+    ANSWER_FORMAT_GUIDANCE,
     ANSWER_MODEL,
     EMBEDDING_MODEL,
     MAX_SEMANTIC_CANDIDATES,
@@ -753,6 +754,7 @@ def test_openai_evidence_includes_tool_and_file_provenance(monkeypatch: pytest.M
     assert "Brief.pdf" in requests[0]["input"]
     assert source.source_url not in requests[0]["input"]
     assert "not an exhaustive inventory" in requests[0]["instructions"]
+    assert ANSWER_FORMAT_GUIDANCE in requests[0]["instructions"]
 
 
 def test_openai_inventory_prompt_treats_scoped_file_names_as_authoritative(monkeypatch: pytest.MonkeyPatch) -> None:

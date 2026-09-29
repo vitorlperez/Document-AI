@@ -270,6 +270,18 @@ class GeneratedAnswer:
     citation_indexes: list[int]
 
 
+# Visual shape of every final answer; the interface renders this markdown subset and the Fontes block.
+ANSWER_FORMAT_GUIDANCE = (
+    " Format the answer as clean, consistent Markdown for a chat interface: open with a one or two sentence "
+    "direct answer or summary; then, only when the content needs it, use short section titles (## Title), "
+    "bullet or numbered lists with one idea per item (each item on its own line), and a Markdown table when "
+    "comparing items across the same attributes. Keep paragraphs to at most three sentences and never paste "
+    "long raw excerpts or run-on text: summarize them in your own words. Use bold only for the few essential "
+    "terms. Do not repeat or list the sources, file links, or a Fontes/Sources section in the body; the "
+    "interface builds that block separately."
+)
+
+
 class OpenAIQuestionProvider:
     """Minimal OpenAI adapter: only authorized selected chunks are transmitted."""
 
@@ -303,6 +315,7 @@ class OpenAIQuestionProvider:
             "If the sources do not support the answer, say exactly: "
             "Insufficient evidence. Do not invent facts or sources."
             + inventory_guidance
+            + ANSWER_FORMAT_GUIDANCE
             + " Return JSON only with exactly this schema: "
             '{"answer":"string","citations":[source_number]}. Every factual claim needs a cited source number.'
         )
@@ -587,8 +600,9 @@ class OpenAIQuestionProvider:
                     "Markdown links, or a sources section; the interface renders source links separately. "
                     "When previous_answer is given, the user wants it restructured: keep only its statements "
                     "that the sources support, reorganize them as asked, and add nothing the sources do not "
-                    "state. If nothing supports an answer, say exactly: Insufficient evidence. "
-                    'Return JSON only: {"answer":"string","citations":[source_number]}.'
+                    "state. If nothing supports an answer, say exactly: Insufficient evidence."
+                    + ANSWER_FORMAT_GUIDANCE
+                    + ' Return JSON only: {"answer":"string","citations":[source_number]}.'
                 ),
                 "input": json.dumps(
                     {

@@ -15,6 +15,7 @@ from app.knowledge.intent import INTENT_SCHEMA, InvalidIntent, heuristic_intent,
 from app.knowledge.models import Document
 from app.knowledge.questions import (
     _REQUEST_DEADLINE,
+    ANSWER_FORMAT_GUIDANCE,
     AIProviderUnavailable,
     GeneratedAnswer,
     OpenAIQuestionProvider,
@@ -605,6 +606,8 @@ def test_openai_intent_classifier_is_deterministic_and_schema_bound(monkeypatch:
     assert '"previous_answer": "Resumo anterior."' in bodies[2]["input"]
     assert "previous_answer" not in bodies[3]["input"]
     assert "URL" in bodies[2]["instructions"]
+    assert ANSWER_FORMAT_GUIDANCE in bodies[2]["instructions"]
+    assert ANSWER_FORMAT_GUIDANCE in bodies[3]["instructions"]
 
 
 def test_intent_eval_set_runs_against_a_mocked_classifier() -> None:

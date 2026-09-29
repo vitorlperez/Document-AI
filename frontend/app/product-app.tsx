@@ -637,26 +637,22 @@ function ConversationLibraryWorkspace({ company, onConnect, setError, setNotice 
   </div>{managedFile && managedDocument && <div className="fixed inset-0 z-50 grid place-items-center bg-primary/40 p-4" role="dialog" aria-modal="true" aria-labelledby="manage-file-title"><section className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-wide text-primary">Índice local</p><h2 id="manage-file-title" className="mt-1 text-xl font-semibold text-ink">Gerenciar arquivo</h2></div><button disabled={managingFile} onClick={() => { setManagedFile(null); setManagedDocument(null); }} className="rounded-lg p-2 text-muted-foreground hover:bg-sage" aria-label="Fechar"><X size={18} /></button></div><div className="mt-5 rounded-md bg-paper p-4"><p className="font-medium text-ink">{managedFile.name}</p><p className="mt-1 text-sm leading-6 text-muted-foreground">As ações abaixo afetam somente a cópia indexada. O original não será apagado do Google Drive.</p></div>{managedReferences.length > 1 && <label className="mt-5 block text-sm font-medium text-ink">Espaço de conhecimento<select value={managedDocument.document_id} disabled={managingFile} onChange={(event) => setManagedDocument(managedReferences.find((item) => item.document_id === event.target.value) ?? null)} className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm"><option value="">Selecione um espaço</option>{managedReferences.map((reference) => <option key={reference.document_id} value={reference.document_id}>{contexts.find((item) => item.id === reference.workspace_folder_id)?.name ?? "Espaço sincronizado"}</option>)}</select></label>}<p className="mt-4 text-xs text-muted-foreground">{managedContext ? `Espaço selecionado: ${managedContext.name}` : "Espaço selecionado para esta cópia."}</p><div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button disabled={managingFile} aria-busy={managingFile} onClick={() => { void removeManagedFile(); }} className="inline-flex items-center justify-center gap-2 rounded-md border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50">{managingFileAction === "remove" ? <RefreshCw size={16} className="motion-safe:animate-spin" aria-hidden="true" /> : <Trash2 size={16} />}{managingFileAction === "remove" ? "Removendo…" : "Remover do índice"}</button><button disabled={managingFile} aria-busy={managingFile} onClick={() => { void reprocessManagedFile(); }} className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest-hover disabled:opacity-50"><RefreshCw size={16} className={managingFileAction === "reprocess" ? "motion-safe:animate-spin" : ""} aria-hidden="true" />{managingFileAction === "reprocess" ? "Reprocessando…" : "Reprocessar"}</button></div></section></div>}</>;
 }
 
-function sourceHost(url: string): string {
-  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "Abrir original"; }
-}
-
 function SourceDocumentRow({ item, number }: { item: Evidence; number: number }) {
-  return <li className="source-card">
-    <span className="source-card-number" aria-hidden="true">{number}</span>
-    <div className="source-card-main">
-      <span className="source-card-name">{item.document_name}{item.source_provider && <span className="citation-tool mb-0 ml-2">{toolLabel(item.source_provider)}</span>}</span>
-      {item.source_url ? <a href={item.source_url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${item.document_name} no original`} className="source-card-link"><ExternalLink size={12} aria-hidden="true" /><span>{sourceHost(item.source_url)}</span></a> : <span className="text-xs text-muted-foreground">Link indisponível</span>}
-    </div>
+  return <li className="flex min-w-0 items-center gap-2 border-t border-line-soft py-2.5 first:border-t-0">
+    <span className="w-5 shrink-0 text-right text-xs font-semibold text-primary">{number}.</span>
+    <FileText size={15} className="shrink-0 text-primary" aria-hidden="true" />
+    <span className="min-w-0 flex-1 break-words text-xs font-medium leading-5 text-ink">{item.document_name}</span>
+    {item.source_provider && <span className="citation-tool mb-0 shrink-0">{toolLabel(item.source_provider)}</span>}
+    {item.source_url && <a href={item.source_url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${item.document_name} no original`} title="Abrir original" className="shrink-0 rounded-md p-1.5 text-primary hover:bg-sage focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"><ExternalLink size={14} aria-hidden="true" /></a>}
   </li>;
 }
 
 function SourceDocuments({ items }: { items: Evidence[] }) {
   const [expanded, setExpanded] = useState(false);
   const remainingCount = Math.max(items.length - 3, 0);
-  return <section className="sources-block" aria-label="Documentos utilizados como fonte">
-    <h3 className="sources-title">Fontes</h3>
-    <ol className="sources-list">{items.slice(0, expanded ? undefined : 3).map((item, index) => <SourceDocumentRow key={citationSourceKey(item)} item={item} number={index + 1} />)}</ol>
+  return <section className="mt-5 border-t border-line pt-4" aria-label="Documentos utilizados como fonte">
+    <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fontes</h3>
+    <ol>{items.slice(0, expanded ? undefined : 3).map((item, index) => <SourceDocumentRow key={citationSourceKey(item)} item={item} number={index + 1} />)}</ol>
     {remainingCount > 0 && <button type="button" onClick={() => setExpanded((open) => !open)} aria-expanded={expanded} className="flex items-center gap-1 border-t border-line-soft py-2 text-xs font-semibold text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
       {expanded ? "Mostrar menos" : `Ver mais ${remainingCount} ${remainingCount === 1 ? "documento" : "documentos"}`}
       <ChevronRight size={14} className={`transition-transform ${expanded ? "-rotate-90" : "rotate-90"}`} aria-hidden="true" />

@@ -1133,10 +1133,21 @@ def _snapshot_citations(snapshots: Iterable[CatalogFileSnapshot]) -> tuple[Evide
     )
 
 
+_CATALOG_EXCERPT_CHARS = 280
+
+
+def _short_excerpt(text: object) -> str:
+    """One-line preview of an indexed excerpt so a catalog row never becomes a wall of raw text."""
+    flat = " ".join(str(text).split())
+    if len(flat) <= _CATALOG_EXCERPT_CHARS:
+        return flat
+    return flat[:_CATALOG_EXCERPT_CHARS].rsplit(" ", 1)[0].rstrip(" ,;:-") + "…"
+
+
 def _catalog_item_row(item: dict[str, object]) -> str:
     name = item["name"]
     if item.get("excerpt") is not None:
-        return f"- {name}: Síntese extrativa do conteúdo indexado: {item['excerpt']}"
+        return f"- {name}: Síntese extrativa do conteúdo indexado: {_short_excerpt(item['excerpt'])}"
     if item.get("index_status") == "not_indexed":
         return f"- {name}: sem conteúdo indexado disponível."
     return f"- {name} ({'Arquivo' if item.get('kind') == 'file' else 'Pasta'})"
