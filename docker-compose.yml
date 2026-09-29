@@ -38,6 +38,7 @@ services:
       ENVIRONMENT: development
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:3000}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AGENT_TOOLS_ENABLED: ${AGENT_TOOLS_ENABLED:-true}
       GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
       GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
       GOOGLE_OAUTH_REDIRECT_URI: ${GOOGLE_OAUTH_REDIRECT_URI:-http://localhost:8000/data-sources/google/oauth/callback}

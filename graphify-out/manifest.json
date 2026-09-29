@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1790631905.6327684,
-    "seen": 1790632271.180759,
+    "mtime": 1790636814.7157676,
+    "seen": 1790637008.225661,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -186,10 +186,10 @@
     "semantic_hash": "ce08dbada8c0721f2c385226bfe8abaa"
   },
   "backend/app/core/logging.py": {
-    "mtime": 1789417734.9187372,
-    "seen": 1790011871.8767092,
-    "ast_hash": "dd1dfb05fa0b9c570fab87e6e8d0d479",
-    "semantic_hash": "dd1dfb05fa0b9c570fab87e6e8d0d479"
+    "mtime": 1790637273.2907166,
+    "seen": 1790637472.0980859,
+    "ast_hash": "88e4dbbbc6a8bd2e578797078004a7b3",
+    "semantic_hash": ""
   },
   "backend/app/core/models.py": {
     "mtime": 1789076900.5519571,
@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "backend/app/knowledge/questions.py": {
-    "mtime": 1790624717.9754624,
-    "seen": 1790625125.20204,
-    "ast_hash": "fc3a046fd9a085e57e75dc5e9d818b58",
+    "mtime": 1790637238.1262343,
+    "seen": 1790637472.0981178,
+    "ast_hash": "e2bce98d38f3d98555a988baed3ecd02",
     "semantic_hash": ""
   },
   "backend/app/knowledge/search.py": {
@@ -318,9 +318,9 @@
     "semantic_hash": ""
   },
   "backend/app/main.py": {
-    "mtime": 1790357910.0317323,
-    "seen": 1790358178.6762009,
-    "ast_hash": "3d5378756ad72fd637b412534abb4bc0",
+    "mtime": 1790637219.5066147,
+    "seen": 1790637472.098125,
+    "ast_hash": "68dff4dd5b9c5fe1e1bdf39e43da1369",
     "semantic_hash": ""
   },
   "backend/app/organizations/__init__.py": {
@@ -2178,9 +2178,9 @@
     "semantic_hash": ""
   },
   "TASK/items/F-202.md": {
-    "mtime": 1790632177.1643634,
-    "seen": 1790632271.181103,
-    "ast_hash": "8f5ac7ad9b33aa1b44694aa372638c2f",
+    "mtime": 1790632485.2955277,
+    "seen": 1790637008.226012,
+    "ast_hash": "b6b9926c7704b90c90e524afdeda9735",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_document_inventory_summary.py": {
@@ -2238,9 +2238,9 @@
     "semantic_hash": ""
   },
   "backend/app/knowledge/agent.py": {
-    "mtime": 1790632198.456475,
-    "seen": 1790632271.1808472,
-    "ast_hash": "7e6ee3e2ec6d40849d2bdf6af47d33d5",
+    "mtime": 1790637298.2577286,
+    "seen": 1790637472.098115,
+    "ast_hash": "8de1b23929fd512fe9c4f71ceb6f9fad",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_document_agent.py": {
@@ -2256,9 +2256,27 @@
     "semantic_hash": ""
   },
   "specs/work-items/agent-follow-up-collective-reference.md": {
-    "mtime": 1790632261.8462636,
-    "seen": 1790632271.181217,
-    "ast_hash": "2f138dda97f1ea14dc05111d12283e66",
+    "mtime": 1790632485.294497,
+    "seen": 1790637008.2261279,
+    "ast_hash": "2b785a756318b21ae6139aabfdea6f31",
+    "semantic_hash": ""
+  },
+  "backend/tests/unit/test_agent_deadline_diagnostic.py": {
+    "mtime": 1790636981.2006674,
+    "seen": 1790637008.225795,
+    "ast_hash": "b8ad88bf2ba2f0d3f72fe4a321627e02",
+    "semantic_hash": ""
+  },
+  "specs/work-items/agent-503-deadline-diagnostic.md": {
+    "mtime": 1790637461.4592924,
+    "seen": 1790637472.098497,
+    "ast_hash": "e5045e4ecf5a88964152d1d64e369d03",
+    "semantic_hash": ""
+  },
+  "backend/tests/unit/test_agent_observability.py": {
+    "mtime": 1790637393.9971597,
+    "seen": 1790637472.098162,
+    "ast_hash": "25648c6affec4b0ec206f35e45cb5788",
     "semantic_hash": ""
   }
 }

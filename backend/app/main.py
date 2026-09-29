@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 from urllib.parse import urlsplit
 from uuid import uuid4
@@ -18,7 +19,7 @@ from app.api.platform import router as platform_router
 from app.api.saved_queries import router as saved_queries_router
 from app.core.config import Settings, get_settings
 from app.core.database import build_engine, build_session_factory
-from app.core.logging import configure_observability
+from app.core.logging import configure_observability, provider_call_count, request_context
 from app.identity.auth import WorkOSAuthKitGateway
 from app.ingestion.dispatch import CeleryIngestionDispatcher
 from app.ingestion.tasks import create_celery_app
@@ -35,22 +36,35 @@ class UnconfiguredGoogleDrivePort:
 logger = logging.getLogger("document_intelligence.request")
 
 
+_REQUEST_ID_PATTERN = re.compile(r"[A-Za-z0-9._-]{1,64}")
+
+
 class RequestLogMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
-        request_id = request.headers.get("x-request-id", str(uuid4()))
+        supplied = request.headers.get("x-request-id", "")
+        request_id = supplied if _REQUEST_ID_PATTERN.fullmatch(supplied) else str(uuid4())
         start = time.perf_counter()
-        response = await call_next(request)
-        elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
-        logger.info(
-            "request complete",
-            extra={
-                "event": "request_complete",
-                "request_id": request_id,
-                "path": request.url.path,
-                "status": response.status_code,
-                "elapsed_ms": elapsed_ms,
-            },
-        )
+
+        def log_complete(status: int) -> None:
+            logger.info(
+                "request complete",
+                extra={
+                    "event": "request_complete",
+                    "request_id": request_id,
+                    "path": request.url.path,
+                    "status": status,
+                    "elapsed_ms": round((time.perf_counter() - start) * 1000, 2),
+                    "provider_call_count": provider_call_count(),
+                },
+            )
+
+        with request_context(request_id):
+            try:
+                response = await call_next(request)
+            except Exception:
+                log_complete(500)
+                raise
+            log_complete(response.status_code)
         response.headers["x-request-id"] = request_id
         return response
 

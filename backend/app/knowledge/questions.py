@@ -19,6 +19,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.audit_usage.service import UsageService
+from app.core.logging import current_request_id, log_agent_phase, provider_call_count
 from app.core.scoping import OrganizationScope
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
@@ -525,11 +526,18 @@ class OpenAIQuestionProvider:
     def _post(self, path: str, body: dict[str, object]) -> dict[str, object]:
         if not self.api_key:
             raise AIProviderUnavailable("AI provider is not configured")
+        started_at = time.monotonic()
         deadline = _REQUEST_DEADLINE.get()
         timeout = 30.0 if deadline is None else min(30.0, deadline - time.monotonic())
+        phase = "provider_http_embeddings" if path == "/v1/embeddings" else "provider_http_responses"
         if timeout <= 0:
+            log_agent_phase(
+                logger, phase=phase, started_at=started_at, deadline=deadline,
+                failure_kind="provider_deadline_preflight",
+            )
             raise AIProviderUnavailable("AI provider deadline exceeded")
         try:
+            provider_call_count(increment=True)
             response = httpx.post(
                 f"https://api.openai.com{path}",
                 headers={"Authorization": f"Bearer {self.api_key}"},
@@ -537,10 +545,27 @@ class OpenAIQuestionProvider:
                 timeout=timeout,
             )
             if response.status_code == 429:
+                log_agent_phase(
+                    logger, phase=phase, started_at=started_at, deadline=deadline,
+                    failure_kind="http_status", status=429,
+                )
                 raise AIProviderRateLimited(_retry_after_seconds(response))
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            log_agent_phase(logger, phase=phase, started_at=started_at, deadline=deadline)
+            return data
         except httpx.HTTPError as error:
+            failure_kind = (
+                "read_timeout" if isinstance(error, httpx.ReadTimeout)
+                else "connect_timeout" if isinstance(error, httpx.ConnectTimeout)
+                else "http_status" if isinstance(error, httpx.HTTPStatusError)
+                else "network_error"
+            )
+            status = error.response.status_code if isinstance(error, httpx.HTTPStatusError) else None
+            log_agent_phase(
+                logger, phase=phase, started_at=started_at, deadline=deadline,
+                failure_kind=failure_kind, status=status,
+            )
             raise AIProviderUnavailable("AI provider is unavailable") from error
 
 
@@ -1111,6 +1136,7 @@ class QuestionService:
             "semantic question complete",
             extra={
                 "event": "semantic_question",
+                "request_id": current_request_id(),
                 "result": result.confidence,
                 "retrieval_status": result.retrieval_status,
                 "provider_outcome": provider_outcome,

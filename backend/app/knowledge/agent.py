@@ -8,8 +8,10 @@ remote URLs, credentials, or arbitrary database records.
 from __future__ import annotations
 
 import json
+import logging
 import re
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 from uuid import UUID
@@ -17,6 +19,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.logging import log_agent_phase
 from app.core.scoping import OrganizationScope
 from app.knowledge.models import Conversation, ConversationMessage
 from app.knowledge.questions import (
@@ -33,6 +36,30 @@ MAX_HISTORY_MESSAGES = 12
 MAX_MODEL_HISTORY_BYTES = 12_000
 INVENTORY_PAGE_SIZE = 100
 INVENTORY_MAX_ITEMS = 500
+logger = logging.getLogger("document_intelligence.agent")
+
+
+@contextmanager
+def _observed_phase(phase: str, deadline: float):
+    started_at = time.monotonic()
+    failure_kind = None
+    try:
+        yield
+    except AIProviderUnavailable as error:
+        failure_kind = (
+            "agent_deadline" if str(error) == "document agent deadline exceeded"
+            else "provider_deadline_preflight" if str(error) == "AI provider deadline exceeded"
+            else "provider_unavailable"
+        )
+        raise
+    except Exception:
+        failure_kind = "internal_error"
+        raise
+    finally:
+        log_agent_phase(
+            logger, phase=phase, started_at=started_at,
+            deadline=deadline, failure_kind=failure_kind,
+        )
 
 
 @dataclass(frozen=True)
@@ -261,10 +288,11 @@ class AgentService:
         )
         inventory_folders = [node_id for kind, node_id in effective_mentions if kind == "folder"]
         if _is_document_inventory_question(question) and len(inventory_folders) == 1:
-            result = self._complete_inventory(
-                scope=scope, user_id=user_id, providers=providers, mentions=effective_mentions,
-                parent_id=inventory_folders[0], deadline=started + self.limits.max_seconds,
-            )
+            with _observed_phase("inventory", started + self.limits.max_seconds):
+                result = self._complete_inventory(
+                    scope=scope, user_id=user_id, providers=providers, mentions=effective_mentions,
+                    parent_id=inventory_folders[0], deadline=started + self.limits.max_seconds,
+                )
             item = {"name": result.name, "result": result.payload}
             if _json_size([item]) > self.limits.max_result_bytes:
                 raise AIProviderUnavailable("document agent result exceeds configured byte limit")
@@ -281,7 +309,7 @@ class AgentService:
             remaining = self.limits.max_seconds - (time.monotonic() - started)
             if remaining <= 0:
                 break
-            with _request_deadline(started + self.limits.max_seconds):
+            with _observed_phase("planning", started + self.limits.max_seconds), _request_deadline(started + self.limits.max_seconds):
                 calls = model.tool_calls(
                     question=question,
                     history=_bounded_history(history),
@@ -290,7 +318,7 @@ class AgentService:
             if not calls:
                 break
             for call in calls[:1]:
-                with _request_deadline(started + self.limits.max_seconds):
+                with _observed_phase("tool_execution", started + self.limits.max_seconds), _request_deadline(started + self.limits.max_seconds):
                     result = self._execute(
                         call=call, scope=scope, user_id=user_id, question=question,
                         providers=providers, mentions=effective_mentions,
@@ -305,8 +333,13 @@ class AgentService:
         question_results = [item.question_result for item in tool_results if item.question_result is not None]
         catalog_results = [item for item in tool_results if item.name in {"search_library", "list_library_children"}]
         if not question_results and not catalog_results and time.monotonic() >= started + self.limits.max_seconds:
+            log_agent_phase(
+                logger, phase="retrieval_fallback", started_at=time.monotonic(),
+                deadline=started + self.limits.max_seconds, failure_kind="agent_deadline",
+            )
             raise AIProviderUnavailable("document agent deadline exceeded")
-        with _request_deadline(started + self.limits.max_seconds):
+        final_phase = "finalization" if question_results or catalog_results else "retrieval_fallback"
+        with _observed_phase(final_phase, started + self.limits.max_seconds), _request_deadline(started + self.limits.max_seconds):
             final = (
                 question_results[-1]
                 if question_results
