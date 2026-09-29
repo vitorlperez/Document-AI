@@ -31,3 +31,14 @@ test("plain or malformed output still renders as markdown", () => {
   assert.match(html, /<li>item<\/li>/);
   assert.match(html, /texto/);
 });
+
+test("css: citation pills stay compact despite the global 44px button minimum, and kv rows share one label column", async () => {
+  const { readFileSync } = await import("node:fs");
+  const css = readFileSync(new URL("../app/chat-workspace.css", import.meta.url), "utf8");
+  const cite = css.match(/\.product-app \.answer-cite[^{]*\{([^}]*)\}/)?.[1] ?? "";
+  assert.match(cite, /min-height:\s*0/);
+  assert.match(cite, /vertical-align:\s*super/);
+  assert.match(cite, /line-height:\s*1\.\d+/);
+  assert.match(css, /\.answer-fields\s*\{[^}]*grid-template-columns:\s*minmax\(8rem, max-content\) minmax\(0, 1fr\)/);
+  assert.match(css, /\.answer-field\s*\{\s*display:\s*contents/);
+});
