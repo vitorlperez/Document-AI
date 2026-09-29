@@ -499,12 +499,12 @@ class AgentService:
         self, decision: IntentDecision, mentions: list[tuple[str, UUID]], conversation: ConversationState,
     ) -> list[tuple[str, UUID]]:
         """Turn the decided target into catalog node ids; the request's mentions stay authoritative."""
+        if mentions:
+            return mentions
         listed = conversation.listed_files
         if decision.target in {"previous_ordinals", "previous_answer_files"} and listed:
             chosen = [listed[index - 1] for index in decision.ordinals] if decision.ordinals else listed
             return [("file", node_id) for node_id, _folder, _name in chosen]
-        if mentions:
-            return mentions
         if decision.target != "library":
             return conversation.previous_turn_mentions or [
                 ("file", node_id) for node_id, _folder, _name in listed

@@ -63,15 +63,17 @@ INTENT_INSTRUCTIONS = (
     "tópicos').\n"
     "- conversation: greetings, thanks or small talk that needs no document.\n"
     "target, decided from context in this order:\n"
-    "1. previous_ordinals: the message points at positions of the files in "
+    "1. mentioned: context.mentioned_files or context.mentioned_folders is greater than 0. "
+    "An explicit selection in the current message always takes priority over files, ordinals "
+    "or cited sources inherited from history. Use historical targets only when nothing is attached now.\n"
+    "2. previous_ordinals: the message points at positions of the files in "
     "context.previous_answer_listed_files ('o segundo' -> [2], 'o primeiro e o terceiro' -> [1, 3], "
     "'o último' -> [its position]). ordinals holds the 1-based positions.\n"
-    "2. previous_answer_files: the message asks about the files in the previous answer, "
+    "3. previous_answer_files: the message asks about the files in the previous answer, "
     "including its cited sources, as a group or one by one. Use the file names in "
     "context.previous_answer_listed_files together with recent_history to resolve this; "
     "a request for a summary per file after an answer citing files continues those sources. "
     "Only when that list is not empty.\n"
-    "3. mentioned: context.mentioned_files or context.mentioned_folders is greater than 0.\n"
     "4. previous_turn_files: nothing is attached now, but the message continues the previous turn "
     "(restructuring the previous answer, or 'esse documento', 'nesse arquivo', 'e quem assina?') and "
     "context.previous_turn_had_files is true.\n"
@@ -126,7 +128,7 @@ def parse_intent(raw: object, *, listed_files: int, mentioned: int = 0) -> Inten
     if target == "previous_answer_files" and not listed_files:
         # Nothing was listed, so "those files" can only be the ones of the previous turn.
         target = "previous_turn_files"
-    if mentioned and target in {"previous_turn_files", "library"}:
+    if mentioned:
         # Files attached to this message always scope it; see AgentService._resolve_targets.
         target = "mentioned"
     if target == "previous_ordinals":

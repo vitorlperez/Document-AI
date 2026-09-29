@@ -8,9 +8,10 @@ from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
-from app.knowledge.agent import AgentLimits, AgentService, ConversationService
+from app.knowledge.agent import AgentLimits, AgentService, ConversationService, ConversationState
+from app.knowledge.intent import IntentDecision
 from app.knowledge.models import Document
-from app.knowledge.questions import AIProviderUnavailable
+from app.knowledge.questions import AIProviderUnavailable, GeneratedAnswer
 from app.library.models import LibraryNode
 from tests.unit.test_semantic_questions import FakeProvider, chunk, context
 from tests.unit.test_semantic_questions import session as semantic_session  # noqa: F401
@@ -37,6 +38,98 @@ class Classifies(FakeProvider):
 
 def list_folder() -> Classifies:
     return Classifies(intent="list_files", tool="list_folder_inventory")
+
+
+@pytest.mark.parametrize("mention_kind", ["folder", "file"])
+@pytest.mark.parametrize("inherited_target", ["previous_answer_files", "previous_ordinals"])
+def test_current_selection_overrides_history_in_vitor_conversation(
+    semantic_session: Session, mention_kind: str, inherited_target: str,  # noqa: F811
+) -> None:
+    session = semantic_session
+    organization, user, workspace = context(session)
+    names = ["Vitor_Perez_Resume_Revised.pdf", "Escopo MPS", "Escopo de MPS",
+             "Curriculo Vitor", "Vitor_Perez_Resume_Revised_pt", "Profile.pdf"]
+    indexed = [chunk(session, organization, workspace, name=name,
+                     text="Vitor desenvolve sistemas com Python." if name == "Profile.pdf" else name)
+               for name in names]
+    root = LibraryNode(organization_id=organization.id, source_id=workspace.source_id,
+                       parent_id=None, external_id="root", kind="source", name="Google Drive")
+    session.add(root)
+    session.flush()
+    folder = LibraryNode(organization_id=organization.id, source_id=workspace.source_id,
+                         parent_id=root.id, external_id="selected-folder", kind="folder",
+                         name="Test Document-AI")
+    session.add(folder)
+    session.flush()
+    nodes = []
+    for item in indexed:
+        document = session.get(Document, item.document_id)
+        node = LibraryNode(organization_id=organization.id, source_id=workspace.source_id,
+                           parent_id=folder.id if document.name == "Profile.pdf" else root.id,
+                           external_id=document.external_file_id, kind="file", name=document.name)
+        session.add(node)
+        nodes.append(node)
+    session.flush()
+    scope = OrganizationScope(organization.id)
+    conversations = ConversationService(session)
+    questions = [
+        "O que sabemos sobre o Vitor?",
+        "O que temos de informacao sobre a carreira profissional do Vitor?",
+        "Voce pode pegar todos os arquivos relacionado com a Vida profissional do Vitor, sejam curriculo ou resumes",
+    ]
+    conversation, _ = conversations.create_or_load(
+        scope=scope, user_id=user.id, conversation_id=None, question=questions[0],
+    )
+    answers = ["Vitor é um Software Engineer.", "O currículo descreve sua carreira profissional.",
+               "A síntese automática ficou indisponível. Estes são trechos indexados relevantes."]
+    for number, question in enumerate(questions):
+        conversations.append(conversation=conversation, role="user", content=question,
+                             context={"mentions": [], "providers": ["google_drive"]})
+        cited = indexed[:3] if number < 2 else indexed[3:5]
+        references = [{"id": str(node.id), "kind": "file", "name": node.name}
+                      for node in nodes[:3]] if number == 1 else []
+        conversations.append(
+            conversation=conversation, role="assistant", content=answers[number],
+            context={"references": references},
+            response={"citations": [{"document_id": str(item.document_id)} for item in cited]},
+        )
+    session.commit()
+    _, history = conversations.history(scope=scope, user_id=user.id, conversation_id=conversation.id)
+
+    class SelectedSynthesis(Classifies):
+        def synthesize_answer(self, **kwargs):
+            self.synthesis_input = kwargs
+            return GeneratedAnswer("Vitor desenvolve sistemas com Python [1].", [1])
+
+    provider = SelectedSynthesis(intent="list_files_with_summaries", target=inherited_target,
+                                 ordinals=[1] if inherited_target == "previous_ordinals" else [],
+                                 tool="list_folder_inventory")
+    service = AgentService(session, provider, AgentLimits())
+    mentions = [(mention_kind, folder.id if mention_kind == "folder" else nodes[-1].id)]
+    result, tools, references = service.ask(
+        scope=scope, user_id=user.id,
+        question="E dentro dessa pasta, o que temos de informacao sobre o Vitor?",
+        providers=["google_drive"], mentions=mentions, history=history,
+    )
+    assert result.resolved_context["target"] == "mentioned"
+    assert result.resolved_context.get("fallback") is None
+    assert provider.last_context[f"mentioned_{mention_kind}s"] == 1
+    assert provider.last_context["previous_answer_listed_files"] == names[:3]
+    assert provider.last_history == [{"role": m.role, "content": m.content[:500]} for m in history[-4:]]
+    assert [s.document_name for s in provider.synthesis_input["sources"]] == ["Profile.pdf"]
+    assert [c["name"] for c in provider.synthesis_input["catalog"]] == ["Profile.pdf"]
+    assert {c.document_name for c in result.citations} == {"Profile.pdf"}
+    assert all(c.source_url for c in result.citations)
+    assert result.answer == "Vitor desenvolve sistemas com Python (fonte 1)."
+    assert [r["name"] for r in references] == ["Profile.pdf"]
+    assert [t["name"] for t in tools] == [
+        "list_library_children" if mention_kind == "folder" else "summarize_inventory",
+    ]
+    # The resolver also enforces the scope if a caller bypasses classifier normalization.
+    assert service._resolve_targets(
+        IntentDecision("summarize_files", inherited_target, ordinals=(1,)), mentions,
+        ConversationState.from_history(history),
+    ) == mentions
 
 
 def test_cited_sources_become_follow_up_file_targets_without_a_folder_mention(

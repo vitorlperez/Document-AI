@@ -420,10 +420,10 @@ def test_fallback_without_evidence_never_returns_a_silent_empty_answer(
         IntentProvider(intent_error=AIProviderUnavailable("AI provider deadline exceeded")),
         IntentProvider(intent_error=ValueError("malformed classifier JSON")),
         IntentProvider(intent=_intent("drop_tables")),
-        IntentProvider(intent=_intent("summarize_files", "previous_ordinals", [7])),
+        IntentProvider(intent=_intent("summarize_files", "previous_ordinals", ["7"])),
         IntentProvider(intent=["not", "an", "object"]),
     ],
-    ids=["classifier-timeout", "classifier-invalid-json", "unknown-intent", "ordinal-out-of-range", "not-object"],
+    ids=["classifier-timeout", "classifier-invalid-json", "unknown-intent", "ordinal-invalid-type", "not-object"],
 )
 def test_classifier_failures_fall_back_to_a_cited_relevance_search(
     semantic_session: Session, provider: IntentProvider,  # noqa: F811
@@ -739,5 +739,12 @@ def test_parse_intent_normalizes_targets_the_agent_resolves_the_same_way() -> No
         "previous_turn_files"
     )
     assert parse_intent(_intent("summarize_files", "previous_ordinals", [1]), listed_files=2, mentioned=1).target == (
-        "previous_ordinals"
+        "mentioned"
     )
+
+
+@pytest.mark.parametrize("target", ["previous_answer_files", "previous_ordinals", "previous_turn_files", "library"])
+def test_parse_intent_current_selection_discards_historical_ordinals(target: str) -> None:
+    decision = parse_intent(_intent("summarize_files", target, [50]), listed_files=2, mentioned=1)
+    assert decision.target == "mentioned"
+    assert decision.ordinals == ()
