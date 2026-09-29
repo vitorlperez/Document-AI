@@ -1,0 +1,102 @@
+{
+  "mode": "captured_synthesis",
+  "cases": [
+    {
+      "id": "companies",
+      "question": "Em quais empresas o Vitor trabalhou e quando?",
+      "expected": [
+        1,
+        2,
+        3
+      ],
+      "selected": [
+        0
+      ],
+      "hits": 0,
+      "recall": 0.0,
+      "precision": 0.0,
+      "visible_facts": 0,
+      "expected_facts": 8,
+      "context_chars": 500,
+      "passages": 1,
+      "linked_citations": 1,
+      "answer": null,
+      "retrieval_status": "sufficient_evidence"
+    },
+    {
+      "id": "latest",
+      "question": "Qual foi o último emprego do Vitor?",
+      "expected": [
+        1
+      ],
+      "selected": [
+        0
+      ],
+      "hits": 0,
+      "recall": 0.0,
+      "precision": 0.0,
+      "visible_facts": 0,
+      "expected_facts": 2,
+      "context_chars": 500,
+      "passages": 1,
+      "linked_citations": 1,
+      "answer": null,
+      "retrieval_status": "sufficient_evidence"
+    },
+    {
+      "id": "duration-estoca",
+      "question": "Quanto tempo o Vitor trabalhou na Estoca?",
+      "expected": [
+        2
+      ],
+      "selected": [],
+      "hits": 0,
+      "recall": 0.0,
+      "precision": 0,
+      "visible_facts": 0,
+      "expected_facts": 3,
+      "context_chars": 0,
+      "passages": 0,
+      "linked_citations": 0,
+      "answer": null,
+      "retrieval_status": "below_evidence_threshold"
+    },
+    {
+      "id": "duration-cloudiabot",
+      "question": "Quanto tempo o Vitor trabalhou na Cloudiabot?",
+      "expected": [
+        3
+      ],
+      "selected": [
+        3
+      ],
+      "hits": 1,
+      "recall": 1.0,
+      "precision": 1.0,
+      "visible_facts": 3,
+      "expected_facts": 3,
+      "context_chars": 500,
+      "passages": 1,
+      "linked_citations": 1,
+      "answer": null,
+      "retrieval_status": "sufficient_evidence"
+    }
+  ],
+  "document_id": "fda92ea5-aca9-40ac-ba5d-546afd4b2a0f",
+  "chunk_lengths": {
+    "0": 1999,
+    "1": 1713,
+    "2": 2024,
+    "3": 1698,
+    "4": 431
+  },
+  "micro": {
+    "hits": 1,
+    "expected": 6,
+    "selected": 3,
+    "recall": 0.16666666666666666,
+    "precision": 0.3333333333333333,
+    "visible_facts": 3,
+    "expected_facts": 16
+  }
+}

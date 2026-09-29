@@ -31,7 +31,9 @@ ANSWER_MODEL = "gpt-5-mini"
 # Light, cheap model for the flag-gated agent planner (intent + tool choice only).
 PLANNER_MODEL = "gpt-5-nano"
 MIN_EVIDENCE_SCORE = 0.45
-MAX_EVIDENCE_CONTEXT_CHARS = 12000
+# About 16k estimated tokens, leaving ample room for instructions and output.
+# Runtime EVIDENCE_CONTEXT_CHARS can tune this for the deployed model.
+MAX_EVIDENCE_CONTEXT_CHARS = 64000
 MAX_SUMMARY_CHUNKS_PER_DOCUMENT = 8
 MAX_SUMMARY_CONTEXT_CHARS = 24000
 EMBED_BATCH_SIZE = 16
@@ -270,6 +272,9 @@ class Evidence:
     source_url: str
     score: float
     source_provider: str | None = None
+    # Original provenance survives merging; chunk_id/page_number anchor the passage.
+    chunk_ids: tuple[UUID, ...] = ()
+    chunk_positions: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -330,6 +335,14 @@ ANSWER_FORMAT_GUIDANCE = (
     "separately."
 )
 
+CONTENT_SYNTHESIS_GUIDANCE = (
+    " You may enumerate, group and chronologically organize factual information stated in the sources, "
+    "including entities, roles, dates and explicitly recorded durations. Read the complete passages before "
+    "deciding evidence is insufficient. Answer the supported parts and identify any missing information; "
+    "abstain entirely only when no source supports an answer. Do not infer missing dates or equate 'Present' "
+    "with today's date: report it as recorded in the document. Cite every factual item."
+)
+
 
 def file_summary_instructions(target_chars: int) -> str:
     """Prompt of the batched per-file summary; the length target is an instruction, never a cut."""
@@ -350,8 +363,11 @@ def file_summary_instructions(target_chars: int) -> str:
 class OpenAIQuestionProvider:
     """Minimal OpenAI adapter: only authorized selected chunks are transmitted."""
 
-    def __init__(self, api_key: str | None):
+    def __init__(
+        self, api_key: str | None, *, evidence_context_chars: int = MAX_EVIDENCE_CONTEXT_CHARS
+    ):
         self.api_key = api_key
+        self.evidence_context_chars = evidence_context_chars
 
     def embed(self, *, texts: list[str]) -> list[list[float]]:
         data = self._post("/v1/embeddings", {"model": EMBEDDING_MODEL, "input": texts})
@@ -377,9 +393,10 @@ class OpenAIQuestionProvider:
             "when describing the scope; do not claim to have read an entire tool. Attribute factual claims "
             "with numeric evidence markers such as [1] or [1][2], never with file names. Never include URLs, "
             "Markdown links, or source links in the answer text; the interface renders source links separately. "
-            "If the sources do not support the answer, say exactly: "
+            "If no source supports any part of the answer, say exactly: "
             "Insufficient evidence. Do not invent facts or sources."
             + inventory_guidance
+            + CONTENT_SYNTHESIS_GUIDANCE
             + ANSWER_FORMAT_GUIDANCE
             + " Return JSON only with exactly this schema: "
             '{"answer":"string","citations":[source_number]}. Every factual claim needs a cited source number.'
@@ -593,6 +610,7 @@ class OpenAIQuestionProvider:
                     "When previous_answer is given, the user wants it restructured: keep only its statements "
                     "that the sources support, reorganize them as asked, and add nothing the sources do not "
                     "state. If nothing supports an answer, say exactly: Insufficient evidence."
+                    + CONTENT_SYNTHESIS_GUIDANCE
                     + ANSWER_FORMAT_GUIDANCE
                     + ' Return JSON only: {"answer":"string","citations":[source_number]}.'
                 ),
@@ -797,6 +815,9 @@ class QuestionService:
     def __init__(self, session: Session, provider: SemanticProvider):
         self.session = session
         self.provider = provider
+        self.evidence_context_chars = getattr(
+            provider, "evidence_context_chars", MAX_EVIDENCE_CONTEXT_CHARS
+        )
 
     def ask_selection(
         self,
@@ -826,6 +847,7 @@ class QuestionService:
                 document_ids=selection.document_ids,
                 question=question,
                 answer_mode=answer_mode,
+                read_selected_documents=bool(mentions) and all(kind == "file" for kind, _ in mentions),
             )
         else:
             UsageService(self.session).check_and_record(
@@ -923,6 +945,7 @@ class QuestionService:
         document_ids: set[UUID] | None = None,
         question: str,
         answer_mode: str | None = None,
+        read_selected_documents: bool | None = None,
     ) -> QuestionResult:
         """answer_mode "summary" or "relevance" is a decision already made by the
         agent's intent classifier; None keeps the keyword rules. "evidence" returns
@@ -1131,7 +1154,9 @@ class QuestionService:
             for document, _chunk in scoped_rows:
                 total_counts[document.id] = total_counts.get(document.id, 0) + 1
             for item in summary_evidence:
-                selected_counts[item.document_id] = selected_counts.get(item.document_id, 0) + 1
+                selected_counts[item.document_id] = (
+                    selected_counts.get(item.document_id, 0) + len(item.chunk_ids or (item.chunk_id,))
+                )
             sections.append(
                 f"Cobertura da síntese avaliada: {len(synthesized_ids)} de {len(inventory_evidence)} "
                 f"arquivos; {len(covered_document_ids) - len(synthesized_ids)} com recuo extrativo. "
@@ -1237,13 +1262,35 @@ class QuestionService:
                 str(item[1].id),
             ),
         )
+        explicitly_selected = (
+            document_ids is not None if read_selected_documents is None else read_selected_documents
+        )
         supported = [
             _evidence(document, chunk, score, source_providers.get(document.workspace_folder_id))
             for document, chunk, score, lexical_score in ranked_candidates
-            if score >= MIN_EVIDENCE_SCORE
+            # An explicit file selection grounds the search in its own indexed content.
+            # Semantic scores should rank passages, not prevent reading the chosen source.
+            if explicitly_selected
+            or score >= MIN_EVIDENCE_SCORE
             or _has_distinctive_exact_term(document, chunk, query_terms)
         ]
-        supported = _select_diverse_evidence(supported)
+        if explicitly_selected:
+            # Include positions outside the candidate top-k for explicitly chosen files;
+            # the total context budget, rather than an arbitrary count, bounds this read.
+            candidate_ids = {item.chunk_id for item in supported}
+            supported.extend(
+                _evidence(
+                    document, chunk,
+                    _hybrid_score(normalized_question, document, chunk, question_embedding),
+                    source_providers.get(document.workspace_folder_id),
+                )
+                for document, chunk in scoped_rows if chunk.id not in candidate_ids
+            )
+        else:
+            supported = _expand_evidence_neighbors(
+                supported, scoped_rows, source_providers, normalized_question, question_embedding
+            )
+        supported = _select_diverse_evidence(supported, max_chars=self.evidence_context_chars)
         top_score = ranked_candidates[0][2] if ranked_candidates else None
         if not supported:
             return self._complete(
@@ -1391,11 +1438,13 @@ def _evidence(
         document_id=document.id,
         document_name=document.name,
         chunk_id=chunk.id,
-        excerpt=chunk.text[:500],
+        excerpt=chunk.text,
         page_number=chunk.page_number,
         source_url=document.source_url,
         score=score,
         source_provider=source_provider,
+        chunk_ids=(chunk.id,),
+        chunk_positions=(chunk.position,),
     )
 
 
@@ -1405,35 +1454,126 @@ def _embedding_input(chunk: DocumentChunk) -> str:
     return context if context.strip() else chunk.text
 
 
-def _select_diverse_evidence(evidence: list[Evidence]) -> list[Evidence]:
-    selected: list[Evidence] = []
-    document_counts: dict[UUID, int] = {}
-    used_chars = 0
+def _expand_evidence_neighbors(
+    evidence: list[Evidence], rows: list[tuple[Document, DocumentChunk]],
+    source_providers: dict[UUID, str], question: str, question_embedding: list[float],
+) -> list[Evidence]:
+    """One-hop window around each document's strongest supported seed, within scope.
+
+    Neighbors may contain a heading or continuation that scores poorly by itself.
+    They never become new seeds; an unrelated document cannot enter through expansion.
+    """
+    anchors: dict[UUID, Evidence] = {}
     for item in evidence:
-        if document_counts.get(item.document_id, 0) >= 2:
-            continue
-        if any(
-            item.document_id == prior.document_id
-            and (
-                item.excerpt.casefold() in prior.excerpt.casefold()
-                or prior.excerpt.casefold() in item.excerpt.casefold()
-            )
-            for prior in selected
+        if item.document_id not in anchors or item.score > anchors[item.document_id].score:
+            anchors[item.document_id] = item
+    selected_ids = {item.chunk_id for item in evidence}
+    expanded = list(evidence)
+    for document, chunk in rows:
+        anchor = anchors.get(document.id)
+        if (
+            anchor and anchor.chunk_positions and chunk.id not in selected_ids
+            and abs(chunk.position - anchor.chunk_positions[0]) == 1
         ):
-            continue
-        item_chars = _evidence_context_chars(item)
-        if used_chars + item_chars > MAX_EVIDENCE_CONTEXT_CHARS:
-            continue
-        selected.append(item)
-        used_chars += item_chars
-        document_counts[item.document_id] = document_counts.get(item.document_id, 0) + 1
-    return selected
+            expanded.append(_evidence(
+                document, chunk, _hybrid_score(question, document, chunk, question_embedding),
+                source_providers.get(document.workspace_folder_id),
+            ))
+    return expanded
+
+
+def _join_overlapping_text(left: str, right: str) -> str:
+    """Remove only literal redundancy, never shared topic vocabulary."""
+    if right in left:
+        return left
+    if left in right:
+        return right
+    # Chunkers can repeat a suffix/prefix with different whitespace. Match complete
+    # tokens (at least three) and keep the original text of all unique content.
+    left_words = list(re.finditer(r"\S+", left))
+    right_words = list(re.finditer(r"\S+", right))
+    if right_words:
+        # Prefix function finds the longest literal overlap in linear time, even
+        # for long/repetitive passages; None cannot occur as a source token.
+        tokens = ([m.group() for m in right_words] + [None]
+                  + [m.group() for m in left_words[-len(right_words):]])
+        prefix = [0] * len(tokens)
+        for index in range(1, len(tokens)):
+            size = prefix[index - 1]
+            while size and tokens[index] != tokens[size]:
+                size = prefix[size - 1]
+            if tokens[index] == tokens[size]:
+                size += 1
+            prefix[index] = size
+        overlap = prefix[-1]
+        if overlap >= 3:
+            return left.rstrip() + right[right_words[overlap - 1].end():]
+    return left + "\n" + right
+
+
+def _merge_contiguous_evidence(evidence: list[Evidence]) -> list[Evidence]:
+    documents: dict[UUID, list[Evidence]] = {}
+    for item in evidence:
+        documents.setdefault(item.document_id, []).append(item)
+    merged: list[Evidence] = []
+    for items in documents.values():
+        ordered = sorted(items, key=lambda item: (
+            item.chunk_positions[0] if item.chunk_positions else 0, str(item.chunk_id)
+        ))
+        passages: list[Evidence] = []
+        for item in ordered:
+            adjacent = bool(passages and passages[-1].chunk_positions and item.chunk_positions
+                            and passages[-1].chunk_positions[-1] + 1 == item.chunk_positions[0])
+            if not adjacent:
+                redundant = next((i for i, prior in enumerate(passages)
+                                  if item.excerpt in prior.excerpt), None)
+                if redundant is not None:
+                    prior = passages[redundant]
+                    # A duplicate across a gap does not establish continuity across it.
+                    passages[redundant] = replace(
+                        prior, chunk_ids=prior.chunk_ids + item.chunk_ids,
+                        score=max(prior.score, item.score),
+                    )
+                    continue
+                passages.append(item)
+                continue
+            prior = passages[-1]
+            passages[-1] = replace(
+                prior, excerpt=_join_overlapping_text(prior.excerpt, item.excerpt),
+                score=max(prior.score, item.score),
+                chunk_ids=prior.chunk_ids + item.chunk_ids,
+                chunk_positions=prior.chunk_positions + item.chunk_positions,
+            )
+        merged.extend(passages)
+    return merged
+
+
+def _select_diverse_evidence(
+    evidence: list[Evidence], *, max_chars: int | None = None
+) -> list[Evidence]:
+    """Pack whole passages by relevance, then present them in original document order."""
+    budget = MAX_EVIDENCE_CONTEXT_CHARS if max_chars is None else max_chars
+    selected: list[Evidence] = []
+    # Stable ties preserve the caller's inventory/document order.
+    for item in sorted(evidence, key=lambda item: -item.score):
+        proposed = _merge_contiguous_evidence([*selected, item])
+        if sum(_evidence_context_chars(passage) for passage in proposed) <= budget:
+            selected.append(item)
+    # Keep the retrieval's exact-entity/document priority for presentation, while
+    # the packing decision above prioritizes score within the shared budget.
+    document_order = {item.document_id: index for index, item in reversed(list(enumerate(evidence)))}
+    selected.sort(key=lambda item: document_order[item.document_id])
+    return _merge_contiguous_evidence(selected)
 
 
 def _evidence_context_chars(item: Evidence) -> int:
     # Mirrors the source wrapper sent to the answer provider, allowing room
     # for a longer source index without tying the budget to a document count.
-    return len(item.document_name) + len(item.source_provider or "unknown") + len(item.excerpt) + 40
+    wrapper = (
+        f"[Source 9999999999: {item.document_name}; tool: {item.source_provider or 'unknown'}; "
+        "selected excerpt]\n"
+    )
+    return len(wrapper) + len(item.excerpt) + 2
 
 
 def _cosine_similarity(left: list[float], right: list[float]) -> float:
@@ -1580,17 +1720,9 @@ def _document_summary_evidence(
         for item in ranked:
             if len(chosen) >= MAX_SUMMARY_CHUNKS_PER_DOCUMENT:
                 break
-            # Adjacent overlapping chunks often repeat a sentence; give other sections room.
-            if any(
-                abs(item.position - prior.position) == 1
-                and len(set(_query_terms(item.text)) & set(_query_terms(prior.text))) > 12
-                for prior in chosen
-            ):
-                continue
             chosen.append(item)
         chunks[:] = chosen
     selected: list[Evidence] = []
-    used_chars = 0
     for chunk_index in range(max((len(chunks) for _document, chunks in ordered), default=0)):
         for document, chunks in ordered:
             if chunk_index >= len(chunks):
@@ -1601,13 +1733,8 @@ def _document_summary_evidence(
                 score=1.0,
                 source_provider=source_providers.get(document.workspace_folder_id),
             )
-            evidence = replace(evidence, excerpt=_complete_passage(chunks[chunk_index].text))
-            item_chars = _evidence_context_chars(evidence)
-            if used_chars + item_chars > MAX_SUMMARY_CONTEXT_CHARS:
-                continue
             selected.append(evidence)
-            used_chars += item_chars
-    return selected
+    return _select_diverse_evidence(selected, max_chars=MAX_SUMMARY_CONTEXT_CHARS)
 
 
 def _summary_passage_score(chunk: DocumentChunk, query_terms: set[str]) -> float:

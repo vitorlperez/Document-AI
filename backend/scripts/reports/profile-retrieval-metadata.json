@@ -1,0 +1,9 @@
+{
+  "before_questions_sha256": "daaac16e99c70e127e827050f45b703779d422d06205181fe2717cba5fc73f0d",
+  "after_questions_sha256": "364fed4672e6f716c2189caaa7fabe39676f83456b70b9574fb602e1be789564",
+  "baseline_commit": "3afc9bd",
+  "date": "2026-09-29",
+  "scope": "Profile.pdf explicitly selected; real local PostgreSQL chunks and OpenAI query embeddings; synthesis captured for retrieval metrics",
+  "embeddings": "same real query vectors reused before/after from /tmp/profile-embeddings.json; vectors not committed",
+  "runtime": "isolated Python process via PYTHONPATH inside existing api container; running API/worker untouched"
+}

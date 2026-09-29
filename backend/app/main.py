@@ -117,7 +117,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.ingestion_dispatcher = CeleryIngestionDispatcher(create_celery_app(runtime_settings))
     app.state.semantic_provider = OpenAIQuestionProvider(
-        runtime_settings.openai_api_key.get_secret_value() if runtime_settings.openai_api_key else None
+        runtime_settings.openai_api_key.get_secret_value() if runtime_settings.openai_api_key else None,
+        evidence_context_chars=runtime_settings.evidence_context_chars,
     )
     # The browser UI runs on a separate local port during development. Restrict
     # cross-origin requests to the configured public application origin and keep

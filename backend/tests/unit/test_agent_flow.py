@@ -377,19 +377,21 @@ def test_question_without_evidence_answers_honestly_with_sources(semantic_sessio
         synthesis=GeneratedAnswer("Insufficient evidence.", []),
         vectors={question: [1.0, 0.0]},
     )
+    provider.answer_text, provider.citations = "Insufficient evidence.", []
 
     result, _tool_results, _references = _run(
         semantic_session, provider, scope, user, question, mentions=[("file", profile_node.id)],
     )
 
-    # The attached file's own text was offered to the synthesis before giving up.
-    assert [item.document_name for item in provider.synthesis_calls[0]["sources"]] == ["Profile.pdf"]
-    assert provider.answer_calls == []
+    # Reading the selected file bypasses the semantic gate, but the mocked LLM
+    # still abstains on a fact absent from its content. No second synthesis needed.
+    assert [item.document_name for item in provider.answer_calls[0][1]] == ["Profile.pdf"]
+    assert provider.synthesis_calls == []
     assert result.answer is not None
     assert "evidência suficiente" in result.answer and "Arquivos consultados" in result.answer
     assert "Profile.pdf (fonte 1)" in result.answer
     assert result.confidence == "insufficient_evidence"
-    assert result.retrieval_status == "below_evidence_threshold"
+    assert result.retrieval_status == "invalid_generation_output"
     assert [(item.document_name, item.source_url) for item in result.citations] == [
         ("Profile.pdf", profile_document.source_url)
     ]
@@ -404,6 +406,7 @@ def test_fallback_without_evidence_never_returns_a_silent_empty_answer(
         intent_error=AIProviderUnavailable("AI provider deadline exceeded"), vectors={question: [1.0, 0.0]},
         synthesis=GeneratedAnswer("Insufficient evidence.", []),
     )
+    provider.answer_text, provider.citations = "Insufficient evidence.", []
 
     result, _tool_results, _references = _run(
         semantic_session, provider, scope, user, question, mentions=[("file", profile_node.id)],

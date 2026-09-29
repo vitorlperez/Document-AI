@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import PostgresDsn, SecretStr, field_validator
+from pydantic import Field, PostgresDsn, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     agent_file_summary_chars: int = 350
     agent_file_summary_model: str = "gpt-5-nano"
     agent_file_summary_timeout_seconds: float = 8.0
+    # Total evidence input for content answers (~16k tokens at the default).
+    # Whole relevant chunks are packed by score; per-file brief length is separate.
+    evidence_context_chars: int = Field(default=64_000, ge=1024)
 
 
 @lru_cache

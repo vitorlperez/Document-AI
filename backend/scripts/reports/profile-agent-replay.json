@@ -1,0 +1,29 @@
+{
+  "question": "Qual a ultima empresa que o Vitor trabalhou?",
+  "answer": "A última empresa em que Vitor trabalhou é a Allstacks (fonte 1).\n\n**Empresa:** Allstacks (fonte 1)\n**Cargo:** Software Engineer (fonte 1)\n**Período:** June 2025 - Present (8 months) (fonte 1)\n**Local:** Raleigh, Carolina do Norte, Estados Unidos (fonte 1)",
+  "confidence": "supported",
+  "retrieval_status": "sufficient_evidence",
+  "resolved_context": {
+    "providers": [
+      "google_drive"
+    ],
+    "folder_count": 1,
+    "document_count": 1,
+    "mention_node_ids": [
+      "fefc5d71-8f78-4ba4-a579-1221b650ca27"
+    ],
+    "intent": "ask_content",
+    "decided_by": "llm",
+    "target": "mentioned",
+    "tools": [
+      "retrieve_evidence"
+    ]
+  },
+  "sources": [
+    {
+      "name": "Profile.pdf",
+      "has_link": true,
+      "original_chunks": 5
+    }
+  ]
+}

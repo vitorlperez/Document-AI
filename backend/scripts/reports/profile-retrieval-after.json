@@ -1,0 +1,120 @@
+{
+  "mode": "captured_synthesis",
+  "cases": [
+    {
+      "id": "companies",
+      "question": "Em quais empresas o Vitor trabalhou e quando?",
+      "expected": [
+        1,
+        2,
+        3
+      ],
+      "selected": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 3,
+      "recall": 1.0,
+      "precision": 0.6,
+      "visible_facts": 8,
+      "expected_facts": 8,
+      "context_chars": 7869,
+      "passages": 1,
+      "linked_citations": 1,
+      "answer": null,
+      "retrieval_status": "sufficient_evidence"
+    },
+    {
+      "id": "latest",
+      "question": "Qual foi o último emprego do Vitor?",
+      "expected": [
+        1
+      ],
+      "selected": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "recall": 1.0,
+      "precision": 0.2,
+      "visible_facts": 2,
+      "expected_facts": 2,
+      "context_chars": 7869,
+      "passages": 1,
+      "linked_citations": 1,
+      "answer": null,
+      "retrieval_status": "sufficient_evidence"
+    },
+    {
+      "id": "duration-estoca",
+      "question": "Quanto tempo o Vitor trabalhou na Estoca?",
+      "expected": [
+        2
+      ],
+      "selected": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "recall": 1.0,
+      "precision": 0.2,
+      "visible_facts": 3,
+      "expected_facts": 3,
+      "context_chars": 7869,
+      "passages": 1,
+      "linked_citations": 1,
+      "answer": null,
+      "retrieval_status": "sufficient_evidence"
+    },
+    {
+      "id": "duration-cloudiabot",
+      "question": "Quanto tempo o Vitor trabalhou na Cloudiabot?",
+      "expected": [
+        3
+      ],
+      "selected": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "recall": 1.0,
+      "precision": 0.2,
+      "visible_facts": 3,
+      "expected_facts": 3,
+      "context_chars": 7869,
+      "passages": 1,
+      "linked_citations": 1,
+      "answer": null,
+      "retrieval_status": "sufficient_evidence"
+    }
+  ],
+  "document_id": "fda92ea5-aca9-40ac-ba5d-546afd4b2a0f",
+  "chunk_lengths": {
+    "0": 1999,
+    "1": 1713,
+    "2": 2024,
+    "3": 1698,
+    "4": 431
+  },
+  "micro": {
+    "hits": 6,
+    "expected": 6,
+    "selected": 20,
+    "recall": 1.0,
+    "precision": 0.3,
+    "visible_facts": 16,
+    "expected_facts": 16
+  }
+}

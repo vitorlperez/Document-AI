@@ -1,0 +1,6 @@
+[
+  {"id": "companies", "question": "Em quais empresas o Vitor trabalhou e quando?", "expected_positions": [1, 2, 3], "facts": ["Allstacks", "June 2025 - Present", "Estoca", "February 2023 - June 2025", "Cloudiabot", "September 2021 - January 2023", "Wasion International", "January 2021 - August 2021"]},
+  {"id": "latest", "question": "Qual foi o último emprego do Vitor?", "expected_positions": [1], "facts": ["Allstacks", "June 2025 - Present"]},
+  {"id": "duration-estoca", "question": "Quanto tempo o Vitor trabalhou na Estoca?", "expected_positions": [2], "facts": ["Estoca", "February 2023 - June 2025", "2 years 5 months"]},
+  {"id": "duration-cloudiabot", "question": "Quanto tempo o Vitor trabalhou na Cloudiabot?", "expected_positions": [3], "facts": ["Cloudiabot", "September 2021 - January 2023", "1 year 5 months"]}
+]
