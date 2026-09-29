@@ -53,7 +53,10 @@ function BlockView({ block, context, blockKey, lead, chips = true }: { block: Bl
       </section>;
     case "fields":
       return <dl className="answer-fields">{block.items.map((field, i) => <div key={i} className="answer-field">
-        <dt>{inline(field.label, `l${i}`)}</dt><dd>{inline(field.value, `v${i}`)}</dd>
+        <dt>{inline(field.label, `l${i}`)}</dt>
+        <dd>{field.tags
+          ? <><span className="answer-tags">{field.tags.map((tag, t) => <span key={t} className="answer-tag">{tag}</span>)}</span>{field.marker && <CitationMarks marker={field.marker} context={context} keyPrefix={`${blockKey}-t${i}`} />}</>
+          : inline(field.value, `v${i}`)}</dd>
       </div>)}</dl>;
     case "table":
       return <div className="answer-table-wrap" tabIndex={0} role="region" aria-label="Tabela da resposta">

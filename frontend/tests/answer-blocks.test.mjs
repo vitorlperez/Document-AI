@@ -112,3 +112,12 @@ test("citation marker helper reads every number of a group", () => {
   assert.deepEqual(citationNumbers("(fontes 1, 2 e 3)"), [1, 2, 3]);
   assert.equal("Texto (fonte 2) e (fontes 1 e 3).".match(CITATION_MARKER).length, 2);
 });
+
+test("a label value of short '|' items becomes tags, a sentence stays text", () => {
+  const blocks = parseAnswerBlocks("**Habilidades:** Grafana | LLM | Generative AI (fonte 2)\n**Resumo:** Engenheiro com 5 anos | especialista em Python e IA aplicada a produtos de documentos e busca (fonte 2)");
+  const [fields] = blocks;
+  assert.equal(fields.kind, "fields");
+  assert.deepEqual(fields.items[0].tags, ["Grafana", "LLM", "Generative AI"]);
+  assert.equal(fields.items[0].marker, "(fonte 2)");
+  assert.equal(fields.items[1].tags, undefined);
+});

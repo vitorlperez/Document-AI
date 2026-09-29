@@ -67,6 +67,7 @@ class TextSearchInput(BaseModel):
 class QuestionMention(BaseModel):
     kind: Literal["file", "folder"]
     node_id: UUID
+    name: str | None = Field(default=None, max_length=300)
 
 
 class QuestionInput(BaseModel):
@@ -353,7 +354,8 @@ def ask_organization_question(
             "provider": payload.provider,
             "providers": payload.providers or [],
             "mentions": [
-                {"kind": item.kind, "node_id": str(item.node_id)} for item in payload.mentions or []
+                {"kind": item.kind, "node_id": str(item.node_id), **({"name": item.name} if item.name else {})}
+                for item in payload.mentions or []
             ],
         }
         conversation_service.append(

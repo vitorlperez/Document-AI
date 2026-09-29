@@ -6,11 +6,12 @@
  *   ::: highlight … :::           -> highlight (direct summary / key point)
  *   ::: steps … :::               -> numbered step-by-step
  *   **Label:** value              -> fields (label/value pairs)
+ *   **Label:** a | b | c          -> fields whose short items ("|"-separated) render as tags
  *   - item / 1. item, table       -> list, table
  * Unknown or malformed directives degrade to plain markdown; parsing never throws.
  */
 export type ListItem = { text: string; sub: string[] };
-export type Field = { label: string; value: string };
+export type Field = { label: string; value: string; tags?: string[]; marker?: string };
 export type Block =
   | { kind: "heading"; level: number; text: string }
   | { kind: "paragraph"; text: string }
@@ -50,7 +51,20 @@ function parseField(line: string): Field | null {
   if (!match) return null;
   const label = (match[1] ?? match[3]).trim();
   const value = (match[2] ?? match[4]).trim();
-  return label && value ? { label, value } : null;
+  return label && value ? withTags({ label, value }) : null;
+}
+
+const TAG_SEPARATOR = /\s+\|\s+/;
+const MAX_TAG_LENGTH = 48;
+const TRAILING_MARKERS = new RegExp(`(?:\\s*${CITATION_MARKER.source})+\\s*$`, "i");
+
+/** A value written as short "|"-separated items ("Python | SQL | Docker") is a tag list; a sentence never is. */
+function withTags(field: Field): Field {
+  const trailing = TRAILING_MARKERS.exec(field.value)?.[0] ?? "";
+  const body = trailing ? field.value.slice(0, field.value.length - trailing.length) : field.value;
+  const parts = body.split(TAG_SEPARATOR).map((part) => part.trim().replace(/[;,.]+$/, "")).filter(Boolean);
+  const isList = parts.length >= 2 && parts.every((part) => part.length <= MAX_TAG_LENGTH && part.split(/\s+/).length <= 7);
+  return isList ? { ...field, tags: parts.map((part) => part.replace(/\*\*|`/g, "")), marker: trailing.trim() } : field;
 }
 
 /** Flat markdown subset: headings, lists (one sub level), fields, tables and paragraphs. */

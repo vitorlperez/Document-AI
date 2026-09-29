@@ -68,3 +68,9 @@ def test_unformatted_synthesis_still_answers_with_sources(semantic_session: Sess
 
     assert result.answer.startswith("::: file sem fechamento")
     assert result.citations and result.citations[0].document_name == "Indexed.pdf"
+
+
+def test_guidance_keeps_labels_in_the_question_language_and_documents_tags() -> None:
+    assert "language of the user's question" in ANSWER_FORMAT_GUIDANCE
+    assert "never translate or alter values quoted from the documents" in ANSWER_FORMAT_GUIDANCE
+    assert "' | '" in ANSWER_FORMAT_GUIDANCE and "tags" in ANSWER_FORMAT_GUIDANCE

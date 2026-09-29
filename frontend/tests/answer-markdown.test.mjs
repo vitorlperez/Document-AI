@@ -42,3 +42,9 @@ test("css: citation pills stay compact despite the global 44px button minimum, a
   assert.match(css, /\.answer-fields\s*\{[^}]*grid-template-columns:\s*minmax\(8rem, max-content\) minmax\(0, 1fr\)/);
   assert.match(css, /\.answer-field\s*\{\s*display:\s*contents/);
 });
+
+test("tag values render as discrete tags followed by their citation", () => {
+  const html = render("**Habilidades:** Grafana | LLM (fonte 1)", ["Profile.pdf"]);
+  assert.match(html, /<span class="answer-tags"><span class="answer-tag">Grafana<\/span><span class="answer-tag">LLM<\/span><\/span>/);
+  assert.match(html, /class="answer-cite"/);
+});
