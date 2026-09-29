@@ -1,5 +1,5 @@
-import { Component, Fragment, type ReactNode } from "react";
-import { FileText, ListChecks } from "lucide-react";
+import { Component, Fragment, useId, useState, type ReactNode } from "react";
+import { ChevronDown, FileText, ListChecks } from "lucide-react";
 import { CITATION_MARKER, citationNumbers, parseAnswerBlocks, plainParagraphs, type Block, type ListItem } from "./answer-blocks";
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -35,7 +35,7 @@ function ListItems({ items, context, keyPrefix, chips }: { items: ListItem[]; co
   </li>)}</>;
 }
 
-function BlockView({ block, context, blockKey, lead, chips = true }: { block: Block; context: InlineContext; blockKey: string; lead?: boolean; chips?: boolean }): ReactNode {
+function BlockView({ block, context, blockKey, lead, chips = true, defaultOpen = true }: { block: Block; context: InlineContext; blockKey: string; lead?: boolean; chips?: boolean; defaultOpen?: boolean }): ReactNode {
   const inline = (text: string, suffix = "") => renderInline(text, context, `${blockKey}${suffix}`, chips);
   switch (block.kind) {
     case "heading":
@@ -67,24 +67,36 @@ function BlockView({ block, context, blockKey, lead, chips = true }: { block: Bl
       </div>;
     case "highlight":
       return <div className="answer-highlight">{block.children.map((child, i) => <BlockView key={i} block={child} context={context} blockKey={`${blockKey}-${i}`} chips={chips} />)}</div>;
-    case "file": {
-      const [first, ...rest] = block.children;
-      const summary = first?.kind === "paragraph" ? first : null;
-      const details = summary ? rest : block.children;
-      return <section className="answer-file-card" aria-label={`Arquivo ${block.name}`}>
-        <h4 className="answer-file-card-header">
-          <span className="answer-file-chip"><FileText size={13} aria-hidden="true" />{block.name}</span>
-          {block.marker && <CitationMarks marker={block.marker} context={context} keyPrefix={`${blockKey}-m`} />}
-        </h4>
-        {(summary || details.length > 0) && <div className="answer-file-card-body">
-          {summary && <p className="answer-file-summary">{renderInline(summary.text, context, `${blockKey}-s`, false)}</p>}
-          {details.map((child, i) => <BlockView key={i} block={child} context={context} blockKey={`${blockKey}-${i}`} chips={false} />)}
-        </div>}
-      </section>;
-    }
+    case "file":
+      return <FileCard block={block} context={context} blockKey={blockKey} defaultOpen={defaultOpen} />;
     default:
       return <p className={lead ? "answer-lead" : "answer-paragraph"}>{inline(block.text)}</p>;
   }
+}
+
+/** From this many consecutive cards on, details start collapsed: the summaries stay visible, the extra detail is one click away. */
+const COLLAPSE_FROM_CARDS = 3;
+
+function FileCard({ block, context, blockKey, defaultOpen }: { block: Extract<Block, { kind: "file" }>; context: InlineContext; blockKey: string; defaultOpen: boolean }) {
+  const [first, ...rest] = block.children;
+  const summary = first?.kind === "paragraph" ? first : null;
+  const details = summary ? rest : block.children;
+  const [open, setOpen] = useState(defaultOpen);
+  const detailsId = useId();
+  const collapsible = details.length > 0;
+  return <section className="answer-file-card" aria-label={`Arquivo ${block.name}`}>
+    <h4 className="answer-file-card-header">
+      <span className="answer-file-name"><FileText size={13} aria-hidden="true" />{block.name}</span>
+      {block.marker && <CitationMarks marker={block.marker} context={context} keyPrefix={`${blockKey}-m`} />}
+      {collapsible && <button type="button" className="answer-file-toggle" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen((value) => !value)}>
+        {open ? "Ver menos" : "Ver mais"}<ChevronDown size={13} aria-hidden="true" />
+      </button>}
+    </h4>
+    {summary && <p className="answer-file-summary">{renderInline(summary.text, context, `${blockKey}-s`, false)}</p>}
+    {collapsible && <div id={detailsId} className="answer-file-card-body" hidden={!open}>
+      {details.map((child, i) => <BlockView key={i} block={child} context={context} blockKey={`${blockKey}-${i}`} chips={false} />)}
+    </div>}
+  </section>;
 }
 
 /** Groups consecutive file cards so the list reads as one set with light dividers. */
@@ -104,7 +116,7 @@ function StructuredAnswer({ text, context }: { text: string; context: InlineCont
   const leadBlock = leadIndex >= 0 ? blocks[leadIndex] : null;
   return <div className="answer-body">{groupBlocks(blocks).map((group, index) => {
     const key = `b${index}`;
-    if (Array.isArray(group)) return <div key={key} className="answer-file-group">{group.map((block, i) => <BlockView key={i} block={block} context={context} blockKey={`${key}-${i}`} />)}</div>;
+    if (Array.isArray(group)) return <div key={key} className="answer-file-group">{group.map((block, i) => <BlockView key={i} block={block} context={context} blockKey={`${key}-${i}`} defaultOpen={group.length < COLLAPSE_FROM_CARDS} />)}</div>;
     return <BlockView key={key} block={group} context={context} blockKey={key} lead={group === leadBlock} />;
   })}</div>;
 }

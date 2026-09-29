@@ -74,3 +74,12 @@ def test_guidance_keeps_labels_in_the_question_language_and_documents_tags() -> 
     assert "language of the user's question" in ANSWER_FORMAT_GUIDANCE
     assert "never translate or alter values quoted from the documents" in ANSWER_FORMAT_GUIDANCE
     assert "' | '" in ANSWER_FORMAT_GUIDANCE and "tags" in ANSWER_FORMAT_GUIDANCE
+
+
+def test_guidance_reserves_file_cards_for_per_file_requests_and_prefers_fluid_prose():
+    assert "only when the user asks for the answer file by file" in ANSWER_FORMAT_GUIDANCE
+    assert "do not split the answer by file" in ANSWER_FORMAT_GUIDANCE
+    assert "fluid, direct prose" in ANSWER_FORMAT_GUIDANCE
+    assert "cites each claim inline" in ANSWER_FORMAT_GUIDANCE
+    assert "never repeat the same fact" in ANSWER_FORMAT_GUIDANCE
+    assert "evidence marker" in ANSWER_FORMAT_GUIDANCE
