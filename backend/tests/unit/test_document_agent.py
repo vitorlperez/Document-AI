@@ -8,13 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
-from app.knowledge.agent import (
-    AgentLimits,
-    AgentService,
-    ConversationService,
-    ToolCall,
-    _is_inventory_summary_request,
-)
+from app.knowledge.agent import AgentLimits, AgentService, ConversationService
 from app.knowledge.models import Document
 from app.knowledge.questions import AIProviderUnavailable
 from app.library.models import LibraryNode
@@ -22,37 +16,25 @@ from tests.unit.test_semantic_questions import FakeProvider, chunk, context
 from tests.unit.test_semantic_questions import session as semantic_session  # noqa: F401
 
 
-class RepeatingCatalogProvider(FakeProvider):
-    def __init__(self) -> None:
-        super().__init__({"What is documented?": [1.0, 0.0]})
-        self.calls = 0
+class Classifies(FakeProvider):
+    """Mocked intent classifier with a fixed decision; no synthesis model."""
 
-    def tool_calls(self, *, question, history, tool_results):
-        self.calls += 1
-        return [ToolCall("search_library", {"query": "brief"})]
+    def __init__(self, vectors=None, *, intent: str, target: str = "mentioned", ordinals=(), tool: str = "none",
+                 query: str = "", extra: dict | None = None, **kwargs) -> None:
+        super().__init__(vectors or {}, **kwargs)
+        self.decision = {
+            "intent": intent, "target": target, "ordinals": list(ordinals), "tool": tool, "query": query,
+            **(extra or {}),
+        }
+        self.intent_calls = 0
 
-
-class SummarizeSecondProvider(FakeProvider):
-    def tool_calls(self, *, question, history, tool_results):
-        return [ToolCall("summarize_documents", {})] if not tool_results else []
-
-
-class FolderInventoryProvider(FakeProvider):
-    def __init__(self, *, parent_id) -> None:
-        super().__init__({})
-        self.parent_id = parent_id
-
-    def tool_calls(self, *, question, history, tool_results):
-        return (
-            [ToolCall("list_library_children", {"parent_id": str(self.parent_id)})]
-            if not tool_results
-            else []
-        )
+    def classify_intent(self, *, question, history, context, model="gpt-5-nano"):
+        self.intent_calls += 1
+        return self.decision
 
 
-class FollowUpPluralProvider(FakeProvider):
-    def tool_calls(self, *, question, history, tool_results):
-        return [ToolCall("retrieve_evidence", {})] if not tool_results else []
+def list_folder() -> Classifies:
+    return Classifies(intent="list_files", tool="list_folder_inventory")
 
 
 def test_direct_children_tool_is_paged_local_catalog_snapshot(
@@ -86,51 +68,55 @@ def test_direct_children_tool_is_paged_local_catalog_snapshot(
     assert [item["name"] for item in result.payload["items"]] == ["Brief 2.pdf"]
 
 
-def test_catalog_tool_result_becomes_the_final_inventory_answer(
+def test_name_search_lists_matches_with_linked_sources(
     semantic_session: Session,  # noqa: F811
 ) -> None:
     session = semantic_session
     organization, user, workspace = context(session)
     text = "The launch is documented in the project brief."
-    chunk(session, organization, workspace, name="Brief.pdf", text=text)
+    indexed = chunk(session, organization, workspace, name="Brief.pdf", text=text)
+    document = session.get(Document, indexed.document_id)
+    assert document is not None
     session.add(LibraryNode(
         organization_id=organization.id, source_id=workspace.source_id, parent_id=None,
-        external_id="brief-node", kind="file", name="Brief.pdf",
+        external_id=document.external_file_id, kind="file", name="Brief.pdf",
     ))
     session.commit()
-    provider = RepeatingCatalogProvider()
+    provider = Classifies(intent="list_files", target="library", tool="search_library", query="brief")
 
     result, tool_results, references = AgentService(
-        session, provider, AgentLimits(max_steps=2, max_result_bytes=10_000, max_seconds=10)
+        session, provider, AgentLimits(max_result_bytes=10_000, max_seconds=10)
     ).ask(
-        scope=OrganizationScope(organization.id), user_id=user.id, question="What is documented?",
+        scope=OrganizationScope(organization.id), user_id=user.id, question="Tem algum arquivo chamado brief?",
         providers=["google_drive"], mentions=[], history=[],
     )
 
-    assert provider.calls == 2
-    assert [item["name"] for item in tool_results] == ["search_library", "search_library"]
+    assert provider.intent_calls == 1
+    assert [item["name"] for item in tool_results] == ["search_library"]
     assert result.answer == "Itens encontrados no catálogo autorizado:\n- Brief.pdf (Arquivo)"
     assert references == [{"id": str(tool_results[-1]["result"]["items"][0]["id"]), "kind": "file", "name": "Brief.pdf"}]
+    assert [(item.document_name, item.source_url) for item in result.citations] == [("Brief.pdf", document.source_url)]
 
 
-def test_tool_arguments_never_override_authorized_request_scope(
+def test_classifier_output_never_overrides_authorized_request_scope(
     semantic_session: Session,  # noqa: F811
 ) -> None:
     session = semantic_session
     organization, user, workspace = context(session)
     text = "Private project scope."
     chunk(session, organization, workspace, name="Scope.pdf", text=text)
-    provider = FakeProvider({"What is the scope?": [1.0, 0.0]})
-    service = AgentService(session, provider, AgentLimits())
-
-    result = service._execute(
-        call=ToolCall("retrieve_evidence", {"providers": ["foreign"], "organization_id": str(uuid4())}),
-        scope=OrganizationScope(organization.id), user_id=user.id, question="What is the scope?",
-        providers=["google_drive"], mentions=[],
+    provider = Classifies(
+        {"What is the scope?": [1.0, 0.0]}, intent="ask_content", target="library", tool="retrieve_evidence",
+        extra={"providers": ["foreign"], "organization_id": str(uuid4())},
     )
 
-    assert result.question_result is not None
-    assert result.question_result.citations
+    result, _tool_results, _references = AgentService(session, provider, AgentLimits()).ask(
+        scope=OrganizationScope(organization.id), user_id=user.id, question="What is the scope?",
+        providers=["google_drive"], mentions=[], history=[],
+    )
+
+    assert {item.document_name for item in result.citations} == {"Scope.pdf"}
+    assert all(item.source_url for item in result.citations)
 
 
 def test_conversation_history_is_user_and_organization_isolated(
@@ -197,7 +183,10 @@ def test_follow_up_ordinal_uses_persisted_reference_and_reauthorizes_it(
     _conversation, history = ConversationService(session).history(
         scope=OrganizationScope(organization.id), user_id=user.id, conversation_id=conversation.id
     )
-    provider = SummarizeSecondProvider({"Resuma o segundo": [1.0, 0.0]})
+    provider = Classifies(
+        {"Resuma o segundo": [1.0, 0.0]}, intent="summarize_files", target="previous_ordinals", ordinals=[2],
+        tool="summarize_documents",
+    )
 
     result, _tool_results, _references = AgentService(session, provider, AgentLimits()).ask(
         scope=OrganizationScope(organization.id), user_id=user.id, question="Resuma o segundo",
@@ -206,9 +195,10 @@ def test_follow_up_ordinal_uses_persisted_reference_and_reauthorizes_it(
 
     assert result.citations
     assert {item.document_name for item in result.citations} == {"Second.pdf"}
+    assert {item.source_url for item in result.citations} == {second_document.source_url}
 
 
-def test_follow_up_plural_reuses_only_the_persisted_folder_inventory(
+def test_follow_up_each_file_reuses_only_the_persisted_folder_inventory(
     semantic_session: Session,  # noqa: F811
 ) -> None:
     session = semantic_session
@@ -247,9 +237,7 @@ def test_follow_up_plural_reuses_only_the_persisted_folder_inventory(
     session.commit()
 
     scope = OrganizationScope(organization.id)
-    inventory, _tool_results, references = AgentService(
-        session, FolderInventoryProvider(parent_id=folder.id), AgentLimits()
-    ).ask(
+    inventory, _tool_results, references = AgentService(session, list_folder(), AgentLimits()).ask(
         scope=scope, user_id=user.id, question="Quais arquivos temos dentro dessa pasta?",
         providers=["google_drive"], mentions=[("folder", folder.id)], history=[],
     )
@@ -259,6 +247,7 @@ def test_follow_up_plural_reuses_only_the_persisted_folder_inventory(
         "- A Gravidade.pdf (Arquivo)\n"
         "- Profile.pdf (Arquivo)"
     )
+    assert {item.document_name for item in inventory.citations} == {"A Gravidade.pdf", "Profile.pdf"}
 
     conversation, _ = ConversationService(session).create_or_load(
         scope=scope, user_id=user.id, conversation_id=None, question="Quais arquivos temos dentro dessa pasta?"
@@ -272,67 +261,46 @@ def test_follow_up_plural_reuses_only_the_persisted_folder_inventory(
         scope=scope, user_id=user.id, conversation_id=conversation.id
     )
     follow_up = "me de um resumo bem sucinto do conteudo de cada arquivo"
-    provider = FollowUpPluralProvider(
-        {follow_up: [1.0, 0.0]},
-        citations=[1, 2, 3],
-    )
 
-    result, _tool_results, follow_up_references = AgentService(session, provider, AgentLimits()).ask(
+    def each_file():
+        return Classifies(
+            {follow_up: [1.0, 0.0]}, intent="summarize_files", target="previous_answer_files",
+            tool="summarize_documents",
+        )
+
+    result, _tool_results, _references = AgentService(session, each_file(), AgentLimits()).ask(
         scope=scope, user_id=user.id, question=follow_up,
         providers=["google_drive"], mentions=[], history=history,
     )
-    assert provider.answer_calls == []
-    assert "A Gravidade.pdf: Síntese extrativa" in result.answer
-    assert "Profile.pdf: Síntese extrativa" in result.answer
-    assert "Outro documento.pdf" not in result.answer
-    assert {reference["name"] for reference in follow_up_references} == {
-        "A Gravidade.pdf",
-        "Profile.pdf",
-    }
-
-    all_files, _tool_results, all_references = AgentService(
-        session, FakeProvider({}), AgentLimits()
-    ).ask(
-        scope=scope, user_id=user.id, question="Resuma todos os arquivos",
-        providers=["google_drive"], mentions=[], history=history,
-    )
-    assert "A Gravidade.pdf: Síntese extrativa" in all_files.answer
-    assert "Profile.pdf: Síntese extrativa" in all_files.answer
-    assert {reference["name"] for reference in all_references} == {
-        "A Gravidade.pdf",
-        "Profile.pdf",
-    }
-
-    singular_follow_up = "Não resuma todos os arquivos; apenas o segundo."
-    singular_provider = SummarizeSecondProvider({singular_follow_up: [1.0, 0.0]})
-    singular, _tool_results, singular_references = AgentService(
-        session, singular_provider, AgentLimits()
-    ).ask(
-        scope=scope, user_id=user.id, question=singular_follow_up,
-        providers=["google_drive"], mentions=[], history=history,
-    )
-    assert "A Gravidade.pdf" not in singular.answer
-    assert {evidence.document_name for evidence in singular.citations} == {"Profile.pdf"}
-    assert singular_references == []
-
-    positive_with_ordinal = "Resuma todos os arquivos, começando pelo segundo."
-    collective_with_ordinal, _tool_results, _references = AgentService(
-        session, FakeProvider({}), AgentLimits()
-    ).ask(
-        scope=scope, user_id=user.id, question=positive_with_ordinal,
-        providers=["google_drive"], mentions=[], history=history,
-    )
-    assert "A Gravidade.pdf: Síntese extrativa" in collective_with_ordinal.answer
-    assert "Profile.pdf: Síntese extrativa" in collective_with_ordinal.answer
+    assert result.answer and "Outro documento.pdf" not in result.answer
+    assert {item.document_name for item in result.citations} <= {"A Gravidade.pdf", "Profile.pdf"}
+    assert result.citations and all(item.source_url for item in result.citations)
+    assert result.resolved_context["target"] == "previous_answer_files"
 
     with pytest.raises(SyncAccessDenied):
-        AgentService(session, FakeProvider({}), AgentLimits()).ask(
+        AgentService(session, each_file(), AgentLimits()).ask(
             scope=scope, user_id=user.id, question=follow_up,
             providers=["notion"], mentions=[], history=history,
         )
     with pytest.raises(SyncAccessDenied):
-        AgentService(session, FakeProvider({}), AgentLimits()).ask(
+        AgentService(session, each_file(), AgentLimits()).ask(
             scope=OrganizationScope(uuid4()), user_id=user.id, question=follow_up,
+            providers=["google_drive"], mentions=[], history=history,
+        )
+
+    moved = session.scalar(
+        select(LibraryNode).where(
+            LibraryNode.source_id == workspace.source_id,
+            LibraryNode.external_id == second_document.external_file_id,
+        )
+    )
+    assert moved is not None
+    moved.parent_id = root.id
+    session.commit()
+    # A file reused from the listing must still be inside the listed folder.
+    with pytest.raises(SyncAccessDenied, match="authorized selection"):
+        AgentService(session, each_file(), AgentLimits()).ask(
+            scope=scope, user_id=user.id, question=follow_up,
             providers=["google_drive"], mentions=[], history=history,
         )
 
@@ -369,7 +337,7 @@ def test_inventory_paginates_more_than_fifty_and_keeps_all_references(
     ])
     session.commit()
 
-    result, _tool_results, references = AgentService(session, FakeProvider({}), AgentLimits()).ask(
+    result, _tool_results, references = AgentService(session, list_folder(), AgentLimits()).ask(
         scope=OrganizationScope(organization.id), user_id=user.id,
         question="Quais arquivos temos dentro dessa pasta?",
         providers=["google_drive"], mentions=[("folder", folder.id)], history=[],
@@ -380,7 +348,7 @@ def test_inventory_paginates_more_than_fifty_and_keeps_all_references(
     assert {reference["folder_id"] for reference in references} == {str(folder.id)}
 
 
-def test_inventory_includes_synchronized_nonindexed_file_and_plural_follow_up_is_per_file(
+def test_inventory_includes_synchronized_nonindexed_file_and_each_file_follow_up_is_cited(
     semantic_session: Session,  # noqa: F811
 ) -> None:
     session = semantic_session
@@ -423,7 +391,7 @@ def test_inventory_includes_synchronized_nonindexed_file_and_plural_follow_up_is
     ])
     session.commit()
     scope = OrganizationScope(organization.id)
-    inventory, _tool_results, references = AgentService(session, FakeProvider({}), AgentLimits()).ask(
+    inventory, _tool_results, references = AgentService(session, list_folder(), AgentLimits()).ask(
         scope=scope, user_id=user.id, question="Quais arquivos temos dentro da pasta Briefs?",
         providers=["google_drive"], mentions=[("folder", folder.id)], history=[],
     )
@@ -435,7 +403,7 @@ def test_inventory_includes_synchronized_nonindexed_file_and_plural_follow_up_is
     assert "Síntese extrativa" not in inventory.answer
 
     summarized_inventory, _tool_results, summarized_references = AgentService(
-        session, FakeProvider({}), AgentLimits()
+        session, Classifies(intent="list_files_with_summaries", tool="list_folder_inventory"), AgentLimits()
     ).ask(
         scope=scope, user_id=user.id,
         question="Quais arquivos temos nessa pasta e me de uma explicacao resumida sobre o conteudo de cada arquivo",
@@ -463,31 +431,21 @@ def test_inventory_includes_synchronized_nonindexed_file_and_plural_follow_up_is
     _conversation, history = ConversationService(session).history(
         scope=scope, user_id=user.id, conversation_id=conversation.id
     )
-    result, _tool_results, _references = AgentService(session, FakeProvider({}), AgentLimits()).ask(
+    result, _tool_results, _references = AgentService(
+        session,
+        Classifies(
+            {"Sobre o que eles falam?": [1.0, 0.0]}, intent="summarize_files", target="previous_answer_files",
+            tool="summarize_documents",
+        ),
+        AgentLimits(),
+    ).ask(
         scope=scope, user_id=user.id, question="Sobre o que eles falam?",
         providers=["google_drive"], mentions=[], history=history,
     )
-    assert "Indexed.pdf: Síntese extrativa do conteúdo indexado: O plano prioriza clientes existentes." in result.answer
-    assert "Not indexed.pdf: sem conteúdo indexado disponível." in result.answer
+    assert result.answer
     assert [(item.document_id, item.source_url) for item in result.citations] == [
         (indexed_document.id, indexed_document.source_url)
     ]
-
-    moved = session.scalar(
-        select(LibraryNode).where(
-            LibraryNode.source_id == workspace.source_id,
-            LibraryNode.external_id == indexed_document.external_file_id,
-        )
-    )
-    assert moved is not None
-    moved.parent_id = root.id
-    session.commit()
-
-    with pytest.raises(SyncAccessDenied, match="authorized selection"):
-        AgentService(session, FakeProvider({}), AgentLimits()).ask(
-            scope=scope, user_id=user.id, question="Sobre o que eles falam?",
-            providers=["google_drive"], mentions=[], history=history,
-        )
 
 
 def test_inventory_applies_deadline_and_result_byte_limits(
@@ -525,25 +483,9 @@ def test_inventory_applies_deadline_and_result_byte_limits(
         "history": [],
     }
     with pytest.raises(AIProviderUnavailable, match="deadline"):
-        AgentService(session, FakeProvider({}), AgentLimits(max_seconds=0)).ask(**kwargs)
+        AgentService(session, list_folder(), AgentLimits(max_seconds=0)).ask(**kwargs)
     with pytest.raises(AIProviderUnavailable, match="result exceeds"):
-        AgentService(session, FakeProvider({}), AgentLimits(max_result_bytes=1)).ask(**kwargs)
-
-
-@pytest.mark.parametrize(
-    ("question", "expected"),
-    [
-        ("Quais arquivos temos nessa pasta e me de uma explicacao resumida sobre o conteudo de cada arquivo", True),
-        ("Liste os arquivos da pasta com um resumo de cada", True),
-        ("Quais documentos há na pasta e do que se trata cada um?", True),
-        ("Quais arquivos temos dentro da pasta Briefs?", False),
-        ("Liste os arquivos da pasta, não resuma", False),
-        ("Quais arquivos falam sobre o contrato?", False),
-        ("Resuma o contrato", False),
-    ],
-)
-def test_inventory_summary_request_detection(question: str, expected: bool) -> None:
-    assert _is_inventory_summary_request(question) is expected
+        AgentService(session, list_folder(), AgentLimits(max_result_bytes=1)).ask(**kwargs)
 
 
 def test_file_mention_restructure_summary_answers_instead_of_insufficient_evidence(
@@ -575,7 +517,8 @@ def test_file_mention_restructure_summary_answers_instead_of_insufficient_eviden
     session.add(profile_node)
     session.commit()
     question = "Estruture melhor o resumo do conteudo do arquivo"
-    provider = FollowUpPluralProvider({question: [1.0, 0.0]})
+    # First turn of the chat: the classifier asks for the file's summary (no earlier answer to restructure).
+    provider = Classifies({question: [1.0, 0.0]}, intent="restructure_previous", tool="previous_answer")
 
     result, _tool_results, _references = AgentService(session, provider, AgentLimits()).ask(
         scope=OrganizationScope(organization.id), user_id=user.id, question=question,

@@ -161,9 +161,10 @@ def test_agent_logs_elapsed_remaining_and_explicit_deadline(monkeypatch) -> None
     monkeypatch.setattr(agent.time, "monotonic", lambda: clock[0])
 
     class SlowProvider:
-        def tool_calls(self, *, question, history, tool_results):
+        def classify_intent(self, *, question, history, context, model):
             clock[0] += 25.0
-            return []
+            return {"intent": "ask_content", "target": "library", "ordinals": [], "tool": "retrieve_evidence",
+                    "query": ""}
 
     capture = Capture()
     logger = logging.getLogger("document_intelligence.agent")
@@ -179,7 +180,7 @@ def test_agent_logs_elapsed_remaining_and_explicit_deadline(monkeypatch) -> None
 
     phases = [item for item in capture.events if item.get("event") == "agent_phase"]
     assert [(item["phase"], item.get("failure_kind")) for item in phases] == [
-        ("planning", None), ("retrieval_fallback", "agent_deadline"),
+        ("intent_classifier", None), ("tool_execution", "agent_deadline"),
     ]
     assert phases[0]["elapsed_ms"] == 25000.0
     assert all(item["remaining_ms"] == 0 for item in phases)

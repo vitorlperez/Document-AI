@@ -1,8 +1,10 @@
-"""Framework-independent, bounded tool execution for the document agent.
+"""The document agent: one framework-independent flow over bounded local tools.
 
-The library is a local projected catalog, not a live provider inventory.  Listing
-always means direct children from that catalog; search and retrieval never access
-remote URLs, credentials, or arbitrary database records.
+classify intent (small model, closed schema) -> execute tools -> synthesize one
+grounded answer -> attach citations. The library is a local projected catalog,
+not a live provider inventory. Listing always means direct children from that
+catalog; search and retrieval never access remote URLs, credentials, or arbitrary
+database records.
 """
 
 from __future__ import annotations
@@ -11,10 +13,10 @@ import json
 import logging
 import re
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
-from typing import Protocol, runtime_checkable
+from typing import ClassVar, Protocol, runtime_checkable
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -22,12 +24,9 @@ from sqlalchemy.orm import Session
 
 from app.core.logging import log_agent_phase
 from app.core.scoping import OrganizationScope
-from app.knowledge.intent import IntentDecision, InvalidIntent, heuristic_intent, parse_intent
+from app.knowledge.intent import IntentDecision, InvalidIntent, fallback_intent, parse_intent
 from app.knowledge.models import Conversation, ConversationMessage
 from app.knowledge.questions import (
-    _INVENTORY_DOCUMENT_TERMS,
-    _INVENTORY_REQUEST_TERMS,
-    _QUERY_TOKEN,
     ANSWER_MODEL,
     PLANNER_MODEL,
     RETRIEVAL_STATUS_BELOW_THRESHOLD,
@@ -40,14 +39,12 @@ from app.knowledge.questions import (
     QuestionResult,
     QuestionService,
     SemanticProvider,
-    _is_document_inventory_question,
     _number_answer_sources,
     _validate_citations,
 )
 from app.library.service import CatalogFileSnapshot, LibraryService, SyncAccessDenied
 
 MAX_HISTORY_MESSAGES = 12
-MAX_MODEL_HISTORY_BYTES = 12_000
 INVENTORY_PAGE_SIZE = 100
 INVENTORY_MAX_ITEMS = 500
 MAX_SYNTHESIS_SOURCES = 24
@@ -80,12 +77,6 @@ def _observed_phase(phase: str, deadline: float):
 
 
 @dataclass(frozen=True)
-class ToolCall:
-    name: str
-    arguments: dict[str, object]
-
-
-@dataclass(frozen=True)
 class ToolResult:
     name: str
     payload: dict[str, object]
@@ -99,19 +90,15 @@ class ToolResult:
 
 
 @runtime_checkable
-class ToolCallingAdapter(Protocol):
-    def tool_calls(
-        self, *, question: str, history: list[dict[str, object]], tool_results: list[dict[str, object]]
-    ) -> list[ToolCall]: ...
-
-
-@runtime_checkable
-class IntentSynthesisAdapter(Protocol):
+class IntentClassifierAdapter(Protocol):
     def classify_intent(
         self, *, question: str, history: list[dict[str, object]], context: dict[str, object],
         model: str = ...,
     ) -> dict[str, object]: ...
 
+
+@runtime_checkable
+class SynthesisAdapter(Protocol):
     def synthesize_answer(
         self, *, question: str, intent: str, sources: list[Evidence], catalog: list[dict[str, object]],
         model: str = ..., previous_answer: str = ...,
@@ -140,31 +127,22 @@ class FileSummaries:
 
 @dataclass(frozen=True)
 class AgentLimits:
-    max_steps: int = 4
     max_result_bytes: int = 48_000
     max_seconds: int = 25
 
 
 @dataclass(frozen=True)
-class PlannedFlow:
-    """Flag-gated intent classifier -> tools -> synthesis flow. Disabled by default.
+class FlowModels:
+    """Models of the classify and synthesize stages."""
 
-    When enabled, a small model decides the intent; keyword rules only decide
-    when that classifier fails or times out.
-    """
-
-    enabled: bool = False
     planner_model: str = PLANNER_MODEL
     synthesis_model: str = ANSWER_MODEL
-    # Share of the agent deadline the planned flow may use, so the current
-    # path still has time to answer when it falls back.
-    budget_fraction: float = 0.5
-    # The classifier is one short call; past this it yields to the keyword fallback.
+    # The classifier is one short call; past this the request falls back to a relevance search.
     intent_timeout_seconds: float = 4.0
 
 
-class PlannedFlowRejected(ValueError):
-    """The planned flow cannot produce a verifiable answer; use the current path."""
+class PlanRejected(ValueError):
+    """The decided intent cannot run with the resolved targets; answer by relevance instead."""
 
 
 class ConversationService:
@@ -308,12 +286,17 @@ class LibraryToolExecutor:
         items = LibraryService(self.session).catalog_search(
             scope=scope, user_id=user_id, providers=providers, mentions=mentions, query=query, limit=50
         )
+        snapshots = LibraryService(self.session).catalog_file_snapshots(
+            scope=scope, user_id=user_id, providers=providers,
+            node_ids=[item.id for item in items if item.kind == "file"], validate_references=False,
+        )
         return ToolResult(
             "search_library",
             {
                 "semantics": "local_catalog_name_search_not_remote_inventory",
                 "items": [{"id": str(item.id), "kind": item.kind, "name": item.name} for item in items],
             },
+            citations=_snapshot_citations(snapshots),
         )
 
     def retrieve_evidence(
@@ -355,15 +338,61 @@ class LibraryToolExecutor:
         )
 
 
+@dataclass(frozen=True)
+class AgentRequest:
+    """One authorized question; scope comes from the request, never from a model."""
+
+    scope: OrganizationScope
+    user_id: UUID
+    question: str
+    providers: list[str]
+    mentions: list[tuple[str, UUID]]
+
+
+@dataclass(frozen=True)
+class ConversationState:
+    """What earlier turns left behind that the current message may refer to."""
+
+    listed_files: list[tuple[UUID, UUID | None, str]]
+    previous_turn_mentions: list[tuple[str, UUID]]
+    previous_answer: str | None
+    # Last messages, truncated, as the classifier sees them.
+    recent_messages: list[dict[str, object]] = field(default_factory=list)
+
+    @classmethod
+    def from_history(cls, history: list[ConversationMessage]) -> ConversationState:
+        return cls(
+            listed_files=_previous_listed_files(history),
+            previous_turn_mentions=_previous_turn_mentions(history),
+            previous_answer=_previous_answer(history),
+            recent_messages=_planner_history(history),
+        )
+
+    def files(self) -> list[UUID]:
+        """Files the conversation is about: the previous turn's attached files, else the last listed ones."""
+        attached = [node_id for kind, node_id in self.previous_turn_mentions if kind == "file"]
+        return attached or [node_id for node_id, _folder, _name in self.listed_files]
+
+
 class AgentService:
-    """Runs model-requested local tools within fixed time, step, and byte limits."""
+    """The single document-agent flow, in four stages with narrow interfaces:
+
+    1. classify: a small model maps the message to a closed IntentDecision;
+    2. execute: the decided local tools run, each one tenant/member scoped;
+    3. synthesize: one grounded call writes the answer from the tool outputs;
+    4. cite: the answer always carries the documents it used, with their links.
+
+    A model failure never ends in a silent empty answer: the classifier falls back to a
+    relevance search, an unverifiable synthesis keeps the extractive or per-file answer,
+    and missing evidence yields an honest answer that lists the consulted files as Fontes.
+    """
 
     def __init__(
         self, session: Session, provider: SemanticProvider, limits: AgentLimits,
-        planned: PlannedFlow | None = None, file_summaries: FileSummaries | None = None,
+        models: FlowModels | None = None, file_summaries: FileSummaries | None = None,
     ):
         self.session, self.provider, self.limits = session, provider, limits
-        self.planned = planned or PlannedFlow()
+        self.models = models or FlowModels()
         self.file_summaries = file_summaries or FileSummaries()
         self.tools = LibraryToolExecutor(session, provider)
 
@@ -377,168 +406,42 @@ class AgentService:
         mentions: list[tuple[str, UUID]],
         history: list[ConversationMessage],
     ) -> tuple[QuestionResult, list[dict[str, object]], list[dict[str, str]]]:
-        started = time.monotonic()
-        if self.planned.enabled and isinstance(self.provider, IntentSynthesisAdapter):
-            planned = self._try_planned(
-                scope=scope, user_id=user_id, question=question, providers=providers,
-                mentions=mentions, history=history, started=started,
-            )
-            if planned is not None:
-                return planned
-        result, serialized, references = self._ask_current(
-            scope=scope, user_id=user_id, question=question, providers=providers,
-            mentions=mentions, history=history, started=started,
-        )
-        if result.answer is None:
-            # Never a silent empty answer: say why, and list the files that were read.
-            targets = self._follow_up_mentions(
-                question=question, history=history, providers=providers, mentions=mentions,
-            )
-            result = self._honest_insufficient(
-                result, scope=scope, user_id=user_id, providers=providers, targets=targets,
-            )
-        return result, serialized, references
+        deadline = time.monotonic() + self.limits.max_seconds
+        request = AgentRequest(scope, user_id, question, providers, list(mentions))
+        conversation = ConversationState.from_history(history)
+        decision = self.classify(request, conversation, deadline=deadline)
+        with _request_deadline(deadline):
+            run = self.execute(decision, request, conversation, deadline=deadline)
+        return run.finish(self.cite(run))
 
-    def _ask_current(
-        self, *, scope: OrganizationScope, user_id: UUID, question: str, providers: list[str],
-        mentions: list[tuple[str, UUID]], history: list[ConversationMessage], started: float,
-    ) -> tuple[QuestionResult, list[dict[str, object]], list[dict[str, str]]]:
-        """Keyword-routed path: the default with the flag off, and the fallback with it on."""
-        model = self.provider if isinstance(self.provider, ToolCallingAdapter) else None
-        tool_results: list[ToolResult] = []
-        serialized: list[dict[str, object]] = []
-        effective_mentions = self._follow_up_mentions(
-            question=question, history=history, providers=providers, mentions=mentions,
-        )
-        inventory_folders = [node_id for kind, node_id in effective_mentions if kind == "folder"]
-        summary_inventory = _is_inventory_summary_request(question)
-        if (_is_document_inventory_question(question) or summary_inventory) and len(inventory_folders) == 1:
-            with _observed_phase("inventory", started + self.limits.max_seconds):
-                result = self._complete_inventory(
-                    scope=scope, user_id=user_id, providers=providers, mentions=effective_mentions,
-                    parent_id=inventory_folders[0], deadline=started + self.limits.max_seconds,
-                    include_excerpts=summary_inventory,
-                )
-            item = {"name": result.name, "result": result.payload}
-            if _json_size([item]) > self.limits.max_result_bytes:
-                raise AIProviderUnavailable("document agent result exceeds configured byte limit")
-            answer = self._catalog_answer(result, question=question, deadline=started + self.limits.max_seconds)
-            return answer, [item], _catalog_references([item])
-        if not mentions and _plural_file_reference(question):
-            references = self._follow_up_file_references(history=history)
-            if references:
-                result = self._summarize_inventory_follow_up(
-                    scope=scope, user_id=user_id, providers=providers, references=references
-                )
-                item = {"name": result.name, "result": result.payload}
-                answer = self._catalog_answer(result, question=question, deadline=started + self.limits.max_seconds)
-                return answer, [item], _catalog_references([item])
-        for _step in range(self.limits.max_steps):
-            remaining = self.limits.max_seconds - (time.monotonic() - started)
-            if remaining <= 0:
-                break
-            with _observed_phase("planning", started + self.limits.max_seconds), _request_deadline(started + self.limits.max_seconds):
-                calls = model.tool_calls(
-                    question=question,
-                    history=_bounded_history(history),
-                    tool_results=serialized,
-                ) if model else []
-            if not calls:
-                break
-            for call in calls[:1]:
-                with _observed_phase("tool_execution", started + self.limits.max_seconds), _request_deadline(started + self.limits.max_seconds):
-                    result = self._execute(
-                        call=call, scope=scope, user_id=user_id, question=question,
-                        providers=providers, mentions=effective_mentions,
-                    )
-                item = {"name": result.name, "result": result.payload}
-                if _json_size([*serialized, item]) > self.limits.max_result_bytes:
-                    break
-                tool_results.append(result)
-                serialized.append(item)
-            if _json_size(serialized) >= self.limits.max_result_bytes:
-                break
-        question_results = [item.question_result for item in tool_results if item.question_result is not None]
-        catalog_results = [item for item in tool_results if item.name in {"search_library", "list_library_children"}]
-        if not question_results and not catalog_results and time.monotonic() >= started + self.limits.max_seconds:
-            log_agent_phase(
-                logger, phase="retrieval_fallback", started_at=time.monotonic(),
-                deadline=started + self.limits.max_seconds, failure_kind="agent_deadline",
-            )
-            raise AIProviderUnavailable("document agent deadline exceeded")
-        final_phase = "finalization" if question_results or catalog_results else "retrieval_fallback"
-        with _observed_phase(final_phase, started + self.limits.max_seconds), _request_deadline(started + self.limits.max_seconds):
-            final = (
-                question_results[-1]
-                if question_results
-                else self._catalog_answer(
-                    catalog_results[-1], question=question, deadline=started + self.limits.max_seconds,
-                )
-                if catalog_results
-                else self.tools.retrieve_evidence(
-                    scope=scope, user_id=user_id, question=question, providers=providers, mentions=effective_mentions
-                ).question_result
-            )
-        assert final is not None
-        return final, serialized, _catalog_references(serialized)
+    # Stage 1 -----------------------------------------------------------------
 
-    def _try_planned(
-        self, *, scope: OrganizationScope, user_id: UUID, question: str, providers: list[str],
-        mentions: list[tuple[str, UUID]], history: list[ConversationMessage], started: float,
-    ) -> tuple[QuestionResult, list[dict[str, object]], list[dict[str, str]]] | None:
-        """Classify the intent and run it; None means fall back to the current path.
-
-        Authorization and usage-limit errors are not provider failures and
-        propagate unchanged.
-        """
-        deadline = started + self.limits.max_seconds * self.planned.budget_fraction
-        started_at = time.monotonic()
-        try:
-            with _request_deadline(deadline):
-                decision = self._classify_intent(
-                    question=question, mentions=mentions, history=history, deadline=deadline,
-                )
-                return self._run_intent(
-                    decision, scope=scope, user_id=user_id, question=question, providers=providers,
-                    mentions=mentions, history=history, deadline=deadline,
-                )
-        except (AIProviderUnavailable, ValueError, TypeError, KeyError) as error:
-            log_agent_phase(
-                logger, phase="planned_fallback", started_at=started_at, deadline=deadline,
-                failure_kind=(
-                    "planned_rejected" if isinstance(error, PlannedFlowRejected)
-                    else "provider_unavailable" if isinstance(error, AIProviderUnavailable)
-                    else "invalid_output"
-                ),
-            )
-            return None
-
-    def _classify_intent(
-        self, *, question: str, mentions: list[tuple[str, UUID]], history: list[ConversationMessage],
-        deadline: float,
+    def classify(
+        self, request: AgentRequest, conversation: ConversationState, *, deadline: float,
     ) -> IntentDecision:
-        """The small model decides; keywords decide only when it fails or times out."""
+        """The small model decides; without it the request falls back to a relevance search."""
         adapter = self.provider
-        assert isinstance(adapter, IntentSynthesisAdapter)
-        listed = _previous_listed_files(history)
-        intent_deadline = min(deadline, time.monotonic() + self.planned.intent_timeout_seconds)
+        mentions = request.mentions
+        if not isinstance(adapter, IntentClassifierAdapter):
+            return fallback_intent(has_mentions=bool(mentions))
+        intent_deadline = min(deadline, time.monotonic() + self.models.intent_timeout_seconds)
         started_at = time.monotonic()
         try:
             with _observed_phase("intent_classifier", intent_deadline), _request_deadline(intent_deadline):
                 raw = adapter.classify_intent(
-                    question=question,
-                    history=_planner_history(history),
+                    question=request.question,
+                    history=conversation.recent_messages,
                     context={
                         "mentioned_folders": sum(kind == "folder" for kind, _ in mentions),
                         "mentioned_files": sum(kind == "file" for kind, _ in mentions),
                         # Names only (the user already saw them); ids and URLs never reach the model.
-                        "previous_answer_listed_files": [name for _id, _folder, name in listed],
-                        "previous_turn_had_files": bool(_previous_turn_mentions(history)),
-                        "has_previous_answer": _previous_answer(history) is not None,
+                        "previous_answer_listed_files": [name for _id, _folder, name in conversation.listed_files],
+                        "previous_turn_had_files": bool(conversation.previous_turn_mentions),
+                        "has_previous_answer": conversation.previous_answer is not None,
                     },
-                    model=self.planned.planner_model,
+                    model=self.models.planner_model,
                 )
-            return parse_intent(raw, listed_files=len(listed), mentioned=len(mentions))
+            return parse_intent(raw, listed_files=len(conversation.listed_files), mentioned=len(mentions))
         except (AIProviderUnavailable, InvalidIntent, ValueError, TypeError, KeyError) as error:
             log_agent_phase(
                 logger, phase="intent_fallback", started_at=started_at, deadline=intent_deadline,
@@ -546,166 +449,204 @@ class AgentService:
                     "provider_unavailable" if isinstance(error, AIProviderUnavailable) else "invalid_output"
                 ),
             )
-            return heuristic_intent(
-                question,
-                has_folder_mention=any(kind == "folder" for kind, _ in mentions),
-                has_file_mention=any(kind == "file" for kind, _ in mentions),
-                listed_files=len(listed),
-                has_previous_answer=_previous_answer(history) is not None,
+            return fallback_intent(has_mentions=bool(mentions))
+
+    # Stage 2 -----------------------------------------------------------------
+
+    def execute(
+        self, decision: IntentDecision, request: AgentRequest, conversation: ConversationState, *,
+        deadline: float,
+    ) -> AgentRun:
+        """Run the tools of the decided intent; a plan the tools cannot serve falls back to relevance."""
+        targets = self._resolve_targets(decision, request.mentions, conversation)
+        intent = decision.intent
+        if intent == "conversation" and targets:
+            # Attached files mean the message is about them, whatever its wording.
+            intent = "ask_content"
+        if intent == "restructure_previous" and conversation.previous_answer is None:
+            intent = "summarize_files"
+        _require_time(deadline)
+        targets = self._reauthorize_listed(request, targets, conversation)
+        run = AgentRun(decision=decision, intent=intent, targets=targets, conversation=conversation)
+        if not targets and intent != "conversation" and decision.target in {
+            "previous_ordinals", "previous_answer_files",
+        }:
+            # Every file the message points at was listed without indexed content.
+            run.answer = self._honest_insufficient(
+                QuestionResult(None, "insufficient_evidence", [], RETRIEVAL_STATUS_NO_INDEXED_CONTENT), request, [],
             )
+            return run
+        started_at = time.monotonic()
+        try:
+            run.answer = self._handlers[intent](self, run, request, deadline)
+        except PlanRejected:
+            log_agent_phase(
+                logger, phase="plan_fallback", started_at=started_at, deadline=deadline,
+                failure_kind="plan_rejected",
+            )
+            run.fallback = "plan_rejected"
+            run.answer = self._ask_content(run, request, deadline)
+        return run
 
     def _resolve_targets(
-        self, decision: IntentDecision, *, mentions: list[tuple[str, UUID]],
-        history: list[ConversationMessage],
+        self, decision: IntentDecision, mentions: list[tuple[str, UUID]], conversation: ConversationState,
     ) -> list[tuple[str, UUID]]:
         """Turn the decided target into catalog node ids; the request's mentions stay authoritative."""
-        listed = _previous_listed_files(history)
+        listed = conversation.listed_files
         if decision.target in {"previous_ordinals", "previous_answer_files"} and listed:
             chosen = [listed[index - 1] for index in decision.ordinals] if decision.ordinals else listed
             return [("file", node_id) for node_id, _folder, _name in chosen]
         if mentions:
             return mentions
         if decision.target != "library":
-            previous = _previous_turn_mentions(history)
-            if previous:
-                return previous
-            return [("file", node_id) for node_id, _folder, _name in listed]
+            return conversation.previous_turn_mentions or [
+                ("file", node_id) for node_id, _folder, _name in listed
+            ]
         return []
 
-    def _run_intent(
-        self, decision: IntentDecision, *, scope: OrganizationScope, user_id: UUID, question: str,
-        providers: list[str], mentions: list[tuple[str, UUID]], history: list[ConversationMessage],
-        deadline: float,
-    ) -> tuple[QuestionResult, list[dict[str, object]], list[dict[str, str]]]:
-        targets = self._resolve_targets(decision, mentions=mentions, history=history)
-        folders = [node_id for kind, node_id in targets if kind == "folder"]
-        files = [node_id for kind, node_id in targets if kind == "file"]
-        intent = decision.intent
-        if intent == "conversation" and targets:
-            # Attached files mean the message is about them, whatever its wording.
-            intent = "ask_content"
-        if intent == "restructure_previous" and _previous_answer(history) is None:
-            intent = "summarize_files"
-        run = _IntentRun(decision=decision, intent=intent)
+    def _reauthorize_listed(
+        self, request: AgentRequest, targets: list[tuple[str, UUID]], conversation: ConversationState,
+    ) -> list[tuple[str, UUID]]:
+        """Files reused from an earlier folder listing must still be inside that folder and authorized.
 
-        if intent == "conversation":
-            return run.finish(
-                QuestionResult(
-                    answer=(
-                        "Posso ajudar com os documentos autorizados: listar os arquivos de uma pasta, "
-                        "resumir um arquivo ou responder perguntas sobre o conteúdo deles, sempre com as "
-                        "fontes. Mencione arquivos ou pastas com @ para restringir a consulta."
-                    ),
-                    confidence="supported", citations=[], retrieval_status="conversation",
+        Listed files without indexed content are dropped: there is nothing in them to read.
+        """
+        if request.mentions:
+            return targets
+        folders = {node_id: folder for node_id, folder, _name in conversation.listed_files if folder}
+        reused = {node_id: folders[node_id] for kind, node_id in targets if kind == "file" and node_id in folders}
+        if not reused:
+            return targets
+        snapshots = LibraryService(self.session).catalog_file_snapshots(
+            scope=request.scope, user_id=request.user_id, providers=request.providers,
+            node_ids=list(reused), inventory_folder_ids=reused,
+        )
+        unreadable = {snapshot.id for snapshot in snapshots if snapshot.document_id is None}
+        return [(kind, node_id) for kind, node_id in targets if node_id not in unreadable]
+
+    def _conversation(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        # No tool runs; the files the conversation is about stay the answer's sources (stage 4).
+        run.conversation_citations = self._reauthorized_citations(request, run.conversation.files())
+        text = (
+            "Se quiser, posso detalhar, resumir ou reorganizar a resposta anterior com base nos mesmos "
+            "documentos, listados nas fontes abaixo. Também posso listar arquivos de uma pasta ou responder "
+            "a outras perguntas sobre o conteúdo deles."
+            if run.conversation_citations
+            else "Posso ajudar com os documentos autorizados: listar os arquivos de uma pasta, resumir um "
+            "arquivo ou responder perguntas sobre o conteúdo deles, sempre com as fontes. Mencione arquivos "
+            "ou pastas com @ para restringir a consulta."
+        )
+        return QuestionResult(answer=text, confidence="supported", citations=[], retrieval_status="conversation")
+
+    def _list_files(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        with_summaries = run.intent == "list_files_with_summaries"
+        folders, files = run.folders(), run.files()
+        if len(folders) == 1 and not files:
+            with _observed_phase("inventory", deadline):
+                listing = self._complete_inventory(
+                    request, mentions=run.targets, parent_id=folders[0], deadline=deadline,
+                    include_excerpts=with_summaries,
                 )
+        elif files and not folders:
+            listing = self._file_snapshots(request, files)
+        elif run.decision.tool == "search_library" and run.decision.query:
+            listing = self.tools.search_library(
+                scope=request.scope, user_id=request.user_id, providers=request.providers,
+                mentions=run.targets, query=run.decision.query,
             )
+        else:
+            raise PlanRejected("listing needs one folder, files, or a name search")
+        if _json_size([{"name": listing.name, "result": listing.payload}]) > self.limits.max_result_bytes:
+            raise AIProviderUnavailable("document agent result exceeds configured byte limit")
+        run.add(listing)
+        if not with_summaries:
+            return _catalog_question_result(listing)
+        return (
+            self._synthesize(run, request, deadline=deadline)
+            or self._catalog_answer(listing, question=request.question, deadline=deadline)
+        )
 
-        if intent in {"list_files", "list_files_with_summaries"}:
-            with_summaries = intent == "list_files_with_summaries"
-            if len(folders) == 1 and not files:
-                with _observed_phase("planned_tool", deadline):
-                    listing = self._complete_inventory(
-                        scope=scope, user_id=user_id, providers=providers, mentions=targets,
-                        parent_id=folders[0], deadline=deadline, include_excerpts=with_summaries,
-                    )
-            elif files and not folders:
-                listing = self._file_snapshots(scope=scope, user_id=user_id, providers=providers, files=files)
-            elif decision.tool == "search_library" and decision.query:
-                listing = self.tools.search_library(
-                    scope=scope, user_id=user_id, providers=providers, mentions=targets, query=decision.query,
-                )
-            else:
-                raise PlannedFlowRejected("listing needs one folder, files, or a name search")
-            run.add(listing)
-            extractive = _catalog_question_result(listing)
-            if not with_summaries:
-                return run.finish(extractive)
-            synthesized = self._synthesize(question=question, intent=intent, run=run, deadline=deadline)
-            return run.finish(
-                synthesized or self._catalog_answer(listing, question=question, deadline=deadline)
-            )
+    def _summarize_files(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        if not run.targets:
+            raise PlanRejected("nothing selected to summarize")
+        return self._summary_or_honest(run, request, deadline)
 
-        if intent == "summarize_files":
-            if not targets:
-                raise PlannedFlowRejected("nothing selected to summarize")
-            with _observed_phase("planned_tool", deadline):
-                summary = self.tools.summarize_documents(
-                    scope=scope, user_id=user_id, question=question, providers=providers, mentions=targets,
-                    answer_mode="summary",
-                )
-            run.add(summary)
-            assert summary.question_result is not None
-            if summary.question_result.answer:
-                return run.finish(summary.question_result)
-            return run.finish(self._honest_insufficient(
-                summary.question_result, scope=scope, user_id=user_id, providers=providers, targets=targets,
+    def _restructure_previous(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        if not run.targets:
+            raise PlanRejected("restructure needs the files of the previous turn")
+        with _observed_phase("tool_execution", deadline):
+            run.add(self.tools.retrieve_evidence(
+                scope=request.scope, user_id=request.user_id, question=request.question,
+                providers=request.providers, mentions=run.targets, answer_mode="evidence",
             ))
+        synthesized = self._synthesize(
+            run, request, deadline=deadline, previous_answer=run.conversation.previous_answer or "",
+        )
+        if synthesized is not None:
+            return synthesized
+        # The model could not restructure verifiably: the evaluated per-file summary is the next best.
+        return self._summary_or_honest(run, request, deadline)
 
-        if intent == "restructure_previous":
-            if not targets:
-                raise PlannedFlowRejected("restructure needs the files of the previous turn")
-            with _observed_phase("planned_tool", deadline):
-                evidence = self.tools.retrieve_evidence(
-                    scope=scope, user_id=user_id, question=question, providers=providers, mentions=targets,
-                    answer_mode="evidence",
-                )
-            run.add(evidence)
-            previous = _previous_answer(history) or ""
-            synthesized = self._synthesize(
-                question=question, intent=intent, run=run, deadline=deadline, previous_answer=previous,
-            )
-            if synthesized is not None:
-                return run.finish(synthesized)
-            # The model could not restructure verifiably: the evaluated per-file summary is the next best.
-            with _observed_phase("planned_tool", deadline):
-                summary = self.tools.summarize_documents(
-                    scope=scope, user_id=user_id, question=question, providers=providers, mentions=targets,
-                    answer_mode="summary",
-                )
-            run.add(summary)
-            assert summary.question_result is not None
-            if summary.question_result.answer:
-                return run.finish(summary.question_result)
-            return run.finish(self._honest_insufficient(
-                summary.question_result, scope=scope, user_id=user_id, providers=providers, targets=targets,
-            ))
-
-        # ask_content
-        with _observed_phase("planned_tool", deadline):
+    def _ask_content(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        with _observed_phase("tool_execution", deadline):
             retrieved = self.tools.retrieve_evidence(
-                scope=scope, user_id=user_id, question=question, providers=providers, mentions=targets,
-                answer_mode="relevance",
+                scope=request.scope, user_id=request.user_id, question=request.question,
+                providers=request.providers, mentions=run.targets, answer_mode="relevance",
             )
         run.add(retrieved)
         assert retrieved.question_result is not None
         if retrieved.question_result.answer:
-            return run.finish(retrieved.question_result)
+            return retrieved.question_result
+        files = run.files()
         if files and retrieved.question_result.retrieval_status == RETRIEVAL_STATUS_BELOW_THRESHOLD:
             # A question about an attached file often names no topic the embedding can match;
             # the file's own indexed text is still evidence the answer can be checked against.
-            run.add(self._file_snapshots(scope=scope, user_id=user_id, providers=providers, files=files))
-            synthesized = self._synthesize(question=question, intent=intent, run=run, deadline=deadline)
+            run.add(self._file_snapshots(request, files))
+            synthesized = self._synthesize(run, request, deadline=deadline)
             if synthesized is not None:
-                return run.finish(synthesized)
-        return run.finish(self._honest_insufficient(
-            retrieved.question_result, scope=scope, user_id=user_id, providers=providers, targets=targets,
-        ))
+                return synthesized
+        return self._honest_insufficient(retrieved.question_result, request, run.targets)
+
+    # Intent -> stage-2 handler; each one is a node of a future graph (see docs/agent-flow.md).
+    _handlers: ClassVar[dict[str, Callable[[AgentService, AgentRun, AgentRequest, float], QuestionResult]]] = {
+        "conversation": _conversation,
+        "list_files": _list_files,
+        "list_files_with_summaries": _list_files,
+        "summarize_files": _summarize_files,
+        "restructure_previous": _restructure_previous,
+        "ask_content": _ask_content,
+    }
+
+    def _summary_or_honest(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        with _observed_phase("tool_execution", deadline):
+            summary = self.tools.summarize_documents(
+                scope=request.scope, user_id=request.user_id, question=request.question,
+                providers=request.providers, mentions=run.targets, answer_mode="summary",
+            )
+        run.add(summary)
+        assert summary.question_result is not None
+        if summary.question_result.answer:
+            return summary.question_result
+        return self._honest_insufficient(summary.question_result, request, run.targets)
+
+    # Stage 3 -----------------------------------------------------------------
 
     def _synthesize(
-        self, *, question: str, intent: str, run: _IntentRun, deadline: float, previous_answer: str = "",
+        self, run: AgentRun, request: AgentRequest, *, deadline: float, previous_answer: str = "",
     ) -> QuestionResult | None:
         """One grounded synthesis call; None when it cannot be verified against the evidence."""
         adapter = self.provider
-        assert isinstance(adapter, IntentSynthesisAdapter)
+        if not isinstance(adapter, SynthesisAdapter):
+            return None
         sources = _synthesis_sources(run.results)
         catalog = _synthesis_catalog(run.results)
         if not sources and not catalog:
             return None
         try:
-            with _observed_phase("planned_synthesis", deadline):
+            with _observed_phase("synthesis", deadline):
                 generated = adapter.synthesize_answer(
-                    question=question, intent=intent, sources=sources, catalog=catalog,
-                    model=self.planned.synthesis_model,
+                    question=request.question, intent=run.intent, sources=sources, catalog=catalog,
+                    model=self.models.synthesis_model,
                     **({"previous_answer": previous_answer} if previous_answer else {}),
                 )
         except AIProviderUnavailable:
@@ -768,11 +709,42 @@ class AgentService:
                 summaries[item_id] = complete
         return summaries
 
-    def _file_snapshots(
-        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str], files: list[UUID],
-    ) -> ToolResult:
+    # Stage 4 -----------------------------------------------------------------
+
+    def cite(self, run: AgentRun) -> QuestionResult:
+        """Every answer that used documents carries them as citations, with their links.
+
+        The answer's own verified citations win; when a step produced text without
+        them (a catalog-only synthesis, a per-file listing), the documents the tools
+        read become the Fontes, and a conversation reply keeps the conversation's.
+        """
+        assert run.answer is not None
+        if run.answer.citations:
+            return run.answer
+        consulted = _document_citations([
+            *(item for result in run.results for item in result.citations),
+            *(
+                item for result in run.results if result.question_result is not None
+                for item in result.question_result.citations
+            ),
+            *run.conversation_citations,
+        ])
+        return replace(run.answer, citations=consulted) if consulted else run.answer
+
+    # Tools shared by the stages ----------------------------------------------
+
+    def _reauthorized_citations(self, request: AgentRequest, files: list[UUID]) -> list[Evidence]:
+        """File-level citations for earlier turns' files, checked against the current catalog again."""
+        if not files:
+            return []
+        try:
+            return list(self._file_snapshots(request, files).citations)
+        except SyncAccessDenied:
+            return []
+
+    def _file_snapshots(self, request: AgentRequest, files: list[UUID]) -> ToolResult:
         snapshots = LibraryService(self.session).catalog_file_snapshots(
-            scope=scope, user_id=user_id, providers=providers, node_ids=files,
+            scope=request.scope, user_id=request.user_id, providers=request.providers, node_ids=files,
         )
         return ToolResult(
             "summarize_inventory",
@@ -791,20 +763,11 @@ class AgentService:
         )
 
     def _honest_insufficient(
-        self, result: QuestionResult | None, *, scope: OrganizationScope, user_id: UUID,
-        providers: list[str], targets: list[tuple[str, UUID]],
+        self, result: QuestionResult | None, request: AgentRequest, targets: list[tuple[str, UUID]],
     ) -> QuestionResult:
         """Replace answer=None with an honest message that still carries the consulted files as Fontes."""
         status = result.retrieval_status if result is not None else RETRIEVAL_STATUS_BELOW_THRESHOLD
-        files = [node_id for kind, node_id in targets if kind == "file"]
-        citations: list[Evidence] = []
-        if files:
-            try:
-                citations = list(self._file_snapshots(
-                    scope=scope, user_id=user_id, providers=providers, files=files,
-                ).citations)
-            except SyncAccessDenied:
-                citations = []
+        citations = self._reauthorized_citations(request, [node_id for kind, node_id in targets if kind == "file"])
         if status == RETRIEVAL_STATUS_NO_INDEXED_CONTENT:
             text = (
                 "Ainda não há conteúdo indexado consultável para esta pergunta. Aguarde a sincronização "
@@ -834,65 +797,8 @@ class AgentService:
             resolved_context=result.resolved_context if result is not None else None,
         )
 
-    def _follow_up_mentions(
-        self, *, question: str, history: list[ConversationMessage], providers: list[str],
-        mentions: list[tuple[str, UUID]],
-    ) -> list[tuple[str, UUID]]:
-        if mentions:
-            return mentions
-        ordinal = _ordinal_reference(question)
-        follow_up_all = _plural_file_reference(question)
-        if ordinal is None and not follow_up_all:
-            return mentions
-        for message in reversed(history):
-            references = (message.context or {}).get("references")
-            if not isinstance(references, list):
-                continue
-            files = [item for item in references if isinstance(item, dict) and item.get("kind") == "file"]
-            if follow_up_all:
-                resolved: list[tuple[str, UUID]] = []
-                for item in files:
-                    raw_id = item.get("id")
-                    if not isinstance(raw_id, str):
-                        continue
-                    try:
-                        resolved.append(("file", UUID(raw_id)))
-                    except ValueError:
-                        continue
-                if resolved:
-                    return resolved
-            elif ordinal is not None and ordinal <= len(files):
-                raw_id = files[ordinal - 1].get("id")
-                if isinstance(raw_id, str):
-                    try:
-                        return [("file", UUID(raw_id))]
-                    except ValueError:
-                        continue
-        return mentions
-
-    def _follow_up_file_references(self, *, history: list[ConversationMessage]) -> list[tuple[UUID, UUID]]:
-        for message in reversed(history):
-            references = (message.context or {}).get("references")
-            if not isinstance(references, list):
-                continue
-            result: list[tuple[UUID, UUID]] = []
-            for item in references:
-                if not isinstance(item, dict) or item.get("kind") != "file":
-                    continue
-                raw_id, raw_folder_id = item.get("id"), item.get("folder_id")
-                if not isinstance(raw_id, str) or not isinstance(raw_folder_id, str):
-                    continue
-                try:
-                    result.append((UUID(raw_id), UUID(raw_folder_id)))
-                except ValueError:
-                    continue
-            if result:
-                return result
-        return []
-
     def _complete_inventory(
-        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
-        mentions: list[tuple[str, UUID]], parent_id: UUID, deadline: float,
+        self, request: AgentRequest, *, mentions: list[tuple[str, UUID]], parent_id: UUID, deadline: float,
         include_excerpts: bool = False,
     ) -> ToolResult:
         items: list[dict[str, object]] = []
@@ -901,14 +807,12 @@ class AgentService:
         page = 1
         total = 0
         while len(items) < INVENTORY_MAX_ITEMS:
-            if time.monotonic() >= deadline:
-                raise AIProviderUnavailable("document agent deadline exceeded")
-            with _request_deadline(deadline):
-                result = self.tools.list_library_children(
-                    scope=scope, user_id=user_id, providers=providers, mentions=mentions,
-                    parent_id=parent_id, page=page, page_size=INVENTORY_PAGE_SIZE,
-                    include_excerpts=include_excerpts,
-                )
+            _require_time(deadline)
+            result = self.tools.list_library_children(
+                scope=request.scope, user_id=request.user_id, providers=request.providers, mentions=mentions,
+                parent_id=parent_id, page=page, page_size=INVENTORY_PAGE_SIZE,
+                include_excerpts=include_excerpts,
+            )
             page_items = result.payload["items"]
             assert isinstance(page_items, list)
             items.extend(page_items)
@@ -936,75 +840,25 @@ class AgentService:
             file_chunks=tuple(file_chunks),
         )
 
-    def _summarize_inventory_follow_up(
-        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
-        references: list[tuple[UUID, UUID]],
-    ) -> ToolResult:
-        snapshots = LibraryService(self.session).catalog_file_snapshots(
-            scope=scope,
-            user_id=user_id,
-            providers=providers,
-            node_ids=[node_id for node_id, _folder_id in references],
-            inventory_folder_ids=dict(references),
-        )
-        return ToolResult(
-            "summarize_inventory",
-            {
-                "semantics": "persisted_inventory_references_with_extractive_content",
-                "items": [
-                    {
-                        "id": str(snapshot.id),
-                        "kind": "file",
-                        "name": snapshot.name,
-                        "index_status": snapshot.index_status,
-                        "excerpt": snapshot.excerpt,
-                    }
-                    for snapshot in snapshots
-                ],
-            },
-            citations=_snapshot_citations(snapshots),
-            file_chunks=tuple((str(snapshot.id), snapshot.chunks) for snapshot in snapshots),
-        )
-
-    def _execute(
-        self, *, call: ToolCall, scope: OrganizationScope, user_id: UUID, question: str,
-        providers: list[str], mentions: list[tuple[str, UUID]],
-    ) -> ToolResult:
-        # Model arguments are untrusted. Scope-bearing arguments are deliberately
-        # ignored; only request-authorized providers/mentions are used.
-        if call.name == "search_library":
-            value = call.arguments.get("query")
-            if not isinstance(value, str):
-                raise ValueError("invalid tool arguments")
-            return self.tools.search_library(
-                scope=scope, user_id=user_id, providers=providers, mentions=mentions, query=value
-            )
-        if call.name == "list_library_children":
-            raw_parent, raw_page = call.arguments.get("parent_id"), call.arguments.get("page", 1)
-            if not isinstance(raw_parent, str) or not isinstance(raw_page, int):
-                raise ValueError("invalid tool arguments")
-            return self.tools.list_library_children(
-                scope=scope, user_id=user_id, providers=providers, mentions=mentions,
-                parent_id=UUID(raw_parent), page=raw_page,
-            )
-        if call.name == "summarize_documents":
-            return self.tools.summarize_documents(
-                scope=scope, user_id=user_id, question=question, providers=providers, mentions=mentions
-            )
-        if call.name == "retrieve_evidence":
-            return self.tools.retrieve_evidence(
-                scope=scope, user_id=user_id, question=question, providers=providers, mentions=mentions
-            )
-        raise ValueError("unknown tool")
-
 
 @dataclass
-class _IntentRun:
-    """Tool results of one classified request and how they become the agent's return value."""
+class AgentRun:
+    """State of one request through the stages, and how it becomes the agent's return value."""
 
     decision: IntentDecision
     intent: str
+    targets: list[tuple[str, UUID]]
+    conversation: ConversationState
     results: list[ToolResult] = field(default_factory=list)
+    answer: QuestionResult | None = None
+    conversation_citations: list[Evidence] = field(default_factory=list)
+    fallback: str | None = None
+
+    def folders(self) -> list[UUID]:
+        return [node_id for kind, node_id in self.targets if kind == "folder"]
+
+    def files(self) -> list[UUID]:
+        return [node_id for kind, node_id in self.targets if kind == "file"]
 
     def add(self, result: ToolResult) -> None:
         self.results.append(result)
@@ -1015,10 +869,31 @@ class _IntentRun:
         serialized = [{"name": item.name, "result": item.payload} for item in self.results]
         context = dict(result.resolved_context or {})
         context.update({
-            "agent_flow": "planned", "intent": self.intent, "decided_by": self.decision.decided_by,
+            "intent": self.intent, "decided_by": self.decision.decided_by,
             "target": self.decision.target, "tools": [item.name for item in self.results],
         })
+        if self.fallback:
+            context["fallback"] = self.fallback
         return replace(result, resolved_context=context), serialized, _catalog_references(serialized)
+
+
+def _require_time(deadline: float) -> None:
+    if time.monotonic() >= deadline:
+        log_agent_phase(
+            logger, phase="tool_execution", started_at=time.monotonic(), deadline=deadline,
+            failure_kind="agent_deadline",
+        )
+        raise AIProviderUnavailable("document agent deadline exceeded")
+
+
+def _document_citations(evidence: Iterable[Evidence]) -> list[Evidence]:
+    """One citation per document, in first-use order, preferring an entry that has a link."""
+    chosen: dict[UUID, Evidence] = {}
+    for item in evidence:
+        current = chosen.get(item.document_id)
+        if current is None or (not current.source_url.strip() and item.source_url.strip()):
+            chosen[item.document_id] = item
+    return list(chosen.values())
 
 
 def _previous_answer(history: list[ConversationMessage]) -> str | None:
@@ -1080,26 +955,6 @@ def _evidence_payload(item: Evidence) -> dict[str, object]:
 
 def _json_size(value: object) -> int:
     return len(json.dumps(value, ensure_ascii=False).encode())
-
-
-def _bounded_history(history: list[ConversationMessage]) -> list[dict[str, object]]:
-    compact: list[dict[str, object]] = []
-    for item in history:
-        context = item.context or {}
-        compact.append(
-            {
-                "role": item.role,
-                "content": item.content[:1_000],
-                "context": {
-                    "providers": context.get("providers", []),
-                    "mentions": context.get("mentions", []),
-                    "references": context.get("references", [])[:INVENTORY_MAX_ITEMS],
-                },
-            }
-        )
-    while compact and _json_size(compact) > MAX_MODEL_HISTORY_BYTES:
-        compact.pop(0)
-    return compact
 
 
 def _planner_history(history: list[ConversationMessage]) -> list[dict[str, object]]:
@@ -1268,54 +1123,6 @@ def _catalog_item_row(item: dict[str, object], summary: str | None = None) -> st
     if "excerpt" in item:
         return f"- {name}: {_NO_INDEXED_TEXT}"
     return f"- {name} ({'Arquivo' if item.get('kind') == 'file' else 'Pasta'})"
-
-
-def _ordinal_reference(question: str) -> int | None:
-    normalized = question.casefold()
-    for index, word in enumerate(("primeiro", "segundo", "terceiro", "quarto", "quinto"), 1):
-        if word in normalized:
-            return index
-    return None
-
-
-def _plural_file_reference(question: str) -> bool:
-    normalized = question.casefold()
-    negated = re.search(
-        r"\b(?:não|nao)\s+(?:resuma|resumir|liste|listar|analise|analisar|descreva|descrever)\s+"
-        r"(?:todos\s+os\s+arquivos|cada\s+(?:um\s+dos\s+)?arquivos?)\b",
-        normalized,
-    )
-    if negated:
-        return False
-    return bool(
-        re.search(
-            r"\b(?:eles|elas|deles|delas|ambos|ambas|cada\s+(?:um\s+dos\s+)?arquivos?|todos\s+os\s+arquivos)\b",
-            normalized,
-        )
-    )
-
-
-def _is_inventory_summary_request(question: str) -> bool:
-    """True when a file-listing question also asks what each file is about.
-
-    Such questions often say "sobre o conteúdo", which the topical guard of
-    _is_document_inventory_question treats as a search, so they are matched here.
-    """
-    terms = {token.casefold() for token in _QUERY_TOKEN.findall(question)}
-    return bool(terms & _INVENTORY_DOCUMENT_TERMS and terms & _INVENTORY_REQUEST_TERMS) and _asks_content_summary(question)
-
-
-def _asks_content_summary(question: str) -> bool:
-    normalized = question.casefold()
-    if re.search(r"\b(?:não|nao|sem)\s+(?:resum|explica|explique|descrev|descri)", normalized):
-        return False
-    return bool(
-        re.search(
-            r"\b(?:resum\w*|explica\w*|explique|descri\w*|descrev\w*|s[ií]ntese|sintetiz\w*"
-            r"|do\s+que\s+(?:se\s+)?trata)",
-            normalized,
-        )
-    )
 
 
 def _request_deadline(deadline: float):

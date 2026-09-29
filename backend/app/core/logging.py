@@ -40,15 +40,13 @@ def provider_call_count(*, increment: bool = False) -> int:
 
 
 _PHASES = frozenset({
-    "planning", "tool_execution", "inventory", "retrieval_fallback", "finalization",
-    "provider_http_responses", "provider_http_embeddings",
-    "planned_tool", "planned_synthesis", "planned_fallback", "file_summaries",
-    "intent_classifier", "intent_fallback",
+    "intent_classifier", "intent_fallback", "tool_execution", "inventory", "plan_fallback",
+    "synthesis", "file_summaries", "provider_http_responses", "provider_http_embeddings",
 })
 _FAILURES = frozenset({
     "agent_deadline", "provider_deadline_preflight", "read_timeout",
     "connect_timeout", "http_status", "network_error", "provider_unavailable",
-    "internal_error", "planned_rejected", "invalid_output",
+    "internal_error", "plan_rejected", "invalid_output",
 })
 
 

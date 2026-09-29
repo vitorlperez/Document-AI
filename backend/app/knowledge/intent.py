@@ -3,8 +3,9 @@
 A small, cheap model decides what the user wants (list, summarize, ask about
 content, restructure the previous answer, or just talk) and which files the
 request is about. Its output is a closed schema validated here; nothing it
-returns is trusted as scope. Keyword heuristics only run when the classifier
-fails, times out, or returns something outside the schema.
+returns is trusted as scope. When the classifier fails, times out, or returns
+something outside the schema, the request is answered by a relevance search over
+what the user attached (fallback_intent); no word list decides in its place.
 """
 
 from __future__ import annotations
@@ -94,7 +95,7 @@ class IntentDecision:
     ordinals: tuple[int, ...] = ()
     tool: str = "none"
     query: str = ""
-    # "llm" when the classifier decided; "heuristic" when keywords decided after a failure.
+    # "llm" when the classifier decided; "fallback" when it failed and relevance search answers.
     decided_by: str = "llm"
 
 
@@ -141,38 +142,13 @@ def parse_intent(raw: object, *, listed_files: int, mentioned: int = 0) -> Inten
     )
 
 
-def heuristic_intent(
-    question: str, *, has_folder_mention: bool, has_file_mention: bool, listed_files: int,
-    has_previous_answer: bool,
-) -> IntentDecision:
-    """Fallback decision from the legacy keyword rules, used only when the classifier fails."""
-    from app.knowledge.agent import (
-        _asks_content_summary,
-        _is_inventory_summary_request,
-        _ordinal_reference,
-        _plural_file_reference,
-    )
-    from app.knowledge.questions import _is_document_inventory_question
+def fallback_intent(*, has_mentions: bool) -> IntentDecision:
+    """Safe decision when the classifier is unavailable: search the attached scope by relevance.
 
-    ordinal = _ordinal_reference(question)
-    target = "mentioned" if has_folder_mention or has_file_mention else "library"
-    if not (has_folder_mention or has_file_mention) and listed_files:
-        if ordinal is not None and ordinal <= listed_files:
-            target = "previous_ordinals"
-        elif _plural_file_reference(question):
-            target = "previous_answer_files"
-    ordinals = (ordinal,) if target == "previous_ordinals" and ordinal is not None else ()
-    if _is_inventory_summary_request(question):
-        intent = "list_files_with_summaries"
-    elif _is_document_inventory_question(question):
-        intent = "list_files"
-    elif _asks_content_summary(question) and (target != "library" or has_previous_answer):
-        intent = "summarize_files"
-        if target == "library" and has_previous_answer:
-            target = "previous_turn_files"
-    else:
-        intent = "ask_content"
+    It reads nothing from the wording of the message, so a failed classifier can
+    never route a request on a guessed keyword; the answer stays grounded and cited.
+    """
     return IntentDecision(
-        intent=intent, target=target, ordinals=ordinals, tool=ALLOWED_TOOLS[intent][0],
-        decided_by="heuristic",
+        intent="ask_content", target="mentioned" if has_mentions else "library",
+        tool="retrieve_evidence", decided_by="fallback",
     )

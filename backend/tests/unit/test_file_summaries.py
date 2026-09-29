@@ -47,7 +47,17 @@ PROFILE_SECOND_CHUNK = "Experience Allstacks Software Engineer building AI agent
 GRAVIDADE_CHUNK = "A GRAVIDADE DO PECADO DE IMPUREZA"
 
 
-class BriefProvider(FakeProvider):
+class InventoryClassifier(FakeProvider):
+    """Mocked classifier: the message asks for the folder's files and what each one is about."""
+
+    def classify_intent(self, *, question, history, context, model="gpt-5-nano"):
+        return {
+            "intent": "list_files_with_summaries", "target": "mentioned", "ordinals": [],
+            "tool": "list_folder_inventory", "query": "",
+        }
+
+
+class BriefProvider(InventoryClassifier):
     """Mocked LLM: records every batched call and returns canned summaries by file number."""
 
     def __init__(self, replies: dict[int, str] | Exception) -> None:
@@ -256,7 +266,7 @@ def test_provider_without_batch_summaries_uses_the_sentence_fallback(
     session = semantic_session
     scope, user, folder = _folder_with_files(session)
 
-    result, _tool_results, _references = _ask(session, FakeProvider({}), folder, scope, user)
+    result, _tool_results, _references = _ask(session, InventoryClassifier({}), folder, scope, user)
 
     assert _row(result.answer, "Profile.pdf").endswith("Django and FastAPI.")
 

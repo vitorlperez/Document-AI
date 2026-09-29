@@ -33,14 +33,16 @@ def test_explicit_agent_deadline_after_slow_model_stage(monkeypatch: pytest.Monk
     clock = FakeClock()
     monkeypatch.setattr(agent.time, "monotonic", clock.monotonic)
 
-    class SlowToolProvider:
-        def tool_calls(self, *, question, history, tool_results):
-            assert questions._REQUEST_DEADLINE.get() == 125.0
+    class SlowClassifier:
+        def classify_intent(self, *, question, history, context, model):
+            # The classifier gets its own short deadline inside the agent's budget.
+            assert questions._REQUEST_DEADLINE.get() == 104.0
             clock.advance(25.0)
-            return []
+            return {"intent": "ask_content", "target": "library", "ordinals": [], "tool": "retrieve_evidence",
+                    "query": ""}
 
     with pytest.raises(AIProviderUnavailable, match="document agent deadline exceeded"):
-        _ask(AgentService(None, SlowToolProvider(), AgentLimits(max_seconds=25)))
+        _ask(AgentService(None, SlowClassifier(), AgentLimits(max_seconds=25)))
     assert clock.now == 125.0
     assert questions._REQUEST_DEADLINE.get() is None
 
@@ -64,7 +66,7 @@ def test_fallback_http_timeout_uses_remaining_budget(monkeypatch: pytest.MonkeyP
         calls.append((url.rsplit("/", 1)[-1], timeout))
         if len(calls) == 1:
             clock.advance(12.0)
-            return FakeResponse()  # no tool call -> agent's retrieval fallback
+            return FakeResponse()  # no classifier output -> relevance-search fallback
         clock.advance(timeout)
         raise httpx.ReadTimeout("simulated read timeout")
 
@@ -81,7 +83,8 @@ def test_fallback_http_timeout_uses_remaining_budget(monkeypatch: pytest.MonkeyP
         _ask(service)
 
     assert isinstance(error.value.__cause__, httpx.ReadTimeout)
-    assert calls == [("responses", 25.0), ("embeddings", 13.0)]
+    # The classifier is capped at its 4 s timeout; the fallback gets what is left of the 25 s budget.
+    assert calls == [("responses", 4.0), ("embeddings", 13.0)]
     assert clock.now == 125.0
     assert questions._REQUEST_DEADLINE.get() is None
 

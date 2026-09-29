@@ -1,13 +1,12 @@
-"""Side-by-side evaluation of the agent with the planned flow off and on.
-
-Run before enabling AGENT_PLANNER_ENABLED, against real project data:
+"""End-to-end evaluation of the document agent against real project data.
 
     python -m app.knowledge.agent_eval --organization-id ORG --user-id USER \
         --folder-id FOLDER --cases scripts/agent_eval_cases.json --output eval.json
 
-Every case runs twice (flag off, flag on) inside a transaction that is rolled
-back, so usage records and other writes never persist. It calls the configured
-OpenAI provider, so it costs real tokens.
+Every case runs once inside a transaction that is rolled back, so usage records
+and other writes never persist. It calls the configured OpenAI provider, so it
+costs real tokens. The report shows, per case, which intent ran, whether the
+classifier fell back, and whether the answer carries sources with links.
 """
 
 from __future__ import annotations
@@ -24,7 +23,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
-from app.knowledge.agent import AgentLimits, AgentService, PlannedFlow
+from app.knowledge.agent import AgentLimits, AgentService, FlowModels
 from app.knowledge.questions import SemanticProvider
 
 _URL = re.compile(r"https?://|www\.", re.IGNORECASE)
@@ -42,8 +41,8 @@ class EvalCase:
 @dataclass(frozen=True)
 class EvalRun:
     case_id: str
-    variant: str
-    flow: str
+    intent: str
+    decided_by: str
     seconds: float
     error: str | None
     answer: str | None
@@ -82,18 +81,17 @@ def load_cases(path: Path, *, folder_id: UUID | None) -> list[EvalCase]:
 
 def run_case(
     session: Session, provider: SemanticProvider, case: EvalCase, *, scope: OrganizationScope,
-    user_id: UUID, limits: AgentLimits, planned: PlannedFlow,
+    user_id: UUID, limits: AgentLimits, models: FlowModels,
 ) -> EvalRun:
-    variant = "on" if planned.enabled else "off"
     started = time.monotonic()
     try:
-        result, _tool_results, references = AgentService(session, provider, limits, planned=planned).ask(
+        result, _tool_results, references = AgentService(session, provider, limits, models=models).ask(
             scope=scope, user_id=user_id, question=case.question, providers=case.providers,
             mentions=case.mentions, history=[],
         )
     except Exception as error:  # noqa: BLE001 - the report records any failure
         return EvalRun(
-            case.id, variant, "error", round(time.monotonic() - started, 2), type(error).__name__,
+            case.id, "error", "error", round(time.monotonic() - started, 2), type(error).__name__,
             None, 0, 0, 0, False, False, 0, 0, 0, len(case.must_mention),
         )
     finally:
@@ -104,8 +102,8 @@ def run_case(
     context = result.resolved_context or {}
     return EvalRun(
         case_id=case.id,
-        variant=variant,
-        flow="planned" if context.get("agent_flow") == "planned" else "current",
+        intent=str(context.get("intent", "")),
+        decided_by=str(context.get("decided_by", "")),
         seconds=round(time.monotonic() - started, 2),
         error=None,
         answer=result.answer,
@@ -121,41 +119,35 @@ def run_case(
     )
 
 
-def compare(
+def run_all(
     session: Session, provider: SemanticProvider, cases: list[EvalCase], *, scope: OrganizationScope,
-    user_id: UUID, limits: AgentLimits, planned: PlannedFlow,
+    user_id: UUID, limits: AgentLimits, models: FlowModels,
 ) -> list[EvalRun]:
-    runs: list[EvalRun] = []
-    for case in cases:
-        for enabled in (False, True):
-            runs.append(
-                run_case(
-                    session, provider, case, scope=scope, user_id=user_id, limits=limits,
-                    planned=PlannedFlow(
-                        enabled=enabled, planner_model=planned.planner_model,
-                        synthesis_model=planned.synthesis_model, budget_fraction=planned.budget_fraction,
-                    ),
-                )
-            )
-    return runs
+    return [
+        run_case(session, provider, case, scope=scope, user_id=user_id, limits=limits, models=models)
+        for case in cases
+    ]
 
 
 def markdown_report(runs: list[EvalRun]) -> str:
     lines = [
-        "| case | flag | flow | s | chars | citations (link) | (fonte n) | url | files named | must mention | error |",
+        "| case | intent | decided by | s | chars | citations (link) | (fonte n) | url | files named | must mention | error |",
         "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for run in runs:
         lines.append(
-            f"| {run.case_id} | {run.variant} | {run.flow} | {run.seconds} | {run.answer_chars} | "
+            f"| {run.case_id} | {run.intent} | {run.decided_by} | {run.seconds} | {run.answer_chars} | "
             f"{run.citations} ({run.citations_with_link}) | {'yes' if run.answer_marks_sources else 'no'} | "
             f"{'yes' if run.answer_has_url else 'no'} | {run.catalog_files_named}/{run.catalog_files} | "
             f"{run.must_mention_hits}/{run.must_mention_total} | {run.error or ''} |"
         )
-    on = [run for run in runs if run.variant == "on"]
-    if on:
-        planned = sum(run.flow == "planned" for run in on)
-        lines.append(f"\nFlag on: {planned}/{len(on)} answered by the planned flow; the rest fell back.")
+    answered = [run for run in runs if run.error is None]
+    if runs:
+        classified = sum(run.decided_by == "llm" for run in answered)
+        cited = sum(run.citations_with_link > 0 for run in answered)
+        lines.append(
+            f"\nClassifier decided {classified}/{len(runs)}; answers with linked sources {cited}/{len(runs)}."
+        )
     return "\n".join(lines)
 
 
@@ -177,18 +169,19 @@ def main(argv: list[str] | None = None) -> int:
         settings.openai_api_key.get_secret_value() if settings.openai_api_key else None
     )
     limits = AgentLimits(
-        max_steps=settings.agent_max_steps, max_result_bytes=settings.agent_max_tool_result_bytes,
+        max_result_bytes=settings.agent_max_tool_result_bytes,
         max_seconds=settings.agent_max_seconds,
     )
-    planned = PlannedFlow(
+    models = FlowModels(
         planner_model=settings.agent_planner_model, synthesis_model=settings.agent_synthesis_model,
+        intent_timeout_seconds=settings.agent_intent_timeout_seconds,
     )
     cases = load_cases(args.cases, folder_id=args.folder_id)
     session_factory = build_session_factory(build_engine(settings))
     with session_factory() as session:
-        runs = compare(
+        runs = run_all(
             session, provider, cases, scope=OrganizationScope(args.organization_id), user_id=args.user_id,
-            limits=limits, planned=planned,
+            limits=limits, models=models,
         )
     print(markdown_report(runs))
     if args.output:

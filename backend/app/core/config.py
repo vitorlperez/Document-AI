@@ -52,16 +52,14 @@ class Settings(BaseSettings):
     sync_scheduler_slo_grace_hours: int = 2
     openai_api_key: SecretStr | None = None
     agent_tools_enabled: bool = False
-    agent_max_steps: int = 4
     agent_max_tool_result_bytes: int = 48_000
     agent_max_seconds: int = 25
-    # Small-model intent classifier -> tools -> one grounded synthesis call. Off by
-    # default until measured; it only runs inside the agent (AGENT_TOOLS_ENABLED)
-    # and falls back to keyword routing when the classifier fails.
-    agent_planner_enabled: bool = False
+    # The agent (AGENT_TOOLS_ENABLED) is one flow: a small-model intent classifier ->
+    # local tools -> one grounded synthesis call. A failed classifier falls back to a
+    # relevance search over the attached scope.
     agent_planner_model: str = "gpt-5-nano"
     agent_synthesis_model: str = "gpt-5-mini"
-    # Seconds the small intent classifier may take before the keyword fallback decides.
+    # Seconds the small intent classifier may take before the relevance-search fallback answers.
     agent_intent_timeout_seconds: float = 4.0
     # Per-file summaries in catalog answers: one batched call to a cheap model that is asked
     # for about this many characters per file (a target in the prompt, not a cut).

@@ -1,4 +1,4 @@
-"""Flag-gated intent classifier -> tools -> grounded synthesis, and its keyword fallback."""
+"""The single agent flow: classify -> tools -> grounded synthesis -> citations, and its safe fallbacks."""
 
 import json
 import time
@@ -9,16 +9,32 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
-from app.knowledge.agent import AgentLimits, AgentService, ConversationService, PlannedFlow
-from app.knowledge.agent_eval import compare, load_cases, markdown_report
-from app.knowledge.intent import INTENT_SCHEMA, InvalidIntent, heuristic_intent, parse_intent
+from app.knowledge.agent import (
+    AgentLimits,
+    AgentRun,
+    AgentService,
+    ConversationService,
+    ConversationState,
+    FlowModels,
+    ToolResult,
+)
+from app.knowledge.agent_eval import load_cases, markdown_report, run_all
+from app.knowledge.intent import (
+    INTENT_SCHEMA,
+    IntentDecision,
+    InvalidIntent,
+    fallback_intent,
+    parse_intent,
+)
 from app.knowledge.models import Document
 from app.knowledge.questions import (
     _REQUEST_DEADLINE,
     ANSWER_FORMAT_GUIDANCE,
     AIProviderUnavailable,
+    Evidence,
     GeneratedAnswer,
     OpenAIQuestionProvider,
+    QuestionResult,
 )
 from app.library.models import LibraryNode
 from tests.unit.test_semantic_questions import FakeProvider, chunk, context
@@ -42,6 +58,7 @@ class IntentProvider(FakeProvider):
     def __init__(
         self, *, intent: object = INVENTORY_INTENT, synthesis: GeneratedAnswer | None = None,
         intent_error: Exception | None = None, vectors: dict[str, list[float]] | None = None,
+        synthesis_error: Exception | None = None,
     ) -> None:
         super().__init__(vectors or {})
         self.intent = intent
@@ -51,6 +68,7 @@ class IntentProvider(FakeProvider):
             [1],
         )
         self.intent_error = intent_error
+        self.synthesis_error = synthesis_error
         self.intent_calls: list[dict[str, object]] = []
         self.synthesis_calls: list[dict[str, object]] = []
 
@@ -67,6 +85,8 @@ class IntentProvider(FakeProvider):
             "intent": intent, "sources": sources, "catalog": catalog, "model": model,
             "previous_answer": previous_answer,
         })
+        if self.synthesis_error is not None:
+            raise self.synthesis_error
         return self.synthesis
 
 
@@ -106,21 +126,11 @@ def _folder_with_files(session: Session):
     return OrganizationScope(organization.id), user, folder, document
 
 
-def _ask(session, provider, folder, scope, user, *, planned: PlannedFlow | None = None, limits=None):
-    return AgentService(session, provider, limits or AgentLimits(), planned=planned).ask(
+def _ask(session, provider, folder, scope, user, *, models: FlowModels | None = None, limits=None):
+    return AgentService(session, provider, limits or AgentLimits(), models=models).ask(
         scope=scope, user_id=user.id, question=QUESTION, providers=["google_drive"],
         mentions=[("folder", folder.id)], history=[],
     )
-
-
-def _comparable(outcome):
-    result, tool_results, references = outcome
-    return (
-        result.answer, result.retrieval_status, result.resolved_context,
-        [(item.document_id, item.source_url) for item in result.citations], tool_results, references,
-    )
-
-
 
 
 def _profile_library(session: Session):
@@ -164,24 +174,15 @@ def _history(session: Session, scope, user, turns: list[tuple[str, str, dict]]):
     return history
 
 
-def _run(session, provider, scope, user, question, *, mentions, history=(), planned=None):
-    return AgentService(session, provider, AgentLimits(), planned=planned or PlannedFlow(enabled=True)).ask(
+def _linked(result) -> list[tuple[str, str]]:
+    return [(item.document_name, item.source_url) for item in result.citations]
+
+
+def _run(session, provider, scope, user, question, *, mentions, history=(), models=None):
+    return AgentService(session, provider, AgentLimits(), models=models).ask(
         scope=scope, user_id=user.id, question=question, providers=["google_drive"],
         mentions=list(mentions), history=list(history),
     )
-
-
-def test_flag_off_never_classifies_and_keeps_current_answer(semantic_session: Session) -> None:  # noqa: F811
-    scope, user, folder, _document = _folder_with_files(semantic_session)
-    baseline = _ask(semantic_session, FakeProvider({}), folder, scope, user)
-    provider = IntentProvider()
-
-    default = _ask(semantic_session, provider, folder, scope, user)
-    disabled = _ask(semantic_session, provider, folder, scope, user, planned=PlannedFlow(enabled=False))
-
-    assert provider.intent_calls == [] and provider.synthesis_calls == []
-    assert _comparable(default) == _comparable(baseline) == _comparable(disabled)
-    assert "Síntese extrativa do conteúdo indexado" in baseline[0].answer
 
 
 def test_classifier_decides_inventory_with_summaries_and_synthesizes_with_sources(
@@ -192,7 +193,7 @@ def test_classifier_decides_inventory_with_summaries_and_synthesizes_with_source
 
     result, tool_results, references = _ask(
         semantic_session, provider, folder, scope, user,
-        planned=PlannedFlow(enabled=True, planner_model="cheap", synthesis_model="final"),
+        models=FlowModels(planner_model="cheap", synthesis_model="final"),
     )
 
     [classified] = provider.intent_calls
@@ -217,7 +218,7 @@ def test_classifier_decides_inventory_with_summaries_and_synthesizes_with_source
     ]
     assert result.retrieval_status == "catalog"
     assert result.resolved_context == {
-        "agent_flow": "planned", "intent": "list_files_with_summaries", "decided_by": "llm",
+        "intent": "list_files_with_summaries", "decided_by": "llm",
         "target": "mentioned", "tools": ["list_library_children"],
     }
     assert [item["name"] for item in tool_results] == ["list_library_children"]
@@ -280,6 +281,7 @@ def test_ordinal_summary_resolves_the_listed_file(semantic_session: Session) -> 
     assert provider.intent_calls[0]["context"]["previous_answer_listed_files"] == ["First.pdf", "Second.pdf"]
     assert result.answer
     assert {item.document_name for item in result.citations} == {"Second.pdf"}
+    assert all(item.source_url == "https://drive.example.test/Second.pdf" for item in result.citations)
     assert result.resolved_context["tools"] == ["summarize_documents"]
     assert result.resolved_context["target"] == "previous_ordinals"
 
@@ -371,17 +373,23 @@ def test_question_without_evidence_answers_honestly_with_sources(semantic_sessio
     ]
 
 
-def test_current_path_never_returns_a_silent_empty_answer(semantic_session: Session) -> None:  # noqa: F811
+def test_fallback_without_evidence_never_returns_a_silent_empty_answer(
+    semantic_session: Session,  # noqa: F811
+) -> None:
     scope, user, profile_node, profile_document = _profile_library(semantic_session)
     question = "Qual é a opinião dele sobre futebol?"
-
-    result, _tool_results, _references = _run(
-        semantic_session, FakeProvider({question: [1.0, 0.0]}), scope, user, question,
-        mentions=[("file", profile_node.id)], planned=PlannedFlow(enabled=False),
+    provider = IntentProvider(
+        intent_error=AIProviderUnavailable("AI provider deadline exceeded"), vectors={question: [1.0, 0.0]},
+        synthesis=GeneratedAnswer("Insufficient evidence.", []),
     )
 
+    result, _tool_results, _references = _run(
+        semantic_session, provider, scope, user, question, mentions=[("file", profile_node.id)],
+    )
+
+    assert result.resolved_context["decided_by"] == "fallback"
     assert result.answer is not None and "Arquivos consultados" in result.answer
-    assert [item.source_url for item in result.citations] == [profile_document.source_url]
+    assert _linked(result) == [("Profile.pdf", profile_document.source_url)]
 
 
 @pytest.mark.parametrize(
@@ -395,20 +403,22 @@ def test_current_path_never_returns_a_silent_empty_answer(semantic_session: Sess
     ],
     ids=["classifier-timeout", "classifier-invalid-json", "unknown-intent", "ordinal-out-of-range", "not-object"],
 )
-def test_classifier_failures_fall_back_to_keyword_decision(
+def test_classifier_failures_fall_back_to_a_cited_relevance_search(
     semantic_session: Session, provider: IntentProvider,  # noqa: F811
 ) -> None:
     scope, user, folder, document = _folder_with_files(semantic_session)
+    provider.vectors = {QUESTION: [1.0, 0.0]}
 
-    result, _tool_results, _references = _ask(
-        semantic_session, provider, folder, scope, user, planned=PlannedFlow(enabled=True),
-    )
+    result, tool_results, _references = _ask(semantic_session, provider, folder, scope, user)
 
     assert len(provider.intent_calls) == 1
-    assert result.resolved_context["decided_by"] == "heuristic"
-    assert result.resolved_context["intent"] == "list_files_with_summaries"
-    assert "(fonte 1)" in result.answer
-    assert [item.source_url for item in result.citations] == [document.source_url]
+    # No word list decides in the classifier's place: the attached folder is searched by relevance.
+    assert result.resolved_context["decided_by"] == "fallback"
+    assert result.resolved_context["intent"] == "ask_content"
+    assert [item["name"] for item in tool_results] == ["retrieve_evidence"]
+    assert provider.synthesis_calls == []
+    assert result.answer
+    assert _linked(result) == [("Indexed.pdf", document.source_url)]
 
 
 def test_classifier_runs_under_its_own_short_deadline(semantic_session: Session) -> None:  # noqa: F811
@@ -416,54 +426,48 @@ def test_classifier_runs_under_its_own_short_deadline(semantic_session: Session)
     provider = IntentProvider()
     before = time.monotonic()
 
-    _ask(semantic_session, provider, folder, scope, user, planned=PlannedFlow(enabled=True, intent_timeout_seconds=0.5))
+    _ask(semantic_session, provider, folder, scope, user, models=FlowModels(intent_timeout_seconds=0.5))
 
     deadline = provider.intent_calls[0]["deadline"]
     assert deadline is not None and deadline <= before + 0.5 + 0.05
 
 
 @pytest.mark.parametrize(
-    "synthesis",
-    [GeneratedAnswer("", []), GeneratedAnswer("Insufficient evidence.", []),
-     GeneratedAnswer("Resposta sem fonte.", []), GeneratedAnswer("Fonte inexistente [9].", [9])],
-    ids=["empty", "insufficient", "uncited", "out-of-range"],
+    "provider",
+    [
+        IntentProvider(synthesis=GeneratedAnswer("", [])),
+        IntentProvider(synthesis=GeneratedAnswer("Insufficient evidence.", [])),
+        IntentProvider(synthesis=GeneratedAnswer("Resposta sem fonte.", [])),
+        IntentProvider(synthesis=GeneratedAnswer("Fonte inexistente [9].", [9])),
+        IntentProvider(synthesis_error=AIProviderUnavailable("AI provider deadline exceeded")),
+    ],
+    ids=["empty", "insufficient", "uncited", "out-of-range", "synthesis-timeout"],
 )
 def test_unverifiable_synthesis_keeps_the_extractive_answer_with_sources(
-    semantic_session: Session, synthesis: GeneratedAnswer,  # noqa: F811
+    semantic_session: Session, provider: IntentProvider,  # noqa: F811
 ) -> None:
     scope, user, folder, document = _folder_with_files(semantic_session)
 
-    result, _tool_results, _references = _ask(
-        semantic_session, IntentProvider(synthesis=synthesis), folder, scope, user, planned=PlannedFlow(enabled=True),
-    )
+    result, _tool_results, _references = _ask(semantic_session, provider, folder, scope, user)
 
     assert "Síntese extrativa do conteúdo indexado" in result.answer
     assert "Fonte inexistente" not in result.answer
     assert [item.source_url for item in result.citations] == [document.source_url]
-    assert result.resolved_context["agent_flow"] == "planned"
+    assert result.resolved_context["decided_by"] == "llm"
 
 
-def test_budget_timeout_falls_back_to_current_path(semantic_session: Session) -> None:  # noqa: F811
-    scope, user, folder, _document = _folder_with_files(semantic_session)
-    baseline = _ask(semantic_session, FakeProvider({}), folder, scope, user)
-    provider = IntentProvider()
+def test_provider_without_classifier_answers_by_relevance_with_sources(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    scope, user, folder, document = _folder_with_files(semantic_session)
 
-    fallback = _ask(
-        semantic_session, provider, folder, scope, user,
-        planned=PlannedFlow(enabled=True, budget_fraction=0.0),
+    result, _tool_results, _references = _ask(
+        semantic_session, FakeProvider({QUESTION: [1.0, 0.0]}), folder, scope, user,
     )
 
-    assert provider.synthesis_calls == []
-    assert _comparable(fallback) == _comparable(baseline)
-
-
-def test_planned_flow_ignores_providers_without_intent_adapter(semantic_session: Session) -> None:  # noqa: F811
-    scope, user, folder, _document = _folder_with_files(semantic_session)
-    baseline = _ask(semantic_session, FakeProvider({}), folder, scope, user)
-
-    enabled = _ask(semantic_session, FakeProvider({}), folder, scope, user, planned=PlannedFlow(enabled=True))
-
-    assert _comparable(enabled) == _comparable(baseline)
+    assert result.resolved_context["decided_by"] == "fallback"
+    assert result.answer
+    assert _linked(result) == [("Indexed.pdf", document.source_url)]
 
 
 def test_conversation_intent_uses_no_tools_unless_files_are_attached(semantic_session: Session) -> None:  # noqa: F811
@@ -472,6 +476,7 @@ def test_conversation_intent_uses_no_tools_unless_files_are_attached(semantic_se
 
     result, tool_results, _references = _run(semantic_session, provider, scope, user, "Obrigado!", mentions=[])
 
+    # A fresh conversation used no document, so there is nothing to cite.
     assert tool_results == [] and result.citations == []
     assert result.retrieval_status == "conversation" and result.answer
 
@@ -486,12 +491,95 @@ def test_conversation_intent_uses_no_tools_unless_files_are_attached(semantic_se
     assert {item.document_name for item in result.citations} == {"Profile.pdf"}
 
 
+def test_conversation_reply_keeps_the_sources_of_the_conversation(semantic_session: Session) -> None:  # noqa: F811
+    scope, user, profile_node, profile_document = _profile_library(semantic_session)
+    history = _history(semantic_session, scope, user, [
+        ("user", "Resuma o arquivo", {"mentions": [{"kind": "file", "node_id": str(profile_node.id)}]}),
+        ("assistant", "Profile.pdf descreve um engenheiro de software (fonte 1).", {}),
+    ])
+    provider = IntentProvider(intent=_intent("conversation", "library"))
+
+    result, tool_results, _references = _run(
+        semantic_session, provider, scope, user, "Valeu, ficou ótimo!", mentions=[], history=history,
+    )
+
+    assert tool_results == []
+    assert result.retrieval_status == "conversation" and "fontes abaixo" in result.answer
+    # Re-read from the current catalog, so a revoked file would not come back as a source.
+    assert _linked(result) == [("Profile.pdf", profile_document.source_url)]
+
+
+def test_cite_backfills_the_documents_the_tools_read_when_the_answer_has_none() -> None:
+    from uuid import uuid4
+
+    read = Evidence(
+        document_id=uuid4(), document_name="Plano.pdf", chunk_id=uuid4(), excerpt="Plano.",
+        page_number=None, source_url="https://drive.example.test/Plano.pdf", score=1.0,
+    )
+    unlinked_copy = Evidence(
+        document_id=read.document_id, document_name="Plano.pdf", chunk_id=uuid4(), excerpt="Outro trecho.",
+        page_number=None, source_url="", score=0.5,
+    )
+    run = AgentRun(
+        decision=IntentDecision(intent="list_files_with_summaries", target="mentioned"),
+        intent="list_files_with_summaries", targets=[],
+        conversation=ConversationState(listed_files=[], previous_turn_mentions=[], previous_answer=None),
+        results=[ToolResult("list_library_children", {"items": []}, citations=(unlinked_copy, read))],
+        answer=QuestionResult(
+            answer="Texto da síntese sem marcadores.", confidence="supported", citations=[],
+            retrieval_status="catalog",
+        ),
+    )
+
+    cited = AgentService(None, FakeProvider({}), AgentLimits()).cite(run)
+
+    assert cited.answer == "Texto da síntese sem marcadores."
+    # One citation per document, and the one that carries the link.
+    assert [(item.document_name, item.source_url) for item in cited.citations] == [
+        ("Plano.pdf", "https://drive.example.test/Plano.pdf")
+    ]
+
+
+@pytest.mark.parametrize(
+    ("intent", "tool"),
+    [
+        ("list_files", "list_folder_inventory"),
+        ("list_files_with_summaries", "list_folder_inventory"),
+        ("summarize_files", "summarize_documents"),
+        ("ask_content", "retrieve_evidence"),
+        ("restructure_previous", "previous_answer"),
+        ("conversation", "none"),
+    ],
+)
+def test_every_answer_that_used_documents_cites_them_with_links(
+    semantic_session: Session, intent: str, tool: str,  # noqa: F811
+) -> None:
+    scope, user, profile_node, profile_document = _profile_library(semantic_session)
+    question = "Sobre o que é este arquivo?"
+    history = _history(semantic_session, scope, user, [
+        ("user", "Resuma o arquivo", {"mentions": [{"kind": "file", "node_id": str(profile_node.id)}]}),
+        ("assistant", "Profile.pdf descreve um engenheiro de software (fonte 1).", {}),
+    ])
+    provider = IntentProvider(
+        intent=_intent(intent, tool=tool), vectors={question: [0.0, 1.0]},
+        # A synthesis that cites nothing: the Fontes must still come from the documents the tools read.
+        synthesis=GeneratedAnswer("Resposta sem marcador de fonte.", []),
+    )
+
+    result, _tool_results, _references = _run(
+        semantic_session, provider, scope, user, question, mentions=[("file", profile_node.id)], history=history,
+    )
+
+    assert result.answer
+    assert _linked(result) == [("Profile.pdf", profile_document.source_url)]
+
+
 def test_authorization_errors_are_not_swallowed_by_fallback(semantic_session: Session) -> None:  # noqa: F811
     scope, user, folder, _document = _folder_with_files(semantic_session)
     provider = IntentProvider(intent_error=SyncAccessDenied("folder unavailable"))
 
     with pytest.raises(SyncAccessDenied):
-        _ask(semantic_session, provider, folder, scope, user, planned=PlannedFlow(enabled=True))
+        _ask(semantic_session, provider, folder, scope, user)
 
 
 def test_parse_intent_enforces_the_closed_schema() -> None:
@@ -514,26 +602,14 @@ def test_parse_intent_enforces_the_closed_schema() -> None:
     assert INTENT_SCHEMA["required"] == ["intent", "target", "ordinals", "tool", "query"]
 
 
-@pytest.mark.parametrize(
-    ("question", "folder", "file", "listed", "previous", "expected"),
-    [
-        (QUESTION, True, False, 0, False, ("list_files_with_summaries", "mentioned")),
-        ("Quais arquivos temos dentro dessa pasta?", True, False, 0, False, ("list_files", "mentioned")),
-        ("Resuma o segundo", False, False, 3, True, ("summarize_files", "previous_ordinals")),
-        ("Resuma cada um deles", False, False, 3, True, ("summarize_files", "previous_answer_files")),
-        ("Qual é o prazo de entrega?", False, False, 0, False, ("ask_content", "library")),
-    ],
-)
-def test_keyword_fallback_decisions(question, folder, file, listed, previous, expected) -> None:
-    decision = heuristic_intent(
-        question, has_folder_mention=folder, has_file_mention=file, listed_files=listed,
-        has_previous_answer=previous,
+def test_fallback_decision_reads_only_what_is_attached() -> None:
+    assert fallback_intent(has_mentions=True) == IntentDecision(
+        intent="ask_content", target="mentioned", tool="retrieve_evidence", decided_by="fallback",
     )
-    assert (decision.intent, decision.target) == expected
-    assert decision.decided_by == "heuristic"
+    assert fallback_intent(has_mentions=False).target == "library"
 
 
-def test_eval_harness_compares_flag_off_and_on(semantic_session: Session, tmp_path) -> None:  # noqa: F811
+def test_eval_harness_reports_intent_and_linked_sources(semantic_session: Session, tmp_path) -> None:  # noqa: F811
     scope, user, folder, _document = _folder_with_files(semantic_session)
     cases_file = tmp_path / "cases.json"
     cases_file.write_text(json.dumps([
@@ -544,27 +620,25 @@ def test_eval_harness_compares_flag_off_and_on(semantic_session: Session, tmp_pa
     ]))
     cases = load_cases(cases_file, folder_id=folder.id)
 
-    runs = compare(
+    [run] = run_all(
         semantic_session, IntentProvider(), cases, scope=scope, user_id=user.id,
-        limits=AgentLimits(), planned=PlannedFlow(),
+        limits=AgentLimits(), models=FlowModels(),
     )
 
-    assert [(run.variant, run.flow, run.error) for run in runs] == [("off", "current", None), ("on", "planned", None)]
-    assert all(run.citations == run.citations_with_link == 1 for run in runs)
-    assert [run.answer_marks_sources for run in runs] == [False, True]
-    assert [run.catalog_files_named for run in runs] == [2, 2]
-    assert all(run.must_mention_hits == 1 and not run.answer_has_url for run in runs)
-    report = markdown_report(runs)
-    assert "Flag on: 1/1 answered by the planned flow" in report
+    assert (run.intent, run.decided_by, run.error) == ("list_files_with_summaries", "llm", None)
+    assert run.citations == run.citations_with_link == 1
+    assert run.answer_marks_sources and run.catalog_files_named == 2
+    assert run.must_mention_hits == 1 and not run.answer_has_url
+    assert "Classifier decided 1/1; answers with linked sources 1/1." in markdown_report([run])
     with pytest.raises(SystemExit):
         load_cases(cases_file, folder_id=None)
 
 
-def test_planner_flag_is_off_by_default() -> None:
+def test_settings_have_no_planner_flag() -> None:
     settings = Settings(database_url="postgresql://user:secret@localhost/db")
-    assert settings.agent_planner_enabled is False
+    assert not hasattr(settings, "agent_planner_enabled")
     assert settings.agent_intent_timeout_seconds == 4.0
-    assert PlannedFlow().enabled is False
+    assert FlowModels().intent_timeout_seconds == 4.0
 
 
 def _responses_envelope(payload: object) -> dict[str, object]:

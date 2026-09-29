@@ -26,7 +26,7 @@ from app.knowledge.agent import (
     AgentService,
     ConversationService,
     FileSummaries,
-    PlannedFlow,
+    FlowModels,
 )
 from app.knowledge.models import ConversationMessage
 from app.knowledge.questions import AIProviderUnavailable, QuestionResult, QuestionService
@@ -366,12 +366,10 @@ def ask_organization_question(
                     session=session,
                     provider=request.app.state.semantic_provider,
                     limits=AgentLimits(
-                        max_steps=request.app.state.settings.agent_max_steps,
                         max_result_bytes=request.app.state.settings.agent_max_tool_result_bytes,
                         max_seconds=request.app.state.settings.agent_max_seconds,
                     ),
-                    planned=PlannedFlow(
-                        enabled=request.app.state.settings.agent_planner_enabled,
+                    models=FlowModels(
                         planner_model=request.app.state.settings.agent_planner_model,
                         synthesis_model=request.app.state.settings.agent_synthesis_model,
                         intent_timeout_seconds=request.app.state.settings.agent_intent_timeout_seconds,
