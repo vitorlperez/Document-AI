@@ -519,7 +519,8 @@ def _answer_without_source_links(value: str | None) -> str | None:
     answer = re.sub(r"[ \t]+([,.;:!?])", r"\1", answer)
     answer = re.sub(r"[ \t]{2,}", " ", answer)
     answer = "\n".join(line for line in answer.splitlines() if not _SOURCE_ONLY_LINE.fullmatch(line))
-    answer = re.sub(r"(?m)^\s*[.,;:!?]+\s*$", "", answer)
+    # ":::" closes a presentation block (see ANSWER_FORMAT_GUIDANCE); keep it.
+    answer = re.sub(r"(?m)^\s*(?!:::\s*$)[.,;:!?]+\s*$", "", answer)
     answer = re.sub(r"\n{3,}", "\n\n", answer)
     return answer.strip()
 

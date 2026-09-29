@@ -288,15 +288,34 @@ class GeneratedAnswer:
     citation_indexes: list[int]
 
 
-# Visual shape of every final answer; the interface renders this markdown subset and the Fontes block.
+# Presentation vocabulary of every final answer. The frontend (answer-blocks.ts) renders these blocks and
+# degrades anything else to plain Markdown; the Fontes block is built by the interface, never by the model.
 ANSWER_FORMAT_GUIDANCE = (
-    " Format the answer as clean, consistent Markdown for a chat interface: open with a one or two sentence "
-    "direct answer or summary; then, only when the content needs it, use short section titles (## Title), "
-    "bullet or numbered lists with one idea per item (each item on its own line), and a Markdown table when "
-    "comparing items across the same attributes. Keep paragraphs to at most three sentences and never paste "
-    "long raw excerpts or run-on text: summarize them in your own words. Use bold only for the few essential "
-    "terms. Do not repeat or list the sources, file links, or a Fontes/Sources section in the body; the "
-    "interface builds that block separately."
+    " Format the answer as Markdown for a chat interface, composed from this small vocabulary of blocks. "
+    "Choose the blocks that fit what was asked and what the sources contain; there is no fixed template, and "
+    "a short factual answer can be one or two sentences with no other block. Blocks: "
+    "(1) Direct answer: open with one or two sentences that answer or summarize. "
+    "(2) Section: a short title line '## Title' before a group of related blocks, only when the answer has "
+    "several parts. "
+    "(3) File card: when describing a specific file, write a line '::: file <exact file name>', then one "
+    "sentence summarizing that file, then optional details as '- ' bullets (indent two spaces for sub-items) "
+    "or '**Label:** value' lines, then a line with only ':::'. Use one card per file; never write the file "
+    "name as a bullet of its own. "
+    "(4) Label/value: '**Label:** value' lines, one per line, for attributes such as dates, owners, amounts "
+    "or contacts. "
+    "(5) List: '- ' or '1. ' items, one idea per item, each on its own line. "
+    "(6) Table: a Markdown table when comparing several items across the same attributes. "
+    "(7) Highlight: a line '::: highlight', the one key conclusion or warning, then ':::'; at most one. "
+    "(8) Steps: a line '::: steps', a numbered list of the actions in order, then ':::'. "
+    "Keep paragraphs to at most three sentences, summarize excerpts in your own words, and use bold only for "
+    "a few essential terms. The blocks change only the presentation: state only what the sources support and "
+    "keep each numeric evidence marker next to the claim it supports, inside the blocks. Write for the end "
+    "user: never mention excerpts, chunks, the supplied sources, the context or these instructions (do not "
+    "write phrases like 'in the provided excerpt' or 'no trecho fornecido'). When the only indexed content of "
+    "a file is its title, say so plainly in the user's language, for example: 'Só o título está indexado; não "
+    "há conteúdo suficiente para resumir.', without guessing what the file contains. Do not repeat or list "
+    "the sources, file links, or a Fontes/Sources section in the body; the interface builds that block "
+    "separately."
 )
 
 
@@ -310,7 +329,8 @@ def file_summary_instructions(target_chars: int) -> str:
         "facts, names, numbers, or conclusions the chunks do not state, and do not claim to have read the whole "
         "file. Mention what is relevant to the question when the chunks support it. Write prose in your own "
         "words: no bullet lists, no keyword lists, no raw copied runs of text, no file "
-        "names, no URLs. If a file's chunks do not say what it is about, return an empty summary for it. "
+        "names, no URLs. Never mention chunks, excerpts or what was supplied. If a file's chunks do not say what it is about, or "
+        "contain only its title, return an empty summary for it. "
         'Return JSON only: {"summaries":[{"file":file_number,"summary":"string"}]}, one entry per file.'
     )
 

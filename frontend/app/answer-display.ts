@@ -22,7 +22,7 @@ export function cleanAnswerForDisplay(value: string | null): string | null {
     .replace(/\(\s*[a-z][a-z0-9_]{1,40}\s*:\s*\)/gi, "")
     .replace(/\(\s*\)/g, "");
   answer = answer.replace(/[ \t]+([,.;:!?])/g, "$1").replace(/[ \t]{2,}/g, " ");
-  answer = answer.split("\n").filter((line) => !/^\s*(?:[-*]\s*)?(?:(?:fonte|fontes|source|sources|link|links|url)\s*[:\-]|[.,;:!?]+\s*$)/i.test(line)).join("\n");
+  answer = answer.split("\n").filter((line) => !/^\s*(?:[-*]\s*)?(?:(?:fonte|fontes|source|sources|link|links|url)\s*[:\-]|(?!:::\s*$)[.,;:!?]+\s*$)/i.test(line)).join("\n");
   return answer.replace(/\n{3,}/g, "\n\n").trim();
 }
 

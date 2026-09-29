@@ -33,3 +33,8 @@ test("preserves numbered source prose from the current API", () => {
   const answer = "O prazo é setembro (fonte 2). As entregas constam em fontes 1 e 3.";
   assert.equal(cleanAnswerForDisplay(answer), answer);
 });
+
+test("keeps the closing line of presentation blocks", () => {
+  const answer = "::: file Profile.pdf\nCurrículo (fonte 1).\n:::\n\nFim.";
+  assert.equal(cleanAnswerForDisplay(answer), answer);
+});
