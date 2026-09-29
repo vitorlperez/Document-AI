@@ -1,0 +1,35 @@
+[
+  {
+    "id": "inventory-with-summaries",
+    "question": "Quais arquivos temos nessa pasta e me de uma explicacao resumida sobre o conteudo de cada arquivo",
+    "mentions": [{"kind": "folder", "node_id": "$FOLDER"}]
+  },
+  {
+    "id": "inventory-only",
+    "question": "Quais arquivos temos dentro dessa pasta?",
+    "mentions": [{"kind": "folder", "node_id": "$FOLDER"}]
+  },
+  {
+    "id": "what-each-is-about",
+    "question": "Do que se trata cada documento dessa pasta?",
+    "mentions": [{"kind": "folder", "node_id": "$FOLDER"}]
+  },
+  {
+    "id": "folder-summary",
+    "question": "Resuma os principais pontos dos documentos dessa pasta",
+    "mentions": [{"kind": "folder", "node_id": "$FOLDER"}]
+  },
+  {
+    "id": "factual-in-folder",
+    "question": "Quais são os principais prazos mencionados nesses documentos?",
+    "mentions": [{"kind": "folder", "node_id": "$FOLDER"}]
+  },
+  {
+    "id": "factual-all-tools",
+    "question": "O que foi definido sobre as entregas?"
+  },
+  {
+    "id": "responsibilities-all-tools",
+    "question": "Quais são as responsabilidades da equipe?"
+  }
+]

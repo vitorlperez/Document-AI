@@ -21,7 +21,7 @@ from app.ingestion.service import (
     SyncAlreadyActive,
 )
 from app.integrations.google_drive import GoogleAccessDenied
-from app.knowledge.agent import AgentLimits, AgentService, ConversationService
+from app.knowledge.agent import AgentLimits, AgentService, ConversationService, PlannedFlow
 from app.knowledge.models import ConversationMessage
 from app.knowledge.questions import AIProviderUnavailable, QuestionResult, QuestionService
 from app.knowledge.search import SearchUnavailable, TextSearchService
@@ -363,6 +363,11 @@ def ask_organization_question(
                         max_steps=request.app.state.settings.agent_max_steps,
                         max_result_bytes=request.app.state.settings.agent_max_tool_result_bytes,
                         max_seconds=request.app.state.settings.agent_max_seconds,
+                    ),
+                    planned=PlannedFlow(
+                        enabled=request.app.state.settings.agent_planner_enabled,
+                        planner_model=request.app.state.settings.agent_planner_model,
+                        synthesis_model=request.app.state.settings.agent_synthesis_model,
                     ),
                 ).ask(
                     scope=scope,

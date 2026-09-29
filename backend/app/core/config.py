@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     agent_max_steps: int = 4
     agent_max_tool_result_bytes: int = 48_000
     agent_max_seconds: int = 25
+    # Multi-step planner -> tools -> one synthesis call. Off by default; it only
+    # runs inside the agent (AGENT_TOOLS_ENABLED) and falls back to it on failure.
+    agent_planner_enabled: bool = False
+    agent_planner_model: str = "gpt-5-nano"
+    agent_synthesis_model: str = "gpt-5-mini"
 
 
 @lru_cache
