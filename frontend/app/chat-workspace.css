@@ -35,3 +35,32 @@
   .chat-workspace .composer-toolbar { align-items: flex-start; flex-wrap: wrap; }
   .chat-workspace .composer-toolbar > div:last-child { margin-left: auto; }
 }
+
+/* Structured assistant answer: lead summary, sections, lists, tables, file chips and Fontes cards. */
+.answer-body { margin-top: 1rem; display: grid; gap: 0.75rem; font-size: 0.875rem; line-height: 1.7; color: var(--color-ink); overflow-wrap: anywhere; }
+.answer-lead { padding: 0.75rem 1rem; border-left: 3px solid var(--color-primary); border-radius: 0 0.5rem 0.5rem 0; background: var(--color-sage); font-size: 0.9375rem; font-weight: 500; line-height: 1.65; }
+.answer-paragraph { max-width: 68ch; }
+.answer-heading { margin-top: 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--color-line-soft); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); }
+.answer-subheading { margin-top: 0.25rem; font-size: 0.875rem; font-weight: 600; }
+.answer-list { display: grid; gap: 0.375rem; padding-left: 1.25rem; list-style: disc; }
+.answer-list-ordered { list-style: decimal; }
+.answer-list li::marker { color: var(--color-primary); }
+.answer-code { padding: 0.05rem 0.35rem; border-radius: 0.25rem; background: var(--color-sage); font-size: 0.8125rem; }
+.answer-file-chip { display: inline-flex; align-items: center; gap: 0.3rem; max-width: 100%; margin-inline: 0.1rem; padding: 0.05rem 0.5rem; border: 1px solid var(--color-line); border-radius: 999px; background: var(--color-sage-selected); color: var(--color-primary); font-size: 0.8125rem; font-weight: 600; line-height: 1.5; vertical-align: baseline; }
+.answer-file-chip svg { flex-shrink: 0; }
+.answer-table-wrap { overflow-x: auto; border: 1px solid var(--color-line); border-radius: 0.5rem; }
+.answer-table { width: 100%; min-width: 26rem; border-collapse: collapse; font-size: 0.8125rem; line-height: 1.5; }
+.answer-table th { padding: 0.5rem 0.75rem; background: var(--color-sage); text-align: left; font-weight: 700; }
+.answer-table td { padding: 0.5rem 0.75rem; border-top: 1px solid var(--color-line-soft); vertical-align: top; }
+.answer-table tbody tr:nth-child(even) { background: var(--color-paper); }
+.sources-block { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--color-line); }
+.sources-title { margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted-foreground); }
+.sources-list { display: grid; gap: 0.5rem; }
+.source-card { display: flex; min-width: 0; align-items: center; gap: 0.625rem; padding: 0.625rem 0.75rem; border: 1px solid var(--color-line); border-radius: 0.5rem; background: var(--color-panel); }
+.source-card-number { display: grid; flex-shrink: 0; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 999px; background: var(--color-sage-selected); color: var(--color-primary); font-size: 0.75rem; font-weight: 700; }
+.source-card-main { min-width: 0; flex: 1; }
+.source-card-name { display: block; font-size: 0.8125rem; font-weight: 600; line-height: 1.4; color: var(--color-ink); overflow-wrap: anywhere; }
+.source-card-link { display: inline-flex; max-width: 100%; min-height: 0 !important; align-items: center; gap: 0.25rem; margin-top: 0.125rem; color: var(--color-primary); font-size: 0.75rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.source-card-link:hover { color: var(--color-forest-hover); }
+.source-card-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 639px) { .source-card { align-items: flex-start; } .answer-lead { font-size: 0.875rem; } }
