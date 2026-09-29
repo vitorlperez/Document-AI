@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 from app.core.logging import log_agent_phase
 from app.core.scoping import OrganizationScope
 from app.knowledge.intent import IntentDecision, InvalidIntent, fallback_intent, parse_intent
-from app.knowledge.models import Conversation, ConversationMessage
+from app.knowledge.models import Conversation, ConversationMessage, Document
 from app.knowledge.questions import (
     ANSWER_MODEL,
     PLANNER_MODEL,
@@ -42,7 +42,9 @@ from app.knowledge.questions import (
     _number_answer_sources,
     _validate_citations,
 )
+from app.library.models import LibraryNode
 from app.library.service import CatalogFileSnapshot, LibraryService, SyncAccessDenied
+from app.workspaces.models import WorkspaceFolder
 
 MAX_HISTORY_MESSAGES = 12
 INVENTORY_PAGE_SIZE = 100
@@ -409,6 +411,11 @@ class AgentService:
         deadline = time.monotonic() + self.limits.max_seconds
         request = AgentRequest(scope, user_id, question, providers, list(mentions))
         conversation = ConversationState.from_history(history)
+        if not conversation.listed_files:
+            conversation = replace(
+                conversation,
+                listed_files=_previous_cited_files(self.session, history, scope.organization_id),
+            )
         decision = self.classify(request, conversation, deadline=deadline)
         with _request_deadline(deadline):
             run = self.execute(decision, request, conversation, deadline=deadline)
@@ -569,6 +576,11 @@ class AgentService:
     def _summarize_files(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
         if not run.targets:
             raise PlanRejected("nothing selected to summarize")
+        if len(run.files()) > 1 and not run.folders():
+            with _observed_phase("tool_execution", deadline):
+                listing = self._file_snapshots(request, run.files())
+            run.add(listing)
+            return self._catalog_answer(listing, question=request.question, deadline=deadline)
         return self._summary_or_honest(run, request, deadline)
 
     def _restructure_previous(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
@@ -943,6 +955,49 @@ def _previous_listed_files(history: list[ConversationMessage]) -> list[tuple[UUI
                 continue
         if files:
             return files
+    return []
+
+
+def _previous_cited_files(
+    session: Session, history: list[ConversationMessage], organization_id: UUID,
+) -> list[tuple[UUID, UUID | None, str]]:
+    """Recover catalog targets from the latest answer's cited documents.
+
+    Search answers have citations but no inventory references. Match document
+    provenance to the local catalog; access is checked again when tools run.
+    """
+    for message in reversed(history):
+        if message.role != "assistant":
+            continue
+        citations = (message.response or {}).get("citations")
+        if not isinstance(citations, list):
+            return []
+        ids: list[UUID] = []
+        for item in citations:
+            if not isinstance(item, dict):
+                continue
+            try:
+                ids.append(UUID(str(item.get("document_id"))))
+            except ValueError:
+                continue
+        if not ids:
+            return []
+        rows = session.execute(
+            select(Document.id, LibraryNode.id, LibraryNode.name)
+            .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+            .join(
+                LibraryNode,
+                (LibraryNode.source_id == WorkspaceFolder.source_id)
+                & (LibraryNode.external_id == Document.external_file_id),
+            )
+            .where(
+                Document.id.in_(ids), Document.organization_id == organization_id,
+                WorkspaceFolder.organization_id == organization_id,
+                LibraryNode.organization_id == organization_id, LibraryNode.kind == "file",
+            )
+        )
+        by_document = {document_id: (node_id, None, name) for document_id, node_id, name in rows}
+        return list(dict.fromkeys(by_document[document_id] for document_id in ids if document_id in by_document))
     return []
 
 

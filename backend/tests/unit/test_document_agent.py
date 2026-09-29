@@ -30,11 +30,82 @@ class Classifies(FakeProvider):
 
     def classify_intent(self, *, question, history, context, model="gpt-5-nano"):
         self.intent_calls += 1
+        self.last_context = context
+        self.last_history = history
         return self.decision
 
 
 def list_folder() -> Classifies:
     return Classifies(intent="list_files", tool="list_folder_inventory")
+
+
+def test_cited_sources_become_follow_up_file_targets_without_a_folder_mention(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    session = semantic_session
+    organization, user, workspace = context(session)
+    documents = [
+        chunk(session, organization, workspace, name="Vitor Resume.pdf",
+              text="Vitor trabalha com Python e Django."),
+        chunk(session, organization, workspace, name="Vitor Profile.pdf",
+              text="Vitor desenvolve sistemas de IA e usa FastAPI."),
+    ]
+    root = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=None,
+        external_id="root", kind="source", name="Google Drive",
+    )
+    session.add(root)
+    session.flush()
+    for item in documents:
+        document = session.get(Document, item.document_id)
+        assert document is not None
+        session.add(LibraryNode(
+            organization_id=organization.id, source_id=workspace.source_id, parent_id=root.id,
+            external_id=document.external_file_id, kind="file", name=document.name,
+        ))
+    session.commit()
+    scope = OrganizationScope(organization.id)
+    first_question = "O que sabemos sobre o Vitor?"
+    first_model = Classifies({first_question: [1.0, 0.0]}, intent="ask_content", target="library",
+                             tool="retrieve_evidence", answer="Vitor trabalha com Python e IA.",
+                             citations=[1, 2])
+    first, _, references = AgentService(session, first_model, AgentLimits()).ask(
+        scope=scope, user_id=user.id, question=first_question,
+        providers=["google_drive"], mentions=[], history=[],
+    )
+    assert first.answer and len({item.document_id for item in first.citations}) == 2
+    assert references == []
+    conversation, _ = ConversationService(session).create_or_load(
+        scope=scope, user_id=user.id, conversation_id=None, question=first_question,
+    )
+    ConversationService(session).append(conversation=conversation, role="user", content=first_question,
+                                        context={"mentions": []})
+    ConversationService(session).append(
+        conversation=conversation, role="assistant", content=first.answer,
+        context={"references": references},
+        response={"citations": [{"document_id": str(item.document_id)} for item in first.citations]},
+    )
+    session.commit()
+    _, history = ConversationService(session).history(
+        scope=scope, user_id=user.id, conversation_id=conversation.id,
+    )
+    follow_up = "Me de um resumo por aquivo do conteudo e o que fala sobre o Vitor"
+    second_model = Classifies(intent="summarize_files", target="previous_answer_files",
+                              tool="summarize_documents")
+    second, tools, _ = AgentService(session, second_model, AgentLimits()).ask(
+        scope=scope, user_id=user.id, question=follow_up,
+        providers=["google_drive"], mentions=[], history=history,
+    )
+    assert set(second_model.last_context["previous_answer_listed_files"]) == {
+        "Vitor Resume.pdf", "Vitor Profile.pdf",
+    }
+    assert second_model.last_history[-1]["content"] == first.answer
+    assert second.resolved_context["target"] == "previous_answer_files"
+    assert second.resolved_context.get("fallback") is None
+    assert [item["name"] for item in tools] == ["summarize_inventory"]
+    assert second.answer and "Vitor Resume.pdf" in second.answer and "Vitor Profile.pdf" in second.answer
+    assert {item.document_name for item in second.citations} == {"Vitor Resume.pdf", "Vitor Profile.pdf"}
+    assert all(item.source_url for item in second.citations)
 
 
 def test_direct_children_tool_is_paged_local_catalog_snapshot(
@@ -530,4 +601,3 @@ def test_file_mention_restructure_summary_answers_instead_of_insufficient_eviden
     assert "cinco anos de experiência em Python" in result.answer
     assert {item.document_name for item in result.citations} == {"Profile.pdf"}
     assert all(item.source_url for item in result.citations)
-
