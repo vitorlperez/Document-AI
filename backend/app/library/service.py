@@ -667,6 +667,33 @@ class LibraryService:
             document_ids.update(matched)
         return QuestionSelection(folder_ids, document_ids, coverage, [node_id for _, node_id in mentions])
 
+    def authorize_mentions(
+        self, *, scope: OrganizationScope, user_id: UUID, root_ids: list[UUID] | None,
+        requested_ids: list[UUID],
+    ) -> list[tuple[str, UUID]]:
+        """Nodes a credential may query: requested ones inside its roots (roots themselves if none asked).
+
+        Fails closed: an unknown/foreign node, a vanished root or a node outside the roots is denied.
+        """
+        self.require_member(scope=scope, user_id=user_id)
+        nodes = self._selection_nodes(scope=scope)
+        roots = []
+        for root_id in dict.fromkeys(root_ids or []):
+            root = nodes.get(root_id)
+            if root is None or root.kind not in {"folder", "file"}:
+                raise SyncAccessDenied("credential root is unavailable")
+            roots.append(root)
+        chosen = list(dict.fromkeys(requested_ids or [root.id for root in roots]))
+        mentions: list[tuple[str, UUID]] = []
+        for node_id in chosen:
+            node = nodes.get(node_id)
+            if node is None or node.kind not in {"folder", "file"}:
+                raise SyncAccessDenied("node outside the credential scope")
+            if roots and not any(self._descends_from(node, root, nodes) for root in roots):
+                raise SyncAccessDenied("node outside the credential scope")
+            mentions.append((node.kind, node.id))
+        return mentions
+
     def recent_syncs(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibrarySync]:
         self.require_member(scope=scope, user_id=user_id)
         rows = self.session.execute(
