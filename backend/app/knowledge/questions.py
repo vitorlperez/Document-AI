@@ -5,6 +5,7 @@ import logging
 import random
 import re
 import time
+from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -16,13 +17,14 @@ from uuid import UUID
 
 import httpx
 from sqlalchemy import func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 
 from app.audit_usage.service import UsageService
 from app.core.logging import current_request_id, log_agent_phase, provider_call_count
 from app.core.scoping import OrganizationScope
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
+from app.knowledge.similarity import PgVectorSimilarity, SimilarityIndex, default_similarity
 from app.workspaces.models import WorkspaceFolder
 from app.workspaces.service import WorkspaceService
 
@@ -785,6 +787,7 @@ class EmbeddingService:
                 raise AIProviderUnavailable("AI provider returned invalid embeddings")
             for chunk, vector in zip(batch, vectors, strict=True):
                 chunk.embedding = vector
+                chunk.embedding_vec = vector
                 chunk.embedding_model = EMBEDDING_MODEL
         self.session.flush()
 
@@ -814,9 +817,13 @@ class EmbeddingService:
 
 
 class QuestionService:
-    def __init__(self, session: Session, provider: SemanticProvider):
+    def __init__(
+        self, session: Session, provider: SemanticProvider,
+        similarity: SimilarityIndex | None = None,
+    ):
         self.session = session
         self.provider = provider
+        self.similarity = similarity
         self.evidence_context_chars = getattr(
             provider, "evidence_context_chars", MAX_EVIDENCE_CONTEXT_CHARS
         )
@@ -1021,21 +1028,29 @@ class QuestionService:
                 started_at=started_at,
                 indexed_chunk_count=0,
             )
+        scoped_filters = [
+            Document.organization_id == scope.organization_id,
+            Document.workspace_folder_id.in_(folder_ids),
+            Document.index_status == "indexed",
+            *([Document.id.in_(document_ids)] if document_ids is not None else []),
+            DocumentChunk.organization_id == scope.organization_id,
+            DocumentChunk.workspace_folder_id.in_(folder_ids),
+            DocumentChunk.workspace_folder_id == Document.workspace_folder_id,
+            DocumentChunk.embedding.is_not(None),
+            DocumentChunk.embedding_model == EMBEDDING_MODEL,
+        ]
+        similarity = self.similarity or default_similarity(self.session)
+        # With pgvector the vectors stay in the database: scores come back as (id, float).
+        vector_options = (
+            [defer(DocumentChunk.embedding), defer(DocumentChunk.embedding_vec)]
+            if isinstance(similarity, PgVectorSimilarity) else []
+        )
         scoped_rows = list(
             self.session.execute(
                 select(Document, DocumentChunk)
                 .join(DocumentChunk, DocumentChunk.document_id == Document.id)
-                .where(
-                    Document.organization_id == scope.organization_id,
-                    Document.workspace_folder_id.in_(folder_ids),
-                    Document.index_status == "indexed",
-                    *([Document.id.in_(document_ids)] if document_ids is not None else []),
-                    DocumentChunk.organization_id == scope.organization_id,
-                    DocumentChunk.workspace_folder_id.in_(folder_ids),
-                    DocumentChunk.workspace_folder_id == Document.workspace_folder_id,
-                    DocumentChunk.embedding.is_not(None),
-                    DocumentChunk.embedding_model == EMBEDDING_MODEL,
-                )
+                .where(*scoped_filters)
+                .options(*vector_options)
             ).all()
         )
         if not scoped_rows:
@@ -1209,10 +1224,14 @@ class QuestionService:
             scope=scope, metric="embedding_tokens", increment=_estimated_tokens(normalized_question)
         )
         question_embedding = self.provider.embed(texts=[normalized_question])[0]
+        similarities = similarity.scores(
+            self.session, filters=scoped_filters,
+            question_embedding=question_embedding, rows=scoped_rows,
+        )
         semantic_candidates = sorted(
             scoped_rows,
             key=lambda row: (
-                -_cosine_similarity(question_embedding, row[1].embedding or []),
+                -similarities.get(row[1].id, 0.0),
                 str(row[1].id),
             ),
         )[:MAX_SEMANTIC_CANDIDATES]
@@ -1237,6 +1256,7 @@ class QuestionService:
                             *(DocumentChunk.search_text.ilike(f"%{term}%") for term in query_terms)
                         ),
                     )
+                    .options(*vector_options)
                     .order_by(DocumentChunk.id)
                     .limit(MAX_LEXICAL_CANDIDATES)
                 ).all()
@@ -1253,7 +1273,9 @@ class QuestionService:
                 (
                     document,
                     chunk,
-                    _hybrid_score(normalized_question, document, chunk, question_embedding),
+                    _hybrid_score(
+                        normalized_question, document, chunk, similarities.get(chunk.id, 0.0)
+                    ),
                     _lexical_score(document, chunk, query_terms),
                 )
                 for document, chunk in rows_by_chunk_id.values()
@@ -1285,14 +1307,16 @@ class QuestionService:
             supported.extend(
                 _evidence(
                     document, chunk,
-                    _hybrid_score(normalized_question, document, chunk, question_embedding),
+                    _hybrid_score(
+                        normalized_question, document, chunk, similarities.get(chunk.id, 0.0)
+                    ),
                     source_providers.get(document.workspace_folder_id),
                 )
                 for document, chunk in scoped_rows if chunk.id not in candidate_ids
             )
         else:
             supported = _expand_evidence_neighbors(
-                supported, scoped_rows, source_providers, normalized_question, question_embedding
+                supported, scoped_rows, source_providers, normalized_question, similarities
             )
         supported = _select_diverse_evidence(supported, max_chars=self.evidence_context_chars)
         top_score = ranked_candidates[0][2] if ranked_candidates else None
@@ -1462,7 +1486,7 @@ def _embedding_input(chunk: DocumentChunk) -> str:
 
 def _expand_evidence_neighbors(
     evidence: list[Evidence], rows: list[tuple[Document, DocumentChunk]],
-    source_providers: dict[UUID, str], question: str, question_embedding: list[float],
+    source_providers: dict[UUID, str], question: str, similarities: Mapping[UUID, float],
 ) -> list[Evidence]:
     """One-hop window around each document's strongest supported seed, within scope.
 
@@ -1482,7 +1506,8 @@ def _expand_evidence_neighbors(
             and abs(chunk.position - anchor.chunk_positions[0]) == 1
         ):
             expanded.append(_evidence(
-                document, chunk, _hybrid_score(question, document, chunk, question_embedding),
+                document, chunk,
+                _hybrid_score(question, document, chunk, similarities.get(chunk.id, 0.0)),
                 source_providers.get(document.workspace_folder_id),
             ))
     return expanded
@@ -1594,9 +1619,8 @@ def _cosine_similarity(left: list[float], right: list[float]) -> float:
 
 
 def _hybrid_score(
-    question: str, document: Document, chunk: DocumentChunk, question_embedding: list[float]
+    question: str, document: Document, chunk: DocumentChunk, semantic_score: float
 ) -> float:
-    semantic_score = _cosine_similarity(question_embedding, chunk.embedding or [])
     query_terms = _query_terms(question)
     lexical_score = _lexical_score(document, chunk, query_terms)
     return (0.8 * semantic_score) + (0.2 * lexical_score)

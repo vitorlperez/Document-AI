@@ -136,3 +136,7 @@ O banco/exportação e a fila não estão acoplados ao Render. Antes de mover,
 faça backup do PostgreSQL, crie os serviços equivalentes no destino, atualize
 as variáveis de ambiente e execute a migração. Depois mude apenas os callbacks
 OAuth e os registros DNS quando o novo ambiente estiver saudável.
+
+## pgvector (F5)
+
+O Postgres gerenciado da Render suporta a extensão `vector` (https://render.com/docs/postgresql-extensions). A migração `20260930_0019_pgvector_expand` executa `CREATE EXTENSION IF NOT EXISTS vector` com o usuário da `DATABASE_URL`; confira depois com `SELECT extversion FROM pg_extension WHERE extname = 'vector';`. Mantenha `VECTOR_BACKEND=python` até concluir o backfill e a paridade (ver `docs/operacao/pgvector-runbook.md`).

@@ -2,7 +2,7 @@ import logging
 import time
 from collections.abc import Generator
 
-from sqlalchemy import Engine, create_engine, text
+from sqlalchemy import Engine, create_engine, event, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -12,13 +12,25 @@ logger = logging.getLogger("document_intelligence.readiness")
 
 
 def build_engine(settings: Settings) -> Engine:
-    return create_engine(
+    engine = create_engine(
         str(settings.database_url),
         pool_pre_ping=True,
         pool_size=5,
         max_overflow=5,
         connect_args={"connect_timeout": 2},
     )
+    if engine.dialect.name == "postgresql":
+        event.listen(engine, "connect", _register_vector)
+    return engine
+
+
+def _register_vector(dbapi_connection, _record) -> None:
+    try:
+        from pgvector.psycopg import register_vector
+
+        register_vector(dbapi_connection)
+    except Exception:  # noqa: BLE001 - no vector type until `alembic upgrade` creates it
+        dbapi_connection.rollback()
 
 
 def build_session_factory(engine: Engine) -> sessionmaker[Session]:

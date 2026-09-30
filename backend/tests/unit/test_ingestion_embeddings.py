@@ -122,6 +122,7 @@ def test_new_chunks_are_embedded_before_the_sync_is_ready(session: Session) -> N
     chunks = list(session.scalars(select(DocumentChunk).order_by(DocumentChunk.position)))
     assert [chunk.embedding_model for chunk in chunks] == [EMBEDDING_MODEL]
     assert all(chunk.embedding is not None for chunk in chunks)
+    assert all(chunk.embedding_vec == chunk.embedding for chunk in chunks)
     assert provider.calls == [[chunk.search_text for chunk in chunks]]
     completed = finish_sync(service, job.id, run_token, discovered)
     assert completed is not None and completed.status.value == "ready"
@@ -242,6 +243,7 @@ def test_embedding_rate_limit_retries_only_current_batch_and_records_usage_once(
     assert sorted(Counter(tuple(batch) for batch in provider.calls).values()) == [1, 2]
     assert sleeps == [0.25]
     assert all(chunk.embedding is not None for chunk in chunks)
+    assert all(chunk.embedding_vec == chunk.embedding for chunk in chunks)
     assert usage is not None and usage.quantity == sum((len(chunk.search_text) + 3) // 4 for chunk in chunks)
 
 

@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, PostgresDsn, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -22,6 +23,7 @@ class Settings(BaseSettings):
             return "postgresql+psycopg://" + value[len("postgresql://"):]
         return value
     environment: str = "development"
+    vector_backend: Literal["python", "pgvector"] = "python"
     new_formats_enabled: bool = False
     active_document_limit: int = Field(default=500, gt=0)
     service_name: str = "document-intelligence-api"

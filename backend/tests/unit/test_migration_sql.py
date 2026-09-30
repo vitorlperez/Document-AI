@@ -25,3 +25,16 @@ def test_foundation_migration_generates_expected_postgresql_sql() -> None:
     assert "CREATE TYPE membership_role" in sql
     assert "CREATE UNIQUE INDEX uq_memberships_active_org_user" in sql
     assert "WHERE is_active" in sql
+
+
+def test_pgvector_expand_sql():
+    result = subprocess.run(
+        [sys.executable, '-m', 'alembic', 'upgrade', 'head', '--sql'],
+        cwd=BACKEND_DIR, env=os.environ | {'DATABASE_URL': OFFLINE_DATABASE_URL},
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert 'CREATE EXTENSION IF NOT EXISTS vector' in result.stdout
+    assert 'ADD COLUMN embedding_vec vector(1536)' in result.stdout
+    assert 'USING hnsw' not in result.stdout
+    assert 'DROP COLUMN embedding' not in result.stdout

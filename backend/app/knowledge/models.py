@@ -17,6 +17,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.vector import EmbeddingVector
 from app.core.models import Base, CreatedAtMixin, UUIDPrimaryKeyMixin
 
 
@@ -57,6 +58,7 @@ class DocumentChunk(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
     search_text: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[list[float] | None] = mapped_column(JSON)
+    embedding_vec: Mapped[list[float] | None] = mapped_column(EmbeddingVector())
     embedding_model: Mapped[str | None] = mapped_column(String(80))
     page_number: Mapped[int | None] = mapped_column(Integer)
 

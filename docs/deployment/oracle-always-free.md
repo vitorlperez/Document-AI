@@ -65,3 +65,7 @@ O rollback de código pode usar o commit Git anterior e reconstruir os container
 Esta é uma topologia de custo fixo zero, não uma arquitetura com alta disponibilidade. Uma queda ou manutenção da VM interrompe todos os serviços. Configure alarmes de CPU, memória e disco na Oracle e mantenha backups externos periódicos do banco. Antes de armazenar dados reais de clientes, defina um destino externo e a frequência desse backup (por exemplo, Object Storage ou outro provedor sob seu controle).
 
 O frontend é construído pelo Vinext e servido pelo comando de produção `vinext start` dentro de um container dedicado. Esta topologia ainda é de piloto: uma única VM não oferece alta disponibilidade ou SLA.
+
+## pgvector (F5)
+
+A migração `20260930_0019_pgvector_expand` exige a extensão `vector`: troque a imagem `postgres:16-alpine` por `pgvector/pgvector:pg16` no compose de produção (mesmo volume de dados, mesma versão major 16) e faça o backup acima antes. O arquivo `docker-compose.production.yml` citado neste guia não está versionado no repositório; localize-o na VM e versione-o antes do rollout. Mantenha `VECTOR_BACKEND=python` até concluir o backfill e a paridade (ver `docs/operacao/pgvector-runbook.md`).
