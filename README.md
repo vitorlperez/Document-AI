@@ -81,7 +81,9 @@ Copy `.env.example` to `.env` and add credentials only for the integrations you 
 | `GOOGLE_TOKEN_ENCRYPTION_KEY` | Encrypts stored Google OAuth tokens |
 | `MICROSOFT_OAUTH_CLIENT_ID` / `MICROSOFT_OAUTH_CLIENT_SECRET` | Enables delegated OneDrive connection for personal and Microsoft 365 work/school accounts; the Entra app registration must support both |
 | `MICROSOFT_OAUTH_REDIRECT_URI` | Must match the Microsoft Entra app registration callback `/data-sources/onedrive/oauth/callback` |
-| `MICROSOFT_TOKEN_ENCRYPTION_KEY` | Encrypts OneDrive OAuth tokens and Graph delta cursors |
+| `MICROSOFT_SHAREPOINT_REDIRECT_URI` | Must match the Entra app callback `/data-sources/sharepoint/oauth/callback` (SharePoint uses the same client, `organizations` authority, work/school accounts only) |
+| `MICROSOFT_TOKEN_ENCRYPTION_KEY` | Encrypts OneDrive and SharePoint OAuth tokens and Graph delta cursors |
+| `SHAREPOINT_DOWNLOAD_WORKERS` / `SHAREPOINT_MAX_FILE_BYTES` / `SHAREPOINT_CATALOG_MAX_SITES` | Optional SharePoint limits (defaults 2, 52428800, 200) |
 | `WORKOS_API_KEY` / `WORKOS_CLIENT_ID` | Enables authentication and organization identity |
 | `RESEND_API_KEY` / `INVITATION_FROM_EMAIL` | Enables email invitations |
 | `PUBLIC_APP_URL` | Public URL allowed by the API CORS policy |
