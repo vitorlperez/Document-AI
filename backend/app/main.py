@@ -5,13 +5,13 @@ from urllib.parse import urlsplit
 from uuid import uuid4
 
 import redis
-
-from app.access.ratelimit import RedisRateLimiter
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.access.ratelimit import RedisRateLimiter
 from app.api.auth import current_user
 from app.api.auth import router as auth_router
 from app.api.health import router as health_router
@@ -19,6 +19,7 @@ from app.api.ingestion import router as ingestion_router
 from app.api.integrations import router as integrations_router
 from app.api.library import router as library_router
 from app.api.platform import router as platform_router
+from app.api.public_v1 import router as public_v1_router
 from app.api.saved_queries import router as saved_queries_router
 from app.core.config import Settings, get_settings
 from app.core.database import build_engine, build_session_factory
@@ -141,6 +142,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     # Fail closed at the router boundary when a new private endpoint is added.
     # FastAPI caches the shared dependency for handlers that also need the user.
+    app.include_router(public_v1_router)
+
+    @app.get("/v1/openapi.json", include_in_schema=False)
+    def public_openapi() -> dict:
+        return get_openapi(title="Arquivio Public API", version="1.0.0",
+                          routes=public_v1_router.routes,
+                          description="Read-only organization library. Bearer API keys.")
+
     authenticated = [Depends(current_user)]
     app.include_router(platform_router, dependencies=authenticated)
     app.include_router(integrations_router, dependencies=authenticated)
