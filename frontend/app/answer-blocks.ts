@@ -10,17 +10,17 @@
  *   - item / 1. item, table       -> list, table
  * Unknown or malformed directives degrade to plain markdown; parsing never throws.
  */
-export type ListItem = { text: string; sub: string[] };
+export type ListItem = { text: string; sub: string[]; paragraphs?: string[] };
 export type Field = { label: string; value: string; tags?: string[]; marker?: string };
 export type Block =
   | { kind: "heading"; level: number; text: string }
   | { kind: "paragraph"; text: string }
-  | { kind: "list"; ordered: boolean; items: ListItem[] }
+  | { kind: "list"; ordered: boolean; start?: number; items: ListItem[] }
   | { kind: "fields"; items: Field[] }
   | { kind: "table"; header: string[]; rows: string[][] }
   | { kind: "file"; name: string; marker: string; children: Block[] }
   | { kind: "highlight"; children: Block[] }
-  | { kind: "steps"; items: ListItem[] };
+  | { kind: "steps"; start?: number; items: ListItem[] };
 
 export type ParseOptions = { fileNames?: string[] };
 
@@ -98,17 +98,50 @@ function parseMarkdown(lines: string[]): Block[] {
     if (listMarker.test(line)) {
       flush();
       const ordered = /^\s*\d/.test(line);
+      const start = ordered ? Number(/^\s*(\d+)/.exec(line)![1]) : 1;
       const baseIndent = listMarker.exec(line)![1].length;
       const items: ListItem[] = [];
-      while (i < lines.length && listMarker.test(lines[i])) {
-        const indent = listMarker.exec(lines[i])![1].length;
-        const text = lines[i].replace(listMarker, "").trim();
-        if (indent > baseIndent && items.length) items[items.length - 1].sub.push(text);
-        else items.push({ text, sub: [] });
-        i++;
+      let newParagraph = false;
+      while (i < lines.length) {
+        const current = lines[i];
+        const marker = listMarker.exec(current);
+        if (marker) {
+          const indent = marker[1].length;
+          if (indent < baseIndent || (indent === baseIndent && /^\s*\d/.test(current) !== ordered)) break;
+          const text = current.replace(listMarker, "").trim();
+          if (indent > baseIndent && items.length) items[items.length - 1].sub.push(text);
+          else items.push({ text, sub: [] });
+          newParagraph = false;
+          i++;
+          continue;
+        }
+        if (!current.trim()) {
+          let next = i + 1;
+          while (next < lines.length && !lines[next].trim()) next++;
+          const following = lines[next] ?? "";
+          const nextMarker = listMarker.exec(following);
+          const continues = nextMarker
+            ? nextMarker[1].length >= baseIndent && (nextMarker[1].length > baseIndent || /^\s*\d/.test(following) === ordered)
+            : /^\s+\S/.test(following) && following.length - following.trimStart().length > baseIndent;
+          if (!continues) break;
+          // Blank lines inside a loose list do not create independent ol elements.
+          i = next;
+          newParagraph = true;
+          continue;
+        }
+        if (items.length && current.length - current.trimStart().length > baseIndent) {
+          const item = items[items.length - 1];
+          if (newParagraph) (item.paragraphs ??= []).push(current.trim());
+          else if (item.paragraphs?.length) item.paragraphs[item.paragraphs.length - 1] += ` ${current.trim()}`;
+          else item.text += ` ${current.trim()}`;
+          newParagraph = false;
+          i++;
+          continue;
+        }
+        break;
       }
       i--;
-      blocks.push({ kind: "list", ordered, items });
+      blocks.push({ kind: "list", ordered, ...(start !== 1 ? { start } : {}), items });
       continue;
     }
     const label = /^\s*\*\*([^*]+?):?\*\*:?\s*$/.exec(line);
@@ -130,7 +163,8 @@ function directiveBlock(kind: "file" | "highlight" | "steps", argument: string, 
   if (kind === "file") return argument ? fileCard(argument, children) : children;
   if (kind === "highlight") return { kind: "highlight", children };
   const items = children.flatMap((block) => block.kind === "list" ? block.items : block.kind === "paragraph" ? [{ text: block.text, sub: [] }] : []);
-  return items.length ? { kind: "steps", items } : children;
+  const firstList = children.find((block) => block.kind === "list");
+  return items.length ? { kind: "steps", ...(firstList?.start ? { start: firstList.start } : {}), items } : children;
 }
 
 /**

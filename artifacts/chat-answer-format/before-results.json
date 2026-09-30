@@ -1,0 +1,102 @@
+[
+  {
+    "stage": "before",
+    "width": 1440,
+    "lists": [
+      {
+        "start": 1,
+        "items": 1
+      },
+      {
+        "start": 1,
+        "items": 1
+      },
+      {
+        "start": 1,
+        "items": 1
+      },
+      {
+        "start": 1,
+        "items": 1
+      }
+    ],
+    "rows": [
+      {
+        "height": 64,
+        "nameSize": "12px",
+        "providerSize": "16px",
+        "providerColor": "rgb(36, 59, 53)",
+        "linkCenterDelta": 0,
+        "href": "https://example.test/resume-1"
+      },
+      {
+        "height": 65,
+        "nameSize": "12px",
+        "providerSize": "16px",
+        "providerColor": "rgb(36, 59, 53)",
+        "linkCenterDelta": 0.5,
+        "href": "https://example.test/resume-2"
+      },
+      {
+        "height": 65,
+        "nameSize": "12px",
+        "providerSize": "16px",
+        "providerColor": "rgb(36, 59, 53)",
+        "linkCenterDelta": 0.5,
+        "href": "https://example.test/resume-3"
+      }
+    ],
+    "citations": 6,
+    "overflow": false
+  },
+  {
+    "stage": "before",
+    "width": 390,
+    "lists": [
+      {
+        "start": 1,
+        "items": 1
+      },
+      {
+        "start": 1,
+        "items": 1
+      },
+      {
+        "start": 1,
+        "items": 1
+      },
+      {
+        "start": 1,
+        "items": 1
+      }
+    ],
+    "rows": [
+      {
+        "height": 64,
+        "nameSize": "12px",
+        "providerSize": "16px",
+        "providerColor": "rgb(36, 59, 53)",
+        "linkCenterDelta": 0,
+        "href": "https://example.test/resume-1"
+      },
+      {
+        "height": 65,
+        "nameSize": "12px",
+        "providerSize": "16px",
+        "providerColor": "rgb(36, 59, 53)",
+        "linkCenterDelta": 0.5,
+        "href": "https://example.test/resume-2"
+      },
+      {
+        "height": 65,
+        "nameSize": "12px",
+        "providerSize": "16px",
+        "providerColor": "rgb(36, 59, 53)",
+        "linkCenterDelta": 0.5,
+        "href": "https://example.test/resume-3"
+      }
+    ],
+    "citations": 6,
+    "overflow": false
+  }
+]

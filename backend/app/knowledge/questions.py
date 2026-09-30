@@ -347,6 +347,8 @@ ANSWER_FORMAT_GUIDANCE = (
 )
 
 CONTENT_SYNTHESIS_GUIDANCE = (
+    " For ordered lists, write sequential markers (1., 2., 3., 4.) "
+    "in one continuous list; indent any internal paragraphs under their item. "
     " Put the requested information first: be concise and direct, without a long introduction, "
     "repeated facts, unrelated attributes or closing recap. For several factual items, prefer a compact "
     "list or table containing only the requested attributes, with inline citations or a citation at the "

@@ -1,0 +1,32 @@
+{
+  "provenance": "Reconstructed from supplied screenshot; raw backend answer unavailable. Sequential markdown reproduces the same numbering defect.",
+  "question": "Quais sao as experiencias profissionais do Vitor?",
+  "raw": "1. Wasion International — Full Stack Software Engineer (estagiário), jan-2021 a ago-2021. Atividades: desenvolvimento web (Python, JavaScript, jQuery, Bootstrap), back-end com Flask, gestão de MySQL/MariaDB [1].\n\n2. Cloudiabot (Cloudia Bot) — Back-end Software Engineer, set-2021 a jan-2023. Atividades: desenvolvimento e manutenção da plataforma de chatbot (APIs REST, integrações com WhatsApp/Meta e sistemas de saúde), uso de Python (Flask), Docker, AWS, e implementação de Lambdas [1].\n\n3. Estoca — Full Stack Software Engineer, fev-2023 – agora (registro em algumas versões como fev-2023 a jun-2025). Atuação focada em back-end com microserviços, integrações via API e arquiteturas escaláveis; projetos: portal do cliente com FastAPI/React, implementação de multi-tenant em Django, participação em força-tarefa para estabilização de produção [1][2][3].\n\n4. Allstacks — Back-End Engineer, jul-2025 – Present (registro no documento). Atuação na equipe de AI, trabalhando com LLMs e LangChain, manutenção e desenvolvimento de funcionalidades backend com Python/Django e PostgreSQL; desenvolvimento de funcionalidades AI-generativas segundo o registro [2].",
+  "answer": "1. Wasion International — Full Stack Software Engineer (estagiário), jan-2021 a ago-2021. Atividades: desenvolvimento web (Python, JavaScript, jQuery, Bootstrap), back-end com Flask, gestão de MySQL/MariaDB (fonte 1).\n\n2. Cloudiabot (Cloudia Bot) — Back-end Software Engineer, set-2021 a jan-2023. Atividades: desenvolvimento e manutenção da plataforma de chatbot (APIs REST, integrações com WhatsApp/Meta e sistemas de saúde), uso de Python (Flask), Docker, AWS, e implementação de Lambdas (fonte 1).\n\n3. Estoca — Full Stack Software Engineer, fev-2023 – agora (registro em algumas versões como fev-2023 a jun-2025). Atuação focada em back-end com microserviços, integrações via API e arquiteturas escaláveis; projetos: portal do cliente com FastAPI/React, implementação de multi-tenant em Django, participação em força-tarefa para estabilização de produção (fonte 1)(fonte 2)(fonte 3).\n\n4. Allstacks — Back-End Engineer, jul-2025 – Present (registro no documento). Atuação na equipe de AI, trabalhando com LLMs e LangChain, manutenção e desenvolvimento de funcionalidades backend com Python/Django e PostgreSQL; desenvolvimento de funcionalidades AI-generativas segundo o registro (fonte 2).",
+  "citations": [
+    {
+      "document_id": "doc-1",
+      "document_name": "Vitor_Perez_Resume_Revised_pt",
+      "excerpt": "Experiência profissional registrada no currículo.",
+      "page_number": 1,
+      "source_url": "https://example.test/resume-1",
+      "source_provider": "google_drive"
+    },
+    {
+      "document_id": "doc-2",
+      "document_name": "Resume_intern-2.pdf",
+      "excerpt": "Experiência profissional registrada no currículo.",
+      "page_number": 1,
+      "source_url": "https://example.test/resume-2",
+      "source_provider": "google_drive"
+    },
+    {
+      "document_id": "doc-3",
+      "document_name": "Profile.pdf",
+      "excerpt": "Experiência profissional registrada no currículo.",
+      "page_number": 1,
+      "source_url": "https://example.test/resume-3",
+      "source_provider": "google_drive"
+    }
+  ]
+}
