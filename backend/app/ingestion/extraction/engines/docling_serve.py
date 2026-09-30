@@ -37,7 +37,9 @@ class DoclingServeEngine:
 
     def __init__(self, base_url, *, timeout=120.0, languages="por,eng", version=VERSION, http=None):
         self.base_url, self.timeout, self.languages, self.version = base_url.rstrip("/"), timeout, languages, version
-        self.http = http or RemoteHttp(policy=RetryPolicy(max_attempts=3, max_total_wait=20.0))
+        # 504 is docling's own timeout: resending only piles up duplicate conversions.
+        policy = RetryPolicy(max_attempts=3, max_total_wait=20.0, retry_statuses=frozenset({429, 500, 502, 503}))
+        self.http = http or RemoteHttp(policy=policy)
 
     def recognize(self, pdf, *, page_count, cache_key=None):
         try:

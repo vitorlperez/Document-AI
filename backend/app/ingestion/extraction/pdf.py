@@ -33,18 +33,22 @@ def pdf_blocks(content, *, ocr=None, budget=None):
     if ocr is not None and low and _worth_ocr(len(texts), len(low)):
         if len(low) > limits.OCR_MAX_PAGES_PER_DOCUMENT:
             raise ExtractionError("ocr_document_too_large")
+        digest = hashlib.sha256(content).hexdigest()
+        step = limits.OCR_PAGES_PER_BATCH
         try:
-            if budget is not None:
-                budget.reserve(len(low))
-            key = f"{hashlib.sha256(content).hexdigest()}:{','.join(str(i) for i in low)}"
-            recognized = ocr.recognize(_subset(reader, low), page_count=len(low), cache_key=key)
+            for start in range(0, len(low), step):
+                batch = low[start:start + step]
+                if budget is not None:
+                    budget.reserve(len(batch))
+                key = f"{digest}:{','.join(str(i) for i in batch)}"
+                recognized = ocr.recognize(_subset(reader, batch), page_count=len(batch), cache_key=key)
+                if len(recognized) != len(batch):
+                    raise ExtractionError("ocr_failed")
+                for index, text in zip(batch, recognized, strict=True):
+                    texts[index] = text
+                recognized_indexes.update(batch)
         except OcrBudgetExceeded:
             raise ExtractionError("ocr_budget_exceeded") from None
         except OcrError:
             raise ExtractionError("ocr_failed") from None
-        if len(recognized) != len(low):
-            raise ExtractionError("ocr_failed")
-        recognized_indexes = set(low)
-        for index, text in zip(low, recognized, strict=True):
-            texts[index] = text
     return [ExtractedBlock(text, page_number=number, ocr=number - 1 in recognized_indexes) for number, text in enumerate(texts, start=1)]

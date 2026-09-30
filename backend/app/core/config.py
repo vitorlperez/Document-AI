@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     docling_serve_version: str = "v1.35.0-pt1"
     docling_serve_timeout_seconds: float = Field(default=120, gt=0)
     ocr_max_pages_per_job: int = Field(default=200, ge=0)
-    ocr_job_deadline_seconds: float = Field(default=600, gt=0)
+    ocr_job_deadline_seconds: float = Field(default=1200, gt=0)
     ocr_languages: str = "por,eng"
     ocr_cloud_fallback_enabled: bool = False
     ocr_cloud_dpa_approved: bool = False

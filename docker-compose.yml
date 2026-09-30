@@ -66,7 +66,8 @@ services:
       DOCLING_SERVE_URL: ${DOCLING_SERVE_URL:-http://docling:5001}
       DOCLING_SERVE_VERSION: ${DOCLING_SERVE_VERSION:-v1.35.0-pt1}
       OCR_MAX_PAGES_PER_JOB: ${OCR_MAX_PAGES_PER_JOB:-200}
-      OCR_JOB_DEADLINE_SECONDS: ${OCR_JOB_DEADLINE_SECONDS:-600}
+      OCR_JOB_DEADLINE_SECONDS: ${OCR_JOB_DEADLINE_SECONDS:-1200}
+      OCR_MAX_PAGES_PER_DOCUMENT: ${OCR_MAX_PAGES_PER_DOCUMENT:-120}
     command: ["alembic", "upgrade", "head"]
     depends_on:
       postgres:
@@ -122,7 +123,8 @@ services:
 
   # Optional OCR sidecar (docker compose --profile ocr up --build docling). Image derived from
   # docling-serve v1.35.0 (pinned by digest) plus the Tesseract `por` model: infra/docling/Dockerfile.
-  # Memory limit is the measured peak RSS (~1.8 GB) plus headroom.
+  # Memory limit is the measured peak RSS (~2.5 GiB with 8-page batches, ~3.8 GiB when 504 retries pile up duplicate
+  # conversions) plus headroom.
   docling:
     build: ./infra/docling
     image: ${DOCLING_SERVE_IMAGE:-arquivio-docling:v1.35.0-pt1}

@@ -1,7 +1,15 @@
 import io
+import os
 from zipfile import ZipFile
 
 from app.ingestion.extraction.errors import ExtractionError
+
+def env_int(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, default))
+    except ValueError:
+        return default
+
 
 ROWS_PER_BLOCK = 25
 MAX_SHEETS = 20
@@ -28,4 +36,5 @@ def guard_zip(content: bytes) -> None:
 
 MIN_CHARS_PER_PAGE = 25
 OCR_MIN_LOW_PAGE_RATIO = 0.3
-OCR_MAX_PAGES_PER_DOCUMENT = 60
+OCR_MAX_PAGES_PER_DOCUMENT = env_int("OCR_MAX_PAGES_PER_DOCUMENT", 120)
+OCR_PAGES_PER_BATCH = 8

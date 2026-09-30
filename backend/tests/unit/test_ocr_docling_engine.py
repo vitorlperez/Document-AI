@@ -50,3 +50,14 @@ def test_timeout_is_opaque(monkeypatch):
     monkeypatch.setattr(httpx, "post", send)
     with pytest.raises(OcrError, match="^OCR engine failed$"):
         DoclingServeEngine("http://sidecar").recognize(b"secret", page_count=1)
+
+
+def test_gateway_timeout_is_not_resent(monkeypatch):
+    calls = []
+    def send(url, **kwargs):
+        calls.append(url)
+        return httpx.Response(504, text="timeout", request=httpx.Request("POST", url))
+    monkeypatch.setattr(httpx, "post", send)
+    with pytest.raises(OcrError):
+        DoclingServeEngine("http://sidecar").recognize(b"pdf", page_count=1)
+    assert len(calls) == 1
