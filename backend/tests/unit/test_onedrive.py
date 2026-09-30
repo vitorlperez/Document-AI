@@ -690,3 +690,11 @@ def test_onedrive_manual_reprocess_forces_item_read_without_delta_change_full_sn
 
     assert client.read_ids == ["manual-item"]
     assert [document.external_file_id for document in result.documents] == ["manual-item"]
+
+
+def test_onedrive_client_defaults_are_unchanged_by_parametrization():
+    client = MicrosoftGraphClient(client_id="c", client_secret="s", redirect_uri="https://x.test/cb")
+    assert MicrosoftGraphClient.AUTHORITY == MICROSOFT_AUTHORITY
+    assert MicrosoftGraphClient.SCOPES == GRAPH_SCOPES
+    assert httpx.URL(client.authorization_url(state="s")).path == "/common/oauth2/v2.0/authorize"
+    assert OneDriveDocumentProvider.max_workers == 4

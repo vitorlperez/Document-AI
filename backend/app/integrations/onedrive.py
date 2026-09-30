@@ -133,6 +133,9 @@ class OneDriveCipher:
 
 
 class MicrosoftGraphClient:
+    AUTHORITY = MICROSOFT_AUTHORITY
+    SCOPES = GRAPH_SCOPES
+
     def __init__(
         self, *, client_id: str | None, client_secret: str | None, redirect_uri: str | None, http: RemoteHttp | None = None
     ):
@@ -149,14 +152,14 @@ class MicrosoftGraphClient:
 
     def authorization_url(self, *, state: str) -> str:
         self._configured()
-        return f"{MICROSOFT_AUTHORITY}/authorize?" + urlencode(
+        return f"{self.AUTHORITY}/authorize?" + urlencode(
             {
                 "client_id": self.client_id,
                 "response_type": "code",
                 "redirect_uri": self.redirect_uri,
                 "response_mode": "query",
                 "prompt": "select_account",
-                "scope": GRAPH_SCOPES,
+                "scope": self.SCOPES,
                 "state": state,
             }
         )
@@ -168,7 +171,7 @@ class MicrosoftGraphClient:
                 "grant_type": "authorization_code",
                 "code": code,
                 "redirect_uri": self.redirect_uri,
-                "scope": GRAPH_SCOPES,
+                "scope": self.SCOPES,
             }
         )
 
@@ -178,7 +181,7 @@ class MicrosoftGraphClient:
             {
                 "grant_type": "refresh_token",
                 "refresh_token": credentials.refresh_token,
-                "scope": GRAPH_SCOPES,
+                "scope": self.SCOPES,
             },
             previous=credentials,
         )
@@ -187,7 +190,7 @@ class MicrosoftGraphClient:
         self, data: dict[str, str | None], *, previous: OneDriveCredentials | None = None
     ) -> OneDriveCredentials:
         response = httpx.post(
-            f"{MICROSOFT_AUTHORITY}/token",
+            f"{self.AUTHORITY}/token",
             data={**data, "client_id": self.client_id, "client_secret": self.client_secret},
             timeout=15,
         )
@@ -323,6 +326,9 @@ class MicrosoftGraphClient:
 
     def read_file(self, *, credentials: OneDriveCredentials, item_id: str) -> bytes:
         url = f"{GRAPH_ROOT}/me/drive/items/{quote(item_id, safe='')}/content"
+        return self._download(url, credentials)
+
+    def _download(self, url: str, credentials: OneDriveCredentials) -> bytes:
         response = self.http.request(
             "GET", url, headers={"Authorization": f"Bearer {credentials.access_token}"},
             timeout=30, follow_redirects=True,
@@ -411,6 +417,8 @@ class MicrosoftGraphClient:
 
 class OneDriveDocumentProvider:
     key = "onedrive"
+    max_workers = MAX_PAGE_WORKERS
+    max_file_bytes = 0
 
     def __init__(self, client: MicrosoftGraphClient, cipher: OneDriveCipher):
         self.client, self.cipher = client, cipher
@@ -559,7 +567,7 @@ class OneDriveDocumentProvider:
         files = sorted(changes.values(), key=lambda item: str(item.get("id") or ""))
         if not files:
             return []
-        with ThreadPoolExecutor(max_workers=min(MAX_PAGE_WORKERS, len(files))) as executor:
+        with ThreadPoolExecutor(max_workers=min(self.max_workers, len(files))) as executor:
             return list(executor.map(lambda item: self._read_one(credentials, item), files))
 
     eligible_mime_types = BASE_MIME_TYPES
@@ -582,6 +590,8 @@ class OneDriveDocumentProvider:
         }
         if mime_type not in self.eligible_mime_types:
             return DiscoveredDocument(**base)
+        if self.max_file_bytes and int(item.get("size") or 0) > self.max_file_bytes:
+            return DiscoveredDocument(**base, error_code="file_too_large")
         content = self.client.read_file(credentials=credentials, item_id=remote_id)
 
         try:
@@ -606,6 +616,9 @@ class OneDriveConnectionService(OAuthConnectionServiceBase):
         super().__init__(session, cipher)
         self.client = client
 
+    def bind_identity(self, credentials: OneDriveCredentials) -> str:
+        return self.client.drive_id(credentials=credentials)
+
     def begin(
         self,
         *,
@@ -622,7 +635,7 @@ class OneDriveConnectionService(OAuthConnectionServiceBase):
                 select(DataSource).where(
                     DataSource.id == source_id,
                     DataSource.organization_id == scope.organization_id,
-                    DataSource.provider == "onedrive",
+                    DataSource.provider == self.provider,
                 )
             )
             is None
@@ -641,13 +654,13 @@ class OneDriveConnectionService(OAuthConnectionServiceBase):
         state = self._consume_state(raw_state=raw_state, session_secret=session_secret)
         credentials = self.client.exchange_code(code=code)
         account_email = self.client.account_email(credentials=credentials)
-        drive_id = self.client.drive_id(credentials=credentials)
+        drive_id = self.bind_identity(credentials)
         source = (
             self.session.scalar(
                 select(DataSource).where(
                     DataSource.id == state.source_id,
                     DataSource.organization_id == state.organization_id,
-                    DataSource.provider == "onedrive",
+                    DataSource.provider == self.provider,
                 )
             )
             if state.source_id
@@ -655,7 +668,7 @@ class OneDriveConnectionService(OAuthConnectionServiceBase):
                 select(DataSource)
                 .where(
                     DataSource.organization_id == state.organization_id,
-                    DataSource.provider == "onedrive",
+                    DataSource.provider == self.provider,
                 )
                 .order_by(DataSource.created_at.desc(), DataSource.id.desc())
             )
@@ -677,7 +690,7 @@ class OneDriveConnectionService(OAuthConnectionServiceBase):
         if source is None:
             source = DataSource(
                 organization_id=state.organization_id,
-                provider="onedrive",
+                provider=self.provider,
                 encrypted_credentials=self.cipher.encrypt_credentials(credentials),
                 status="connected",
                 account_email=account_email,
@@ -736,7 +749,7 @@ class OneDriveConnectionService(OAuthConnectionServiceBase):
                 DataSource.id == source_id,
                 DataSource.organization_id == scope.organization_id,
                 DataSource.status == "connected",
-                DataSource.provider == "onedrive",
+                DataSource.provider == self.provider,
             )
         )
         if source is None or source.encrypted_credentials is None:
