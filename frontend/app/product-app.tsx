@@ -72,7 +72,7 @@ const documentFailureLabel = (code: string | null) => ({
   ocr_budget_exceeded: "O limite de OCR desta sincronização foi atingido; o arquivo será tentado novamente na próxima.",
   ocr_failed: "Não foi possível reconhecer o texto deste arquivo escaneado.",
   ocr_document_too_large: "O documento escaneado tem páginas demais para o OCR automático.",
-  empty_extracted_text: "Nenhum texto foi extraído. Se o PDF é escaneado, o OCR precisa estar habilitado para a sua organização.",
+  empty_extracted_text: "Nenhum texto foi extraído. Se o PDF é escaneado, o OCR não está ativo neste ambiente; peça ao administrador para ativá-lo.",
   empty_document: "O documento está vazio (não há texto para indexar).",
 } as Record<string, string>)[code ?? ""] ?? "Não há uma explicação disponível para este código.";
 const providerFromName = (name: string) => ({
