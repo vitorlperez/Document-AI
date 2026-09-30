@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -31,6 +31,7 @@ from app.knowledge.models import Document
 from app.knowledge.presentation import serialize_question_result
 from app.knowledge.questions import AIProviderUnavailable, QuestionService
 from app.knowledge.retrieval import RetrievalService
+from app.knowledge.untrusted import UNTRUSTED_NOTICE
 from app.library.service import LibraryService
 
 
@@ -75,12 +76,14 @@ _bearer = HTTPBearer(auto_error=False, scheme_name="ApiKey",
 
 
 class SearchInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     query: str = Field(min_length=1, max_length=500)
     limit: int = Field(default=10, ge=1, le=20)
     node_ids: list[UUID] | None = Field(default=None, max_length=20)
 
 
 class AskInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     question: str = Field(min_length=1, max_length=1000)
     node_ids: list[UUID] | None = Field(default=None, max_length=20)
 
@@ -125,7 +128,10 @@ def guarded(scope_name: str, bucket: str, *, cap: str | None = None):
         if not per_key.allowed or not per_org.allowed:
             _record(request, principal, bucket, "rate_limited", 429)
             raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "rate limit exceeded",
-                                headers={"Retry-After": str(max(per_key.reset_seconds, per_org.reset_seconds))})
+                                headers={"Retry-After": str(max(per_key.reset_seconds, per_org.reset_seconds)),
+                                         "RateLimit-Limit": str(per_key.limit),
+                                         "RateLimit-Remaining": "0",
+                                         "RateLimit-Reset": str(max(per_key.reset_seconds, per_org.reset_seconds))})
         request.state.started_at = time.perf_counter()
         return principal
     return dependency
@@ -174,7 +180,7 @@ def search(payload: SearchInput, request: Request,
     hits = RetrievalService(session).search(scope=principal.scope, user_id=principal.user_id,
                                             query=payload.query, selection=selection, limit=payload.limit)
     _record(request, principal, "search", "ok", 200, result_count=len(hits), query=payload.query)
-    return {"results": [{"id": str(h.document_id), "title": h.title, "url": h.url, "snippet": h.snippet,
+    return {"content_trust": "untrusted_document_content", "notice": UNTRUSTED_NOTICE, "results": [{"id": str(h.document_id), "title": h.title, "url": h.url, "snippet": h.snippet,
                          "page_number": h.page_number, "source_provider": h.source_provider} for h in hits]}
 
 
@@ -193,7 +199,7 @@ def document(document_id: UUID, request: Request,
         raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
     _record(request, principal, "fetch", "ok", 200, result_count=1, document_id=document_id)
     return {"id": str(fetched.document_id), "title": fetched.title, "url": fetched.url, "text": fetched.text,
-            "content_trust": "untrusted_document_content",
+            "content_trust": "untrusted_document_content", "notice": UNTRUSTED_NOTICE,
             "metadata": {"source_provider": fetched.source_provider, "mime_type": fetched.mime_type,
                          "modified_at": fetched.modified_at.isoformat() if fetched.modified_at else None,
                          "truncated": fetched.truncated}}

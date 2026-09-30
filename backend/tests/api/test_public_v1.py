@@ -141,3 +141,54 @@ def test_cookie_and_bearer_authentication_do_not_cross_boundaries(api):
     assert client.get("/v1/whoami").status_code == 401
     client.cookies.clear()
     assert client.get("/me", headers=bearer(mint_key(factory, tenant))).status_code == 401
+
+
+def test_restricted_key_default_and_requested_selection_are_enforced(api):
+    from app.knowledge.models import Document, DocumentChunk
+    from app.knowledge.questions import EMBEDDING_MODEL
+    from app.library.models import LibraryNode
+    client, factory = api
+    tenant = seed_tenant(factory, "A", "Aurora")
+    with factory.begin() as session:
+        root = session.query(LibraryNode).filter_by(organization_id=tenant.organization_id, kind="source").one()
+        allowed = session.query(LibraryNode).filter_by(organization_id=tenant.organization_id, kind="file").one().id
+        other = Document(organization_id=tenant.organization_id, workspace_folder_id=tenant.folder_id,
+                         external_file_id="other", name="Secret.pdf", mime_type="application/pdf",
+                         source_url="https://drive.example.test/other", content_hash="b" * 64,
+                         processing_version="v1", index_status="indexed")
+        session.add(other); session.flush()
+        session.add(DocumentChunk(organization_id=tenant.organization_id, workspace_folder_id=tenant.folder_id,
+                                  document_id=other.id, position=0, text="Aurora secret", search_text="aurora secret",
+                                  embedding=[1.0, 0.0], embedding_model=EMBEDDING_MODEL))
+        sibling = LibraryNode(organization_id=tenant.organization_id, source_id=root.source_id,
+                              parent_id=root.id, external_id="other", kind="file", name="Secret.pdf")
+        session.add(sibling); session.flush()
+        outside, outside_node = other.id, sibling.id
+    key = mint_key(factory, tenant, node_ids=[allowed])
+    hits = client.post("/v1/search", json={"query": "Aurora"}, headers=bearer(key))
+    assert [hit["id"] for hit in hits.json()["results"]] == [str(tenant.document_id)]
+    assert client.get(f"/v1/documents/{outside}", headers=bearer(key)).status_code == 404
+    assert client.post("/v1/search", json={"query": "Aurora", "node_ids": [str(outside_node)]}, headers=bearer(key)).status_code == 404
+    with factory.begin() as session:
+        session.query(LibraryNode).filter_by(id=allowed).delete()
+    assert client.get(f"/v1/documents/{tenant.document_id}", headers=bearer(key)).status_code == 404
+
+
+def test_organization_limit_is_shared_by_different_keys(api):
+    client, factory = api
+    tenant = seed_tenant(factory, "A", "Aurora")
+    client.app.state.settings.api_org_rate_limit_per_minute = 1
+    assert client.get("/v1/whoami", headers=bearer(mint_key(factory, tenant))).status_code == 200
+    assert client.get("/v1/whoami", headers=bearer(mint_key(factory, tenant))).status_code == 429
+
+
+def test_enabled_ask_uses_safe_presentation_and_audits(api):
+    from tests.api.test_text_search_api import FakeSemanticProvider
+    client, factory = api
+    tenant = seed_tenant(factory, "A", "Aurora campaign launches in September")
+    client.app.state.settings.public_api_ask_enabled = True
+    client.app.state.semantic_provider = FakeSemanticProvider()
+    key = mint_key(factory, tenant)
+    response = client.post("/v1/ask", json={"question": "When does the campaign launch?"}, headers=bearer(key))
+    assert response.status_code == 200, response.text
+    assert response.json()["citations"][0]["source_url"] == "https://drive.example.test/A"
