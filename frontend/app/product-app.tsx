@@ -65,7 +65,12 @@ const statusLabel = (status: string) => ({ ready: "Pronto", queued: "Na fila", s
 const documentFailureLabel = (code: string | null) => ({
   source_file_unavailable: "A fonte conectada não permitiu ler este arquivo.",
   text_extraction_failed: "Não foi possível extrair texto; o arquivo pode estar danificado ou usar uma estrutura não suportada.",
-  empty_extracted_text: "Nenhum texto foi extraído. PDFs escaneados precisam de OCR, que ainda não está disponível.",
+  file_too_large: "O arquivo excede o tamanho máximo suportado para indexação.",
+  file_encrypted: "O arquivo está protegido por senha e não pode ser lido.",
+  ocr_budget_exceeded: "O limite de OCR desta sincronização foi atingido; o arquivo será tentado novamente na próxima.",
+  ocr_failed: "Não foi possível reconhecer o texto deste arquivo escaneado.",
+  ocr_document_too_large: "O documento escaneado tem páginas demais para o OCR automático.",
+  empty_extracted_text: "Nenhum texto foi extraído. Se o PDF é escaneado, o OCR precisa estar habilitado para a sua organização.",
 } as Record<string, string>)[code ?? ""] ?? "Não há uma explicação disponível para este código.";
 const providerFromName = (name: string) => ({
   "google drive": "google_drive",

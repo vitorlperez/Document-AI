@@ -5,7 +5,7 @@ An AI-powered document intelligence platform for organizations. It connects docu
 ## Highlights
 
 - Connect Google Drive, OneDrive, and Notion scopes and control synchronized content
-- Extract text from PDF and DOCX files and process ingestion asynchronously
+- Extract located text from PDF, DOCX and Markdown; enable TXT, CSV, XLSX, PPTX and Google Sheets/Slides via a guarded rollout
 - Search company knowledge with text and semantic retrieval
 - Ask AI-assisted questions grounded in the indexed document library
 - Manage organizations, workspaces, invitations, and platform staff access
@@ -85,6 +85,8 @@ Copy `.env.example` to `.env` and add credentials only for the integrations you 
 | `WORKOS_API_KEY` / `WORKOS_CLIENT_ID` | Enables authentication and organization identity |
 | `RESEND_API_KEY` / `INVITATION_FROM_EMAIL` | Enables email invitations |
 | `PUBLIC_APP_URL` | Public URL allowed by the API CORS policy |
+| `NEW_FORMATS_ENABLED` | Enables TXT/CSV/XLSX/PPTX and Sheets/Slides; default `false`. Formats, caps and backfill: [integration roadmap](docs/integrations-roadmap.md#formatos-indexáveis) |
+| `ACTIVE_DOCUMENT_LIMIT` | Maximum active indexed documents per organization; default `500` |
 
 Never commit `.env` files or credentials. The repository includes `.env.example` as a safe template.
 

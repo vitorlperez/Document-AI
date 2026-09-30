@@ -27,3 +27,20 @@ O conector está implementado para contas pessoais e organizacionais. Ainda é n
 5. UI ativa, testes de integração e rollout controlado.
 
 O produto atual concluiu essa sequência para OneDrive; a lista é mantida como registro da decomposição adotada, não como backlog pendente.
+
+
+## Formatos indexáveis
+
+| Fonte | Formatos |
+|---|---|
+| Google Drive | Docs (export TXT), PDF, DOCX, Markdown; com `NEW_FORMATS_ENABLED=true`: TXT, CSV, XLSX, PPTX, Sheets (export XLSX), Slides (export PPTX) |
+| OneDrive | PDF, DOCX, Markdown; com `NEW_FORMATS_ENABLED=true`: TXT, CSV, XLSX, PPTX |
+| Notion | Markdown do adapter existente |
+
+Formatos novos permanecem desligados por padrão. `ACTIVE_DOCUMENT_LIMIT` mantém o default 500.
+Extração limita bytes a 25 MiB (ZIP descomprimido 200 MiB e razão 200), texto a 600.000 caracteres e chunks a 2.000 por documento. Planilhas: 20 abas, 5.000 linhas/aba, 60 colunas, 2.000 caracteres/célula; cada bloco carrega cabeçalhos e número das linhas. Abas ocultas são ignoradas; linhas/colunas ocultas são incluídas; fórmulas usam o valor em cache, sem calcular fórmulas. Slides preservam número e título; notas do orador são rotuladas separadamente. Imagens, macros, gráficos e formatos legados continuam fora do escopo.
+
+Google limita exportações a 10 MB. `exportSizeLimitExceeded` é falha do arquivo, sem reconectar a fonte.
+Para canário, habilite a flag no ambiente piloto, execute de `backend/`:
+`.venv/bin/python -m scripts.requeue_ignored --folder UUID` (dry-run) e depois `--apply`.
+O script só atua nas pastas explicitamente selecionadas, preserva arquivos não elegíveis e enfileira sincronização após commit. O próximo sync também força a leitura de arquivos ignorados cujo MIME normalizado passou a ser elegível. Compare proporção de ignorados, custo de embeddings e perguntas com citações antes de ampliar o rollout.
