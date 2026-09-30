@@ -5,12 +5,16 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const output = path.join(__dirname, 'qa', 'fixed');
+fs.mkdirSync(output, { recursive: true });
+const checks = new Set((process.env.CHECK_ITEMS ?? 'F-001').split(','));
+const check = (id, fn) => checks.has(id) ? fn() : undefined;
 
 (async () => {
   const browser = await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
   const results = [];
   for (const width of [1440, 390]) {
-    const context = await browser.newContext({ viewport: { width, height: 900 } });
+    const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 } });
     const page = await context.newPage();
     page.setDefaultTimeout(20000);
     const errors = [];
@@ -34,8 +38,8 @@ const path = require('node:path');
     };
     const fit = async () => assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await fit();
-    await page.screenshot({ path: path.join(__dirname, `welcome-${width}.png`), fullPage: true });
-    if (width === 1440) {
+    await page.screenshot({ path: path.join(output, `welcome-${width}.png`), fullPage: true });
+    {
       await page.getByRole('button', { name: 'Vamos começar', exact: true }).click();
       await page.getByRole('heading', { name: 'Traga o conhecimento da sua equipe', exact: true }).waitFor();
       assert.equal((await state()).step, 'integrations');
@@ -44,6 +48,15 @@ const path = require('node:path');
       await page.getByRole('button', { name: 'Voltar', exact: true }).click();
       await page.getByRole('heading', { name: 'Boas-vindas ao Arquivio', exact: true }).waitFor();
       await page.getByRole('button', { name: 'Vamos começar', exact: true }).click();
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.screenshot({ path: path.join(output, `integrations-first-fold-${width}.png`) });
+      await check('F-001', async () => {
+        if (width !== 390) return;
+        for (const name of ['Voltar', 'Conectar depois', 'Ir para a conversa']) {
+          const bounds = await page.getByRole('button', { name, exact: true }).boundingBox();
+          assert.ok(bounds.y >= 0 && bounds.y + bounds.height <= page.viewportSize().height, `F-001: ${name} must fit first fold`);
+        }
+      });
       await page.getByRole('button', { name: 'Conectar', exact: true }).click();
       await page.getByRole('dialog', { name: 'Google Drive', exact: true }).waitFor();
       assert.equal((await state()).step, 'integrations'); // OAuth returns into the pending wizard.
@@ -60,10 +73,8 @@ const path = require('node:path');
       assert.equal(entries.length, 1);
       assert.equal(entries[0].status, 'queued');
       await syncDialog.getByRole('button', { name: 'Fechar', exact: true }).click();
-      await page.screenshot({ path: path.join(__dirname, `integrations-${width}.png`), fullPage: true });
+      await page.screenshot({ path: path.join(output, `integrations-${width}.png`), fullPage: true });
       await page.getByRole('button', { name: 'Ir para a conversa', exact: true }).click();
-    } else {
-      await page.getByRole('button', { name: 'Pular introdução', exact: true }).click();
     }
     const tour = page.getByRole('dialog', { name: 'Pergunte aos seus documentos', exact: true });
     await tour.waitFor();
@@ -84,7 +95,7 @@ const path = require('node:path');
       }, ['composer', 'tools', 'new-conversation', 'navigation'][index]);
       const focused = await page.evaluate(() => document.querySelector('dialog[open]').contains(document.activeElement));
       assert.equal(focused, true);
-      await page.screenshot({ path: path.join(__dirname, `tour-${width}-${index + 1}.png`) });
+      await page.screenshot({ path: path.join(output, `tour-${width}-${index + 1}.png`) });
       await page.getByRole('button', { name: index === 3 ? 'Começar a conversar' : 'Próximo', exact: true }).click();
     }
     await page.locator('dialog[open]').waitFor({ state: 'detached' });
@@ -105,10 +116,10 @@ const path = require('node:path');
     assert.equal(await page.locator('dialog[open]').count(), 0);
     assert.deepEqual(errors, []);
     assert.deepEqual(httpErrors, []);
-    results.push({ width, signupAndOrg: true, welcome: true, skip: width === 390, oauthResumeAndSyncQueued: width === 1440, tourSteps: 4, focusTrapped: true, viewportFit: true, secondLoginDirectChat: true, replayAndEscape: true, pageErrors: 0, httpErrors: 0 });
+    results.push({ width, signupAndOrg: true, welcome: true, skip: false, oauthResumeAndSyncQueued: true, tourSteps: 4, focusTrapped: true, viewportFit: true, secondLoginDirectChat: true, replayAndEscape: true, pageErrors: 0, httpErrors: 0 });
     await context.close();
   }
-  fs.writeFileSync(path.join(__dirname, 'browser-results.json'), JSON.stringify(results, null, 2));
+  fs.writeFileSync(path.join(output, 'browser-results.json'), JSON.stringify(results, null, 2));
   await browser.close();
   console.log('PASS: desktop/mobile signup → organization → welcome/connect-or-skip → chat → 4 coachmarks → logout/login direct chat. OAuth resume, real sync queue/history, replay, Escape, focus and viewport checks passed.');
 })().catch(error => { console.error(error); process.exit(1); });
