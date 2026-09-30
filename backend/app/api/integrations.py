@@ -576,7 +576,9 @@ def scope_catalog(
         session.commit()
         raise HTTPException(409, "reauthentication required") from error
     return {
-        "folders": [{"id": item.id, "name": item.name} for item in rows],
+        "folders": [
+            {"id": item.id, "name": item.name, "parent_ids": list(item.parent_ids)} for item in rows
+        ],
         "root_files": {"available": True, "label": "Arquivos avulsos da raiz"},
         "all_accessible": {"available": True, "label": "Todo o Drive acessível"},
     }

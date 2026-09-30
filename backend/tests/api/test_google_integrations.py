@@ -571,7 +571,7 @@ def test_cross_tenant_source_cannot_be_selected_as_workspace_folder(google_api) 
 
 def test_admin_creates_one_workspace_scope_from_multiple_folders_and_root_files(google_api) -> None:
     client, factory, auth_gateway, google_port = google_api
-    google_port.folders = [RemoteFolder("folder-1", "Client A"), RemoteFolder("folder-2", "Client B")]
+    google_port.folders = [RemoteFolder("folder-1", "Client A", ("root",)), RemoteFolder("folder-2", "Client B", ("folder-1",))]
     login(client, auth_gateway, code="owner", email="owner@example.test", subject="owner")
     organization_id = create_organization(client)
     started = client.post("/data-sources/google/oauth/start", json={"organization_id": str(organization_id)}, follow_redirects=False)
@@ -601,7 +601,9 @@ def test_admin_creates_one_workspace_scope_from_multiple_folders_and_root_files(
     )
 
     assert catalog.status_code == 200
-    assert catalog.json()["folders"] == [{"id": "folder-1", "name": "Client A"}, {"id": "folder-2", "name": "Client B"}]
+    # Parents let the UI flag a folder already covered by an existing space.
+    assert catalog.json()["folders"] == [{"id": "folder-1", "name": "Client A", "parent_ids": ["root"]},
+                                         {"id": "folder-2", "name": "Client B", "parent_ids": ["folder-1"]}]
     assert catalog.json()["root_files"]["available"] is True
     assert response.status_code == 201
     assert repeated.json()["id"] == response.json()["id"]
