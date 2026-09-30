@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const output = path.join(__dirname, 'qa', 'fixed');
 fs.mkdirSync(output, { recursive: true });
-const checks = new Set((process.env.CHECK_ITEMS ?? 'F-001,F-002').split(','));
+const checks = new Set((process.env.CHECK_ITEMS ?? 'F-001,F-002,F-003').split(','));
 const check = (id, fn) => checks.has(id) ? fn() : undefined;
 
 (async () => {
@@ -104,6 +104,21 @@ const check = (id, fn) => checks.has(id) ? fn() : undefined;
     }
     await page.locator('dialog[open]').waitFor({ state: 'detached' });
     await page.getByRole('heading', { name: 'O que você quer descobrir?', exact: true }).waitFor();
+    const checkScope = async () => assert.equal(await page.evaluate(() => {
+      const scope = document.querySelector('.sources-scope');
+      if (getComputedStyle(scope).display === 'none') return true;
+      const note = scope.getBoundingClientRect();
+      const panel = scope.parentElement.getBoundingClientRect();
+      return note.top >= panel.top && note.bottom <= panel.bottom + 1;
+    }), true, 'F-003: scope note must be entirely visible or hidden on stacked layouts');
+    await check('F-003', checkScope);
+    await page.screenshot({ path: path.join(output, `chat-${width}.png`) });
+    if (width === 390 && checks.has('F-003')) {
+      await page.setViewportSize({ width: 768, height: 1024 });
+      await checkScope();
+      await page.screenshot({ path: path.join(output, 'chat-768.png') });
+      await page.setViewportSize({ width, height: 844 });
+    }
     assert.equal((await state()).tour_required, false);
     assert.equal(new URL(page.url()).pathname, `/companies/${org}`);
     await page.getByRole('button', { name: 'Sair da conta', exact: true }).click();
