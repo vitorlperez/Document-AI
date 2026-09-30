@@ -360,12 +360,21 @@ class LibraryService:
     def filter_excluded_content(
         self, *, organization_id: UUID, source_id: UUID,
         documents: list[DiscoveredDocument], folders: list[RemoteFolder],
+        workspace_folder_id: UUID | None = None,
     ) -> tuple[list[DiscoveredDocument], list[RemoteFolder]]:
-        """Filter discovery before indexing/projection, including newly discovered descendants."""
-        exclusions = list(self.session.scalars(select(LibraryExclusion).where(
+        """Filter discovery before indexing/projection, including newly discovered descendants.
+
+        A removal binds the sync spaces that existed when it was made. A space
+        selected afterwards is a newer explicit choice and sees its whole tree.
+        """
+        conditions = [
             LibraryExclusion.organization_id == organization_id,
             LibraryExclusion.source_id == source_id,
-        )))
+        ]
+        if workspace_folder_id is not None:
+            conditions.append(LibraryExclusion.created_at >= select(WorkspaceFolder.created_at).where(
+                WorkspaceFolder.id == workspace_folder_id).scalar_subquery())
+        exclusions = list(self.session.scalars(select(LibraryExclusion).where(*conditions)))
         if not exclusions:
             return documents, folders
         blocked = {item.external_id for item in exclusions}
@@ -386,6 +395,21 @@ class LibraryService:
              and not set(item.parent_ids) & blocked_folders],
             [folder for folder in folders if folder.id not in blocked],
         )
+
+    def forget_stale_exclusions(self, *, organization_id: UUID, source_id: UUID) -> None:
+        """Drop removals that no remaining sync space of the source still honours."""
+        oldest_space = self.session.scalar(select(func.min(WorkspaceFolder.created_at)).where(
+            WorkspaceFolder.organization_id == organization_id,
+            WorkspaceFolder.source_id == source_id,
+        ))
+        stale = delete(LibraryExclusion).where(
+            LibraryExclusion.organization_id == organization_id,
+            LibraryExclusion.source_id == source_id,
+        )
+        if oldest_space is not None:
+            stale = stale.where(LibraryExclusion.created_at < oldest_space)
+        self.session.execute(stale)
+        self.session.flush()
 
     def search_names(
         self, *, scope: OrganizationScope, user_id: UUID, query: str, limit: int = SEARCH_RESULT_LIMIT
@@ -829,6 +853,7 @@ class LibraryService:
         source: DataSource,
         documents: list[DiscoveredDocument],
         folders: list[RemoteFolder],
+        workspace_folder_id: UUID | None = None,
     ) -> None:
         """Upsert the synchronized provider metadata into the local catalog.
 
@@ -838,7 +863,8 @@ class LibraryService:
         if source.organization_id != organization_id:
             raise SyncAccessDenied("source tenant mismatch")
         documents, folders = self.filter_excluded_content(organization_id=organization_id,
-            source_id=source.id, documents=documents, folders=folders)
+            source_id=source.id, documents=documents, folders=folders,
+            workspace_folder_id=workspace_folder_id)
         root = self._root(organization_id=organization_id, source=source)
         folder_by_id = {folder.id: folder for folder in folders}
         for remote_folder in folders:

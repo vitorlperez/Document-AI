@@ -377,6 +377,11 @@ class IngestionService:
             )
         )
         self.session.delete(folder)
+        self.session.flush()
+        from app.library.service import LibraryService
+        LibraryService(self.session).forget_stale_exclusions(
+            organization_id=scope.organization_id, source_id=removed.source_id
+        )
         self.session.add(
             AuditLog(
                 organization_id=scope.organization_id,
@@ -473,6 +478,7 @@ class IngestionService:
         current_documents, _ = LibraryService(self.session).filter_excluded_content(
             organization_id=job.organization_id, source_id=folder.source_id,
             documents=discovery.documents, folders=list(manual_folders),
+            workspace_folder_id=job.workspace_folder_id,
         )
         from app.library.manual_sync import scoped_documents, update_progress
         manual_documents = scoped_documents(self.session, job, current_documents, manual_folders)

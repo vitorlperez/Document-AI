@@ -341,6 +341,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             document_results, source_folders = LibraryService(session).filter_excluded_content(
                 organization_id=job.organization_id, source_id=source.id,
                 documents=document_results, folders=source_folders,
+                workspace_folder_id=job.workspace_folder_id,
             )
             discovered_documents = (
                 replace(discovery, documents=document_results) if discovery else document_results
@@ -402,6 +403,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 source=source,
                 documents=document_results,
                 folders=source_folders,
+                workspace_folder_id=job.workspace_folder_id,
             )
             if discovery and discovery.delta_links is not None:
                 selections_by_id = {item.id: item for item in selections}
