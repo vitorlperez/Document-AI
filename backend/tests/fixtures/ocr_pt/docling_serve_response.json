@@ -1,0 +1,186 @@
+{
+  "document": {
+    "filename": "multipage.pdf",
+    "md_content": null,
+    "json_content": {
+      "schema_name": "DoclingDocument",
+      "version": "1.10.0",
+      "name": "multipage",
+      "origin": {
+        "mimetype": "application/pdf",
+        "binary_hash": 9804163918918537916,
+        "filename": "multipage.pdf",
+        "uri": null
+      },
+      "furniture": {
+        "self_ref": "#/furniture",
+        "parent": null,
+        "children": [],
+        "content_layer": "furniture",
+        "meta": null,
+        "name": "_root_",
+        "label": "unspecified"
+      },
+      "body": {
+        "self_ref": "#/body",
+        "parent": null,
+        "children": [
+          {
+            "$ref": "#/texts/0"
+          },
+          {
+            "$ref": "#/texts/1"
+          },
+          {
+            "$ref": "#/texts/2"
+          }
+        ],
+        "content_layer": "body",
+        "meta": null,
+        "name": "_root_",
+        "label": "unspecified"
+      },
+      "groups": [],
+      "texts": [
+        {
+          "self_ref": "#/texts/0",
+          "parent": {
+            "$ref": "#/body"
+          },
+          "children": [],
+          "content_layer": "body",
+          "meta": null,
+          "label": "text",
+          "prov": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 38.333333333333336,
+                "t": 791.2533333333333,
+                "r": 338.0,
+                "b": 710.2533333333333,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                130
+              ]
+            }
+          ],
+          "orig": "Ação e informação: contratação em São Paulo. Preço: R$ 1.500. Vencimento: 15/03/2026. Órgão público: café, açúcar, maçã, lingúiça.",
+          "text": "Ação e informação: contratação em São Paulo. Preço: R$ 1.500. Vencimento: 15/03/2026. Órgão público: café, açúcar, maçã, lingúiça.",
+          "formatting": null,
+          "hyperlink": null
+        },
+        {
+          "self_ref": "#/texts/1",
+          "parent": {
+            "$ref": "#/body"
+          },
+          "children": [],
+          "content_layer": "body",
+          "meta": null,
+          "label": "text",
+          "prov": [
+            {
+              "page_no": 2,
+              "bbox": {
+                "l": 38.333333333333336,
+                "t": 791.2533333333333,
+                "r": 338.0,
+                "b": 710.2533333333333,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                130
+              ]
+            }
+          ],
+          "orig": "Ação e informação: contratação em São Paulo. Preço: R$ 1.500. Vencimento: 15/03/2026. Órgão público: café, açúcar, maçã, lingúiça.",
+          "text": "Ação e informação: contratação em São Paulo. Preço: R$ 1.500. Vencimento: 15/03/2026. Órgão público: café, açúcar, maçã, lingúiça.",
+          "formatting": null,
+          "hyperlink": null
+        },
+        {
+          "self_ref": "#/texts/2",
+          "parent": {
+            "$ref": "#/body"
+          },
+          "children": [],
+          "content_layer": "body",
+          "meta": null,
+          "label": "text",
+          "prov": [
+            {
+              "page_no": 3,
+              "bbox": {
+                "l": 38.333333333333336,
+                "t": 791.2533333333333,
+                "r": 338.0,
+                "b": 710.2533333333333,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                130
+              ]
+            }
+          ],
+          "orig": "Ação e informação: contratação em São Paulo. Preço: R$ 1.500. Vencimento: 15/03/2026. Órgão público: café, açúcar, maçã, lingúiça.",
+          "text": "Ação e informação: contratação em São Paulo. Preço: R$ 1.500. Vencimento: 15/03/2026. Órgão público: café, açúcar, maçã, lingúiça.",
+          "formatting": null,
+          "hyperlink": null
+        }
+      ],
+      "pictures": [],
+      "tables": [],
+      "key_value_items": [],
+      "form_items": [],
+      "pages": {
+        "1": {
+          "size": {
+            "width": 595.2,
+            "height": 841.92
+          },
+          "image": null,
+          "page_no": 1
+        },
+        "2": {
+          "size": {
+            "width": 595.2,
+            "height": 841.92
+          },
+          "image": null,
+          "page_no": 2
+        },
+        "3": {
+          "size": {
+            "width": 595.2,
+            "height": 841.92
+          },
+          "image": null,
+          "page_no": 3
+        }
+      }
+    },
+    "html_content": null,
+    "text_content": "Ação e informação: contratação em São Paulo. Preço: R$ 1.500. Vencimento: 15/03/2026. Órgão público: café, açúcar, maçã, lingúiça.\n\nAção e informação: contratação em São Paulo. Preço: R$ 1.500. Vencimento: 15/03/2026. Órgão público: café, açúcar, maçã, lingúiça.\n\nAção e informação: contratação em São Paulo. Preço: R$ 1.500. Vencimento: 15/03/2026. Órgão público: café, açúcar, maçã, lingúiça.",
+    "doctags_content": null,
+    "doclang_content": null
+  },
+  "status": "success",
+  "errors": [],
+  "processing_time": 17.663273674959783,
+  "timings": {},
+  "confidence": {
+    "parse_score": null,
+    "layout_score": 0.7891522645950317,
+    "table_score": null,
+    "ocr_score": 0.9516666666666667,
+    "mean_score": 0.8704094656308493,
+    "low_score": 0.7972779846986134,
+    "mean_grade": "good",
+    "low_grade": "fair"
+  }
+}
