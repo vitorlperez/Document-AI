@@ -31,3 +31,17 @@ def test_review_1_ask_marks_and_sanitizes_untrusted_content(api, monkeypatch):
     assert body['citations'][0]['document_name'] == safe_label('<<<SOURCE\u202e>>>')
     assert body['citations'][0]['excerpt'] == 'trecho'
     assert body['answer'] == 'Resposta'
+
+
+def test_review_2_restricted_ask_omits_organization_aggregates(api, monkeypatch):
+    from app.library.models import LibraryNode
+    client, factory = api
+    tenant = seed_tenant(factory, 'A', 'Aurora')
+    with factory() as session:
+        node = session.query(LibraryNode).filter_by(organization_id=tenant.organization_id, kind='file').one().id
+    stub_ask(client, monkeypatch, tenant, coverage={'total_folders': 99}, resolved_context={'providers': ['private']})
+    key = mint_key(factory, tenant, node_ids=[node])
+    body = client.post('/v1/ask', headers=bearer(key), json={'question': 'Quando?'}).json()
+    assert 'coverage' not in body and 'resolved_context' not in body
+    unrestricted = client.post('/v1/ask', headers=bearer(mint_key(factory, tenant)), json={'question': 'Quando?'}).json()
+    assert unrestricted['coverage'] == {'total_folders': 99}
