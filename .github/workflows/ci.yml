@@ -44,6 +44,12 @@ jobs:
       - name: Run backend tests
         working-directory: backend
         run: python -m pytest -q tests/unit tests/api
+      - name: Check public OpenAPI contract
+        working-directory: backend
+        run: python scripts/export_openapi.py --check
+      - name: Run PostgreSQL integration tests
+        working-directory: backend
+        run: python -m pytest -q -m postgres tests/integration
       - name: Apply database migrations
         working-directory: backend
         run: alembic upgrade head

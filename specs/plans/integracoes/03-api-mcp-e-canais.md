@@ -2,6 +2,8 @@
 
 > Decisão do dono 29/09: Slack e Teams estão fora de escopo — Fases C e D adiadas; o plano executável é Fase 0 + A + B (≈ 17,5–24 d), sem a migração `0026_channels`.
 
+> Execução: pane-260 em feat/integracoes entregou T0.1/T0.5/T0.6 e A1–A11 com migrações 0022/0023 encadeadas no head confirmado 0021. Cerca F6 reutilizada. Validação final: 741 testes (suíte inteira + PostgreSQL), exit 0; frontend lint/typecheck/build e export OpenAPI --check, exit 0. A7b não habilitada: embedding canônico ainda JSON (embedding_vec é expansão da F5). Pendentes revisão independente do threat model e smoke visual (Chrome indisponível no conector). Evidência detalhada em docs/api/execucao-fase-a.md. Slack/Teams não implementados.
+
 Data: 2026-09-29 · Base: `main` @ `c9cebf0` **com alterações não commitadas** (working tree: `backend/app/library/*`, `ingestion/*`, `integrations/*`, `api/library.py`, migração `20260929_0018_manual_sync_runs.py` ainda não versionada). Todas as citações `path:line` refletem o disco em 2026-09-29; reconfira as linhas antes de editar (o arquivo mais volátil é `backend/app/library/service.py`).
 Origem: Recomendação 3 de `specs/research/integracoes-analise-2026-09-29.md` (§1, §5.1–5.3, §5.7, §6 itens F/G/H/L/M, §7 Onda 2, §8.4, §9).
 Usando oc-route (plano) + oc-scout (levantamento de código/fontes). `graphify` **não está instalado** neste ambiente (`command not found`); o levantamento foi feito lendo o código diretamente. Rode `graphify update .` ao final de cada fase, se disponível.
