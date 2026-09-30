@@ -28,11 +28,24 @@ class ScopedAccess:
 
     def selection(self, requested_ids: list[UUID] | None) -> QuestionSelection | None:
         """None when nothing is eligible (no ready folder, or the selection has no indexed content)."""
-        try:
-            selection = self._library.resolve_question_selection(
-                scope=self.principal.scope, user_id=self.principal.user_id,
-                providers=self.providers(), mentions=self.mentions(requested_ids),
-            )
-        except ValueError:  # "mention is unavailable": nothing indexed under it
+        # Authorize all nodes first: unavailable content must never hide a foreign node.
+        mentions, providers = self.mentions(requested_ids), self.providers()
+        selections = []
+        for group in ([[mention] for mention in mentions] if mentions else [[]]):
+            try:
+                selection = self._library.resolve_question_selection(
+                    scope=self.principal.scope, user_id=self.principal.user_id,
+                    providers=providers, mentions=group,
+                )
+            except ValueError:  # An authorized root has no indexed content yet.
+                continue
+            if selection.folder_ids:
+                selections.append(selection)
+        if not selections:
             return None
-        return selection if selection.folder_ids else None
+        return QuestionSelection(
+            list(dict.fromkeys(folder for item in selections for folder in item.folder_ids)),
+            None if not mentions else set().union(*(item.document_ids or set() for item in selections)),
+            selections[0].coverage,
+            [node for item in selections for node in item.accepted_node_ids],
+        )

@@ -45,3 +45,21 @@ def test_review_2_restricted_ask_omits_organization_aggregates(api, monkeypatch)
     assert 'coverage' not in body and 'resolved_context' not in body
     unrestricted = client.post('/v1/ask', headers=bearer(mint_key(factory, tenant)), json={'question': 'Quando?'}).json()
     assert unrestricted['coverage'] == {'total_folders': 99}
+
+
+def test_review_3_empty_root_does_not_hide_indexed_roots(api):
+    from app.library.models import LibraryNode
+    client, factory = api
+    tenant = seed_tenant(factory, 'A', 'Aurora')
+    with factory.begin() as session:
+        indexed = session.query(LibraryNode).filter_by(organization_id=tenant.organization_id, kind='file').one()
+        empty = LibraryNode(organization_id=tenant.organization_id, source_id=indexed.source_id,
+                            parent_id=indexed.parent_id, external_id='empty', kind='folder', name='Empty')
+        session.add(empty)
+        session.flush()
+        roots = [indexed.id, empty.id]
+    key = mint_key(factory, tenant, node_ids=roots)
+    response = client.post('/v1/search', headers=bearer(key), json={'query': 'Aurora'})
+    assert [h['id'] for h in response.json()['results']] == [str(tenant.document_id)]
+    assert client.get(f'/v1/documents/{tenant.document_id}', headers=bearer(key)).status_code == 200
+    assert [s['id'] for s in client.get('/v1/sources', headers=bearer(key)).json()['sources']] == [str(tenant.folder_id)]
