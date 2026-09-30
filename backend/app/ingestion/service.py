@@ -510,6 +510,17 @@ class IngestionService:
                 for document in removed_documents:
                     document.index_status = "removed"
                     document.error_code = None
+        # Content of a document gone from the source is not retained: its
+        # chunks and vectors leave together with it (idempotent sweep).
+        self.session.flush()
+        self.session.execute(delete(DocumentChunk).where(
+            DocumentChunk.organization_id == job.organization_id,
+            DocumentChunk.workspace_folder_id == job.workspace_folder_id,
+            DocumentChunk.document_id.in_(select(Document.id).where(
+                Document.workspace_folder_id == job.workspace_folder_id,
+                Document.index_status == "removed",
+            )),
+        ))
 
         failures = 0
         for discovered in current_documents:
