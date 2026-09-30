@@ -49,3 +49,8 @@ Nenhum prazo abaixo está implementado ou prometido ao usuário. O responsável 
 - [ ] Testar backups e restauração reais da Railway, inclusive expurgo; confirmar região, acesso e processo para pedidos de exclusão.
 - [ ] Fazer deploy autorizado das páginas públicas e conferir `/privacidade` e `/termos` na produção. Em 28/09/2026, `https://frontend-production-e02d.up.railway.app` ainda respondia 404 para as páginas, esperado antes do deploy.
 - [ ] Fazer validação visual e responsiva após o usuário liberar essa etapa; a validação no navegador foi interrompida nesta tarefa e não foi retomada.
+
+## `extraction_cache` (OCR)
+
+Guarda o texto reconhecido por página (dado de cliente, mesma classe dos chunks), por organização/motor/versão/hash.
+Retenção de 90 dias (`purge_extraction_cache`, diária) e `ON DELETE CASCADE` com a organização.

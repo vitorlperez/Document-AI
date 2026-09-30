@@ -1,0 +1,116 @@
+[
+ {
+  "question": "O que diz o documento 01: O contrato de prestação de ser?",
+  "expected_doc": "01",
+  "expected_page": 1,
+  "expected_substring": "O contrato de prestação de serviços foi assinado em 12/03/2025"
+ },
+ {
+  "question": "O que diz o documento 01: A rescisão exige aviso prévio ?",
+  "expected_doc": "01",
+  "expected_page": 1,
+  "expected_substring": "A rescisão exige aviso prévio de trinta dias e notificação por escrito"
+ },
+ {
+  "question": "O que diz o documento 01: O pagamento mensal será de R$ ?",
+  "expected_doc": "01",
+  "expected_page": 1,
+  "expected_substring": "O pagamento mensal será de R$ 1"
+ },
+ {
+  "question": "O que diz o documento 01: A coordenação do órgão aprovou?",
+  "expected_doc": "01",
+  "expected_page": 1,
+  "expected_substring": "A coordenação do órgão aprovou a inspeção do pêssego importado"
+ },
+ {
+  "question": "O que diz o documento 05: ação, coração, órgão, pêssego,?",
+  "expected_doc": "05",
+  "expected_page": 1,
+  "expected_substring": "ação"
+ },
+ {
+  "question": "O que diz o documento 05: nutrição, opinião, avô, língua?",
+  "expected_doc": "05",
+  "expected_page": 1,
+  "expected_substring": "nutrição"
+ },
+ {
+  "question": "O que diz o documento 05: informação, café, você, saída,?",
+  "expected_doc": "05",
+  "expected_page": 1,
+  "expected_substring": "informação"
+ },
+ {
+  "question": "O que diz o documento 10: CONTRATO Nº 042/2025?",
+  "expected_doc": "10",
+  "expected_page": 1,
+  "expected_substring": "CONTRATO Nº 042/2025"
+ },
+ {
+  "question": "O que diz o documento 10: Contratante: ACME Ltda, CNPJ 1?",
+  "expected_doc": "10",
+  "expected_page": 1,
+  "expected_substring": "Contratante: ACME Ltda"
+ },
+ {
+  "question": "O que diz o documento 10: Contratada: Maria Souza, CPF 1?",
+  "expected_doc": "10",
+  "expected_page": 1,
+  "expected_substring": "Contratada: Maria Souza"
+ },
+ {
+  "question": "O que diz o documento 10: Valor total: R$ 1.234,56 (mil ?",
+  "expected_doc": "10",
+  "expected_page": 1,
+  "expected_substring": "Valor total: R$ 1"
+ },
+ {
+  "question": "O que diz o documento 10: Vigência: 01/02/2025 a 31/01/2?",
+  "expected_doc": "10",
+  "expected_page": 1,
+  "expected_substring": "Vigência: 01/02/2025 a 31/01/2026"
+ },
+ {
+  "question": "O que diz o documento 03: O contrato de prestação de ser?",
+  "expected_doc": "03",
+  "expected_page": 1,
+  "expected_substring": "O contrato de prestação de serviços foi assinado em 12/03/2025"
+ },
+ {
+  "question": "O que diz o documento 03: A rescisão exige aviso prévio ?",
+  "expected_doc": "03",
+  "expected_page": 1,
+  "expected_substring": "A rescisão exige aviso prévio de trinta dias e notificação por escrito"
+ },
+ {
+  "question": "O que diz o documento 04: O contrato de prestação de ser?",
+  "expected_doc": "04",
+  "expected_page": 1,
+  "expected_substring": "O contrato de prestação de serviços foi assinado em 12/03/2025"
+ },
+ {
+  "question": "O que diz o documento 04: A rescisão exige aviso prévio ?",
+  "expected_doc": "04",
+  "expected_page": 1,
+  "expected_substring": "A rescisão exige aviso prévio de trinta dias e notificação por escrito"
+ },
+ {
+  "question": "O que diz o documento 11: O contrato de prestação de ser?",
+  "expected_doc": "11",
+  "expected_page": 1,
+  "expected_substring": "O contrato de prestação de serviços foi assinado em 12/03/2025"
+ },
+ {
+  "question": "O que diz o documento 11: A rescisão exige aviso prévio ?",
+  "expected_doc": "11",
+  "expected_page": 1,
+  "expected_substring": "A rescisão exige aviso prévio de trinta dias e notificação por escrito"
+ },
+ {
+  "question": "Qual a página escaneada da avaliação?",
+  "expected_doc": "09",
+  "expected_page": 2,
+  "expected_substring": "avaliação técnica"
+ }
+]

@@ -58,6 +58,11 @@ services:
       WORKOS_REDIRECT_URI: ${WORKOS_REDIRECT_URI:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       INVITATION_FROM_EMAIL: ${INVITATION_FROM_EMAIL:-}
+      OCR_ENGINE: ${OCR_ENGINE:-none}
+      DOCLING_SERVE_URL: ${DOCLING_SERVE_URL:-http://docling:5001}
+      DOCLING_SERVE_VERSION: ${DOCLING_SERVE_VERSION:-v1.35.0-pt1}
+      OCR_MAX_PAGES_PER_JOB: ${OCR_MAX_PAGES_PER_JOB:-200}
+      OCR_JOB_DEADLINE_SECONDS: ${OCR_JOB_DEADLINE_SECONDS:-600}
     command: ["alembic", "upgrade", "head"]
     depends_on:
       postgres:
@@ -88,6 +93,23 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+
+  # Optional OCR sidecar (docker compose --profile ocr up docling). Pin the tag measured in
+  # the F0.3 spike; memory limit is the measured peak RSS (~1.8 GB) plus headroom.
+  docling:
+    image: ${DOCLING_SERVE_IMAGE:?pin a docling-serve tag from the F0.3 spike}
+    profiles: ["ocr"]
+    ports:
+      - "127.0.0.1:5001:5001"
+    deploy:
+      resources:
+        limits:
+          memory: 6g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
 
   frontend:
     image: arquivio-frontend:local
