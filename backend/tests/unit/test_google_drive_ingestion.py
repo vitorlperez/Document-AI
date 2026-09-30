@@ -1,5 +1,5 @@
-from io import BytesIO
 from datetime import UTC, datetime, timedelta
+from io import BytesIO
 from threading import Event, Lock, Thread
 from types import SimpleNamespace
 from uuid import uuid4

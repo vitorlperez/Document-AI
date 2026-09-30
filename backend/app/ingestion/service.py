@@ -14,7 +14,11 @@ from app.audit_usage.models import AuditLog, SavedQuery
 from app.audit_usage.service import UsageLimitExceeded, UsageService
 from app.core.scoping import OrganizationScope
 from app.ingestion.blocks import ExtractedBlock
-from app.ingestion.extraction import BASE_MIME_TYPES, ELIGIBLE_MIME_TYPES, eligible_mime_types
+from app.ingestion.extraction import (
+    BASE_MIME_TYPES,
+    ELIGIBLE_MIME_TYPES,  # noqa: F401 -- compatibility re-export
+    eligible_mime_types,
+)
 from app.ingestion.extraction.limits import MAX_CHUNKS_PER_DOCUMENT
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.knowledge.models import Document, DocumentChunk
