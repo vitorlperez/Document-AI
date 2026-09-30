@@ -10,10 +10,12 @@ const catalog = [
   { id: "deep", name: "Deep", parent_ids: ["pratico"] },
 ];
 
-test("a folder that already is a space is never offered", () => {
+test("a folder that already is a space is offered flagged as a complete re-sync", () => {
   const spaces = [{ name: "Test Document-AI", selection_kind: "selected", selection_folder_ids: ["tda"] }];
   const { folders } = newSpaceOptions(catalog, spaces);
-  assert.deepEqual(folders.map((item) => item.id), ["edicao", "pratico", "deep"]);
+  assert.deepEqual(folders.map((item) => item.id), ["tda", "edicao", "pratico", "deep"]);
+  assert.equal(folders.find((item) => item.id === "tda").existingSpace, "Test Document-AI");
+  assert.equal(folders.find((item) => item.id === "edicao").existingSpace, null);
 });
 
 test("a subfolder of an existing space is offered with a warning naming the space", () => {
@@ -24,14 +26,14 @@ test("a subfolder of an existing space is offered with a warning naming the spac
   assert.equal(folders.find((item) => item.id === "deep").coveredBy, "3° Edição");
 });
 
-test("an all-accessible space covers every folder and is not offered again", () => {
+test("an all-accessible space covers every folder and is flagged as existing", () => {
   const spaces = [{ name: "Todo o Drive acessível", selection_kind: "all_accessible", selection_folder_ids: [] }];
   const { folders, allAccessibleTaken } = newSpaceOptions(catalog, spaces);
   assert.equal(allAccessibleTaken, true);
   assert.ok(folders.every((item) => item.coveredBy === "Todo o Drive acessível"));
 });
 
-test("a folder is offered again after its space is deleted", () => {
+test("a folder that is not a space is a plain first sync", () => {
   const { folders, allAccessibleTaken } = newSpaceOptions(catalog, []);
   assert.equal(allAccessibleTaken, false);
   assert.deepEqual(folders.map((item) => [item.id, item.coveredBy]),

@@ -1,9 +1,11 @@
 export type CatalogFolder = { id: string; name: string; selectable?: boolean; parent_ids?: string[] };
 export type ExistingSpace = { name: string; selection_kind?: string; selection_folder_ids?: string[] };
-export type NewSpaceFolder = CatalogFolder & { coveredBy: string | null };
+/** `existingSpace` names the space that already is this folder: choosing it re-syncs that space completely. */
+export type NewSpaceFolder = CatalogFolder & { coveredBy: string | null; existingSpace: string | null };
 
-/** Folders offered for a new space: never one that already is a space; a folder
- * inside an existing space (or under "all accessible") names that space. */
+/** Folders offered for a space. One that already is a space is flagged (`existingSpace`) because
+ * selecting it is a complete re-sync; a folder inside an existing space (or under "all accessible")
+ * names that space in `coveredBy`. `allAccessibleTaken` flags that "all accessible" already exists. */
 export function newSpaceOptions(catalog: CatalogFolder[], spaces: ExistingSpace[]): { folders: NewSpaceFolder[]; allAccessibleTaken: boolean } {
   const allAccessible = spaces.find((space) => space.selection_kind === "all_accessible");
   const spaceByFolder = new Map<string, string>();
@@ -26,7 +28,7 @@ export function newSpaceOptions(catalog: CatalogFolder[], spaces: ExistingSpace[
     return allAccessible?.name ?? null;
   }
   return {
-    folders: catalog.filter((folder) => !spaceByFolder.has(folder.id)).map((folder) => ({ ...folder, coveredBy: coveringSpace(folder.id) })),
+    folders: catalog.map((folder) => { const existingSpace = spaceByFolder.get(folder.id) ?? null; return { ...folder, existingSpace, coveredBy: existingSpace ? null : coveringSpace(folder.id) }; }),
     allAccessibleTaken: Boolean(allAccessible),
   };
 }
