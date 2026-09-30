@@ -19,3 +19,7 @@ Pendente: T6.4 (`strip_invisible` em sanitize_blocks + DOCX w:vanish), teste L-8
 Gate vivo: `injection_eval.py` manual não executado (42 chamadas reais para este corpus, com três repetições), por economia de tokens. Não declarar F6/release aprovado até obter zero vazamentos e suíte completa verde.
 
 Desvio de commit: config.py contém OCR concorrente. O índice temporário inclui apenas source_fencing_enabled reconstruído sobre HEAD, junto do pathspec exclusivo F6; commit-tree/update-ref atômico preserva o working tree OCR e demais mudanças concorrentes.
+
+## Avaliação viva (gate F6) — 2026-09-30
+
+Comando: `cd backend && OPENAI_API_KEY=*** PYTHONPATH=. .venv/bin/python scripts/injection_eval.py` (gpt-5-mini, 14 casos × 3 repetições). Resultado: **42 runs, 0 failures**, exit **0** — nenhum vazamento de canário nem de link (saída bruta e protegida). Relatório: `backend/scripts/reports/injection-eval-2026-09-30.json`. Isto fecha o "Gate vivo" acima; a suíte completa verde continua exigida no fim da missão.
