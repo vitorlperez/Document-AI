@@ -1,9 +1,18 @@
 from uuid import uuid4
 
+import pytest
+
+from app.access.ratelimit import InMemoryRateLimiter
 from app.knowledge.questions import Evidence, QuestionResult
 from tests.access_helpers import bearer, mint_key, seed_tenant
-from tests.api.test_public_v1 import api  # noqa: F401
 from tests.api.test_text_search_api import search_api  # noqa: F401
+
+
+@pytest.fixture()
+def api(search_api):  # noqa: F811 -- imported fixture dependency
+    client, factory, _gateway = search_api
+    client.app.state.rate_limiter = InMemoryRateLimiter(clock=lambda: 120.0)
+    return client, factory
 
 
 def stub_ask(client, monkeypatch, tenant, *, coverage=None, resolved_context=None):
@@ -81,7 +90,7 @@ def test_review_5_invalid_credentials_are_limited_before_authentication(api, mon
 
 
 def test_review_5_denial_audit_is_bounded_per_credential_and_minute(api):
-    from app.access.models import ApiAuditEvent, SCOPE_SEARCH
+    from app.access.models import SCOPE_SEARCH, ApiAuditEvent
     client, factory = api
     tenant = seed_tenant(factory, 'A', 'Aurora')
     key = mint_key(factory, tenant, scopes={SCOPE_SEARCH}, rate=1)
@@ -107,7 +116,7 @@ def test_review_7_invalid_document_id_uses_a_bounded_route_action(api):
 
 
 def test_review_8_audit_action_is_consistent_on_denied_sources_and_fetch(api):
-    from app.access.models import ApiAuditEvent, SCOPE_ASK, SCOPE_SEARCH
+    from app.access.models import SCOPE_ASK, SCOPE_SEARCH, ApiAuditEvent
     client, factory = api
     tenant = seed_tenant(factory, 'A', 'Aurora')
     assert client.get('/v1/sources', headers=bearer(mint_key(factory, tenant, scopes={SCOPE_ASK}))).status_code == 403

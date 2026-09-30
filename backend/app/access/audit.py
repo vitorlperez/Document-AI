@@ -2,9 +2,9 @@
 import hashlib
 import logging
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from sqlalchemy import delete
-from uuid import UUID
 
 from app.access.models import ApiAuditEvent
 from app.access.principal import Principal

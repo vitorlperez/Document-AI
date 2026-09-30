@@ -34,7 +34,6 @@ from app.knowledge.retrieval import RetrievalService
 from app.knowledge.untrusted import UNTRUSTED_NOTICE
 from app.library.service import LibraryService
 
-
 IP_RATE_LIMIT = 600  # Per peer IP, before any credential/database work.
 
 
@@ -45,7 +44,7 @@ def _audit_allowed(request: Request, principal: Principal, code: int) -> bool:
         return request.app.state.rate_limiter.hit(
             key=f"audit:{principal.credential_id}:{request.scope['route'].name}:{code}", limit=1,
         ).allowed
-    except Exception:
+    except Exception:  # noqa: BLE001 -- limiter failures must not amplify denial writes
         return False  # Do not turn a limiter outage into an unbounded denial audit stream.
 
 
@@ -134,7 +133,8 @@ def principal_dep(
 def guarded(scope_name: str | None, bucket: str, *, cap: str | None = None):
     def dependency(request: Request, response: Response, principal: Principal = Depends(principal_dep)) -> Principal:
         try:
-            if scope_name is not None: principal.require(scope_name)
+            if scope_name is not None:
+                principal.require(scope_name)
         except InsufficientScope as error:
             _record(request, principal, bucket, "denied", 403)
             raise HTTPException(status.HTTP_403_FORBIDDEN, f"insufficient scope: {error.needed}") from error
