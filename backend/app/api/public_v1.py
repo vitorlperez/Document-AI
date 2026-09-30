@@ -131,10 +131,10 @@ def principal_dep(
     return principal
 
 
-def guarded(scope_name: str, bucket: str, *, cap: str | None = None):
+def guarded(scope_name: str | None, bucket: str, *, cap: str | None = None):
     def dependency(request: Request, response: Response, principal: Principal = Depends(principal_dep)) -> Principal:
         try:
-            principal.require(scope_name)
+            if scope_name is not None: principal.require(scope_name)
         except InsufficientScope as error:
             _record(request, principal, bucket, "denied", 403)
             raise HTTPException(status.HTTP_403_FORBIDDEN, f"insufficient scope: {error.needed}") from error
@@ -170,7 +170,7 @@ def _record(request: Request, principal: Principal, action: str, outcome: str, h
 
 
 @router.get("/whoami")
-def whoami(request: Request, principal: Principal = Depends(guarded(SCOPE_SEARCH, "whoami"))) -> dict[str, object]:
+def whoami(request: Request, principal: Principal = Depends(guarded(None, "whoami"))) -> dict[str, object]:
     return {"organization_id": str(principal.organization_id), "scopes": sorted(principal.scopes),
             "restricted_to_nodes": [str(n) for n in principal.node_ids] if principal.node_ids else None}
 

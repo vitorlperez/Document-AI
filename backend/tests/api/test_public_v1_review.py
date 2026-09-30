@@ -114,3 +114,13 @@ def test_review_8_audit_action_is_consistent_on_denied_sources_and_fetch(api):
     assert client.get(f'/v1/documents/{tenant.document_id}', headers=bearer(mint_key(factory, tenant, scopes={SCOPE_SEARCH}))).status_code == 403
     with factory() as session:
         assert {r.action for r in session.query(ApiAuditEvent)} == {'list_sources', 'fetch'}
+
+
+def test_review_11_whoami_accepts_every_valid_scope(api):
+    from app.access.models import ALL_SCOPES
+    client, factory = api
+    tenant = seed_tenant(factory, 'A', 'Aurora')
+    for scope in ALL_SCOPES:
+        response = client.get('/v1/whoami', headers=bearer(mint_key(factory, tenant, scopes={scope})))
+        assert response.status_code == 200
+        assert response.json()['scopes'] == [scope]
