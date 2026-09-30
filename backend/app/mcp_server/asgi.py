@@ -13,7 +13,12 @@ from starlette.routing import Route
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.access.audit import AuditWriter
-from app.access.principal import InsufficientScope, Principal
+from app.access.principal import (
+    ApiKeyAuthenticator,
+    InsufficientScope,
+    InvalidCredential,
+    Principal,
+)
 from app.access.ratelimit import RateLimiter, RedisRateLimiter
 from app.core.config import Settings, get_settings
 from app.core.database import build_engine, build_session_factory
@@ -33,8 +38,9 @@ class McpAuthMiddleware:
     """Bearer validation, per-call principal resolution and rate limiting in front of the MCP endpoint."""
 
     def __init__(self, app: ASGIApp, *, path: str, metadata_url: str, verifier: AuthKitTokenVerifier,
-                 session_factory, rate_limiter: RateLimiter, limit: int, audit: AuditWriter):
+                 session_factory, rate_limiter: RateLimiter, limit: int, audit: AuditWriter, static_keys: bool = False):
         self.app, self.path, self.metadata_url = app, path, metadata_url
+        self.static_keys = static_keys
         self.verifier, self.factory, self.limiter, self.limit, self.audit = verifier, session_factory, rate_limiter, limit, audit
 
     def _unauthorized(self, with_error: bool) -> JSONResponse:
@@ -44,6 +50,14 @@ class McpAuthMiddleware:
         return JSONResponse({"error": "unauthorized"}, status_code=401, headers={"WWW-Authenticate": challenge})
 
     def _resolve(self, token: str) -> Principal:
+        if self.static_keys and token.startswith("arq_"):
+            with self.factory() as session:
+                try:
+                    principal = ApiKeyAuthenticator(session).authenticate(token)
+                except InvalidCredential as error:
+                    raise InvalidToken from error
+                session.commit()  # last-used bookkeeping
+                return principal
         verified = self.verifier.verify(token)
         with self.factory() as session:  # every request: revocation/deactivation apply immediately
             return McpPrincipalResolver(session).resolve(verified.subject)
@@ -63,7 +77,7 @@ class McpAuthMiddleware:
             await self._unauthorized(True)(scope, receive, send)
             return
         try:
-            decision = self.limiter.hit(key=f"mcp:{principal.user_id}", limit=self.limit)
+            decision = self.limiter.hit(key=f"mcp:{principal.credential_id or principal.user_id}", limit=self.limit)
         except Exception:  # noqa: BLE001 — limiter down: fail closed
             await JSONResponse({"error": "rate limiter unavailable"}, status_code=503,
                                headers={"Retry-After": "5"})(scope, receive, send)
@@ -145,7 +159,7 @@ def build_mcp_app(settings: Settings, session_factory, rate_limiter: RateLimiter
     app.add_middleware(
         McpAuthMiddleware, path=path, metadata_url=origin + metadata_path, verifier=verifier,
         session_factory=session_factory, rate_limiter=rate_limiter, limit=settings.mcp_rate_limit_per_minute,
-        audit=audit,
+        audit=audit, static_keys=settings.mcp_static_key_enabled,
     )
     return app
 

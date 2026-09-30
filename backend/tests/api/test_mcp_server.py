@@ -18,7 +18,7 @@ from app.identity.models import AuthIdentity
 from app.mcp_server.asgi import build_mcp_app
 from app.mcp_server.auth import AuthKitTokenVerifier
 from app.organizations.models import Membership
-from tests.access_helpers import seed_tenant
+from tests.access_helpers import mint_key, seed_tenant
 
 BASE, RESOURCE, ISSUER = "https://mcp.example.test", "https://mcp.example.test/mcp", "https://auth.example.test"
 HEADERS = {"Accept": "application/json, text/event-stream", "Content-Type": "application/json",
@@ -37,9 +37,10 @@ def factory():
     return sessionmaker(bind=engine, expire_on_commit=False)
 
 
-def _make_client(factory, private_key, *, limit=60):
+def _make_client(factory, private_key, *, limit=60, static_keys=False):
     settings = Settings(_env_file=None, database_url="postgresql+psycopg://test_user:not-a-secret@localhost:5432/test_db", mcp_resource_url=RESOURCE, mcp_issuer_url=ISSUER,
-                        mcp_allowed_hosts="mcp.example.test", mcp_rate_limit_per_minute=limit)
+                        mcp_allowed_hosts="mcp.example.test", mcp_rate_limit_per_minute=limit,
+                        mcp_static_key_enabled=static_keys)
     verifier = AuthKitTokenVerifier(issuer=ISSUER, resource=RESOURCE, key_resolver=lambda _t: private_key.public_key())
     app = build_mcp_app(settings, factory, InMemoryRateLimiter(), verifier)
     return TestClient(app, base_url=BASE)
@@ -189,3 +190,23 @@ def test_unexpected_host_is_rejected(client, world):
     response = client.post("/mcp", headers=HEADERS | {"Authorization": f"Bearer {token_a}", "Host": "evil.example.test"},
                            json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
     assert response.status_code == 421
+
+
+def test_plan_c_static_api_key_is_off_by_default(client, factory):
+    a = seed_tenant(factory, "A", "Projeto Aurora")
+    assert rpc_raw(client, mint_key(factory, a), "tools/list").status_code == 401
+
+
+def test_plan_c_static_api_key_works_when_enabled_and_stays_scoped(factory, private_key):
+    a, b = seed_tenant(factory, "A", "Projeto Aurora"), seed_tenant(factory, "B", "Projeto Zenite")
+    key_a, revoked = mint_key(factory, a), mint_key(factory, a, revoked=True)
+    only_search = mint_key(factory, b, scopes={"search:read"})
+    with _make_client(factory, private_key, static_keys=True) as static:
+        assert [t["name"] for t in rpc(static, key_a, "tools/list")["result"]["tools"]] == ["search", "fetch", "list_sources"]
+        assert call(static, key_a, "search", {"query": "Aurora"})["result"]["structuredContent"]["results"]
+        assert call(static, key_a, "search", {"query": "Zenite"})["result"]["structuredContent"]["results"] == []
+        assert call(static, only_search, "fetch", {"id": str(b.document_id)})["result"]["isError"] is True
+        assert rpc_raw(static, revoked, "tools/list").status_code == 401
+        assert rpc_raw(static, "arq_nope_nothing", "tools/list").status_code == 401
+    with factory() as s:
+        assert s.query(ApiAuditEvent).filter_by(channel="mcp", action="search").count() == 2
