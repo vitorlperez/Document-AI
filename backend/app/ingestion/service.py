@@ -11,8 +11,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog, SavedQuery
-from app.audit_usage.service import ACTIVE_DOCUMENT_LIMIT, UsageLimitExceeded, UsageService
+from app.audit_usage.service import UsageLimitExceeded, UsageService
 from app.core.scoping import OrganizationScope
+from app.ingestion.blocks import ExtractedBlock
+from app.ingestion.extraction import BASE_MIME_TYPES, ELIGIBLE_MIME_TYPES, eligible_mime_types
+from app.ingestion.extraction.limits import MAX_CHUNKS_PER_DOCUMENT
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.knowledge.models import Document, DocumentChunk
 from app.organizations.models import Membership, MembershipRole, Organization
@@ -20,12 +23,7 @@ from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 PROCESSING_VERSION = "v2"
 JOB_LEASE = timedelta(minutes=20)
-ELIGIBLE_MIME_TYPES = {
-    "application/vnd.google-apps.document",
-    "application/pdf",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "text/markdown",
-}
+
 
 
 class SyncAccessDenied(PermissionError):
@@ -67,15 +65,6 @@ class DiscoveryResult:
 
 
 @dataclass(frozen=True)
-class ExtractedBlock:
-    """A structurally bounded piece of extracted text and its known location."""
-
-    text: str
-    page_number: int | None = None
-    section_path: str | None = None
-
-
-@dataclass(frozen=True)
 class ManagedDocument:
     id: UUID
     workspace_folder_id: UUID
@@ -91,8 +80,10 @@ class RemovedWorkspace:
 
 
 class IngestionService:
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, *, settings=None):
         self.session = session
+        self.settings = settings
+        self.eligible_mime_types = eligible_mime_types(settings) if settings else BASE_MIME_TYPES
 
     def require_active_member(self, *, scope: OrganizationScope, user_id: UUID) -> None:
         membership = self.session.scalar(
@@ -496,7 +487,7 @@ class IngestionService:
 
         failures = 0
         for discovered in current_documents:
-            if discovered.mime_type not in ELIGIBLE_MIME_TYPES:
+            if discovered.mime_type not in self.eligible_mime_types:
                 self._upsert_nonindexed(
                     job, discovered, status="ignored", error_code="unsupported_file_type"
                 )
@@ -516,7 +507,7 @@ class IngestionService:
             update_progress(self.session, job, total=len(manual_documents), processed=len(manual_documents),
                 outcomes=[{"external_id": item.external_file_id, "name": item.name,
                            "processed": True, "error_code": item.error_code or
-                           ("empty_extracted_text" if item.mime_type in ELIGIBLE_MIME_TYPES and not (item.text or "").strip() else None)}
+                           ("empty_extracted_text" if item.mime_type in self.eligible_mime_types and not (item.text or "").strip() else None)}
                           for item in manual_documents])
         if finalize:
             return self.finalize_reconciliation(
@@ -881,7 +872,7 @@ class IngestionService:
             .select_from(Document)
             .where(Document.organization_id == organization_id, Document.index_status == "indexed")
         )
-        if active_count is not None and active_count >= ACTIVE_DOCUMENT_LIMIT:
+        if active_count is not None and active_count >= (self.settings.active_document_limit if self.settings else 500):
             raise UsageLimitExceeded("organization active document limit reached")
 
 
@@ -894,6 +885,12 @@ def _chunk_document(discovered: DiscoveredDocument) -> list[ExtractedBlock]:
     chunks: list[ExtractedBlock] = []
     for block in blocks:
         chunks.extend(_chunk_block(block))
+        if len(chunks) > MAX_CHUNKS_PER_DOCUMENT:
+            last = chunks[MAX_CHUNKS_PER_DOCUMENT - 1]
+            return chunks[:MAX_CHUNKS_PER_DOCUMENT - 1] + [ExtractedBlock(
+                "[Conteúdo truncado: limite de trechos do documento atingido.]",
+                last.page_number, last.section_path,
+            )]
     return chunks
 
 

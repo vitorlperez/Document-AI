@@ -22,6 +22,8 @@ class Settings(BaseSettings):
             return "postgresql+psycopg://" + value[len("postgresql://"):]
         return value
     environment: str = "development"
+    new_formats_enabled: bool = False
+    active_document_limit: int = Field(default=500, gt=0)
     service_name: str = "document-intelligence-api"
     auth_session_cookie_name: str = "document_intelligence_session"
     auth_login_state_cookie_name: str = "document_intelligence_login_state"
