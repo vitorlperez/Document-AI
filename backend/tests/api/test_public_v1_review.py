@@ -93,3 +93,14 @@ def test_review_5_denial_audit_is_bounded_per_credential_and_minute(api):
     with factory() as session:
         statuses = [row.http_status for row in session.query(ApiAuditEvent)]
     assert sorted(statuses) == [200, 403, 429]
+
+
+def test_review_7_invalid_document_id_uses_a_bounded_route_action(api):
+    from app.access.models import ApiAuditEvent
+    client, factory = api
+    tenant = seed_tenant(factory, 'A', 'Aurora')
+    response = client.get('/v1/documents/' + 'attacker' * 30, headers=bearer(mint_key(factory, tenant)))
+    assert response.status_code == 422
+    with factory() as session:
+        row = session.query(ApiAuditEvent).one()
+        assert row.action == 'document' and len(row.action) <= 40

@@ -73,7 +73,7 @@ class AuditedRoute(APIRoute):
                     outcome = "ok" if code < 400 else "rate_limited" if code == 429 else "denied" if code in {403, 404} else "error"
                     AuditWriter(request.app.state.session_factory).record(
                         principal=principal, organization_id=principal.organization_id,
-                        channel=principal.channel, action=metadata.get("action", request.url.path.rsplit("/", 1)[-1]),
+                        channel=principal.channel, action=metadata.get("action", self.name)[:40],
                         status=outcome, http_status=code, request_id=current_request_id(),
                         latency_ms=round((time.perf_counter() - request.state.started_at) * 1000),
                         result_count=metadata.get("result_count"), query=metadata.get("query"),
