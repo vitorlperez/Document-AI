@@ -88,6 +88,10 @@ class GoogleItemUnavailable(SourceItemUnavailable):
     pass
 
 
+class GoogleItemTooLarge(GoogleItemUnavailable):
+    """Google refused to export the file because it exceeds its own export cap."""
+
+
 QUOTA_REASONS = frozenset({"rateLimitExceeded", "userRateLimitExceeded", "sharingRateLimitExceeded"})
 DAILY_QUOTA_REASONS = frozenset({"dailyLimitExceeded"})
 from app.ingestion.extraction.mime import GOOGLE_EXPORT_MIME
@@ -125,6 +129,8 @@ def raise_for_google(response: httpx.Response) -> None:
         reason = google_error_reason(response)
         if reason in DAILY_QUOTA_REASONS or reason in QUOTA_REASONS:
             raise RemoteThrottled(parse_retry_after(response.headers.get("Retry-After")), reason=reason)
+        if reason == "exportSizeLimitExceeded":
+            raise GoogleItemTooLarge(reason)
         if reason in ITEM_FORBIDDEN_REASONS:
             raise GoogleItemUnavailable(reason)
         raise GoogleRemoteUnauthorized()

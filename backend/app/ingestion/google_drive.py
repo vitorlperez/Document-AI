@@ -24,6 +24,7 @@ from app.integrations.google_drive import (
     GoogleCredentials,
     GoogleCursorInvalid,
     GoogleDriveOAuthClient,
+    GoogleItemTooLarge,
     GoogleRemoteUnauthorized,
     RemoteFile,
     RemoteFolder,
@@ -314,6 +315,8 @@ class GoogleDriveDocumentProvider:
                 ),
             )
             blocks = extract_blocks(mime_type, content, ocr=self.ocr, budget=self.budget)
+        except GoogleItemTooLarge:
+            return DiscoveredDocument(**base, error_code="file_too_large")
         except (GoogleRemoteUnauthorized, SourceItemUnavailable):
             # A listing token can remain valid while one shared/export-restricted
             # file rejects its content request. Treat that as an item failure;

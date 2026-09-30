@@ -44,7 +44,7 @@ celery_app.conf.update(
 )
 
 
-TERMINAL_ERROR_CODES = frozenset({"file_encrypted", "file_too_large", "ocr_document_too_large"})
+TERMINAL_ERROR_CODES = frozenset({"file_encrypted", "ocr_document_too_large"})  # file_too_large is retried: the limit is configurable
 
 
 def create_celery_app(settings: Settings) -> Celery:

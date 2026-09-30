@@ -7,6 +7,7 @@ from test_google_drive_ingestion import (
     FakeGoogleDriveClient,
     encrypted_credentials,
     fresh_credentials,
+    selection,
 )
 
 from app.ingestion.extraction import BASE_MIME_TYPES, ELIGIBLE_MIME_TYPES
@@ -113,3 +114,27 @@ def test_google_propagates_encrypted_pdf_code():
         encrypted_credentials=fresh_credentials(cipher), remote_file=remote
     )
     assert result.error_code == "file_encrypted"
+
+
+def test_google_export_size_limit_maps_to_file_too_large_code():
+    from app.ingestion.google_drive import GoogleDriveDocumentProvider
+    from app.integrations.google_drive import GoogleItemTooLarge
+
+    assert issubclass(GoogleItemTooLarge, Exception)
+
+    class Client(FakeGoogleDriveClient):
+        def read_file(self, *, credentials, remote_file):
+            raise GoogleItemTooLarge("exportSizeLimitExceeded")
+
+    remote = RemoteFile("id", "big", "application/vnd.google-apps.document", "", None)
+    cipher, _ = encrypted_credentials()
+    found = GoogleDriveDocumentProvider(Client([remote], {}), cipher).discover(
+        encrypted_credentials=fresh_credentials(cipher), selections=[selection("all_accessible")]
+    )
+    assert [d.error_code for d in found.documents] == ["file_too_large"]
+
+
+def test_file_too_large_is_retried_by_the_next_sync_when_the_limit_changes():
+    from app.ingestion.tasks import TERMINAL_ERROR_CODES
+
+    assert "file_too_large" not in TERMINAL_ERROR_CODES
