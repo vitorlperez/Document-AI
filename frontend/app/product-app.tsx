@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronRight, CircleAlert, ExternalLink, FileText, FolderOpe
 import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AccessSettings } from "./access-settings";
 import { LandingPage } from "./landing-page";
 import { cleanAnswerForDisplay } from "./answer-display";
 import { AnswerMarkdown } from "./answer-markdown";
@@ -170,7 +171,7 @@ export function ProductApp({ screen }: { screen: Screen }) {
     {screen === "company" && <CompanyDashboard company={company} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "library" && <LibraryScreen key={company.id} company={company} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "team" && <TeamScreen key={company.id} company={company} setError={setError} setNotice={setNotice} />}
-    {screen === "integrations" && (company.role === "member" ? <section role="alert" className="mx-auto max-w-lg rounded-lg border border-line bg-white p-8 text-center"><ShieldCheck className="mx-auto text-primary" size={28} /><h1 className="mt-4 text-xl font-semibold text-ink">Acesso restrito</h1><p className="mt-2 text-sm text-muted-foreground">Somente responsáveis e administradores podem gerenciar integrações.</p><button onClick={() => router.push(companyPath(company.id))} className="mt-5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white">Voltar à conversa</button></section> : <IntegrationScreen key={company.id} company={company} setError={setError} setNotice={setNotice} />)}
+    {screen === "integrations" && (company.role === "member" ? <section role="alert" className="mx-auto max-w-lg rounded-lg border border-line bg-white p-8 text-center"><ShieldCheck className="mx-auto text-primary" size={28} /><h1 className="mt-4 text-xl font-semibold text-ink">Acesso restrito</h1><p className="mt-2 text-sm text-muted-foreground">Somente responsáveis e administradores podem gerenciar integrações.</p><button onClick={() => router.push(companyPath(company.id))} className="mt-5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white">Voltar à conversa</button></section> : <div><IntegrationScreen key={company.id} company={company} setError={setError} setNotice={setNotice} /><AccessSettings key={`access-${company.id}`} organizationId={company.id} api={api} /></div>)}
   </Shell>;
 }
 
