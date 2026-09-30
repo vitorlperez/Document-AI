@@ -3,7 +3,6 @@
 import json
 import logging
 import secrets
-import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -26,6 +25,7 @@ from app.identity.models import UserSession
 from app.ingestion.service import ELIGIBLE_MIME_TYPES, DiscoveredDocument, DiscoveryResult
 from app.integrations.errors import SourceRemoteUnauthorized
 from app.integrations.google_drive import RemoteFolder
+from app.integrations.http import RemoteHttp
 from app.integrations.models import DataSource, OAuthConnectionState
 from app.organizations.models import Membership, MembershipRole
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
@@ -127,8 +127,9 @@ class OneDriveCipher:
 
 class MicrosoftGraphClient:
     def __init__(
-        self, *, client_id: str | None, client_secret: str | None, redirect_uri: str | None
+        self, *, client_id: str | None, client_secret: str | None, redirect_uri: str | None, http: RemoteHttp | None = None
     ):
+        self.http = http or RemoteHttp()
         self.client_id, self.client_secret, self.redirect_uri = (
             client_id,
             client_secret,
@@ -315,25 +316,14 @@ class MicrosoftGraphClient:
 
     def read_file(self, *, credentials: OneDriveCredentials, item_id: str) -> bytes:
         url = f"{GRAPH_ROOT}/me/drive/items/{quote(item_id, safe='')}/content"
-        for attempt in range(4):
-            response = httpx.get(
-                url,
-                headers={"Authorization": f"Bearer {credentials.access_token}"},
-                timeout=30,
-                follow_redirects=True,
-            )
-            if response.status_code in {401, 403}:
-                raise SourceRemoteUnauthorized()
-            if response.status_code == 429 and attempt < 3:
-                retry_after = response.headers.get("Retry-After", "1")
-                try:
-                    time.sleep(min(max(float(retry_after), 0.0), 30.0))
-                except ValueError:
-                    time.sleep(1)
-                continue
-            response.raise_for_status()
-            return response.content
-        raise RuntimeError("Microsoft Graph throttling limit reached")
+        response = self.http.request(
+            "GET", url, headers={"Authorization": f"Bearer {credentials.access_token}"},
+            timeout=30, follow_redirects=True,
+        )
+        if response.status_code in {401, 403}:
+            raise SourceRemoteUnauthorized()
+        response.raise_for_status()
+        return response.content
 
     def get_item(self, *, credentials: OneDriveCredentials, item_id: str) -> dict[str, Any] | None:
         url = f"{GRAPH_ROOT}/me/drive/items/{quote(item_id, safe='')}?$select=id,name,file,folder,parentReference,webUrl,lastModifiedDateTime,deleted"
@@ -374,32 +364,23 @@ class MicrosoftGraphClient:
         self, url: str, *, credentials: OneDriveCredentials, allow_expired_delta: bool = False
     ) -> dict[str, Any]:
         self._validate_graph_url(url)
-        for attempt in range(4):
-            response = httpx.get(
-                url, headers={"Authorization": f"Bearer {credentials.access_token}"}, timeout=20
-            )
-            if response.status_code in {401, 403}:
-                raise SourceRemoteUnauthorized()
-            if allow_expired_delta and response.status_code == 410:
+        response = self.http.request("GET",
+            url, headers={"Authorization": f"Bearer {credentials.access_token}"}, timeout=20
+        )
+        if response.status_code in {401, 403}:
+            raise SourceRemoteUnauthorized()
+        if allow_expired_delta and response.status_code == 410:
+            raise OneDriveDeltaExpired()
+        if allow_expired_delta and response.status_code == 404:
+            try:
+                error_payload = response.json().get("error", {})
+            except (ValueError, AttributeError):
+                error_payload = {}
+            if isinstance(error_payload, dict) and error_payload.get("code") == "itemNotFound":
                 raise OneDriveDeltaExpired()
-            if allow_expired_delta and response.status_code == 404:
-                try:
-                    error_payload = response.json().get("error", {})
-                except (ValueError, AttributeError):
-                    error_payload = {}
-                if isinstance(error_payload, dict) and error_payload.get("code") == "itemNotFound":
-                    raise OneDriveDeltaExpired()
-            if response.status_code == 429 and attempt < 3:
-                retry_after = response.headers.get("Retry-After", "1")
-                try:
-                    time.sleep(min(max(float(retry_after), 0.0), 30.0))
-                except ValueError:
-                    time.sleep(1)
-                continue
-            response.raise_for_status()
-            data = response.json()
-            return data if isinstance(data, dict) else {}
-        raise RuntimeError("Microsoft Graph throttling limit reached")
+        response.raise_for_status()
+        data = response.json()
+        return data if isinstance(data, dict) else {}
 
     @staticmethod
     def _external_id(item: dict[str, Any], *, fallback_drive_id: str | None = None) -> str:

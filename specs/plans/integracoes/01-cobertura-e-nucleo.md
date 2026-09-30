@@ -225,6 +225,8 @@ select provider, status, count(*) from data_sources group by 1, 2;
 
 ---
 
+> Execução: F0.1 teve baseline local 459 passed e cabeça 0018; contagens dev/piloto não disponíveis. F0.3/F0.4 ficam com outra frente. Em F1, Retry-After não é limitado a max_delay (isso repetiria antes do prazo remoto); o orçamento de 90 s libera o job quando necessário. O teste de 403-item usa credenciais frescas para não contar o refresh preventivo como refresh causado por 403. Celery eager executa retries imediatamente; o teste intercepta retry para provar o countdown.
+
 # FASE 1 — Núcleo HTTP: `RemoteHttp`, 403-quota × 403-auth, 429 (≈ 3 d)
 
 Objetivo mensurável: **0** transições `reauth_required` causadas por quota/permissão de arquivo; 429 em Drive/Graph/Notion nunca derruba a fonte nem o job na primeira ocorrência; um só lugar para política de retry.

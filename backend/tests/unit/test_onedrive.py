@@ -5,6 +5,7 @@ import httpx
 import pytest
 from cryptography.fernet import Fernet
 
+from app.integrations.http import RemoteHttp
 from app.integrations.onedrive import (
     GRAPH_ROOT,
     GRAPH_SCOPES,
@@ -183,7 +184,7 @@ def test_graph_file_download_retries_throttling_with_retry_after(
         return httpx.Response(200, content=b"document bytes", request=httpx.Request("GET", url))
 
     monkeypatch.setattr("app.integrations.onedrive.httpx.get", get)
-    monkeypatch.setattr("app.integrations.onedrive.time.sleep", waits.append)
+    client.http = RemoteHttp(sleep=waits.append, monotonic=lambda: 0.0, jitter=lambda: 1.0)
 
     content = client.read_file(credentials=credentials, item_id="file-1")
 

@@ -3,6 +3,7 @@ from threading import Lock
 from time import sleep
 from uuid import uuid4
 
+import httpx
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -12,7 +13,9 @@ from app.core.models import Base
 from app.core.scoping import OrganizationScope
 from app.identity.auth import hash_secret
 from app.identity.models import User, UserSession
+from app.integrations.errors import SourceItemUnavailable
 from app.integrations.google_drive import GoogleCredentials
+from app.integrations.http import RemoteHttp
 from app.integrations.models import DataSource, OAuthConnectionState
 from app.integrations.notion import (
     NotionConnectionService,
@@ -354,3 +357,53 @@ def test_notion_manual_reprocess_forces_page_read_when_timestamp_is_unchanged_fu
 
     assert client.read_ids == ["page"]
     assert [document.external_file_id for document in discovery.documents] == ["page"]
+
+
+def _reply(status: int, payload: dict | None = None, headers: dict[str, str] | None = None) -> httpx.Response:
+    return httpx.Response(status, json=payload or {}, headers=headers or {}, request=httpx.Request("POST", "https://api.notion.com/v1/search"))
+
+
+def test_notion_429_is_retried_with_retry_after(monkeypatch: pytest.MonkeyPatch) -> None:
+    waits: list[float] = []
+    replies = iter([_reply(429, headers={"Retry-After": "1"}), _reply(200, {"results": [], "has_more": False})])
+    monkeypatch.setattr(httpx, "post", lambda url, **kwargs: next(replies))
+    client = NotionOAuthClient(
+        client_id="i", client_secret="s", redirect_uri="https://cb",
+        http=RemoteHttp(sleep=waits.append, monotonic=lambda: 0.0, jitter=lambda: 1.0),
+    )
+    assert client.list_pages(credentials=GoogleCredentials("token", None, None)) == []
+    assert waits == [1.0]
+
+
+def test_notion_403_and_404_are_item_failures_and_401_is_auth(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.integrations.notion import NotionRemoteUnauthorized
+
+    client = NotionOAuthClient(client_id="i", client_secret="s", redirect_uri="https://cb")
+    credentials = GoogleCredentials("token", None, None)
+    for status, expected in ((403, SourceItemUnavailable), (404, SourceItemUnavailable), (401, NotionRemoteUnauthorized)):
+        monkeypatch.setattr(httpx, "get", lambda url, status=status, **kwargs: _reply(status))
+        with pytest.raises(expected):
+            client._request("GET", "/v1/blocks/p/children", credentials=credentials)
+
+
+def test_notion_restricted_page_is_dropped_from_the_index_without_failing_the_sync() -> None:
+    class FakeCipher:
+        def decrypt(self, value: str) -> GoogleCredentials:
+            return GoogleCredentials("token", None, None)
+
+    class FakeClient:
+        def list_pages(self, *, credentials: GoogleCredentials) -> list[NotionPage]:
+            return [NotionPage("p1", "Runbook", "https://notion.so/p1", None), NotionPage("p2", "Private", "https://notion.so/p2", None)]
+
+        def page_blocks(self, *, credentials: GoogleCredentials, page_id: str) -> list[dict[str, object]]:
+            if page_id == "p2":
+                raise SourceItemUnavailable("restricted_resource")
+            return [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "Runbook body"}]}}]
+
+    result = NotionDocumentProvider(FakeClient(), FakeCipher()).discover(
+        encrypted_credentials="encrypted",
+        selections=[type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()],
+    )
+
+    assert [document.external_file_id for document in result.documents] == ["p1"]
+    assert "p2" in result.removed_file_ids

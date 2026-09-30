@@ -716,3 +716,19 @@ def test_google_manual_reprocess_forces_remote_read_without_delta_change_full_sn
 
     assert [document.external_file_id for document in result.documents] == ["manual"]
     assert client.read_calls == ["manual"]
+
+
+def test_item_level_403_fails_the_document_without_refreshing_or_reauth() -> None:
+    from app.integrations.google_drive import GoogleItemUnavailable
+
+    client = FakeGoogleDriveClient([remote_file("locked", PDF)], {"locked": b""})
+    client.read_error = GoogleItemUnavailable("insufficientFilePermissions")
+    cipher, _ = encrypted_credentials()
+    credentials = fresh_credentials(cipher)
+
+    discovered = GoogleDriveDocumentProvider(client, cipher).discover(
+        encrypted_credentials=credentials, selections=[selection("folder", "root")]
+    )
+
+    assert discovered.documents[0].error_code == "source_file_unavailable"
+    assert client.refresh_calls == []

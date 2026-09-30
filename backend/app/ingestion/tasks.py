@@ -22,6 +22,7 @@ from app.integrations.google_drive import (
     CredentialCipher,
     GoogleDriveOAuthClient,
 )
+from app.integrations.http import RemoteThrottled
 from app.integrations.models import DataSource
 from app.integrations.registry import IntegrationRegistry
 from app.knowledge.models import Document
@@ -199,6 +200,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
     session_factory = build_session_factory(build_engine(settings))
     with session_factory() as session:
         service = IngestionService(session)
+        source_provider = "unknown"
         source: DataSource | None = None
         run_token: str | None = None
         try:
@@ -412,6 +414,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 extra={
                     "event": "ingestion_sync",
                     "result": "reauth_required",
+                    "reason": "remote_401_or_403",
                     "provider": source_provider,
                     "action": "reconcile",
                     "job_id": job_id,
@@ -461,6 +464,20 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                     "job_id": job_id,
                 },
             )
+        except RemoteThrottled as error:
+            session.rollback()
+            if run_token is None:
+                raise
+            exhausted = self.request.retries >= self.max_retries
+            if exhausted:
+                service.fail(job_id=UUID(job_id), error_code="source_rate_limited", expected_run_token=run_token)
+            else:
+                service.release_for_retry(job_id=UUID(job_id), expected_run_token=run_token)
+            session.commit()
+            logger.warning("remote source rate limited", extra={"event": "ingestion_sync", "result": "rate_limited", "provider": source_provider, "job_id": job_id})
+            if exhausted:
+                return
+            raise self.retry(countdown=max(error.retry_after_seconds or 0, 30 * (2 ** self.request.retries)))
         except Exception as error:
             session.rollback()
             if run_token is None:

@@ -2,8 +2,6 @@
 
 import base64
 import secrets
-import threading
-import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -19,9 +17,16 @@ from app.core.scoping import OrganizationScope
 from app.identity.auth import hash_secret
 from app.identity.models import UserSession
 from app.ingestion.service import DiscoveryResult
-from app.integrations.google_drive import GoogleCredentials, GoogleRemoteUnauthorized, RemoteFolder
+from app.integrations.errors import SourceItemUnavailable, SourceRemoteUnauthorized
+from app.integrations.google_drive import GoogleCredentials, RemoteFolder
+from app.integrations.http import RemoteHttp
 from app.integrations.models import DataSource, OAuthConnectionState
 from app.organizations.models import Membership, MembershipRole
+
+
+class NotionRemoteUnauthorized(SourceRemoteUnauthorized):
+    pass
+
 
 NOTION_READ_SCOPE = ""
 MAX_PAGE_WORKERS = 2
@@ -49,12 +54,11 @@ class NotionPage:
 
 
 class NotionOAuthClient:
-    def __init__(self, *, client_id: str | None, client_secret: str | None, redirect_uri: str | None):
+    def __init__(self, *, client_id: str | None, client_secret: str | None, redirect_uri: str | None, http: RemoteHttp | None = None):
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
-        self._request_lock = threading.Lock()
-        self._next_request_at = 0.0
+        self.http = http or RemoteHttp(min_interval_seconds=NOTION_REQUEST_INTERVAL_SECONDS)
 
     def _configured(self) -> None:
         if not self.client_id or not self.client_secret or not self.redirect_uri:
@@ -147,17 +151,11 @@ class NotionOAuthClient:
 
     def _request(self, method: str, path: str, *, credentials: GoogleCredentials, **kwargs: object) -> dict[str, object]:
         headers = {"Authorization": f"Bearer {credentials.access_token}", "Notion-Version": "2022-06-28"}
-        # Notion's requests are shared by concurrent page readers. Space their
-        # starts to avoid turning a faster sync into a burst of 429 responses.
-        with self._request_lock:
-            now = time.monotonic()
-            delay = max(0.0, self._next_request_at - now)
-            if delay:
-                time.sleep(delay)
-            self._next_request_at = time.monotonic() + NOTION_REQUEST_INTERVAL_SECONDS
-        response = httpx.request(method, f"https://api.notion.com{path}", headers=headers, timeout=20, **kwargs)
-        if response.status_code in {401, 403}:
-            raise GoogleRemoteUnauthorized()
+        response = self.http.request(method, f"https://api.notion.com{path}", headers=headers, timeout=20, **kwargs)
+        if response.status_code == 401:
+            raise NotionRemoteUnauthorized()
+        if response.status_code in {403, 404}:
+            raise SourceItemUnavailable("restricted_resource" if response.status_code == 403 else "object_not_found")
         response.raise_for_status()
         return response.json()
 
@@ -279,7 +277,10 @@ class NotionDocumentProvider:
         ]
 
         def read_page(page: NotionPage) -> tuple[str, DiscoveredDocument | None]:
-            text = _blocks_to_text(self.client.page_blocks(credentials=credentials, page_id=page.id))
+            try:
+                text = _blocks_to_text(self.client.page_blocks(credentials=credentials, page_id=page.id))
+            except SourceItemUnavailable:
+                return page.id, None
             # Notion search also returns empty metadata pages (for example a
             # person/profile page). They are valid remote objects, but there
             # is no content to embed or cite. Skipping them keeps the sync

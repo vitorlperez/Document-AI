@@ -24,6 +24,7 @@ from app.ingestion.service import (
     DiscoveryResult,
     ExtractedBlock,
 )
+from app.integrations.errors import SourceItemUnavailable
 from app.integrations.google_drive import (
     CredentialCipher,
     GoogleCredentials,
@@ -174,12 +175,16 @@ class GoogleDriveDocumentProvider:
             for file_id in force_file_ids or set():
                 if file_id in removed or file_id in changes_by_id:
                     continue
-                remote_file = self._remote_call(
-                    encrypted_credentials,
-                    lambda credentials: self.client.get_file(
-                        credentials=credentials, file_id=file_id
-                    ),
-                )
+                try:
+                    remote_file = self._remote_call(
+                        encrypted_credentials,
+                        lambda credentials: self.client.get_file(
+                            credentials=credentials, file_id=file_id
+                        ),
+                    )
+                except SourceItemUnavailable:
+                    removed.add(file_id)
+                    continue
                 if remote_file is None or not in_scope(file_id, remote_file):
                     removed.add(file_id)
                     continue
@@ -307,7 +312,7 @@ class GoogleDriveDocumentProvider:
                 ),
             )
             blocks = _extract_blocks(remote_file.mime_type, content)
-        except GoogleRemoteUnauthorized:
+        except (GoogleRemoteUnauthorized, SourceItemUnavailable):
             # A listing token can remain valid while one shared/export-restricted
             # file rejects its content request. Treat that as an item failure;
             # source-level authorization failures are still raised by discovery.

@@ -18,7 +18,8 @@ from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
 from app.identity.auth import hash_secret
 from app.identity.models import UserSession
-from app.integrations.errors import SourceRemoteUnauthorized
+from app.integrations.errors import SourceItemUnavailable, SourceRemoteUnauthorized
+from app.integrations.http import RemoteHttp, RemoteThrottled, parse_retry_after
 from app.integrations.models import DataSource, OAuthConnectionState
 from app.organizations.models import Membership, MembershipRole
 
@@ -89,10 +90,56 @@ class GoogleDrivePort(Protocol):
     def list_folders(self, *, credentials: GoogleCredentials) -> list[RemoteFolder]: ...
 
 
+class GoogleItemUnavailable(SourceItemUnavailable):
+    pass
+
+
+QUOTA_REASONS = frozenset({"rateLimitExceeded", "userRateLimitExceeded", "sharingRateLimitExceeded"})
+DAILY_QUOTA_REASONS = frozenset({"dailyLimitExceeded"})
+ITEM_FORBIDDEN_REASONS = frozenset(
+    {"insufficientFilePermissions", "appNotAuthorizedToFile", "cannotDownloadFile", "fileNotDownloadable"}
+)
+
+
+def google_error_reason(response: httpx.Response) -> str | None:
+    try:
+        error = response.json()["error"]
+    except (ValueError, KeyError, TypeError):
+        return None
+    if not isinstance(error, dict):
+        return None
+    for entry in error.get("errors") or []:
+        if isinstance(entry, dict) and isinstance(entry.get("reason"), str):
+            return entry["reason"]
+    for entry in error.get("details") or []:
+        if isinstance(entry, dict) and isinstance(entry.get("reason"), str):
+            return entry["reason"]
+    return None
+
+
+def _google_retryable(response: httpx.Response) -> bool:
+    return response.status_code == 403 and google_error_reason(response) in QUOTA_REASONS
+
+
+def raise_for_google(response: httpx.Response) -> None:
+    """Map a Drive response to the domain errors; the ONLY place that reads 401/403."""
+    if response.status_code == 401:
+        raise GoogleRemoteUnauthorized()
+    if response.status_code == 403:
+        reason = google_error_reason(response)
+        if reason in DAILY_QUOTA_REASONS or reason in QUOTA_REASONS:
+            raise RemoteThrottled(parse_retry_after(response.headers.get("Retry-After")), reason=reason)
+        if reason in ITEM_FORBIDDEN_REASONS:
+            raise GoogleItemUnavailable(reason)
+        raise GoogleRemoteUnauthorized()
+    response.raise_for_status()
+
+
 class GoogleDriveOAuthClient:
     def __init__(
-        self, *, client_id: str | None, client_secret: str | None, redirect_uri: str | None
+        self, *, client_id: str | None, client_secret: str | None, redirect_uri: str | None, http: RemoteHttp | None = None
     ):
+        self.http = http or RemoteHttp(is_retryable=_google_retryable)
         self.client_id, self.client_secret, self.redirect_uri = (
             client_id,
             client_secret,
@@ -132,7 +179,7 @@ class GoogleDriveOAuthClient:
         )
         if response.status_code in {400, 401, 403}:
             raise GoogleOAuthInvalid("Google authorization failed")
-        response.raise_for_status()
+        raise_for_google(response)
         data = response.json()
         return GoogleCredentials(data["access_token"], data.get("refresh_token"), None)
 
@@ -164,15 +211,13 @@ class GoogleDriveOAuthClient:
         )
 
     def account_email(self, *, credentials: GoogleCredentials) -> str | None:
-        response = httpx.get(
+        response = self.http.request("GET",
             "https://www.googleapis.com/drive/v3/about",
             params={"fields": "user(emailAddress)"},
             headers={"Authorization": f"Bearer {credentials.access_token}"},
             timeout=10,
         )
-        if response.status_code in {401, 403}:
-            raise GoogleRemoteUnauthorized()
-        response.raise_for_status()
+        raise_for_google(response)
         email = response.json().get("user", {}).get("emailAddress")
         return str(email).strip().lower() if isinstance(email, str) and email.strip() else None
 
@@ -196,22 +241,20 @@ class GoogleDriveOAuthClient:
                 return folders
 
     def start_page_token(self, *, credentials: GoogleCredentials) -> str:
-        response = httpx.get(
+        response = self.http.request("GET",
             "https://www.googleapis.com/drive/v3/changes/startPageToken",
             params={"supportsAllDrives": "true"},
             headers={"Authorization": f"Bearer {credentials.access_token}"},
             timeout=20,
         )
-        if response.status_code in {401, 403}:
-            raise GoogleRemoteUnauthorized()
-        response.raise_for_status()
+        raise_for_google(response)
         token = response.json().get("startPageToken")
         if not isinstance(token, str) or not token:
             raise GoogleOAuthInvalid("Google Drive change token is invalid")
         return token
 
     def get_file(self, *, credentials: GoogleCredentials, file_id: str) -> RemoteFile | None:
-        response = httpx.get(
+        response = self.http.request("GET",
             f"https://www.googleapis.com/drive/v3/files/{quote(file_id, safe='')}",
             params={"fields": "id,name,mimeType,modifiedTime,webViewLink,parents,trashed", "supportsAllDrives": "true"},
             headers={"Authorization": f"Bearer {credentials.access_token}"},
@@ -219,9 +262,7 @@ class GoogleDriveOAuthClient:
         )
         if response.status_code == 404:
             return None
-        if response.status_code in {401, 403}:
-            raise GoogleRemoteUnauthorized()
-        response.raise_for_status()
+        raise_for_google(response)
         item = response.json()
         if item.get("trashed") or not item.get("id") or not item.get("mimeType"):
             return None
@@ -230,7 +271,7 @@ class GoogleDriveOAuthClient:
     def changes(self, *, credentials: GoogleCredentials, page_token: str) -> GoogleChangesPage:
         changes: list[dict[str, object]] = []
         while True:
-            response = httpx.get(
+            response = self.http.request("GET",
                 "https://www.googleapis.com/drive/v3/changes",
                 params={
                     "pageToken": page_token,
@@ -243,11 +284,9 @@ class GoogleDriveOAuthClient:
                 headers={"Authorization": f"Bearer {credentials.access_token}"},
                 timeout=20,
             )
-            if response.status_code in {401, 403}:
-                raise GoogleRemoteUnauthorized()
             if response.status_code in {400, 410}:
                 raise GoogleCursorInvalid("Google Drive change cursor expired")
-            response.raise_for_status()
+            raise_for_google(response)
             payload = response.json()
             page_changes = payload.get("changes", [])
             if isinstance(page_changes, list):
@@ -344,11 +383,10 @@ class GoogleDriveOAuthClient:
             parent_ids=tuple(str(parent) for parent in item.get("parents", [])),
         )
 
-    @staticmethod
     def _list_response(
-        *, credentials: GoogleCredentials, query: str, fields: str, page_token: str | None
+        self, *, credentials: GoogleCredentials, query: str, fields: str, page_token: str | None
     ) -> httpx.Response:
-        response = httpx.get(
+        response = self.http.request("GET",
             "https://www.googleapis.com/drive/v3/files",
             params={
                 "q": query,
@@ -361,30 +399,26 @@ class GoogleDriveOAuthClient:
             headers={"Authorization": f"Bearer {credentials.access_token}"},
             timeout=20,
         )
-        if response.status_code in {401, 403}:
-            raise GoogleRemoteUnauthorized()
-        response.raise_for_status()
+        raise_for_google(response)
         return response
 
     def read_file(self, *, credentials: GoogleCredentials, remote_file: RemoteFile) -> bytes:
         if remote_file.mime_type == "application/vnd.google-apps.document":
             url = f"https://www.googleapis.com/drive/v3/files/{remote_file.id}/export"
-            response = httpx.get(
+            response = self.http.request("GET",
                 url,
                 params={"mimeType": "text/plain"},
                 headers={"Authorization": f"Bearer {credentials.access_token}"},
                 timeout=30,
             )
         else:
-            response = httpx.get(
+            response = self.http.request("GET",
                 f"https://www.googleapis.com/drive/v3/files/{remote_file.id}",
                 params={"alt": "media"},
                 headers={"Authorization": f"Bearer {credentials.access_token}"},
                 timeout=30,
             )
-        if response.status_code in {401, 403}:
-            raise GoogleRemoteUnauthorized()
-        response.raise_for_status()
+        raise_for_google(response)
         return response.content
 
 

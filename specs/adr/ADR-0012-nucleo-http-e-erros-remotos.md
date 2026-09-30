@@ -20,3 +20,5 @@ Entregas incrementais com testes primeiro; spikes externos e gates operacionais 
 
 - specs/plans/integracoes/01-cobertura-e-nucleo.md
 - specs/plans/integracoes/00-indice.md §4
+
+- Conferência em 2026-09-29: https://developers.google.com/workspace/drive/api/guides/handle-errors e https://developers.notion.com/reference/status-codes ; Notion request-limits confirma espaçamento médio de 3 req/s. cannotDownloadFile é mantido defensivamente como erro de item; não consta como seção no guia Drive consultado.
