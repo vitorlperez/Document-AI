@@ -216,6 +216,7 @@ export function ProductApp({ screen }: { screen: Screen }) {
       }
       const progress = await api<OnboardingState>(`/organizations/${company.id}/onboarding`, { method: "PATCH", body: JSON.stringify({ step }) });
       if (activeRequest?.signal.aborted) return;
+      if (!progress.required) { setNotice(null); setError(null); }
       setOnboarding({ ...progress, organizationId: company.id });
       if (!progress.required) router.replace(companyPath(company.id));
     } catch (caught) { throw new Error(messageFor(caught)); }

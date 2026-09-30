@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const output = path.join(__dirname, 'qa', 'fixed');
 fs.mkdirSync(output, { recursive: true });
-const checks = new Set((process.env.CHECK_ITEMS ?? 'F-001').split(','));
+const checks = new Set((process.env.CHECK_ITEMS ?? 'F-001,F-002').split(','));
 const check = (id, fn) => checks.has(id) ? fn() : undefined;
 
 (async () => {
@@ -60,6 +60,9 @@ const check = (id, fn) => checks.has(id) ? fn() : undefined;
       await page.getByRole('button', { name: 'Conectar', exact: true }).click();
       await page.getByRole('dialog', { name: 'Google Drive', exact: true }).waitFor();
       assert.equal((await state()).step, 'integrations'); // OAuth returns into the pending wizard.
+      // Resume setup on the conversation route so finishing it preserves the same ProductApp.
+      await page.goto(`http://localhost:5173/companies/${org}`);
+      await page.getByRole('heading', { name: 'Traga o conhecimento da sua equipe', exact: true }).waitFor();
       await page.getByRole('button', { name: 'Gerenciar', exact: true }).last().click();
       const syncDialog = page.getByRole('dialog', { name: 'Google Drive', exact: true });
       await syncDialog.getByRole('checkbox', { name: /Client A/ }).check();
@@ -78,6 +81,7 @@ const check = (id, fn) => checks.has(id) ? fn() : undefined;
     }
     const tour = page.getByRole('dialog', { name: 'Pergunte aos seus documentos', exact: true });
     await tour.waitFor();
+    await check('F-002', async () => assert.equal(await page.getByText('Sincronização iniciada.', { exact: false }).count(), 0, 'F-002: sync toast must be dismissed when setup finishes'));
     assert.equal((await state()).required, false);
     for (let index = 0; index < 4; index++) {
       await page.waitForFunction(() => {
