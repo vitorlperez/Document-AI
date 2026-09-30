@@ -1,0 +1,30 @@
+[
+  {
+    "width": 1440,
+    "signupAndOrg": true,
+    "welcome": true,
+    "skip": false,
+    "oauthResumeAndSyncQueued": true,
+    "tourSteps": 4,
+    "focusTrapped": true,
+    "viewportFit": true,
+    "secondLoginDirectChat": true,
+    "replayAndEscape": true,
+    "pageErrors": 0,
+    "httpErrors": 0
+  },
+  {
+    "width": 390,
+    "signupAndOrg": true,
+    "welcome": true,
+    "skip": true,
+    "oauthResumeAndSyncQueued": false,
+    "tourSteps": 4,
+    "focusTrapped": true,
+    "viewportFit": true,
+    "secondLoginDirectChat": true,
+    "replayAndEscape": true,
+    "pageErrors": 0,
+    "httpErrors": 0
+  }
+]

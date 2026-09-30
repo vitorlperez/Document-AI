@@ -20,6 +20,7 @@ from app.api.ingestion import router as ingestion_router
 from app.api.integrations import router as integrations_router
 from app.api.library import router as library_router
 from app.api.mcp_admin import router as mcp_admin_router
+from app.api.onboarding import router as onboarding_router
 from app.api.platform import router as platform_router
 from app.api.public_v1 import router as public_v1_router
 from app.api.saved_queries import router as saved_queries_router
@@ -155,6 +156,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     authenticated = [Depends(current_user)]
     app.include_router(access_admin_router, dependencies=authenticated)
     app.include_router(mcp_admin_router, dependencies=authenticated)
+    app.include_router(onboarding_router, dependencies=authenticated)
     app.include_router(platform_router, dependencies=authenticated)
     app.include_router(integrations_router, dependencies=authenticated)
     app.include_router(saved_queries_router, dependencies=authenticated)
