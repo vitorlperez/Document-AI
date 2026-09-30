@@ -1,0 +1,152 @@
+{
+  "history_seen": [
+    {
+      "role": "user",
+      "content": "Em quais empresas o Vitor trabalhou e quando?"
+    },
+    {
+      "role": "assistant",
+      "content": "Vitor trabalhou nas seguintes empresas e os períodos registrados foram:\n\n- Wasion International — jan-2021–ago-2021 (fontes 1 e 2 e 3); também aparece registrado como jan-2021–jul-2021 em outra versão do currículo (fonte 4).\n- Cloudiabot (também escrito Cloudia / Cloudia Bot) — set-2021–jan-2023 (fontes 1 e 2 e 5); algumas versões registram o período como jul-2021–fev-2023 (fonte 4).\n- Estoca — fev-2023–now (registro “now”/presente em várias versões) (fontes 1 e 2 e 3); outra versão lista fev-20"
+    }
+  ],
+  "context": {
+    "mentioned_folders": 0,
+    "mentioned_files": 0,
+    "previous_answer_listed_files": [
+      "Profile.pdf"
+    ],
+    "previous_turn_had_files": false,
+    "has_previous_answer": true
+  },
+  "decision": {
+    "intent": "ask_content",
+    "target": "library",
+    "ordinals": [],
+    "tool": "retrieve_evidence",
+    "query": "Qual foi o último emprego de Vitor?"
+  },
+  "embedding_query": [
+    "Qual foi o último emprego?"
+  ],
+  "top_candidates": [
+    {
+      "document": "BANCO DE PERGUNTAS - ENTREVISTA RH.pdf",
+      "position": 0,
+      "score": 0.53887,
+      "allstacks": false
+    },
+    {
+      "document": "Currículo",
+      "position": 7,
+      "score": 0.39481,
+      "allstacks": false
+    },
+    {
+      "document": "Currículo",
+      "position": 13,
+      "score": 0.39481,
+      "allstacks": false
+    },
+    {
+      "document": "Currículo",
+      "position": 10,
+      "score": 0.39481,
+      "allstacks": false
+    },
+    {
+      "document": "Vitor_Perez_Resume_Revised_pt",
+      "position": 7,
+      "score": 0.38745,
+      "allstacks": false
+    },
+    {
+      "document": "Currículo",
+      "position": 6,
+      "score": 0.38289,
+      "allstacks": false
+    },
+    {
+      "document": "Vitor_Perez_Resume_Revised_pt",
+      "position": 31,
+      "score": 0.382,
+      "allstacks": false
+    },
+    {
+      "document": "Vitor_Perez_Resume_Revised_pt",
+      "position": 15,
+      "score": 0.38087,
+      "allstacks": false
+    },
+    {
+      "document": "Vitor_Perez_Resume_Revised_pt",
+      "position": 21,
+      "score": 0.36647,
+      "allstacks": false
+    },
+    {
+      "document": "Currículo",
+      "position": 21,
+      "score": 0.36362,
+      "allstacks": false
+    },
+    {
+      "document": "Currículo",
+      "position": 14,
+      "score": 0.36362,
+      "allstacks": false
+    },
+    {
+      "document": "Currículo",
+      "position": 11,
+      "score": 0.36362,
+      "allstacks": false
+    },
+    {
+      "document": "Currículo",
+      "position": 18,
+      "score": 0.36362,
+      "allstacks": false
+    },
+    {
+      "document": "Curriculo Vitor",
+      "position": 8,
+      "score": 0.36347,
+      "allstacks": false
+    },
+    {
+      "document": "Vitor_Perez_Resume_Revised_pt",
+      "position": 8,
+      "score": 0.35865,
+      "allstacks": false
+    }
+  ],
+  "selected": [
+    {
+      "document": "BANCO DE PERGUNTAS - ENTREVISTA RH.pdf",
+      "score": 0.5388664908596952,
+      "chars": 2932,
+      "allstacks": false
+    }
+  ],
+  "generation": {
+    "text": "Insufficient evidence.",
+    "indexes": []
+  },
+  "answer": "Não encontrei, nos trechos indexados, evidência suficiente para responder a isso com segurança, e prefiro não afirmar o que os documentos não sustentam. Mencione o arquivo com @ ou reformule a pergunta com termos que apareçam no documento.",
+  "status": "invalid_generation_output",
+  "resolved": {
+    "providers": [
+      "google_drive"
+    ],
+    "folder_count": 1,
+    "document_count": null,
+    "mention_node_ids": [],
+    "intent": "ask_content",
+    "decided_by": "llm",
+    "target": "library",
+    "tools": [
+      "retrieve_evidence"
+    ]
+  },
+  "links": 0
+}

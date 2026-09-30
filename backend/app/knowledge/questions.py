@@ -559,8 +559,10 @@ class OpenAIQuestionProvider:
             {
                 "model": model,
                 "store": False,
-                **_deterministic_options(model),
-                "max_output_tokens": 800,
+                # Resolving references and choosing a source scope needs some
+                # reasoning; minimal effort misroutes elliptical fact questions.
+                **_deterministic_options(model, reasoning_effort="low"),
+                "max_output_tokens": 2000,
                 "text": {
                     "format": {
                         "type": "json_schema", "name": "agent_intent", "strict": True, "schema": INTENT_SCHEMA,
@@ -950,8 +952,9 @@ class QuestionService:
         """answer_mode "summary" or "relevance" is a decision already made by the
         agent's intent classifier; None keeps the keyword rules. "evidence" returns
         the per-document summary passages as citations without any model call, for
-        the agent to synthesize from."""
-        if answer_mode not in {None, "summary", "relevance", "evidence"}:
+        the agent to synthesize from. "content" ranks candidates without a score
+        rejection: the grounded answer model decides whether they support the fact."""
+        if answer_mode not in {None, "summary", "relevance", "evidence", "content"}:
             raise ValueError("unknown answer mode")
         started_at = time.perf_counter()
         normalized_question = " ".join(question.split())
@@ -1271,6 +1274,7 @@ class QuestionService:
             # An explicit file selection grounds the search in its own indexed content.
             # Semantic scores should rank passages, not prevent reading the chosen source.
             if explicitly_selected
+            or answer_mode == "content"
             or score >= MIN_EVIDENCE_SCORE
             or _has_distinctive_exact_term(document, chunk, query_terms)
         ]
@@ -1340,7 +1344,9 @@ class QuestionService:
             or not cited_evidence
         ):
             return self._complete(
-                _insufficient_evidence(RETRIEVAL_STATUS_INVALID_GENERATION),
+                # A grounded abstention still consulted these authorized sources.
+                # Preserve them so the agent can return an honest answer with links.
+                replace(_insufficient_evidence(RETRIEVAL_STATUS_INVALID_GENERATION), citations=supported),
                 started_at=started_at,
                 indexed_chunk_count=indexed_chunk_count,
                 compatible_embedding_count=len(scoped_rows),
@@ -1884,14 +1890,14 @@ def _query_terms(text: str) -> set[str]:
     }
 
 
-def _deterministic_options(model: str) -> dict[str, object]:
+def _deterministic_options(model: str, *, reasoning_effort: str = "minimal") -> dict[str, object]:
     """Least-variance sampling the model accepts.
 
     Reasoning models (gpt-5*, o*) reject a temperature other than the default;
     minimal reasoning effort is their closest equivalent to temperature 0.
     """
     if model.startswith(("gpt-5", "o1", "o3", "o4")):
-        return {"reasoning": {"effort": "minimal"}}
+        return {"reasoning": {"effort": reasoning_effort}}
     return {"temperature": 0}
 
 

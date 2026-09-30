@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     agent_planner_model: str = "gpt-5-nano"
     agent_synthesis_model: str = "gpt-5-mini"
     # Seconds the small intent classifier may take before the relevance-search fallback answers.
-    agent_intent_timeout_seconds: float = 4.0
+    agent_intent_timeout_seconds: float = 8.0
     # Per-file summaries in catalog answers: one batched call to a cheap model that is asked
     # for about this many characters per file (a target in the prompt, not a cut).
     agent_file_summary_chars: int = 350

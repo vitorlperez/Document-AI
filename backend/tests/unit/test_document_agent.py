@@ -115,7 +115,7 @@ def test_current_selection_overrides_history_in_vitor_conversation(
     assert result.resolved_context.get("fallback") is None
     assert provider.last_context[f"mentioned_{mention_kind}s"] == 1
     assert provider.last_context["previous_answer_listed_files"] == names[:3]
-    assert provider.last_history == [{"role": m.role, "content": m.content[:500]} for m in history[-4:]]
+    assert provider.last_history == [{"role": m.role, "content": m.content} for m in history[-4:]]
     assert [s.document_name for s in provider.synthesis_input["sources"]] == ["Profile.pdf"]
     assert [c["name"] for c in provider.synthesis_input["catalog"]] == ["Profile.pdf"]
     assert {c.document_name for c in result.citations} == {"Profile.pdf"}

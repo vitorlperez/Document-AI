@@ -36,7 +36,7 @@ def test_explicit_agent_deadline_after_slow_model_stage(monkeypatch: pytest.Monk
     class SlowClassifier:
         def classify_intent(self, *, question, history, context, model):
             # The classifier gets its own short deadline inside the agent's budget.
-            assert questions._REQUEST_DEADLINE.get() == 104.0
+            assert questions._REQUEST_DEADLINE.get() == 108.0
             clock.advance(25.0)
             return {"intent": "ask_content", "target": "library", "ordinals": [], "tool": "retrieve_evidence",
                     "query": ""}
@@ -83,8 +83,8 @@ def test_fallback_http_timeout_uses_remaining_budget(monkeypatch: pytest.MonkeyP
         _ask(service)
 
     assert isinstance(error.value.__cause__, httpx.ReadTimeout)
-    # The classifier is capped at its 4 s timeout; the fallback gets what is left of the 25 s budget.
-    assert calls == [("responses", 4.0), ("embeddings", 13.0)]
+    # The classifier is capped at 8 s; fallback still shares the total 25 s budget.
+    assert calls == [("responses", 8.0), ("embeddings", 13.0)]
     assert clock.now == 125.0
     assert questions._REQUEST_DEADLINE.get() is None
 

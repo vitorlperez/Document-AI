@@ -1,0 +1,6 @@
+[
+  {"id":"latest-followup","question":"Qual foi o último emprego?","expected_positions":[1],"facts":["Allstacks","June 2025 - Present"]},
+  {"id":"elliptic-latest","question":"e o último?","expected_positions":[1],"facts":["Allstacks","June 2025 - Present"]},
+  {"id":"elliptic-duration","question":"quanto tempo ficou lá?","after_latest":true,"expected_positions":[1],"facts":["Allstacks","June 2025 - Present","8 months"]},
+  {"id":"elliptic-role","question":"qual o cargo?","after_latest":true,"expected_positions":[1],"facts":["Allstacks","Software Engineer"]}
+]

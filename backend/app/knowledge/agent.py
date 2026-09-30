@@ -140,7 +140,7 @@ class FlowModels:
     planner_model: str = PLANNER_MODEL
     synthesis_model: str = ANSWER_MODEL
     # The classifier is one short call; past this the request falls back to a relevance search.
-    intent_timeout_seconds: float = 4.0
+    intent_timeout_seconds: float = 8.0
 
 
 class PlanRejected(ValueError):
@@ -358,7 +358,7 @@ class ConversationState:
     listed_files: list[tuple[UUID, UUID | None, str]]
     previous_turn_mentions: list[tuple[str, UUID]]
     previous_answer: str | None
-    # Last messages, truncated, as the classifier sees them.
+    # Last messages as the classifier sees them, including the end of cited answers.
     recent_messages: list[dict[str, object]] = field(default_factory=list)
 
     @classmethod
@@ -600,10 +600,13 @@ class AgentService:
         return self._summary_or_honest(run, request, deadline)
 
     def _ask_content(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        # The classifier resolves conversational references; retrieval and the answer
+        # model must see the same autonomous question, rather than the raw ellipsis.
+        question = run.decision.standalone_query or request.question
         with _observed_phase("tool_execution", deadline):
             retrieved = self.tools.retrieve_evidence(
-                scope=request.scope, user_id=request.user_id, question=request.question,
-                providers=request.providers, mentions=run.targets, answer_mode="relevance",
+                scope=request.scope, user_id=request.user_id, question=question,
+                providers=request.providers, mentions=run.targets, answer_mode="content",
             )
         run.add(retrieved)
         assert retrieved.question_result is not None
@@ -779,7 +782,10 @@ class AgentService:
     ) -> QuestionResult:
         """Replace answer=None with an honest message that still carries the consulted files as Fontes."""
         status = result.retrieval_status if result is not None else RETRIEVAL_STATUS_BELOW_THRESHOLD
-        citations = self._reauthorized_citations(request, [node_id for kind, node_id in targets if kind == "file"])
+        citations = _document_citations([
+            *(result.citations if result is not None else []),
+            *self._reauthorized_citations(request, [node_id for kind, node_id in targets if kind == "file"]),
+        ])
         if status == RETRIEVAL_STATUS_NO_INDEXED_CONTENT:
             text = (
                 "Ainda não há conteúdo indexado consultável para esta pergunta. Aguarde a sincronização "
@@ -793,8 +799,9 @@ class AgentService:
         else:
             text = (
                 "Não encontrei, nos trechos indexados, evidência suficiente para responder a isso com "
-                "segurança, e prefiro não afirmar o que os documentos não sustentam. Mencione o arquivo com "
-                "@ ou reformule a pergunta com termos que apareçam no documento."
+                "segurança. Os documentos consultados não permitem confirmar esse detalhe. "
+                "Você pode esclarecer a pessoa, empresa ou período a que se refere, ou selecionar "
+                "uma fonte com @ para continuar a consulta."
             )
         if citations:
             text += "\n\nArquivos consultados:\n" + "\n".join(
@@ -884,6 +891,8 @@ class AgentRun:
             "intent": self.intent, "decided_by": self.decision.decided_by,
             "target": self.decision.target, "tools": [item.name for item in self.results],
         })
+        if self.decision.standalone_query:
+            context["standalone_query"] = self.decision.standalone_query
         if self.fallback:
             context["fallback"] = self.fallback
         return replace(result, resolved_context=context), serialized, _catalog_references(serialized)
@@ -1014,7 +1023,7 @@ def _json_size(value: object) -> int:
 
 def _planner_history(history: list[ConversationMessage]) -> list[dict[str, object]]:
     return [
-        {"role": item.role, "content": item.content[:500]}
+        {"role": item.role, "content": item.content}
         for item in history[-MAX_PLANNER_HISTORY_MESSAGES:]
     ]
 

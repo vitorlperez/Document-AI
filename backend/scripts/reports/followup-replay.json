@@ -1,0 +1,255 @@
+{
+  "mode": "real_llm",
+  "code_sha256": "e0b57163df54ac5d84ae3dea87e27095fa10a4efe93946862ed985fa14bd9c79",
+  "cases": [
+    {
+      "id": "latest-followup",
+      "question": "Qual foi o último emprego?",
+      "decision": {
+        "intent": "ask_content",
+        "target": "previous_answer_files",
+        "ordinals": [],
+        "tool": "retrieve_evidence",
+        "query": "",
+        "standalone_query": "Qual foi o último emprego de Vitor, de acordo com o registro apresentado na resposta anterior que cita o Profile.pdf?"
+      },
+      "classifier_instructions_sha256": "e17c19b71466ad0fa6b9014a46eb63f29fd3a3f0d64a2f3012d24488cc4c027a",
+      "embedding_queries": [
+        "Qual foi o último emprego de Vitor, de acordo com o registro apresentado na resposta anterior que cita o Profile.pdf?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": 1,
+        "mention_node_ids": [
+          "09d309dd-8990-4638-9eda-207e68ca375c"
+        ],
+        "intent": "ask_content",
+        "decided_by": "llm",
+        "target": "previous_answer_files",
+        "tools": [
+          "retrieve_evidence"
+        ],
+        "standalone_query": "Qual foi o último emprego de Vitor, de acordo com o registro apresentado na resposta anterior que cita o Profile.pdf?"
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "expected_facts": 2,
+      "visible_facts": 2,
+      "sources": [
+        {
+          "name": "Profile.pdf",
+          "score": 0.4520637730041633,
+          "chars": 7869,
+          "chunk_count": 5
+        }
+      ],
+      "linked_citations": 1,
+      "answer": "O último emprego listado é como Software Engineer na Allstacks; período registrado: June 2025 - Present; local: Raleigh, Carolina do Norte, Estados Unidos (fonte 1).",
+      "status": "sufficient_evidence"
+    },
+    {
+      "id": "elliptic-latest",
+      "question": "e o último?",
+      "decision": {
+        "intent": "ask_content",
+        "target": "previous_answer_files",
+        "ordinals": [],
+        "tool": "retrieve_evidence",
+        "query": "",
+        "standalone_query": "Quais são as informações sobre o último emprego de Vitor mencionado no Profile.pdf?"
+      },
+      "classifier_instructions_sha256": "e17c19b71466ad0fa6b9014a46eb63f29fd3a3f0d64a2f3012d24488cc4c027a",
+      "embedding_queries": [
+        "Quais são as informações sobre o último emprego de Vitor mencionado no Profile.pdf?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": 1,
+        "mention_node_ids": [
+          "09d309dd-8990-4638-9eda-207e68ca375c"
+        ],
+        "intent": "ask_content",
+        "decided_by": "llm",
+        "target": "previous_answer_files",
+        "tools": [
+          "retrieve_evidence"
+        ],
+        "standalone_query": "Quais são as informações sobre o último emprego de Vitor mencionado no Profile.pdf?"
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "expected_facts": 2,
+      "visible_facts": 2,
+      "sources": [
+        {
+          "name": "Profile.pdf",
+          "score": 0.49903697548680787,
+          "chars": 7869,
+          "chunk_count": 5
+        }
+      ],
+      "linked_citations": 1,
+      "answer": "O último emprego mencionado é Software Engineer na Allstacks (June 2025 - Present (8 months)). (fonte 1)\n\n**Cargo:** Software Engineer (fonte 1)\n**Empresa:** Allstacks (fonte 1)\n**Período:** June 2025 - Present (8 months) (fonte 1)\n**Localização:** Raleigh, Carolina do Norte, Estados Unidos (fonte 1)\n**Descrição da empresa:** Allstacks is a company that provides engineering intelligence through metrics and insights, helping teams gain clear visibility into their software delivery life cycle and stay aligned with business goals. (fonte 1)\n**Principais responsabilidades/contribuições:** Manutenção e melhoria de funcionalidades backend; desenvolvimento de novas funcionalidades com LLMs e LangChain; colaboração com a equipe de IA para permitir consultas de métricas por linguagem natural; desenvolvimento backend em Python e Django, com PostgreSQL como banco principal e tarefas ocasionais envolvendo Vue.js no frontend. (fonte 1)\n**Tecnologias e ferramentas:** Python | Django | LLM | Generative AI | LangChain | PostgreSQL | SQLAlchemy | Vue.js (fonte 1)",
+      "status": "sufficient_evidence"
+    },
+    {
+      "id": "elliptic-duration",
+      "question": "quanto tempo ficou lá?",
+      "decision": {
+        "intent": "ask_content",
+        "target": "previous_answer_files",
+        "ordinals": [],
+        "tool": "retrieve_evidence",
+        "query": "",
+        "standalone_query": "Qual foi a duração do emprego mais recente do Vitor em Allstacks (Software Engineer, desde junho de 2025 até o momento)?"
+      },
+      "classifier_instructions_sha256": "e17c19b71466ad0fa6b9014a46eb63f29fd3a3f0d64a2f3012d24488cc4c027a",
+      "embedding_queries": [
+        "Qual foi a duração do emprego mais recente do Vitor em Allstacks (Software Engineer, desde junho de 2025 até o momento)?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": 1,
+        "mention_node_ids": [
+          "09d309dd-8990-4638-9eda-207e68ca375c"
+        ],
+        "intent": "ask_content",
+        "decided_by": "llm",
+        "target": "previous_answer_files",
+        "tools": [
+          "retrieve_evidence"
+        ],
+        "standalone_query": "Qual foi a duração do emprego mais recente do Vitor em Allstacks (Software Engineer, desde junho de 2025 até o momento)?"
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "expected_facts": 3,
+      "visible_facts": 3,
+      "sources": [
+        {
+          "name": "Profile.pdf",
+          "score": 0.4820197436303706,
+          "chars": 7869,
+          "chunk_count": 5
+        }
+      ],
+      "linked_citations": 1,
+      "answer": "A duração registrada do emprego mais recente em Allstacks é de 8 meses; início em junho de 2025 e marcado como “Present” no perfil (fonte 1).",
+      "status": "sufficient_evidence"
+    },
+    {
+      "id": "elliptic-role",
+      "question": "qual o cargo?",
+      "decision": {
+        "intent": "ask_content",
+        "target": "previous_answer_files",
+        "ordinals": [],
+        "tool": "retrieve_evidence",
+        "query": "",
+        "standalone_query": "Qual foi o cargo da posição mais recente de Vitor, conforme o Profile.pdf?"
+      },
+      "classifier_instructions_sha256": "e17c19b71466ad0fa6b9014a46eb63f29fd3a3f0d64a2f3012d24488cc4c027a",
+      "embedding_queries": [
+        "Qual foi o cargo da posição mais recente de Vitor, conforme o Profile.pdf?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": 1,
+        "mention_node_ids": [
+          "09d309dd-8990-4638-9eda-207e68ca375c"
+        ],
+        "intent": "ask_content",
+        "decided_by": "llm",
+        "target": "previous_answer_files",
+        "tools": [
+          "retrieve_evidence"
+        ],
+        "standalone_query": "Qual foi o cargo da posição mais recente de Vitor, conforme o Profile.pdf?"
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "expected_facts": 2,
+      "visible_facts": 2,
+      "sources": [
+        {
+          "name": "Profile.pdf",
+          "score": 0.46896386252004774,
+          "chars": 7869,
+          "chunk_count": 5
+        }
+      ],
+      "linked_citations": 1,
+      "answer": "A posição mais recente de Vitor é Software Engineer na Allstacks (fonte 1).",
+      "status": "sufficient_evidence"
+    }
+  ],
+  "intent_instructions_sha256": "e17c19b71466ad0fa6b9014a46eb63f29fd3a3f0d64a2f3012d24488cc4c027a",
+  "seed": "fresh real first turn",
+  "first_turn": {
+    "answer": "Vitor trabalhou nas seguintes empresas e períodos (conforme registros encontrados):\n\n- Wasion International (também referido como Wazion / Wasion da Amazônia): registros indicam jan‑2021 – ago‑2021 (fontes 1 e 2 e 6); uma fonte registra jan‑2021 – jul‑2021 (fonte 4).\n- Cloudiabot (Cloudia Bot): set‑2021 – jan‑2023 (fontes 1 e 2 e 5 e 6).\n- Estoca: registros indicam fev‑2023 – now (presente) (fontes 1 e 2 e 3); outras fontes registram fev‑2023 – jun‑2025 (fontes 5 e 6 e 7 e 8).\n- Allstacks: registros indicam jun/Jul‑2025 – Present (início em jun‑2025 ou jul‑2025 conforme a fonte) (fontes 5 e 6 e 7).",
+    "decision": {
+      "intent": "ask_content",
+      "target": "library",
+      "ordinals": [],
+      "tool": "search_library",
+      "query": "Em quais empresas o Vitor trabalhou e quando?",
+      "standalone_query": "Em quais empresas o Vitor trabalhou e quando?"
+    },
+    "linked_citations": 8
+  },
+  "micro": {
+    "hits": 4,
+    "expected": 4,
+    "recall": 1.0,
+    "visible_facts": 9,
+    "expected_facts": 9
+  }
+}

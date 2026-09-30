@@ -1,0 +1,81 @@
+{
+  "mode": "real_llm",
+  "code_sha256": "b01cd14dd3eb33b47e1c2bb793bd29fa87d81f1e249b54834f95da56e74a3a01",
+  "cases": [
+    {
+      "id": "latest-followup",
+      "question": "Qual foi o último emprego?",
+      "decision": {
+        "intent": "ask_content",
+        "target": "previous_answer_files",
+        "ordinals": [],
+        "tool": "retrieve_evidence",
+        "query": "Qual foi o último emprego do Vitor?"
+      },
+      "classifier_instructions_sha256": "d66762d7f32261df70090647b57cf14f1da31c0b0e9b56424b55292459e92bc2",
+      "embedding_queries": [
+        "Qual foi o último emprego?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": 1,
+        "mention_node_ids": [
+          "09d309dd-8990-4638-9eda-207e68ca375c"
+        ],
+        "intent": "ask_content",
+        "decided_by": "llm",
+        "target": "previous_answer_files",
+        "tools": [
+          "retrieve_evidence"
+        ]
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "expected_facts": 2,
+      "visible_facts": 2,
+      "sources": [
+        {
+          "name": "Profile.pdf",
+          "score": 0.3276434795078514,
+          "chars": 7869,
+          "chunk_count": 5
+        }
+      ],
+      "linked_citations": 1,
+      "answer": "O último emprego foi como Software Engineer na Allstacks (June 2025 - Present, 8 months), em Raleigh, Carolina do Norte, Estados Unidos (fonte 1).",
+      "status": "sufficient_evidence"
+    }
+  ],
+  "intent_instructions_sha256": "d66762d7f32261df70090647b57cf14f1da31c0b0e9b56424b55292459e92bc2",
+  "seed": "fresh real first turn",
+  "first_turn": {
+    "answer": "Direto: Vitor trabalhou nas empresas listadas abaixo; onde há variações entre os documentos eu indiquei as diferentes datas registradas.\n\n- Wasion International (também aparecendo como Wasion da Amazonia / Wazion): jan-2021–ago-2021 (fontes 1 e 2 e 3) (em uma versão aparece como jan-2021–jul-2021) (fonte 4).\n- Cloudiabot (também aparece como Cloudia / Cloudia Bot): set-2021–jan-2023 (fontes 1 e 2 e 3) (ou registros alternativos: jul-2021–fev-2023 (fonte 4); set/sep-2021–jan-2023 (fonte 5)).\n- Estoca: fev-2023–now (registrado como “now” em várias versões) (fontes 1 e 2 e 3) (em outra versão aparece como fev-2023–jun-2025) (fonte 5).\n- Allstacks: registrado em documentos com início em jun-2025 ou jul-2025 – Present/Now (variação entre arquivos: Jun 2025 – Present (fontes 6 e 7); Jul 2025 – Present (fonte 5)).\n\n::: highlight\nSe precisar, posso consolidar qual data aparece em cada arquivo individualmente.\n:::",
+    "decision": {
+      "intent": "ask_content",
+      "target": "library",
+      "ordinals": [],
+      "tool": "retrieve_evidence",
+      "query": "Quais empresas o Vitor trabalhou e quando?"
+    },
+    "linked_citations": 7
+  },
+  "micro": {
+    "hits": 1,
+    "expected": 1,
+    "recall": 1.0,
+    "visible_facts": 2,
+    "expected_facts": 2
+  }
+}

@@ -45,13 +45,17 @@ INTENT_SCHEMA: dict[str, object] = {
         "ordinals": {"type": "array", "items": {"type": "integer"}},
         "tool": {"type": "string", "enum": list(INTENT_TOOLS)},
         "query": {"type": "string"},
+        "standalone_query": {"type": "string", "maxLength": 1000},
     },
-    "required": ["intent", "target", "ordinals", "tool", "query"],
+    "required": ["intent", "target", "ordinals", "tool", "query", "standalone_query"],
 }
 
 INTENT_INSTRUCTIONS = (
     "You classify one user message sent to a document assistant over an authorized, already indexed "
-    "library (Portuguese or English). Decide only what must be done; never answer the question.\n"
+    "library (Portuguese or English). Interpret the CURRENT message in recent_history. "
+    "Resolve what the user is referring to before selecting the intent, target and retrieval question. "
+    "Never answer the question. A fact question remains ask_content even if its subject is omitted. "
+    "list_files means listing DOCUMENTS, not listing or selecting entities/facts inside them.\n"
     "intent:\n"
     "- list_files: which files/documents exist, or whether a file with some name exists.\n"
     "- list_files_with_summaries: list files AND say what each one is about ('do que se trata cada "
@@ -68,11 +72,15 @@ INTENT_INSTRUCTIONS = (
     "or cited sources inherited from history. Use historical targets only when nothing is attached now.\n"
     "2. previous_ordinals: the message points at positions of the files in "
     "context.previous_answer_listed_files ('o segundo' -> [2], 'o primeiro e o terceiro' -> [1, 3], "
-    "'o último' -> [its position]). ordinals holds the 1-based positions.\n"
+    "'o último' -> [its position]). ordinals holds the 1-based positions. This applies only to "
+    "FILES, never to facts such as the latest job, role or period inside a source.\n"
     "3. previous_answer_files: the message asks about the files in the previous answer, "
     "including its cited sources, as a group or one by one. Use the file names in "
     "context.previous_answer_listed_files together with recent_history to resolve this; "
     "a request for a summary per file after an answer citing files continues those sources. "
+    "Fact follow-ups continuing the subject of the previous answer also use these cited sources, "
+    "even when the message omits the subject or document names. A latest job, duration or role "
+    "question is ask_content, not list_files.\n"
     "Only when that list is not empty.\n"
     "4. previous_turn_files: nothing is attached now, but the message continues the previous turn "
     "(restructuring the previous answer, or 'esse documento', 'nesse arquivo', 'e quem assina?') and "
@@ -82,7 +90,20 @@ INTENT_INSTRUCTIONS = (
     "search; put only the name terms in query), previous_answer (restructure_previous) or none "
     "(conversation). query is empty unless tool is search_library. ordinals is empty unless target is "
     "previous_ordinals.\n"
+    "standalone_query: for ask_content, rewrite the message as one autonomous factual question "
+    "using recent_history to resolve omitted subjects and references (person, entity, event, "
+    "place, time). Preserve the user's meaning and language. Do not answer it or add facts not "
+    "established in the conversation. If context is insufficient, preserve the ambiguity rather "
+    "than guessing. With current selections, do not import an unrelated historical subject. "
+    "For other intents use an empty string. This is a semantic retrieval question, distinct "
+    "from query (file-name search only).\n"
     "Examples:\n"
+    '- History: user asks who worked where; assistant describes employment with cited sources. '
+    'Current message asks which employment was most recent -> ask_content, previous_answer_files; '
+    'standalone_query asks for the most recent employment of the person named in history.\n'
+    '- History: assistant identifies a project and its budget from Proposal.pdf. Current message '
+    '"e o prazo?" -> ask_content, previous_answer_files; standalone_query asks for that project\'s '
+    'deadline, naming the project from history.\n'
     '- "Resuma o segundo" with 3 listed files -> summarize_files, previous_ordinals, [2]\n'
     '- "Estruture melhor o resumo" with mentioned_files 1 -> restructure_previous, mentioned\n'
     '- "Organiza isso em tópicos" with nothing attached and previous_turn_had_files -> '
@@ -102,6 +123,7 @@ class IntentDecision:
     query: str = ""
     # "llm" when the classifier decided; "fallback" when it failed and relevance search answers.
     decided_by: str = "llm"
+    standalone_query: str = ""
 
 
 class InvalidIntent(ValueError):
@@ -118,12 +140,15 @@ def parse_intent(raw: object, *, listed_files: int, mentioned: int = 0) -> Inten
         raise InvalidIntent("intent output is not an object")
     intent, target, tool = raw.get("intent"), raw.get("target"), raw.get("tool")
     ordinals, query = raw.get("ordinals", []), raw.get("query", "")
+    standalone_query = raw.get("standalone_query", "")
     if intent not in INTENTS or target not in TARGETS:
         raise InvalidIntent("unknown intent or target")
     if not isinstance(ordinals, list) or not all(type(item) is int for item in ordinals):
         raise InvalidIntent("ordinals must be integers")
     if not isinstance(query, str):
         raise InvalidIntent("query must be a string")
+    if not isinstance(standalone_query, str) or len(standalone_query) > 1000:
+        raise InvalidIntent("standalone_query must be a string of at most 1000 characters")
     positions = tuple(dict.fromkeys(ordinals))
     if target == "previous_answer_files" and not listed_files:
         # Nothing was listed, so "those files" can only be the ones of the previous turn.
@@ -144,6 +169,7 @@ def parse_intent(raw: object, *, listed_files: int, mentioned: int = 0) -> Inten
         ordinals=positions,
         tool=chosen,
         query=query.strip()[:200] if chosen == "search_library" else "",
+        standalone_query=standalone_query.strip() if intent == "ask_content" else "",
     )
 
 

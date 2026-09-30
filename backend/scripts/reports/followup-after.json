@@ -1,0 +1,243 @@
+{
+  "mode": "captured_synthesis",
+  "code_sha256": "e0b57163df54ac5d84ae3dea87e27095fa10a4efe93946862ed985fa14bd9c79",
+  "cases": [
+    {
+      "id": "latest-followup",
+      "question": "Qual foi o último emprego?",
+      "decision": {
+        "intent": "ask_content",
+        "target": "previous_answer_files",
+        "ordinals": [],
+        "tool": "retrieve_evidence",
+        "query": "",
+        "standalone_query": "Qual foi o último emprego registrado para Vitor nas fontes listadas no Profile.pdf?"
+      },
+      "classifier_instructions_sha256": "e17c19b71466ad0fa6b9014a46eb63f29fd3a3f0d64a2f3012d24488cc4c027a",
+      "embedding_queries": [
+        "Qual foi o último emprego registrado para Vitor nas fontes listadas no Profile.pdf?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": 1,
+        "mention_node_ids": [
+          "09d309dd-8990-4638-9eda-207e68ca375c"
+        ],
+        "intent": "ask_content",
+        "decided_by": "llm",
+        "target": "previous_answer_files",
+        "tools": [
+          "retrieve_evidence"
+        ],
+        "standalone_query": "Qual foi o último emprego registrado para Vitor nas fontes listadas no Profile.pdf?"
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "expected_facts": 2,
+      "visible_facts": 2,
+      "sources": [
+        {
+          "name": "Profile.pdf",
+          "score": 0.48202111842453993,
+          "chars": 7869,
+          "chunk_count": 5
+        }
+      ],
+      "linked_citations": 1,
+      "answer": null,
+      "status": "sufficient_evidence"
+    },
+    {
+      "id": "elliptic-latest",
+      "question": "e o último?",
+      "decision": {
+        "intent": "ask_content",
+        "target": "previous_answer_files",
+        "ordinals": [],
+        "tool": "previous_answer",
+        "query": "",
+        "standalone_query": "Qual é o último emprego listado para Vitor no Profile.pdf?"
+      },
+      "classifier_instructions_sha256": "e17c19b71466ad0fa6b9014a46eb63f29fd3a3f0d64a2f3012d24488cc4c027a",
+      "embedding_queries": [
+        "Qual é o último emprego listado para Vitor no Profile.pdf?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": 1,
+        "mention_node_ids": [
+          "09d309dd-8990-4638-9eda-207e68ca375c"
+        ],
+        "intent": "ask_content",
+        "decided_by": "llm",
+        "target": "previous_answer_files",
+        "tools": [
+          "retrieve_evidence"
+        ],
+        "standalone_query": "Qual é o último emprego listado para Vitor no Profile.pdf?"
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "expected_facts": 2,
+      "visible_facts": 2,
+      "sources": [
+        {
+          "name": "Profile.pdf",
+          "score": 0.5250972346294701,
+          "chars": 7869,
+          "chunk_count": 5
+        }
+      ],
+      "linked_citations": 1,
+      "answer": null,
+      "status": "sufficient_evidence"
+    },
+    {
+      "id": "elliptic-duration",
+      "question": "quanto tempo ficou lá?",
+      "decision": {
+        "intent": "ask_content",
+        "target": "previous_answer_files",
+        "ordinals": [],
+        "tool": "previous_answer",
+        "query": "",
+        "standalone_query": "Qual foi o tempo total que Vitor ficou no Allstacks como Software Engineer desde junho de 2025 até o presente?"
+      },
+      "classifier_instructions_sha256": "e17c19b71466ad0fa6b9014a46eb63f29fd3a3f0d64a2f3012d24488cc4c027a",
+      "embedding_queries": [
+        "Qual foi o tempo total que Vitor ficou no Allstacks como Software Engineer desde junho de 2025 até o presente?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": 1,
+        "mention_node_ids": [
+          "09d309dd-8990-4638-9eda-207e68ca375c"
+        ],
+        "intent": "ask_content",
+        "decided_by": "llm",
+        "target": "previous_answer_files",
+        "tools": [
+          "retrieve_evidence"
+        ],
+        "standalone_query": "Qual foi o tempo total que Vitor ficou no Allstacks como Software Engineer desde junho de 2025 até o presente?"
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "expected_facts": 3,
+      "visible_facts": 3,
+      "sources": [
+        {
+          "name": "Profile.pdf",
+          "score": 0.47424364388645923,
+          "chars": 7869,
+          "chunk_count": 5
+        }
+      ],
+      "linked_citations": 1,
+      "answer": null,
+      "status": "sufficient_evidence"
+    },
+    {
+      "id": "elliptic-role",
+      "question": "qual o cargo?",
+      "decision": {
+        "intent": "ask_content",
+        "target": "previous_answer_files",
+        "ordinals": [],
+        "tool": "retrieve_evidence",
+        "query": "",
+        "standalone_query": "Qual é o cargo registrado no emprego mais recente de Vitor, conforme consta no Profile.pdf?"
+      },
+      "classifier_instructions_sha256": "e17c19b71466ad0fa6b9014a46eb63f29fd3a3f0d64a2f3012d24488cc4c027a",
+      "embedding_queries": [
+        "Qual é o cargo registrado no emprego mais recente de Vitor, conforme consta no Profile.pdf?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": 1,
+        "mention_node_ids": [
+          "09d309dd-8990-4638-9eda-207e68ca375c"
+        ],
+        "intent": "ask_content",
+        "decided_by": "llm",
+        "target": "previous_answer_files",
+        "tools": [
+          "retrieve_evidence"
+        ],
+        "standalone_query": "Qual é o cargo registrado no emprego mais recente de Vitor, conforme consta no Profile.pdf?"
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "expected_facts": 2,
+      "visible_facts": 2,
+      "sources": [
+        {
+          "name": "Profile.pdf",
+          "score": 0.46938999418911675,
+          "chars": 7869,
+          "chunk_count": 5
+        }
+      ],
+      "linked_citations": 1,
+      "answer": null,
+      "status": "sufficient_evidence"
+    }
+  ],
+  "intent_instructions_sha256": "e17c19b71466ad0fa6b9014a46eb63f29fd3a3f0d64a2f3012d24488cc4c027a",
+  "seed": "persisted companies answer; latest-job fixture only for duration/role",
+  "micro": {
+    "hits": 4,
+    "expected": 4,
+    "recall": 1.0,
+    "visible_facts": 9,
+    "expected_facts": 9
+  }
+}

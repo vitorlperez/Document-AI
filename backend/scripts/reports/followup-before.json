@@ -1,0 +1,209 @@
+{
+  "mode": "captured_synthesis",
+  "code_sha256": "b01cd14dd3eb33b47e1c2bb793bd29fa87d81f1e249b54834f95da56e74a3a01",
+  "cases": [
+    {
+      "id": "latest-followup",
+      "question": "Qual foi o último emprego?",
+      "decision": {
+        "intent": "list_files",
+        "target": "library",
+        "ordinals": [],
+        "tool": "list_folder_inventory",
+        "query": ""
+      },
+      "embedding_queries": [
+        "Qual foi o último emprego?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": null,
+        "mention_node_ids": [],
+        "intent": "list_files",
+        "decided_by": "llm",
+        "target": "library",
+        "tools": [
+          "retrieve_evidence"
+        ],
+        "fallback": "plan_rejected"
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [],
+      "hits": 0,
+      "expected_facts": 2,
+      "visible_facts": 0,
+      "sources": [
+        {
+          "name": "BANCO DE PERGUNTAS - ENTREVISTA RH.pdf",
+          "score": 0.5388664908596952,
+          "chars": 2932,
+          "chunk_count": 2
+        }
+      ],
+      "linked_citations": 1,
+      "answer": null,
+      "status": "sufficient_evidence"
+    },
+    {
+      "id": "elliptic-latest",
+      "question": "e o último?",
+      "decision": {
+        "intent": "list_files",
+        "target": "library",
+        "ordinals": [],
+        "tool": "list_folder_inventory",
+        "query": ""
+      },
+      "embedding_queries": [
+        "e o último?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": null,
+        "mention_node_ids": [],
+        "intent": "list_files",
+        "decided_by": "llm",
+        "target": "library",
+        "tools": [
+          "retrieve_evidence"
+        ],
+        "fallback": "plan_rejected"
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [],
+      "hits": 0,
+      "expected_facts": 2,
+      "visible_facts": 0,
+      "sources": [
+        {
+          "name": "BANCO DE PERGUNTAS - ENTREVISTA RH.pdf",
+          "score": 0.406410374457995,
+          "chars": 2932,
+          "chunk_count": 2
+        }
+      ],
+      "linked_citations": 1,
+      "answer": null,
+      "status": "sufficient_evidence"
+    },
+    {
+      "id": "elliptic-duration",
+      "question": "quanto tempo ficou lá?",
+      "decision": {
+        "intent": "ask_content",
+        "target": "previous_turn_files",
+        "ordinals": [],
+        "tool": "retrieve_evidence",
+        "query": "quanto tempo ficou lá?"
+      },
+      "embedding_queries": [
+        "quanto tempo ficou lá?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": 1,
+        "mention_node_ids": [
+          "09d309dd-8990-4638-9eda-207e68ca375c"
+        ],
+        "intent": "ask_content",
+        "decided_by": "llm",
+        "target": "previous_turn_files",
+        "tools": [
+          "retrieve_evidence"
+        ]
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "hits": 1,
+      "expected_facts": 3,
+      "visible_facts": 3,
+      "sources": [
+        {
+          "name": "Profile.pdf",
+          "score": 0.2233560904896208,
+          "chars": 7869,
+          "chunk_count": 5
+        }
+      ],
+      "linked_citations": 1,
+      "answer": null,
+      "status": "sufficient_evidence"
+    },
+    {
+      "id": "elliptic-role",
+      "question": "qual o cargo?",
+      "decision": {
+        "intent": "list_files",
+        "target": "library",
+        "ordinals": [],
+        "tool": "list_folder_inventory",
+        "query": ""
+      },
+      "embedding_queries": [
+        "qual o cargo?"
+      ],
+      "resolved_context": {
+        "providers": [
+          "google_drive"
+        ],
+        "folder_count": 1,
+        "document_count": null,
+        "mention_node_ids": [],
+        "intent": "list_files",
+        "decided_by": "llm",
+        "target": "library",
+        "tools": [
+          "retrieve_evidence"
+        ],
+        "fallback": "plan_rejected"
+      },
+      "expected": [
+        1
+      ],
+      "selected_profile_positions": [],
+      "hits": 0,
+      "expected_facts": 2,
+      "visible_facts": 0,
+      "sources": [
+        {
+          "name": "Currículo",
+          "score": 0.6137022159386318,
+          "chars": 55,
+          "chunk_count": 5
+        }
+      ],
+      "linked_citations": 1,
+      "answer": null,
+      "status": "sufficient_evidence"
+    }
+  ],
+  "seed": "persisted companies answer; latest-job fixture only for duration/role",
+  "micro": {
+    "hits": 1,
+    "expected": 4,
+    "recall": 0.25,
+    "visible_facts": 3,
+    "expected_facts": 9
+  }
+}

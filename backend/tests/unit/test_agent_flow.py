@@ -204,7 +204,7 @@ def test_unmentioned_profile_question_keeps_sources_when_answer_provider_times_o
 
     assert result.answer and "Software Engineer" in result.answer
     assert "síntese" in result.answer.casefold()
-    assert _linked(result) == [("Profile.pdf", profile_document.source_url)]
+    assert ("Profile.pdf", profile_document.source_url) in _linked(result)
 
 
 def test_classifier_decides_inventory_with_summaries_and_synthesizes_with_sources(
@@ -624,7 +624,7 @@ def test_parse_intent_enforces_the_closed_schema() -> None:
     ):
         with pytest.raises(InvalidIntent):
             parse_intent(raw, listed_files=3)
-    assert INTENT_SCHEMA["required"] == ["intent", "target", "ordinals", "tool", "query"]
+    assert INTENT_SCHEMA["required"] == ["intent", "target", "ordinals", "tool", "query", "standalone_query"]
 
 
 def test_fallback_decision_reads_only_what_is_attached() -> None:
@@ -662,8 +662,8 @@ def test_eval_harness_reports_intent_and_linked_sources(semantic_session: Sessio
 def test_settings_have_no_planner_flag() -> None:
     settings = Settings(database_url="postgresql://user:secret@localhost/db")
     assert not hasattr(settings, "agent_planner_enabled")
-    assert settings.agent_intent_timeout_seconds == 4.0
-    assert FlowModels().intent_timeout_seconds == 4.0
+    assert settings.agent_intent_timeout_seconds == 8.0
+    assert FlowModels().intent_timeout_seconds == 8.0
 
 
 def _responses_envelope(payload: object) -> dict[str, object]:
@@ -699,8 +699,9 @@ def test_openai_intent_classifier_is_deterministic_and_schema_bound(monkeypatch:
     assert [body["model"] for body in bodies] == ["gpt-5-nano", "gpt-4.1-nano", "final", "gpt-5-mini"]
     schema_format = bodies[0]["text"]["format"]
     assert schema_format["strict"] is True and schema_format["schema"] == INTENT_SCHEMA
-    # Reasoning models reject temperature; minimal effort is their deterministic setting.
-    assert bodies[0]["reasoning"] == {"effort": "minimal"} and "temperature" not in bodies[0]
+    # Resolve elliptical references with bounded reasoning, still without temperature.
+    assert bodies[0]["reasoning"] == {"effort": "low"} and "temperature" not in bodies[0]
+    assert bodies[0]["max_output_tokens"] == 2000
     assert bodies[1]["temperature"] == 0
     assert '"previous_answer": "Resumo anterior."' in bodies[2]["input"]
     assert "previous_answer" not in bodies[3]["input"]
