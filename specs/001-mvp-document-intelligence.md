@@ -45,7 +45,7 @@ Se a plataforma indexar uma pasta de trabalho e responder perguntas com citaçõ
 1. Organização, autenticação e convite de membros.
 2. Conexão somente leitura com Google Drive e OneDrive Microsoft 365 por administrador.
 3. Seleção explícita de uma ou mais pastas, arquivos avulsos da raiz ou todo o conteúdo acessível pelo usuário conectado, dentro da organização.
-4. Sincronização de Google Docs, arquivos OneDrive compatíveis, PDF e DOCX presentes no escopo selecionado.
+4. Sincronização de Google Docs, Google Sheets, Google Slides, arquivos OneDrive compatíveis, PDF (texto e escaneado via OCR), DOCX, PPTX, XLSX, CSV, TXT e Markdown presentes no escopo selecionado.
 5. Extração de texto, indexação, busca por palavra-chave e busca semântica.
 6. Perguntas em linguagem natural sobre uma pasta, uma ferramenta ou todas as fontes indexadas da organização (F-042).
 7. Resposta apoiada por evidências recuperadas, com lista compacta dos documentos efetivamente citados e links para as fontes originais.
@@ -57,7 +57,7 @@ Se a plataforma indexar uma pasta de trabalho e responder perguntas com citaçõ
 
 - Dropbox, S3, e-mail e upload de arquivos.
 - No OneDrive da primeira versão: contas pessoais, SharePoint, bibliotecas compartilhadas, drives de grupo e atalhos.
-- OCR, imagens escaneadas, PPTX, planilhas complexas e CSV/XLSX.
+- Imagens soltas (JPG/PNG), formatos legados (.doc/.xls/.ppt/.rtf) e planilhas complexas (macros, tabelas dinâmicas, gráficos, fórmulas sem valor em cache).
 - Edição, movimentação ou reorganização de arquivos no Google Drive.
 - Permissões herdadas por arquivo ou pasta do Google Drive.
 - Agentes autônomos, alertas, relatórios, exportação, knowledge graph, comparação de documentos, versões e duplicados semânticos.
