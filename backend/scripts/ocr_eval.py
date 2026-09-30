@@ -34,12 +34,17 @@ def wer(reference: str, hypothesis: str) -> float:
     return _edit_distance(ref, hyp) / max(1, len(ref))
 
 
+# The Acordo Ortográfico (1990/2009) abolished the trema in PT-BR, so ü is not an accent to recall.
+ABOLISHED_ACCENTS = frozenset("üÜ")
+
+
 def _accents(word: str) -> Counter:
-    return Counter(c for c in word if c.isalpha() and unicodedata.normalize("NFD", c) != c)
+    return Counter(c for c in word if c.isalpha() and c not in ABOLISHED_ACCENTS
+                   and unicodedata.normalize("NFD", c) != c)
 
 
 def accent_recall(reference: str, hypothesis: str) -> float:
-    """Share of accented characters (incl. ç) of the reference kept in the aligned hypothesis words."""
+    """Share of accented characters (incl. ç, excl. the abolished ü) of the reference kept in the aligned hypothesis words."""
     ref, hyp = reference.split(), hypothesis.split()
     total = kept = 0
     for tag, i1, i2, j1, j2 in SequenceMatcher(a=ref, b=hyp, autojunk=False).get_opcodes():

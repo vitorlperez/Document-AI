@@ -20,6 +20,14 @@ def test_accent_recall():
     assert accent_recall("sem acento", "qualquer") == 1.0
 
 
+def test_accent_recall_ignores_trema_abolished_by_the_orthographic_agreement():
+    # ü left PT-BR in the 1990 Acordo Ortográfico: it is neither required nor credited.
+    assert accent_recall("pêssego, ü", "pêssego, u") == 1.0
+    assert accent_recall("pêssego, ü", "pessego, u") == 0.0
+    assert accent_recall("pingüim", "pinguim") == 1.0
+    assert accent_recall("ação, ü", "acao, ü") == 0.0
+
+
 def test_corpus_has_truth_and_questions_for_every_pdf():
     truths = {p.stem for p in (CORPUS / "truth").glob("*.txt")}
     assert truths and truths == {p.stem for p in (CORPUS / "pdf").glob("*.pdf")}

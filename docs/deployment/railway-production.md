@@ -105,3 +105,7 @@ Referências Railway: [monorepo](https://docs.railway.com/deployments/monorepo),
 ## pgvector (F5)
 
 A migração `20260930_0020_pgvector_expand` executa `CREATE EXTENSION IF NOT EXISTS vector`. Crie o Postgres a partir do template com pgvector (https://railway.com/deploy/postgres-with-pgvector-engine) ou da imagem `pgvector/pgvector:pg16`; o Postgres padrão sem a extensão faz o pre-deploy falhar. Confira com `SELECT extversion FROM pg_extension WHERE extname = 'vector';`. Mantenha `VECTOR_BACKEND=python` até concluir o backfill e a paridade (ver `docs/operacao/pgvector-runbook.md`).
+
+## OCR (docling-serve com `por`)
+
+O sidecar de OCR **não** usa a imagem upstream: ela não inclui o modelo Tesseract `por`. Crie o serviço `docling` (sem domínio público, rede privada) a partir de `infra/docling/Dockerfile` (base `docling-serve-cpu:v1.35.0` fixada por digest + `tessdata_best` verificado por SHA-256) ou de uma imagem publicada desse Dockerfile. Reserve ≥ 2 GB de RAM (pico medido ≈ 1,6–1,9 GB) e aponte `DOCLING_SERVE_URL` do worker para o endereço privado. Detalhes e escolha `best`/`fast`: `docs/operacao/ocr-runbook.md`.

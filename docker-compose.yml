@@ -120,10 +120,12 @@ services:
       redis:
         condition: service_healthy
 
-  # Optional OCR sidecar (docker compose --profile ocr up docling). Pin the tag measured in
-  # the F0.3 spike; memory limit is the measured peak RSS (~1.8 GB) plus headroom.
+  # Optional OCR sidecar (docker compose --profile ocr up --build docling). Image derived from
+  # docling-serve v1.35.0 (pinned by digest) plus the Tesseract `por` model: infra/docling/Dockerfile.
+  # Memory limit is the measured peak RSS (~1.8 GB) plus headroom.
   docling:
-    image: ${DOCLING_SERVE_IMAGE:?pin a docling-serve tag from the F0.3 spike}
+    build: ./infra/docling
+    image: ${DOCLING_SERVE_IMAGE:-arquivio-docling:v1.35.0-pt1}
     profiles: ["ocr"]
     ports:
       - "127.0.0.1:5001:5001"

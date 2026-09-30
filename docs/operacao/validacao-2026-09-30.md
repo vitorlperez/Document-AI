@@ -68,5 +68,33 @@ O workflow fixa Node 22; o ambiente local usou Node `v24.3.0` e npm `11.4.2`. Os
 
 - iCloud, migrações e CI local passaram. Os testes unitários/API e PostgreSQL passaram; Docling respondeu e os dois fluxos de extração ao vivo passaram.
 - O gate de qualidade de OCR não está totalmente aprovado: faltam 0,02 de recall e o WER do PDF 05 excede o alvo; o PDF 07 fica 0,002 abaixo do recall. A informação necessária para fechar é decidir como tratar `ü` (caractere não usual em PT-BR no corpus) no limiar global e autorizar/definir a próxima ação para o recall do PDF 07. Nenhum limiar ou gabarito foi alterado.
-- A imagem Docling validada requer uma variante pinada que inclua o modelo português; o modelo foi instalado somente no container efêmero. Os três syncs de staging continuam pendentes de um ambiente de staging com fonte e PDFs de teste.
+- (Resolvido no adendo abaixo) A imagem Docling validada requer uma variante pinada que inclua o modelo português; o modelo foi instalado somente no container efêmero. Os três syncs de staging continuam pendentes de um ambiente de staging com fonte e PDFs de teste.
 - Graphify e CI já estavam disponíveis; não foi necessário instalar ou criar esses artefatos. Nenhum arquivo de código foi alterado.
+
+## Adendo — imagem Docling pinada e limiar de acentos (2026-09-30)
+
+**Imagem.** `infra/docling/Dockerfile`: `FROM quay.io/docling-project/docling-serve-cpu:v1.35.0@sha256:79e5fcd19ab227ed36323fa5fa31820d14d53efc4f073417ba37be7931c7af0a` + `por.traineddata` de `tessdata_best` 4.1.0 (SHA-256 `711de9dbb8052067bd42f16b9119967f30bada80d57e2ef24f65d09f531adb04`, verificado por `ADD --checksum`). Build local `arquivio-docling:v1.35.0-pt1`, ID `sha256:da43f8e5b20705ee7cd1e381990d8facb847720c6e2bee569789c45976bd0a22`; `tesseract --list-langs` → `eng, osd, por`. O ID é local: o digest de registry só existe após publicar a imagem. `docker-compose.yml` passa a construir/usar essa imagem (`DOCLING_SERVE_IMAGE` continua como override).
+
+**best vs fast.** Mesma suíte, imagens idênticas salvo o modelo. `best` e `fast` empatam em 10 dos 12 PDFs. PDF 06 (tabela): `best` CER 0,028 / recall 1,000; `fast` CER 0,052 / recall 0,500. PDF 08: `fast` melhor (CER 0,019 vs 0,031; WER 0,045 vs 0,114), ambos dentro de 0,08. Escolhido `best`: o gate é recall de acentos e o `fast` perde a tabela.
+
+**Decisão do piloto.** `ü`/`Ü` não entram mais no `accent_recall` (trema abolido em PT-BR pelo Acordo Ortográfico). Implementado em `backend/scripts/ocr_eval.py` (`ABOLISHED_ACCENTS`) com teste `test_accent_recall_ignores_trema_abolished_by_the_orthographic_agreement` (vermelho antes, verde depois). Limiar 0,97 mantido para os demais acentos; gabaritos intactos.
+
+**Reavaliação com a imagem nova** (`backend/scripts/reports/ocr-eval-2026-09-30.json`, 12 documentos, exit 0):
+
+| PDF | CER | WER | Recall de acentos |
+|---|---:|---:|---:|
+| 01 | 0,000 | 0,000 | 1,000 |
+| 02 | 0,011 | 0,000 | 1,000 |
+| 03 | 0,011 | 0,000 | 1,000 |
+| 04 | 0,000 | 0,000 | 1,000 |
+| 05 | 0,027 | 0,067 | 1,000 |
+| 06 | 0,028 | 0,049 | 1,000 |
+| 07 | 0,018 | 0,019 | 1,000 |
+| 08 | 0,031 | 0,114 | 1,000 |
+| 09 | 0,716 | 0,706 | 1,000 |
+| 10 | 0,017 | 0,000 | 1,000 |
+| 11 | 0,000 | 0,000 | 1,000 |
+| 12 | 0,000 | 0,000 | 1,000 |
+
+- Recall de acentos ≥ 0,97 em todos os PDFs; o PDF 07 (antes 0,968) agora fecha em 1,000 sem ajuste de DPI/psm: o único caractere que falhava era `ü` (lido como `U`).
+- Ressalva aceita: WER do PDF 05 = 0,067 (> 0,06 dos limpos). A única palavra errada é `ü` → `U`, em um texto de 15 palavras; o gabarito não foi alterado e o WER não tem verificação automática no script. Dentro do escopo da decisão do piloto, fica aceito com ressalva. PDF 09 segue como descrito acima (avaliação força OCR em páginas digitais; fluxo real preserva o texto nativo).
