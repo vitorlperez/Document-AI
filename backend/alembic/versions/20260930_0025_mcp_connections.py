@@ -23,6 +23,7 @@ def upgrade():
     op.create_index(
         "uq_mcp_connections_active_user", "mcp_connections", ["user_id"], unique=True,
         postgresql_where=sa.text("revoked_at IS NULL"),
+        sqlite_where=sa.text("revoked_at IS NULL"),
     )
 
 

@@ -128,9 +128,8 @@ def build_mcp_app(settings: Settings, session_factory, rate_limiter: RateLimiter
             status, result = "denied", None
         except InsufficientScope:
             status, result = "denied", None
-        except Exception:
-            status = "error"
-            raise
+        except Exception:  # noqa: BLE001 — tool errors are generic; details never reach the SDK
+            status, result = "error", None
         finally:
             audit.record(
                 principal=principal, organization_id=principal.organization_id, channel="mcp", action=name,

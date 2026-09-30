@@ -78,7 +78,6 @@ class Settings(BaseSettings):
     mcp_jwks_url: str | None = None
     mcp_allowed_hosts: str = ""
     mcp_rate_limit_per_minute: int = Field(default=60, gt=0)
-    mcp_ask_enabled: bool = False
     mcp_static_key_enabled: bool = False  # plan C: accept an organization API key as the MCP Bearer
     redis_url: str = "redis://localhost:6379/0"
     sync_scheduler_interval_minutes: int = 15

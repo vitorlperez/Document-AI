@@ -37,9 +37,9 @@ def run_search(session: Session, principal: Principal, query: str) -> dict[str, 
     )
     return {"results": [
         {"id": str(hit.document_id), "title": strip_invisible(hit.title)[:TITLE_CHARS], "url": hit.url,
-         "text": hit.snippet}
+         "text": strip_invisible(hit.snippet)}
         for hit in hits
-    ]}
+    ], "metadata": {"content_trust": "untrusted_document_content", "notice": UNTRUSTED_NOTICE}}
 
 
 def run_fetch(session: Session, principal: Principal, id: str) -> dict[str, object]:

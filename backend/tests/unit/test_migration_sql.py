@@ -75,3 +75,29 @@ def test_integration_migration_chain_preserves_main_revision():
         assert Path(migration.path).name == f"{revision}_{slug}.py"
         assert migration.down_revision == previous
         previous = revision
+
+
+def test_mcp_migration_allows_rebinding_a_revoked_user_on_sqlite():
+    import importlib.util
+
+    import pytest
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.exc import IntegrityError
+
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+
+    path = BACKEND_DIR / "alembic/versions/20260930_0025_mcp_connections.py"
+    spec = importlib.util.spec_from_file_location("mcp_migration", path)
+    migration = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migration)
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection:
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.upgrade()
+        insert = text("INSERT INTO mcp_connections (id, organization_id, user_id, revoked_at, created_at) "
+                      "VALUES (:id, 'org', 'user', :revoked, CURRENT_TIMESTAMP)")
+        connection.execute(insert, {"id": "first", "revoked": "2026-09-30"})
+        connection.execute(insert, {"id": "second", "revoked": None})
+        with pytest.raises(IntegrityError):
+            connection.execute(insert, {"id": "third", "revoked": None})

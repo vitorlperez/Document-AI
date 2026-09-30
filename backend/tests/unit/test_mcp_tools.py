@@ -43,7 +43,7 @@ def test_search_matches_the_chatgpt_shape(factory):
     a = seed_tenant(factory, "A", "Projeto Aurora entrega em setembro")
     with factory() as session:
         result = tools.run_search(session, _principal(a), "Aurora")
-    assert set(result) == {"results"} and {"id", "title", "url"} <= set(result["results"][0])
+    assert set(result) == {"results", "metadata"} and {"id", "title", "url"} <= set(result["results"][0])
     assert result["results"][0]["url"] == "https://drive.example.test/A"
     assert result["results"][0]["id"] == str(a.document_id)
 
@@ -114,3 +114,21 @@ def test_title_invisible_characters_are_stripped(factory):
         session.get(Document, a.document_id).name = "plano" + chr(0xE0041) + chr(0x202E) + ".pdf"
     with factory() as session:
         assert tools.run_search(session, _principal(a), "Aurora")["results"][0]["title"] == "plano.pdf"
+
+
+def test_search_sanitizes_snippets_and_marks_all_results_untrusted(factory, monkeypatch):
+    from types import SimpleNamespace
+
+    from app.knowledge.untrusted import UNTRUSTED_NOTICE
+
+    a = seed_tenant(factory, "A", "Aurora")
+    hit = SimpleNamespace(document_id=a.document_id, title="plano", url="https://drive.example.test/A",
+                          snippet="Aurora" + chr(0xE0041) + chr(0x202E))
+    monkeypatch.setattr(tools.RetrievalService, "search", lambda *_args, **_kwargs: [hit])
+    with factory() as session:
+        result = tools.run_search(session, _principal(a), "Aurora")
+    assert result["results"][0]["text"] == "Aurora"
+    assert result["metadata"] == {"content_trust": "untrusted_document_content", "notice": UNTRUSTED_NOTICE}
+    monkeypatch.setattr(tools.RetrievalService, "search", lambda *_args, **_kwargs: [])
+    with factory() as session:
+        assert tools.run_search(session, _principal(a), "Aurora")["metadata"] == result["metadata"]

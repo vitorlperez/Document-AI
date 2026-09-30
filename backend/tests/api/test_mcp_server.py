@@ -248,3 +248,21 @@ def test_allowed_host_derivation_keeps_explicit_port(factory, private_key, world
 def test_no_host_and_unusable_resource_fails_at_boot(factory, private_key, resource):
     with pytest.raises(RuntimeError, match="MCP_ALLOWED_HOSTS"):
         _make_client(factory, private_key, allowed_hosts="", resource=resource)
+
+
+@pytest.mark.parametrize("tool_name,arguments", [("search", {"query": "Aurora"}),
+                                                ("fetch", {"id": "unused"}), ("list_sources", {})])
+def test_tool_failures_hide_internal_exceptions_and_are_audited(client, world, factory, monkeypatch, tool_name, arguments):
+    from app.mcp_server import tools
+
+    def fail(*_args, **_kwargs):
+        raise RuntimeError("private SQL detail and internal credentials")
+
+    monkeypatch.setattr(tools, f"run_{tool_name}", fail)
+    body = call(client, world[2], tool_name, arguments)
+    assert body["result"]["isError"] is True
+    assert body["result"]["content"][0]["text"] == "not found"
+    assert "private SQL" not in json.dumps(body) and "internal credentials" not in json.dumps(body)
+    with factory() as session:
+        event = session.query(ApiAuditEvent).filter_by(channel="mcp", action=tool_name).one()
+        assert event.status == "error" and event.http_status == 500
