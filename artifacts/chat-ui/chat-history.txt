@@ -1,0 +1,24 @@
+759ef93 [M25] fix(ingestion): report empty native documents as empty_document, not as a scanned PDF
+91a2917 On main: wip-outra-missao-antes-merge-integracoes
+8fcaa1c [Integracoes 1] Merge main preserving integrations and renumber unapplied migrations
+e65ccb3 [A10] feat(frontend): manage one-time organization api keys
+7def418 [02-A6] Frontend: cartão SharePoint, rótulos por provider, erros OAuth e bibliotecas agrupadas por site
+aec0e90 fix(library): persist removals, unify sync history and fix Notion disconnect
+314ff0e [01-F3] mensagens de extração e operação dos formatos novos
+f5f3a1e feat(library): improve browsing and add recursive sync history
+0bb42e3 fix(chat): 'Pasta: undefined', hierarquia do card, rótulos no idioma da pergunta e tags
+edde2b7 feat(chat): vocabulário de blocos de apresentação escolhido pelo LLM na resposta
+9df6713 fix(chat): Fontes no estilo anterior e resposta com estrutura visual
+5104e7e feat(chat): resposta estruturada com resumo, tabelas, chips de arquivo e cards de Fontes
+de66cd8 feat(agent): fontes com links e resumo por arquivo no inventário
+822f126 feat(agente): adicionar conversas e tools de documentos
+33f50cf feat(chat): add multi-tool question context
+0005652 last files
+17b0fe5 Improve library and integration management
+a21138a fix(frontend): restore provider brand icons
+de2a3e6 fix(frontend): handle anonymous session probe
+acedf9e feat(frontend): polish Arquivio product states
+df0f448 first deploy
+62890ab feat: add Oracle Always Free deployment
+0fe2700 feat: evolve company knowledge workspace
+74be7f3 chore: include frontend in main repository

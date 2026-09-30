@@ -1,0 +1,378 @@
+[
+  {
+    "stage": "before",
+    "width": 1440,
+    "label": "3 pastas disponíveis",
+    "top": {
+      "frameScrollTop": 0,
+      "button": {
+        "top": 84,
+        "bottom": 128
+      },
+      "log": {
+        "top": 76,
+        "bottom": 712.34375,
+        "height": 636.34375,
+        "scrollHeight": 3192,
+        "scrollTop": 0
+      },
+      "intersections": [
+        {
+          "text": "Todas as ferramentas",
+          "x": 1009.609375,
+          "y": 95,
+          "width": 115.390625,
+          "height": 14
+        }
+      ]
+    },
+    "scrolls": [
+      {
+        "frameScrollTop": 0,
+        "button": {
+          "top": 84,
+          "bottom": 128
+        },
+        "log": {
+          "top": 76,
+          "bottom": 712.34375,
+          "height": 636.34375,
+          "scrollHeight": 3192,
+          "scrollTop": 639
+        },
+        "intersections": []
+      },
+      {
+        "frameScrollTop": 0,
+        "button": {
+          "top": 84,
+          "bottom": 128
+        },
+        "log": {
+          "top": 76,
+          "bottom": 712.34375,
+          "height": 636.34375,
+          "scrollHeight": 3192,
+          "scrollTop": 1278
+        },
+        "intersections": []
+      },
+      {
+        "frameScrollTop": 0,
+        "button": {
+          "top": 84,
+          "bottom": 128
+        },
+        "log": {
+          "top": 76,
+          "bottom": 712.34375,
+          "height": 636.34375,
+          "scrollHeight": 3192,
+          "scrollTop": 1917
+        },
+        "intersections": []
+      },
+      {
+        "frameScrollTop": 0,
+        "button": {
+          "top": 84,
+          "bottom": 128
+        },
+        "log": {
+          "top": 76,
+          "bottom": 712.34375,
+          "height": 636.34375,
+          "scrollHeight": 3192,
+          "scrollTop": 2556
+        },
+        "intersections": []
+      }
+    ]
+  },
+  {
+    "stage": "before",
+    "width": 390,
+    "label": "3 pastas disponíveis",
+    "top": {
+      "frameScrollTop": 0,
+      "button": {
+        "top": 394,
+        "bottom": 438
+      },
+      "log": {
+        "top": 386,
+        "bottom": 5184.578125,
+        "height": 4798.578125,
+        "scrollHeight": 4799,
+        "scrollTop": 0
+      },
+      "intersections": [
+        {
+          "text": "Todas as ferramentas",
+          "x": 247.609375,
+          "y": 405,
+          "width": 115.390625,
+          "height": 14
+        }
+      ]
+    },
+    "scrolls": [
+      {
+        "frameScrollTop": 1184,
+        "button": {
+          "top": -790,
+          "bottom": -746
+        },
+        "log": {
+          "top": -798,
+          "bottom": 4000.578125,
+          "height": 4798.578125,
+          "scrollHeight": 4799,
+          "scrollTop": 0
+        },
+        "intersections": [
+          {
+            "text": "Todas as ferramentas",
+            "x": 247.609375,
+            "y": -779,
+            "width": 115.390625,
+            "height": 14
+          }
+        ]
+      },
+      {
+        "frameScrollTop": 2368,
+        "button": {
+          "top": -1974,
+          "bottom": -1930
+        },
+        "log": {
+          "top": -1982,
+          "bottom": 2816.578125,
+          "height": 4798.578125,
+          "scrollHeight": 4799,
+          "scrollTop": 0
+        },
+        "intersections": [
+          {
+            "text": "Todas as ferramentas",
+            "x": 247.609375,
+            "y": -1963,
+            "width": 115.390625,
+            "height": 14
+          }
+        ]
+      },
+      {
+        "frameScrollTop": 3552,
+        "button": {
+          "top": -3158,
+          "bottom": -3114
+        },
+        "log": {
+          "top": -3166,
+          "bottom": 1632.578125,
+          "height": 4798.578125,
+          "scrollHeight": 4799,
+          "scrollTop": 0
+        },
+        "intersections": [
+          {
+            "text": "Todas as ferramentas",
+            "x": 247.609375,
+            "y": -3147,
+            "width": 115.390625,
+            "height": 14
+          }
+        ]
+      },
+      {
+        "frameScrollTop": 4736,
+        "button": {
+          "top": -4342,
+          "bottom": -4298
+        },
+        "log": {
+          "top": -4350,
+          "bottom": 448.578125,
+          "height": 4798.578125,
+          "scrollHeight": 4799,
+          "scrollTop": 0
+        },
+        "intersections": [
+          {
+            "text": "Todas as ferramentas",
+            "x": 247.609375,
+            "y": -4331,
+            "width": 115.390625,
+            "height": 14
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "stage": "after",
+    "width": 1440,
+    "label": "2 ferramentas disponíveis",
+    "top": {
+      "frameScrollTop": 0,
+      "button": {
+        "top": 82,
+        "bottom": 126
+      },
+      "log": {
+        "top": 133,
+        "bottom": 712.34375,
+        "height": 579.34375,
+        "scrollHeight": 3192,
+        "scrollTop": 0
+      },
+      "intersections": []
+    },
+    "scrolls": [
+      {
+        "frameScrollTop": 0,
+        "button": {
+          "top": 82,
+          "bottom": 126
+        },
+        "log": {
+          "top": 133,
+          "bottom": 712.34375,
+          "height": 579.34375,
+          "scrollHeight": 3192,
+          "scrollTop": 653
+        },
+        "intersections": []
+      },
+      {
+        "frameScrollTop": 0,
+        "button": {
+          "top": 82,
+          "bottom": 126
+        },
+        "log": {
+          "top": 133,
+          "bottom": 712.34375,
+          "height": 579.34375,
+          "scrollHeight": 3192,
+          "scrollTop": 1307
+        },
+        "intersections": []
+      },
+      {
+        "frameScrollTop": 0,
+        "button": {
+          "top": 82,
+          "bottom": 126
+        },
+        "log": {
+          "top": 133,
+          "bottom": 712.34375,
+          "height": 579.34375,
+          "scrollHeight": 3192,
+          "scrollTop": 1960
+        },
+        "intersections": []
+      },
+      {
+        "frameScrollTop": 0,
+        "button": {
+          "top": 82,
+          "bottom": 126
+        },
+        "log": {
+          "top": 133,
+          "bottom": 712.34375,
+          "height": 579.34375,
+          "scrollHeight": 3192,
+          "scrollTop": 2613
+        },
+        "intersections": []
+      }
+    ]
+  },
+  {
+    "stage": "after",
+    "width": 390,
+    "label": "2 ferramentas disponíveis",
+    "top": {
+      "frameScrollTop": 0,
+      "button": {
+        "top": 392,
+        "bottom": 436
+      },
+      "log": {
+        "top": 443,
+        "bottom": 5241.578125,
+        "height": 4798.578125,
+        "scrollHeight": 4799,
+        "scrollTop": 0
+      },
+      "intersections": []
+    },
+    "scrolls": [
+      {
+        "frameScrollTop": 1198,
+        "button": {
+          "top": -806,
+          "bottom": -762
+        },
+        "log": {
+          "top": -755,
+          "bottom": 4043.578125,
+          "height": 4798.578125,
+          "scrollHeight": 4799,
+          "scrollTop": 0
+        },
+        "intersections": []
+      },
+      {
+        "frameScrollTop": 2397,
+        "button": {
+          "top": -2005,
+          "bottom": -1961
+        },
+        "log": {
+          "top": -1954,
+          "bottom": 2844.578125,
+          "height": 4798.578125,
+          "scrollHeight": 4799,
+          "scrollTop": 0
+        },
+        "intersections": []
+      },
+      {
+        "frameScrollTop": 3595,
+        "button": {
+          "top": -3203,
+          "bottom": -3159
+        },
+        "log": {
+          "top": -3152,
+          "bottom": 1646.578125,
+          "height": 4798.578125,
+          "scrollHeight": 4799,
+          "scrollTop": 0
+        },
+        "intersections": []
+      },
+      {
+        "frameScrollTop": 4793,
+        "button": {
+          "top": -4401,
+          "bottom": -4357
+        },
+        "log": {
+          "top": -4350,
+          "bottom": 448.578125,
+          "height": 4798.578125,
+          "scrollHeight": 4799,
+          "scrollTop": 0
+        },
+        "intersections": []
+      }
+    ]
+  }
+]
