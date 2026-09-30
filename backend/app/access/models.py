@@ -73,3 +73,28 @@ class ApiAuditEvent(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
 
 Index("ix_api_audit_events_org_created", ApiAuditEvent.organization_id, ApiAuditEvent.created_at)
 Index("ix_api_audit_events_credential", ApiAuditEvent.credential_id, ApiAuditEvent.created_at)
+
+
+class McpConnection(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
+    """Binds a member's MCP identity (WorkOS subject) to exactly one organization at a time."""
+
+    __tablename__ = "mcp_connections"
+
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    # Library node ids (folders/files) the connection is confined to; None = whole organization.
+    node_ids: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+Index(
+    "uq_mcp_connections_active_user",
+    McpConnection.user_id,
+    unique=True,
+    postgresql_where=McpConnection.revoked_at.is_(None),
+    sqlite_where=McpConnection.revoked_at.is_(None),
+)

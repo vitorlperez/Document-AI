@@ -73,6 +73,12 @@ class Settings(BaseSettings):
     api_org_rate_limit_per_minute: int = Field(default=600, gt=0)
     api_ask_rate_limit_per_minute: int = Field(default=10, gt=0)
     public_api_ask_enabled: bool = False
+    mcp_resource_url: str | None = None
+    mcp_issuer_url: str | None = None
+    mcp_jwks_url: str | None = None
+    mcp_allowed_hosts: str = ""
+    mcp_rate_limit_per_minute: int = Field(default=60, gt=0)
+    mcp_ask_enabled: bool = False
     redis_url: str = "redis://localhost:6379/0"
     sync_scheduler_interval_minutes: int = 15
     sync_freshness_hours: int = 24
