@@ -6,6 +6,7 @@ from uuid import UUID
 
 import httpx
 
+from app.ingestion.extraction import limits
 from app.ingestion.service import DiscoveryResult
 from app.integrations.google_drive import RemoteFolder
 from app.integrations.onedrive import (
@@ -251,7 +252,7 @@ class SharePointDocumentProvider(OneDriveDocumentProvider):
 
     key = "sharepoint"
     max_workers = 2
-    max_file_bytes = 50 * 1024 * 1024
+    max_file_bytes = limits.MAX_FILE_BYTES
 
     def folders(self, *, encrypted_credentials: str | None) -> list[RemoteFolder]:
         return self.client.catalog(credentials=self._credentials(encrypted_credentials))

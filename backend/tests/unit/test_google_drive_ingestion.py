@@ -413,15 +413,15 @@ def test_provider_extracts_with_bounded_concurrency_and_stable_order() -> None:
             self.lock = Lock()
             self.active_reads = 0
             self.max_active_reads = 0
-            self.six_reads_started = Event()
+            self.three_reads_started = Event()
             self.release_reads = Event()
 
         def read_file(self, *, credentials: GoogleCredentials, remote_file: RemoteFile) -> bytes:
             with self.lock:
                 self.active_reads += 1
                 self.max_active_reads = max(self.max_active_reads, self.active_reads)
-                if self.active_reads == 6:
-                    self.six_reads_started.set()
+                if self.active_reads == 3:
+                    self.three_reads_started.set()
             self.release_reads.wait(timeout=2)
             try:
                 return super().read_file(credentials=credentials, remote_file=remote_file)
@@ -442,12 +442,12 @@ def test_provider_extracts_with_bounded_concurrency_and_stable_order() -> None:
     )
 
     thread.start()
-    assert client.six_reads_started.wait(timeout=2)
+    assert client.three_reads_started.wait(timeout=2)
     client.release_reads.set()
     thread.join(timeout=2)
 
     assert not thread.is_alive()
-    assert client.max_active_reads == 6
+    assert client.max_active_reads == 3
     assert [item.external_file_id for item in discovered] == sorted(item.id for item in files)
     assert [item.text for item in discovered] == sorted(item.id for item in files)
 
@@ -733,3 +733,33 @@ def test_item_level_403_fails_the_document_without_refreshing_or_reauth() -> Non
 
     assert discovered.documents[0].error_code == "source_file_unavailable"
     assert client.refresh_calls == []
+
+
+def test_oversized_drive_file_is_rejected_from_its_size_field_without_download() -> None:
+    from app.ingestion.extraction import limits
+
+    big = RemoteFile(id="big", name="big.pdf", mime_type=PDF, source_url="u", modified_at=None,
+                     size=limits.MAX_FILE_BYTES + 1)
+    client = FakeGoogleDriveClient([big], {"big": b"%PDF"})
+    cipher, _ = encrypted_credentials()
+    discovered = GoogleDriveDocumentProvider(client, cipher).discover(
+        encrypted_credentials=fresh_credentials(cipher), selections=[selection("folder", "root-folder")]
+    )
+    assert [d.error_code for d in discovered.documents] == ["file_too_large"]
+    assert client.read_calls == []
+
+
+def test_drive_extraction_uses_three_workers() -> None:
+    from app.ingestion import google_drive
+
+    assert google_drive.MAX_EXTRACTION_WORKERS == 3
+
+
+def test_max_file_bytes_is_one_env_shared_by_sharepoint(monkeypatch) -> None:
+    from app.core.config import Settings
+    from app.ingestion.extraction import limits
+
+    assert limits.MAX_FILE_BYTES == 50 * 1024 * 1024
+    monkeypatch.setenv("MAX_FILE_BYTES", "1000")
+    assert limits.env_int("MAX_FILE_BYTES", 1) == 1000
+    assert Settings(database_url="postgresql+psycopg://u:p@localhost:5432/db").max_file_bytes == 1000

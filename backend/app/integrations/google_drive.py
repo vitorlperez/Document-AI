@@ -74,6 +74,7 @@ class RemoteFile:
     source_url: str
     modified_at: datetime | None
     parent_ids: tuple[str, ...] = ()
+    size: int | None = None  # bytes; absent for Google-native files
 
 
 class GoogleDrivePort(Protocol):
@@ -251,7 +252,7 @@ class GoogleDriveOAuthClient:
     def get_file(self, *, credentials: GoogleCredentials, file_id: str) -> RemoteFile | None:
         response = self.http.request("GET",
             f"https://www.googleapis.com/drive/v3/files/{quote(file_id, safe='')}",
-            params={"fields": "id,name,mimeType,modifiedTime,webViewLink,parents,trashed", "supportsAllDrives": "true"},
+            params={"fields": "id,name,mimeType,modifiedTime,webViewLink,parents,size,trashed", "supportsAllDrives": "true"},
             headers={"Authorization": f"Bearer {credentials.access_token}"},
             timeout=20,
         )
@@ -274,7 +275,7 @@ class GoogleDriveOAuthClient:
                     "spaces": "drive",
                     "includeItemsFromAllDrives": "true",
                     "supportsAllDrives": "true",
-                    "fields": "nextPageToken,newStartPageToken,changes(fileId,removed,file(id,name,mimeType,modifiedTime,webViewLink,parents,trashed))",
+                    "fields": "nextPageToken,newStartPageToken,changes(fileId,removed,file(id,name,mimeType,modifiedTime,webViewLink,parents,size,trashed))",
                 },
                 headers={"Authorization": f"Bearer {credentials.access_token}"},
                 timeout=20,
@@ -312,7 +313,7 @@ class GoogleDriveOAuthClient:
                 response = self._list_response(
                     credentials=credentials,
                     query=f"'{folder_id}' in parents and trashed = false",
-                    fields="nextPageToken,files(id,name,mimeType,modifiedTime,webViewLink,parents)",
+                    fields="nextPageToken,files(id,name,mimeType,modifiedTime,webViewLink,parents,size)",
                     page_token=page_token,
                 )
                 data = response.json()
@@ -355,7 +356,7 @@ class GoogleDriveOAuthClient:
             response = self._list_response(
                 credentials=credentials,
                 query=f"{query} and mimeType != 'application/vnd.google-apps.folder'",
-                fields="nextPageToken,files(id,name,mimeType,modifiedTime,webViewLink,parents)",
+                fields="nextPageToken,files(id,name,mimeType,modifiedTime,webViewLink,parents,size)",
                 page_token=page_token,
             )
             data = response.json()
@@ -376,6 +377,7 @@ class GoogleDriveOAuthClient:
             ),
             modified_at=datetime.fromisoformat(str(modified)) if modified else None,
             parent_ids=tuple(str(parent) for parent in item.get("parents", [])),
+            size=int(item["size"]) if str(item.get("size") or "").isdigit() else None,
         )
 
     def _list_response(

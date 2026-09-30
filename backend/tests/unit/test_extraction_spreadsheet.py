@@ -72,7 +72,7 @@ def test_csv_detects_semicolon_and_cp1252() -> None:
 
 def test_oversized_and_zip_bomb_inputs_fail_with_a_code() -> None:
     with pytest.raises(ExtractionError) as big:
-        extract_blocks(XLSX, b"0" * (25 * 1024 * 1024 + 1))
+        extract_blocks(XLSX, b"0" * (50 * 1024 * 1024 + 1))
     assert big.value.code == "file_too_large"
 
 

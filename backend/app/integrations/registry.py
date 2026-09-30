@@ -167,7 +167,7 @@ class SharePointProviderAdapter(OneDriveProviderAdapter):
             client, OneDriveCipher(keys[0], fallback_keys=keys[1:])
         )
         self._provider.max_workers = settings.sharepoint_download_workers
-        self._provider.max_file_bytes = settings.sharepoint_max_file_bytes
+        self._provider.max_file_bytes = settings.max_file_bytes
         self.eligible_mime_types = eligible_mime_types(settings)
 
     def folders_for_selections(self, *, encrypted_credentials, selections):

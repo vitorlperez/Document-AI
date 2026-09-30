@@ -10,7 +10,7 @@ from pypdf.errors import PdfReadError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.ingestion.extraction import BASE_MIME_TYPES, extract_blocks
+from app.ingestion.extraction import BASE_MIME_TYPES, extract_blocks, limits
 from app.ingestion.extraction.errors import ExtractionError
 from app.ingestion.extraction.mime import normalize_mime_type
 from app.ingestion.service import (
@@ -31,7 +31,7 @@ from app.integrations.google_drive import (
 from app.integrations.models import DataSource
 from app.workspaces.models import WorkspaceFolderSelection
 
-MAX_EXTRACTION_WORKERS = 6
+MAX_EXTRACTION_WORKERS = 3
 REFRESH_SAFETY_MARGIN = timedelta(minutes=2)
 
 
@@ -304,6 +304,8 @@ class GoogleDriveDocumentProvider:
         }
         if mime_type not in self.eligible_mime_types:
             return DiscoveredDocument(**base)
+        if remote_file.size is not None and remote_file.size > limits.MAX_FILE_BYTES:
+            return DiscoveredDocument(**base, error_code="file_too_large")
         try:
             content = self._remote_call(
                 encrypted_credentials,
