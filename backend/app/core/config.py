@@ -70,6 +70,9 @@ class Settings(BaseSettings):
     sharepoint_download_workers: int = Field(default=2, ge=1, le=8)
     sharepoint_max_file_bytes: int = Field(default=52_428_800, ge=0)
     sharepoint_catalog_max_sites: int = Field(default=200, ge=1)
+    api_org_rate_limit_per_minute: int = Field(default=600, gt=0)
+    api_ask_rate_limit_per_minute: int = Field(default=10, gt=0)
+    public_api_ask_enabled: bool = False
     redis_url: str = "redis://localhost:6379/0"
     sync_scheduler_interval_minutes: int = 15
     sync_freshness_hours: int = 24
