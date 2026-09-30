@@ -2072,3 +2072,8 @@ def _number_answer_sources(
 
 def _estimated_tokens(text: str) -> int:
     return max(1, (len(text) + 3) // 4)
+
+
+# Public retrieval primitives shared by API/MCP.
+query_terms = _query_terms
+join_overlapping_text = _join_overlapping_text
