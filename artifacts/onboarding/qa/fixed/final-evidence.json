@@ -1,0 +1,74 @@
+{
+  "skills": "inline [qa-fix-protocol, oc-blackbox, oc-stamp]",
+  "commits": {
+    "R-1": "1bfe67b",
+    "R-2": "e22bd82",
+    "F-001": "53cde38",
+    "F-002": "20e8dab",
+    "F-003": "2836745",
+    "F-004": "8f76d10",
+    "F-005": "aca6b8e",
+    "F-006": "f56faf8",
+    "M27-two-flows": "bb648a8"
+  },
+  "commands": [
+    {
+      "cmd": "backend/.venv/bin/pytest -q (cwd backend)",
+      "exitCode": 0,
+      "result": "919 passed, 13 skipped"
+    },
+    {
+      "cmd": "backend/.venv/bin/pytest -q tests/api/test_onboarding.py tests/unit/test_onboarding_migration.py (cwd backend)",
+      "exitCode": 0,
+      "result": "15 passed"
+    },
+    {
+      "cmd": "backend/.venv/bin/ruff check app/organizations/onboarding.py tests/api/test_onboarding.py (cwd backend)",
+      "exitCode": 0
+    },
+    {
+      "cmd": "backend/.venv/bin/ruff check . (cwd backend)",
+      "exitCode": 1,
+      "result": "18 findings identical to f659262 baseline; no new findings"
+    },
+    {
+      "cmd": "npx tsc --noEmit (cwd frontend)",
+      "exitCode": 0
+    },
+    {
+      "cmd": "npm run lint (cwd frontend)",
+      "exitCode": 0
+    },
+    {
+      "cmd": "node --import /tmp/document-ai-onboarding-tools/node_modules/tsx/dist/loader.mjs --test tests/*.test.mjs (cwd frontend)",
+      "exitCode": 0,
+      "result": "39 passed, 0 failed"
+    },
+    {
+      "cmd": "npm run build (cwd frontend)",
+      "exitCode": 0,
+      "result": "5/5 stages complete"
+    },
+    {
+      "cmd": "QA_API_URL=http://localhost:8012 QA_APP_URL=http://localhost:5174 NODE_PATH=/tmp/document-ai-onboarding-tools/node_modules node artifacts/onboarding/browser-check.cjs",
+      "exitCode": 0,
+      "result": "8 scenarios across 1440 and 390, extra tablet screenshot768"
+    },
+    {
+      "cmd": "QA_API_URL=http://localhost:8012 QA_APP_URL=http://localhost:5174 NODE_PATH=/tmp/document-ai-onboarding-tools/node_modules node artifacts/onboarding/review-check.cjs",
+      "exitCode": 0,
+      "result": "R-1/R-2 pass after red reproductions"
+    },
+    {
+      "cmd": "graphify update .",
+      "exitCode": 0
+    }
+  ],
+  "pending": [],
+  "limits": [
+    "13 PostgreSQL tests skipped without TEST_DATABASE_URL",
+    "18 preexisting global Ruff findings",
+    "external authentication/provider/email/ingestion doubled in isolated browser QA"
+  ],
+  "preserved": "Other workers changes and original graph/artifacts excluded from staging"
+}

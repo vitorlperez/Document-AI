@@ -8,6 +8,7 @@ A migration `20260930_0026` continua marcando organizações e memberships anter
 
 | Item | Commit | Evidência |
 | --- | --- | --- |
+| M27 — dois fluxos | `bb648a8` | Só dono prepara; convidados recebem tour independente. Convites reais e segundo login de cada papel em desktop/celular. |
 | R-1 | `1bfe67b` | Membership atualizada via `populate_existing` e bloqueada antes de cada avanço. Regressão falhou antes para membership antiga; passou depois. A regra final foi restringida ao dono no commit próprio de M27. |
 | R-2 | `e22bd82` | AbortController protege carregamento, erros, conclusão e callbacks antigos. `review-check.cjs` segurou a resposta de B, voltou para A e entregou B atrasada: falhou antes, passou depois. |
 | F-001 | `53cde38` | Rodapé fixo no celular, com reserva de espaço e safe-area; três ações acessíveis na primeira dobra. |
