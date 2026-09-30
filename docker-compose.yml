@@ -99,6 +99,18 @@ services:
       redis:
         condition: service_healthy
 
+  # Scheduler: enqueues the periodic reconciliation ("Agendamento automático" in the
+  # sync history) and the extraction-cache purge. Exactly one beat per deployment.
+  beat:
+    <<: *backend
+    environment: *backend_environment
+    command: ["celery", "-A", "app.ingestion.tasks", "beat", "--loglevel=INFO", "--schedule=/tmp/celerybeat-schedule"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
   # Optional remote MCP server (docker compose --profile mcp up mcp). Needs the MCP_* variables;
   # without them the process refuses to start, so it stays out of the default stack.
   mcp:

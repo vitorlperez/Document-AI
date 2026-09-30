@@ -47,18 +47,29 @@ celery_app.conf.update(
 TERMINAL_ERROR_CODES = frozenset({"file_encrypted", "ocr_document_too_large"})  # file_too_large is retried: the limit is configurable
 
 
-def create_celery_app(settings: Settings) -> Celery:
-    celery_app.conf.broker_url = settings.redis_url
-    celery_app.conf.beat_schedule = {
+def beat_schedule(interval_minutes: int) -> dict[str, dict[str, object]]:
+    return {
         "schedule-connected-source-reconciliation": {
             "task": "document_intelligence.ingestion.schedule",
-            "schedule": timedelta(minutes=settings.sync_scheduler_interval_minutes),
+            "schedule": timedelta(minutes=interval_minutes),
         },
         "purge-extraction-cache": {
             "task": "document_intelligence.ingestion.purge_extraction_cache",
             "schedule": timedelta(days=1),
         },
     }
+
+
+# `celery -A app.ingestion.tasks beat` only imports this module, so the schedule
+# must exist here, not only in create_celery_app (which just the API calls).
+celery_app.conf.beat_schedule = beat_schedule(
+    int(os.getenv("SYNC_SCHEDULER_INTERVAL_MINUTES", "15"))
+)
+
+
+def create_celery_app(settings: Settings) -> Celery:
+    celery_app.conf.broker_url = settings.redis_url
+    celery_app.conf.beat_schedule = beat_schedule(settings.sync_scheduler_interval_minutes)
     return celery_app
 
 
