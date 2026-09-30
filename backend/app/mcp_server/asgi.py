@@ -13,6 +13,7 @@ from starlette.routing import Route
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.access.audit import AuditWriter
+from app.access.models import OrganizationAccessSettings
 from app.access.principal import (
     ApiKeyAuthenticator,
     InsufficientScope,
@@ -56,6 +57,9 @@ class McpAuthMiddleware:
                     principal = ApiKeyAuthenticator(session).authenticate(token)
                 except InvalidCredential as error:
                     raise InvalidToken from error
+                access_settings = session.get(OrganizationAccessSettings, principal.organization_id)
+                if access_settings is None or not access_settings.mcp_enabled:
+                    raise InvalidToken
                 session.commit()  # last-used bookkeeping
                 return principal
         verified = self.verifier.verify(token)
@@ -140,6 +144,10 @@ def build_mcp_app(settings: Settings, session_factory, rate_limiter: RateLimiter
         return await run_in_threadpool(run_sync, name, arguments, _principal.get())
 
     hosts = [host.strip() for host in settings.mcp_allowed_hosts.split(",") if host.strip()]
+    if not hosts:
+        if resource.scheme not in {"http", "https"} or not resource.hostname:
+            raise RuntimeError("MCP_ALLOWED_HOSTS or an absolute HTTP(S) MCP_RESOURCE_URL is required")
+        hosts = [resource.netloc]
     server = build_server(run_tool)
     app = server.streamable_http_app(
         streamable_http_path=path, stateless_http=True, json_response=True,

@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from starlette.testclient import TestClient
 
-from app.access.models import ApiAuditEvent, McpConnection
+from app.access.models import ApiAuditEvent, McpConnection, OrganizationAccessSettings
 from app.access.ratelimit import InMemoryRateLimiter
 from app.core.config import Settings
 from app.core.models import Base
@@ -37,9 +37,9 @@ def factory():
     return sessionmaker(bind=engine, expire_on_commit=False)
 
 
-def _make_client(factory, private_key, *, limit=60, static_keys=False):
-    settings = Settings(_env_file=None, database_url="postgresql+psycopg://test_user:not-a-secret@localhost:5432/test_db", mcp_resource_url=RESOURCE, mcp_issuer_url=ISSUER,
-                        mcp_allowed_hosts="mcp.example.test", mcp_rate_limit_per_minute=limit,
+def _make_client(factory, private_key, *, limit=60, static_keys=False, allowed_hosts="mcp.example.test", resource=RESOURCE):
+    settings = Settings(_env_file=None, database_url="postgresql+psycopg://test_user:not-a-secret@localhost:5432/test_db", mcp_resource_url=resource, mcp_issuer_url=ISSUER,
+                        mcp_allowed_hosts=allowed_hosts, mcp_rate_limit_per_minute=limit,
                         mcp_static_key_enabled=static_keys)
     verifier = AuthKitTokenVerifier(issuer=ISSUER, resource=RESOURCE, key_resolver=lambda _t: private_key.public_key())
     app = build_mcp_app(settings, factory, InMemoryRateLimiter(), verifier)
@@ -210,3 +210,41 @@ def test_plan_c_static_api_key_works_when_enabled_and_stays_scoped(factory, priv
         assert rpc_raw(static, "arq_nope_nothing", "tools/list").status_code == 401
     with factory() as s:
         assert s.query(ApiAuditEvent).filter_by(channel="mcp", action="search").count() == 2
+
+
+def test_plan_c_obeys_mcp_toggle_on_every_request(factory, private_key):
+    a = seed_tenant(factory, "A", "Projeto Aurora")
+    key = mint_key(factory, a)
+    with _make_client(factory, private_key, static_keys=True) as static:
+        assert rpc_raw(static, key, "tools/list").status_code == 200
+        with factory.begin() as session:
+            session.get(OrganizationAccessSettings, a.organization_id).mcp_enabled = False
+        assert rpc_raw(static, key, "tools/list").status_code == 401
+        with factory.begin() as session:
+            session.delete(session.get(OrganizationAccessSettings, a.organization_id))
+        assert rpc_raw(static, key, "tools/list").status_code == 401
+
+
+def test_default_allowed_hosts_is_derived_from_resource(factory, private_key, world):
+    with _make_client(factory, private_key, allowed_hosts="  , ") as derived:
+        assert rpc_raw(derived, world[2], "tools/list").status_code == 200
+        bad = derived.post("/mcp", headers=HEADERS | {
+            "Authorization": f"Bearer {world[2]}", "Host": "evil.example.test"},
+            json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
+        assert bad.status_code == 421
+
+
+def test_allowed_host_derivation_keeps_explicit_port(factory, private_key, world):
+    with _make_client(factory, private_key, allowed_hosts="", resource="https://mcp.example.test:8443/mcp") as derived:
+        headers = HEADERS | {"Authorization": f"Bearer {world[2]}", "Host": "mcp.example.test:8443"}
+        assert derived.post("/mcp", headers=headers,
+                            json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"}).status_code == 200
+        headers["Host"] = "mcp.example.test:9999"
+        assert derived.post("/mcp", headers=headers,
+                            json={"jsonrpc": "2.0", "id": 2, "method": "tools/list"}).status_code == 421
+
+
+@pytest.mark.parametrize("resource", [None, "/mcp", "file:///mcp"])
+def test_no_host_and_unusable_resource_fails_at_boot(factory, private_key, resource):
+    with pytest.raises(RuntimeError, match="MCP_ALLOWED_HOSTS"):
+        _make_client(factory, private_key, allowed_hosts="", resource=resource)
