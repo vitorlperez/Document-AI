@@ -86,3 +86,10 @@ def test_browser_preflight_allows_access_switch_put(admin_api):
     })
     assert response.status_code == 200
     assert "PUT" in response.headers["access-control-allow-methods"]
+
+
+def test_review_14_one_time_key_response_is_never_cached(admin_api):
+    client, _factory, org = admin_api
+    response = client.post(f'/organizations/{org}/api-keys', json={'name': 'x', 'scopes': ['search:read']})
+    assert response.status_code == 201
+    assert response.headers.get('Cache-Control') == 'no-store'

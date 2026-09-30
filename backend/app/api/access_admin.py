@@ -71,7 +71,7 @@ def _serialize(key: ApiKey):
 
 
 @router.post("/api-keys", status_code=201)
-def create_key(organization_id: UUID, payload: KeyInput,
+def create_key(organization_id: UUID, payload: KeyInput, response: Response,
                user: User = Depends(current_user), session: Session = Depends(database_session)):
     _require_admin(session, organization_id, user.id)
     node_ids = list(dict.fromkeys(payload.node_ids or []))
@@ -90,6 +90,7 @@ def create_key(organization_id: UUID, payload: KeyInput,
     session.add(key)
     session.flush()
     _audit(session, organization_id, user.id, "api_key.created", "api_key", key.id)
+    response.headers["Cache-Control"] = "no-store"
     return _serialize(key) | {"key": generated.raw}
 
 
