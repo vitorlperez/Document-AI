@@ -150,6 +150,12 @@ export function ProductApp({ screen }: { screen: Screen }) {
     finally { setLoading(false); }
   }, [router, screen, params.companyId]);
   useEffect(() => { void Promise.resolve().then(loadSession); }, [loadSession]);
+  useEffect(() => {
+    if (!onboarding?.required) return;
+    const refresh = () => { void loadSession(); };
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [loadSession, onboarding?.required]);
   const oauthProvider = screen === "integrations" ? searchParams.get("connected") : null;
   const oauthError = screen === "integrations" ? searchParams.get("error") : null;
   const oauthFailure = oauthErrorMessage(oauthError);
@@ -174,8 +180,15 @@ export function ProductApp({ screen }: { screen: Screen }) {
   if (screen === "staff") return <StaffCenter user={user} onBack={() => router.push(companies[0] ? companyPath(companies[0].id) : "/")} />;
   if (!isUuid(params.companyId) || !company) return <InvalidCompany companies={companies} onChoose={goCompany} />;
   if (!onboarding || onboarding.organizationId !== company.id) return <main className="auth-page"><section className="auth-card"><Brand /><p role="alert" className="mt-6">{error ?? "Preparando sua organização…"}</p><button onClick={() => { void loadSession(); }} className="onboarding-primary mt-4">Tentar novamente</button><button onClick={() => { void logout(); }} className="onboarding-text-button mt-4">Sair</button></section></main>;
-  if (onboarding.required) return <OrganizationOnboarding key={company.id} name={company.name} state={onboarding} onLogout={() => { void logout(); }} alert={alertMessage ? <NotificationToast message={alertMessage} tone={error || oauthFailure ? "error" : "notice"} onDismiss={dismissAlert} /> : null} onAdvance={async (step) => {
+  if (onboarding.required && company.role !== "member") return <OrganizationOnboarding key={company.id} name={company.name} state={onboarding} onLogout={() => { void logout(); }} alert={alertMessage ? <NotificationToast message={alertMessage} tone={error || oauthFailure ? "error" : "notice"} onDismiss={dismissAlert} /> : null} onAdvance={async (step) => {
     try {
+      const memberships = await api<Company[]>("/organizations", { cache: "no-store" });
+      setCompanies(memberships);
+      const currentMembership = memberships.find((item) => item.id === company.id);
+      if (!currentMembership || currentMembership.role === "member") {
+        await loadSession();
+        throw new Error("Você não tem permissão para esta ação.");
+      }
       const progress = await api<OnboardingState>(`/organizations/${company.id}/onboarding`, { method: "PATCH", body: JSON.stringify({ step }) });
       setOnboarding({ ...progress, organizationId: company.id });
       if (!progress.required) router.replace(companyPath(company.id));

@@ -97,3 +97,27 @@ def test_admin_can_configure_and_anonymous_requests_are_rejected(auth_api):  # n
     assert client.get(path).status_code == 401
     assert client.patch(path, json={"step": "complete"}).status_code == 401
     assert client.post(path + "/tour/complete").status_code == 401
+
+
+@pytest.mark.parametrize("step", ["integrations", "complete"])
+def test_demoted_admin_cannot_advance_with_cached_membership(auth_api, step):  # noqa: F811
+    from sqlalchemy import update
+
+    from app.organizations.onboarding import OnboardingNotAllowed, OnboardingService
+
+    client, factory, gateway, _ = auth_api
+    org = UUID(create(client, gateway))
+    with factory.begin() as session:
+        session.scalar(select(Membership)).role = MembershipRole.ADMIN
+    with factory() as session:
+        membership = session.scalar(select(Membership))
+        service = OnboardingService(session)
+        assert service.state(organization_id=org, user_id=membership.user_id)["required"]
+        # A second transaction changes the role while this session retains its identity map.
+        with factory.begin() as other:
+            other.execute(update(Membership).where(Membership.id == membership.id).values(role=MembershipRole.MEMBER))
+        with pytest.raises(OnboardingNotAllowed):
+            service.advance(organization_id=org, user_id=membership.user_id, step=step)
+        session.rollback()
+    assert client.get(f"/organizations/{org}/onboarding").json()["step"] == "welcome"
+    assert client.patch(f"/organizations/{org}/onboarding", json={"step": step}).status_code == 403

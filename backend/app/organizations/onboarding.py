@@ -56,11 +56,14 @@ class OnboardingService:
         return self.state(organization_id=organization_id, user_id=user_id)
 
     def _rows(self, organization_id: UUID, user_id: UUID, *, lock: bool = False):
-        membership = self.session.scalar(select(Membership).where(
+        membership_query = select(Membership).where(
             Membership.organization_id == organization_id,
             Membership.user_id == user_id,
             Membership.is_active.is_(True),
-        ))
+        ).execution_options(populate_existing=True)
+        if lock:
+            membership_query = membership_query.with_for_update()
+        membership = self.session.scalar(membership_query)
         if membership is None:
             raise OnboardingNotAllowed("active membership required")
         query = select(Organization).where(Organization.id == organization_id)
