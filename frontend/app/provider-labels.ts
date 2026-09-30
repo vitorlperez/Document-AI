@@ -15,6 +15,8 @@ const OAUTH_ERRORS: Record<string, string> = {
   sharepoint_tenant_mismatch: "Esta fonte SharePoint pertence a outra organização Microsoft 365 (outro tenant). Reconecte com uma conta da mesma organização.",
   sharepoint_admin_consent: "Sua organização Microsoft 365 exige aprovação do administrador para conectar o SharePoint. Peça ao administrador para autorizar o acesso e tente novamente.",
   sharepoint: "Não foi possível conectar o SharePoint. Tente novamente.",
+  onedrive_unavailable: "A integração com o OneDrive não está configurada neste ambiente. Peça ao administrador da plataforma para habilitá-la.",
+  sharepoint_unavailable: "A integração com o SharePoint não está configurada neste ambiente. Peça ao administrador da plataforma para habilitá-la.",
 };
 
 export function oauthErrorMessage(code: string | null | undefined): string | null {

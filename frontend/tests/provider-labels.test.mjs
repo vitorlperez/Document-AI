@@ -18,3 +18,8 @@ test("oauthErrorMessage explains tenant mismatch and admin consent for SharePoin
   assert.equal(oauthErrorMessage(null), null);
   assert.equal(oauthErrorMessage("unknown"), null);
 });
+
+test("oauthErrorMessage explains unconfigured Microsoft providers", () => {
+  assert.match(oauthErrorMessage("sharepoint_unavailable"), /SharePoint.*não está configurada/i);
+  assert.match(oauthErrorMessage("onedrive_unavailable"), /OneDrive.*não está configurada/i);
+});

@@ -142,6 +142,12 @@ def _microsoft_start(
             source_id=source_id,
         )
     except OneDriveOAuthUnavailable as error:
+        if "text/html" in request.headers.get("accept", "").lower():
+            app_url = request.app.state.settings.public_app_url.rstrip("/")
+            return RedirectResponse(
+                f"{app_url}/companies/{organization_id}/integrations?error={provider}_unavailable",
+                status_code=303,
+            )
         raise HTTPException(503, "integration unavailable") from error
     except OneDriveAccessDenied as error:
         raise HTTPException(403, "not allowed") from error

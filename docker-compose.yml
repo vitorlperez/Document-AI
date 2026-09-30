@@ -47,6 +47,10 @@ services:
       MICROSOFT_OAUTH_CLIENT_ID: ${MICROSOFT_OAUTH_CLIENT_ID:-}
       MICROSOFT_OAUTH_CLIENT_SECRET: ${MICROSOFT_OAUTH_CLIENT_SECRET:-}
       MICROSOFT_OAUTH_REDIRECT_URI: ${MICROSOFT_OAUTH_REDIRECT_URI:-http://localhost:8000/data-sources/onedrive/oauth/callback}
+      MICROSOFT_SHAREPOINT_REDIRECT_URI: ${MICROSOFT_SHAREPOINT_REDIRECT_URI:-http://localhost:8000/data-sources/sharepoint/oauth/callback}
+      SHAREPOINT_DOWNLOAD_WORKERS: ${SHAREPOINT_DOWNLOAD_WORKERS:-2}
+      SHAREPOINT_MAX_FILE_BYTES: ${SHAREPOINT_MAX_FILE_BYTES:-52428800}
+      SHAREPOINT_CATALOG_MAX_SITES: ${SHAREPOINT_CATALOG_MAX_SITES:-200}
       MICROSOFT_TOKEN_ENCRYPTION_KEY: ${MICROSOFT_TOKEN_ENCRYPTION_KEY:-}
       NOTION_OAUTH_CLIENT_ID: ${NOTION_OAUTH_CLIENT_ID:-}
       NOTION_OAUTH_CLIENT_SECRET: ${NOTION_OAUTH_CLIENT_SECRET:-}
@@ -88,6 +92,28 @@ services:
     <<: *backend
     environment: *backend_environment
     command: ["celery", "-A", "app.ingestion.tasks", "worker", "--loglevel=INFO"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  # Optional remote MCP server (docker compose --profile mcp up mcp). Needs the MCP_* variables;
+  # without them the process refuses to start, so it stays out of the default stack.
+  mcp:
+    <<: *backend
+    profiles: ["mcp"]
+    environment:
+      <<: *backend_environment
+      MCP_RESOURCE_URL: ${MCP_RESOURCE_URL:-}
+      MCP_ISSUER_URL: ${MCP_ISSUER_URL:-}
+      MCP_JWKS_URL: ${MCP_JWKS_URL:-}
+      MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-}
+      MCP_RATE_LIMIT_PER_MINUTE: ${MCP_RATE_LIMIT_PER_MINUTE:-60}
+      MCP_STATIC_KEY_ENABLED: ${MCP_STATIC_KEY_ENABLED:-false}
+    command: ["uvicorn", "app.mcp_server.asgi:app", "--host", "0.0.0.0", "--port", "8001"]
+    ports:
+      - "8001:8001"
     depends_on:
       migrate:
         condition: service_completed_successfully

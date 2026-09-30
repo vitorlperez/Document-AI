@@ -82,6 +82,8 @@ API_PUBLIC_URL=https://api.seudominio.com
    | `GOOGLE_TOKEN_ENCRYPTION_KEY` | a mesma chave Fernet estável usada localmente |
    | `MICROSOFT_OAUTH_CLIENT_ID`, `MICROSOFT_OAUTH_CLIENT_SECRET` | credencial do app registrado no Microsoft Entra |
    | `MICROSOFT_OAUTH_REDIRECT_URI` | `https://api.seudominio.com/data-sources/onedrive/oauth/callback` |
+   | `MICROSOFT_SHAREPOINT_REDIRECT_URI` | `https://api.seudominio.com/data-sources/sharepoint/oauth/callback` (mesmo app Entra; adicione também `Sites.Read.All`) |
+   | `SHAREPOINT_DOWNLOAD_WORKERS`, `SHAREPOINT_MAX_FILE_BYTES`, `SHAREPOINT_CATALOG_MAX_SITES` | opcionais; padrões 2, 52428800 e 200 |
    | `MICROSOFT_TOKEN_ENCRYPTION_KEY` | chave Fernet estável para tokens e cursores OneDrive |
    | `RESEND_API_KEY`, `INVITATION_FROM_EMAIL` | configuração atual de convites |
 

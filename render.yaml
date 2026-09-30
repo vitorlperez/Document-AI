@@ -40,6 +40,14 @@ services:
         sync: false
       - key: MICROSOFT_OAUTH_REDIRECT_URI
         sync: false
+      - key: MICROSOFT_SHAREPOINT_REDIRECT_URI
+        sync: false
+      - key: SHAREPOINT_DOWNLOAD_WORKERS
+        value: "2"
+      - key: SHAREPOINT_MAX_FILE_BYTES
+        value: "52428800"
+      - key: SHAREPOINT_CATALOG_MAX_SITES
+        value: "200"
       - key: MICROSOFT_TOKEN_ENCRYPTION_KEY
         sync: false
       - key: NOTION_OAUTH_CLIENT_ID

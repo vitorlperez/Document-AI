@@ -213,6 +213,20 @@ def test_sharepoint_reconnect_to_other_tenant_is_rejected_with_html_redirect(
         assert source.provider_account_id == "contoso.sharepoint.com"
 
 
+def test_sharepoint_start_without_config_redirects_html_to_unavailable_notice(
+    sharepoint_api,
+) -> None:
+    client, _factory, organization_id, _source_id = owner_org(sharepoint_api)
+    client.app.state.settings.microsoft_sharepoint_redirect_uri = None
+    url = f"/data-sources/sharepoint/oauth/start?organization_id={organization_id}"
+    browser = client.get(url, headers={"accept": "text/html"}, follow_redirects=False)
+    assert browser.status_code == 303
+    assert browser.headers["location"].endswith(
+        f"/companies/{organization_id}/integrations?error=sharepoint_unavailable"
+    )
+    assert client.get(url, follow_redirects=False).status_code == 503
+
+
 def test_member_cannot_start_sharepoint_oauth(sharepoint_api) -> None:
     client, factory, organization_id, source_id = owner_org(sharepoint_api)
     _, _, gateway, _ = sharepoint_api

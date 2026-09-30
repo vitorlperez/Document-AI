@@ -41,6 +41,8 @@ GOOGLE_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/google/oau
 MICROSOFT_OAUTH_CLIENT_ID=<client id>
 MICROSOFT_OAUTH_CLIENT_SECRET=<segredo>
 MICROSOFT_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/onedrive/oauth/callback
+MICROSOFT_SHAREPOINT_REDIRECT_URI=https://app.seudominio.com/api/data-sources/sharepoint/oauth/callback
+# Opcionais do SharePoint (padrões): SHAREPOINT_DOWNLOAD_WORKERS=2, SHAREPOINT_MAX_FILE_BYTES=52428800, SHAREPOINT_CATALOG_MAX_SITES=200
 NOTION_OAUTH_CLIENT_ID=<client id>
 NOTION_OAUTH_CLIENT_SECRET=<segredo>
 NOTION_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/notion/oauth/callback
@@ -80,6 +82,7 @@ Depois de HTTPS funcionar, cadastre os callbacks exatos:
 - WorkOS: redirect `https://app.seudominio.com/api/auth/callback`; retorno após logout `https://app.seudominio.com/login`.
 - Google Cloud OAuth: `https://app.seudominio.com/api/data-sources/google/oauth/callback`.
 - Microsoft Entra: `https://app.seudominio.com/api/data-sources/onedrive/oauth/callback` e os tipos de conta/permissões aprovados para OneDrive pessoal e corporativo.
+- Microsoft Entra (SharePoint, mesmo app multi-tenant): `https://app.seudominio.com/api/data-sources/sharepoint/oauth/callback` e a permissão delegada `Sites.Read.All`. O valor deve casar caractere por caractere com `MICROSOFT_SHAREPOINT_REDIRECT_URI`. Veja `docs/integracoes/sharepoint-runbook-consentimento-admin.md`.
 - Notion: `https://app.seudominio.com/api/data-sources/notion/oauth/callback`.
 - Resend: verifique o domínio do remetente de convites.
 
