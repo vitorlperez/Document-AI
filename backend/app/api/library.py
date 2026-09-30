@@ -16,7 +16,7 @@ from app.ingestion.service import (
     SyncAccessDenied,
     SyncAlreadyActive,
 )
-from app.library.manual_sync import request_run, serialize_run
+from app.library.manual_sync import SyncCooldown, request_run, serialize_run
 from app.library.models import LibraryNode, ManualSyncRun
 from app.library.service import PAGE_SIZE_MAX, IndexedDocumentProvenance, LibraryService
 from app.workspaces.models import WorkspaceFolder
@@ -226,10 +226,12 @@ def reprocess_library_folder(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="document not found") from error
     except SyncAlreadyActive as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="workspace sync already active") from error
+    except SyncCooldown as error:
+        raise _cooldown(error) from error
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     _dispatch_manual_jobs(request=request, session=session, jobs=jobs)
-    return {"documents": len(documents), "run_id": str(run.id), "job_ids": [str(job.id) for job in jobs]}
+    return {"documents": len(documents), "run_id": _run_id(run, jobs), "job_ids": [str(job.id) for job in jobs]}
 
 
 @router.delete("/library/nodes/{node_id}/index")
@@ -351,13 +353,27 @@ def reprocess_library_workspace(workspace_id: UUID, organization_id: UUID, reque
         raise HTTPException(status_code=403, detail="not allowed") from error
     except SyncAlreadyActive as error:
         raise HTTPException(status_code=409, detail="workspace sync already active") from error
+    except SyncCooldown as error:
+        raise _cooldown(error) from error
     _dispatch_manual_jobs(request=request, session=session, jobs=jobs)
-    return {"run_id": str(run.id), "job_id": str(jobs[0].id), "status": "queued"}
+    return {"run_id": _run_id(run, jobs), "job_id": str(jobs[0].id), "status": "queued"}
+
+
+def _cooldown(error: SyncCooldown) -> HTTPException:
+    return HTTPException(429, "sync requested too soon for this space",
+                         headers={"Retry-After": str(error.retry_after)})
+
+
+def _run_id(run, jobs) -> str:
+    """History id of the run; a followed job from a scheduled sync is listed under its job id."""
+    return str(run.id) if run else str(jobs[0].manual_run_id or jobs[0].id)
 
 
 def _dispatch_manual_jobs(*, request: Request, session: Session, jobs):
     queue_failed = False
     for job in jobs:
+        if getattr(job, "reused", False):
+            continue
         try:
             request.app.state.ingestion_dispatcher.dispatch(job_id=job.id)
         except RuntimeError:

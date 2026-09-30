@@ -20,3 +20,11 @@ def test_database_url() -> str:
     if not database_url.startswith(("postgresql://", "postgresql+psycopg://")):
         pytest.fail("TEST_DATABASE_URL must point to PostgreSQL")
     return database_url
+
+
+@pytest.fixture(autouse=True)
+def no_manual_sync_cooldown(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests trigger several manual syncs back to back; the cooldown has its own test."""
+    from app.library import manual_sync
+
+    monkeypatch.setattr(manual_sync, "SYNC_COOLDOWN_SECONDS", 0)

@@ -334,8 +334,13 @@ def test_manual_queue_failure_is_persisted_and_active_run_cannot_be_reused(api):
     assert history['status'] == 'failed' and history['completed_at']
     assert history['tasks'][0]['error_code'] == 'sync_queue_unavailable'
     client.app.state.ingestion_dispatcher = type('Dispatcher', (), {'dispatch': lambda self, job_id: None})()
-    assert client.post(f'/library/nodes/{outer}/reprocess?organization_id={organization}').status_code == 202
-    assert client.post(f'/library/nodes/{outer}/reprocess?organization_id={organization}').status_code == 409
+    first = client.post(f'/library/nodes/{outer}/reprocess?organization_id={organization}')
+    assert first.status_code == 202
+    # An incremental request while a sync is active follows that job instead of conflicting.
+    second = client.post(f'/library/nodes/{outer}/reprocess?organization_id={organization}')
+    assert second.status_code == 202 and second.json()['job_ids'] == first.json()['job_ids']
+    # A complete resync still refuses to overlap an active job.
+    assert client.post(f'/library/nodes/{outer}/reprocess?organization_id={organization}&reprocess_all=true').status_code == 409
 
 
 @pytest.mark.parametrize("indexed", [True, False])

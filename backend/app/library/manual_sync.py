@@ -1,7 +1,7 @@
 """Durable synchronization snapshots. A run is incremental (provider delta, only what changed)
 or full (complete discovery and rebuild of every file)."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import select
@@ -9,11 +9,31 @@ from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
-from app.ingestion.models import ProcessingJob
+from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveredDocument, IngestionService, SyncAccessDenied
 from app.knowledge.models import Document
 from app.library.models import LibraryNode, ManualSyncRun
+from app.organizations.models import Membership
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
+
+# An incremental sync is open to every member, so each space is rate limited.
+SYNC_COOLDOWN_SECONDS = 60
+
+
+class SyncCooldown(Exception):
+    def __init__(self, retry_after: int) -> None:
+        super().__init__("sync requested too soon for this space")
+        self.retry_after = retry_after
+
+
+def _require_member(session: Session, scope: OrganizationScope, user: User) -> None:
+    member = session.scalar(select(Membership.id).where(
+        Membership.organization_id == scope.organization_id,
+        Membership.user_id == user.id,
+        Membership.is_active.is_(True),
+    ))
+    if member is None:
+        raise SyncAccessDenied("company library access denied")
 
 
 def record_sync(
@@ -93,7 +113,12 @@ def request_run(
     """``reprocess_all`` also clears every hash of the spaces; ``full_mode`` only labels the run
     (and forces full discovery) for callers that clear a narrower set of hashes themselves."""
     ingestion = IngestionService(session)
-    ingestion.require_admin(scope=scope, user_id=user.id)
+    full = reprocess_all or full_mode
+    if full:
+        # Complete resync rebuilds everything and spends quota: Owner/Admin only.
+        ingestion.require_admin(scope=scope, user_id=user.id)
+    else:
+        _require_member(session, scope, user)
     if workspace_id:
         folder = ingestion.require_folder(scope=scope, workspace_folder_id=workspace_id, lock=True)
         source_id, kind, external_id, name = folder.source_id, "workspace", None, folder.name
@@ -125,9 +150,37 @@ def request_run(
             folders = _containing_workspaces(session, node, folders)
     if not folders:
         raise ValueError("Nenhum espaço sincronizado nesta ferramenta. Selecione um espaço na integração antes de ressincronizar.")
+    fresh: list[WorkspaceFolder] = []
+    reused: list[ProcessingJob] = []
+    cooling: list[WorkspaceFolder] = []
+    cutoff = datetime.now(UTC) - timedelta(seconds=SYNC_COOLDOWN_SECONDS)
     for folder in folders:
         ingestion.require_folder(scope=scope, workspace_folder_id=folder.id, lock=True)
-        ingestion._require_no_active_job(scope=scope, workspace_folder_id=folder.id)
+        if full:
+            ingestion._require_no_active_job(scope=scope, workspace_folder_id=folder.id)
+            fresh.append(folder)
+            continue
+        active = session.scalar(select(ProcessingJob).where(
+            ProcessingJob.organization_id == scope.organization_id,
+            ProcessingJob.workspace_folder_id == folder.id,
+            ProcessingJob.status.in_([ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING]),
+        ))
+        if active is not None:
+            # Someone already syncs this space: follow that job instead of failing.
+            active.reused = True
+            reused.append(active)
+        elif session.scalar(select(ProcessingJob.id).where(
+            ProcessingJob.workspace_folder_id == folder.id, ProcessingJob.created_at >= cutoff,
+            ProcessingJob.manual_run_id.is_not(None), ProcessingJob.status != ProcessingJobStatus.FAILED,
+        ).limit(1)) is not None:
+            cooling.append(folder)
+        else:
+            fresh.append(folder)
+    if not fresh:
+        if reused:
+            return session.get(ManualSyncRun, reused[0].manual_run_id) if reused[0].manual_run_id else None, reused
+        raise SyncCooldown(SYNC_COOLDOWN_SECONDS)
+    folders = fresh
     run = ManualSyncRun(
         organization_id=scope.organization_id,
         source_id=source_id,
@@ -145,8 +198,9 @@ def request_run(
     session.flush()
     jobs = []
     for folder in folders:
-        job = ingestion.enqueue(scope=scope, user_id=user.id, workspace_folder_id=folder.id,
-                                record_history=False)
+        # Authorization was decided above (member for incremental, admin for complete).
+        job = ingestion._enqueue(scope=scope, user_id=user.id, workspace_folder_id=folder.id,
+                                 record_history=False)
         job.manual_run_id = run.id
         jobs.append(job)
     run.progress = {
@@ -213,7 +267,7 @@ def request_run(
         )):
             document.content_hash = ""
     session.flush()
-    return run, jobs
+    return run, jobs + reused
 
 
 def scoped_documents(session: Session, job: ProcessingJob, documents, folders=()):
