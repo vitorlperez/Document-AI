@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const output = path.join(__dirname, 'qa', 'fixed');
 fs.mkdirSync(output, { recursive: true });
-const checks = new Set((process.env.CHECK_ITEMS ?? 'F-001,F-002,F-003,F-004').split(','));
+const checks = new Set((process.env.CHECK_ITEMS ?? 'F-001,F-002,F-003,F-004,F-005').split(','));
 const check = (id, fn) => checks.has(id) ? fn() : undefined;
 
 (async () => {
@@ -105,6 +105,12 @@ const check = (id, fn) => checks.has(id) ? fn() : undefined;
     }
     await page.locator('dialog[open]').waitFor({ state: 'detached' });
     await page.getByRole('heading', { name: 'O que você quer descobrir?', exact: true }).waitFor();
+    await check('F-005', async () => {
+      const message = page.getByText('Sincronização em andamento — as respostas ficam disponíveis conforme a indexação termina.', { exact: true });
+      await message.first().waitFor();
+      assert.equal(await message.count(), 2, 'F-005: persistent queue status in sidebar and composer');
+      assert.equal(await page.getByText('Nenhuma fonte sincronizada.', { exact: true }).count(), 0);
+    });
     const checkScope = async () => assert.equal(await page.evaluate(() => {
       const scope = document.querySelector('.sources-scope');
       if (getComputedStyle(scope).display === 'none') return true;
