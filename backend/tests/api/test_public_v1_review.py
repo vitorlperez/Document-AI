@@ -104,3 +104,13 @@ def test_review_7_invalid_document_id_uses_a_bounded_route_action(api):
     with factory() as session:
         row = session.query(ApiAuditEvent).one()
         assert row.action == 'document' and len(row.action) <= 40
+
+
+def test_review_8_audit_action_is_consistent_on_denied_sources_and_fetch(api):
+    from app.access.models import ApiAuditEvent, SCOPE_ASK, SCOPE_SEARCH
+    client, factory = api
+    tenant = seed_tenant(factory, 'A', 'Aurora')
+    assert client.get('/v1/sources', headers=bearer(mint_key(factory, tenant, scopes={SCOPE_ASK}))).status_code == 403
+    assert client.get(f'/v1/documents/{tenant.document_id}', headers=bearer(mint_key(factory, tenant, scopes={SCOPE_SEARCH}))).status_code == 403
+    with factory() as session:
+        assert {r.action for r in session.query(ApiAuditEvent)} == {'list_sources', 'fetch'}

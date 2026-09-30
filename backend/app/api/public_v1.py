@@ -170,13 +170,13 @@ def _record(request: Request, principal: Principal, action: str, outcome: str, h
 
 
 @router.get("/whoami")
-def whoami(request: Request, principal: Principal = Depends(guarded(SCOPE_SEARCH, "meta"))) -> dict[str, object]:
+def whoami(request: Request, principal: Principal = Depends(guarded(SCOPE_SEARCH, "whoami"))) -> dict[str, object]:
     return {"organization_id": str(principal.organization_id), "scopes": sorted(principal.scopes),
             "restricted_to_nodes": [str(n) for n in principal.node_ids] if principal.node_ids else None}
 
 
 @router.get("/sources")
-def sources(request: Request, principal: Principal = Depends(guarded(SCOPE_SEARCH, "sources")),
+def sources(request: Request, principal: Principal = Depends(guarded(SCOPE_SEARCH, "list_sources")),
             session: Session = Depends(database_session)) -> dict[str, object]:
     contexts = LibraryService(session).question_contexts(scope=principal.scope, user_id=principal.user_id)
     if principal.node_ids:
@@ -212,7 +212,7 @@ def search(payload: SearchInput, request: Request,
 
 @router.get("/documents/{document_id}")
 def document(document_id: UUID, request: Request,
-             principal: Principal = Depends(guarded(SCOPE_DOCUMENTS, "documents")),
+             principal: Principal = Depends(guarded(SCOPE_DOCUMENTS, "fetch")),
              session: Session = Depends(database_session)) -> dict[str, object]:
     try:
         selection = ScopedAccess(session, principal).selection(None)
