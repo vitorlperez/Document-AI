@@ -363,6 +363,14 @@ def disconnect_source(
             DataSource.organization_id == organization_id,
         )
     )
+    if source is not None and source.provider == "notion":
+        try:
+            notion_service(request, session).disconnect(
+                scope=OrganizationScope(organization_id), user_id=user.id, source_id=source_id
+            )
+        except NotionAccessDenied as error:
+            raise HTTPException(403, "not allowed") from error
+        return
     if source is not None and source.provider == "onedrive":
         try:
             onedrive_service(request, session).disconnect(

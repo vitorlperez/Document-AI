@@ -3,6 +3,7 @@
 import logging
 import os
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -313,6 +314,13 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             # of work. A failed projection retries the job and never leaves a
             # ready sync that cannot be browsed from the Company Library.
             source_folders = provider.folders(encrypted_credentials=source.encrypted_credentials)
+            document_results, source_folders = LibraryService(session).filter_excluded_content(
+                organization_id=job.organization_id, source_id=source.id,
+                documents=document_results, folders=source_folders,
+            )
+            discovered_documents = (
+                replace(discovery, documents=document_results) if discovery else document_results
+            )
             if getattr(job, "manual_run_id", None):
                 from app.library.manual_sync import scoped_documents, update_progress
                 manual_documents = scoped_documents(session, job, document_results, source_folders)

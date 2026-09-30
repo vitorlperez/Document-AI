@@ -3,12 +3,13 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy import select
+from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
 from app.api.auth import current_user, database_session
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
+from app.ingestion.models import ProcessingJob
 from app.ingestion.service import (
     IngestionService,
     ManagedDocumentNotFound,
@@ -18,6 +19,7 @@ from app.ingestion.service import (
 from app.library.manual_sync import request_run, serialize_run
 from app.library.models import LibraryNode, ManualSyncRun
 from app.library.service import PAGE_SIZE_MAX, IndexedDocumentProvenance, LibraryService
+from app.workspaces.models import WorkspaceFolder
 
 router = APIRouter(tags=["library"])
 
@@ -219,6 +221,8 @@ def reprocess_library_folder(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="document not found") from error
     except SyncAlreadyActive as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="workspace sync already active") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
     _dispatch_manual_jobs(request=request, session=session, jobs=jobs)
     return {"documents": len(documents), "run_id": str(run.id), "job_ids": [str(job.id) for job in jobs]}
 
@@ -235,6 +239,21 @@ def remove_library_folder_from_index(
         scope = OrganizationScope(organization_id)
         library = LibraryService(session)
         ingestion = IngestionService(session)
+        ingestion.require_admin(scope=scope, user_id=user.id)
+        node = session.scalar(select(LibraryNode).where(
+            LibraryNode.id == node_id,
+            LibraryNode.organization_id == organization_id,
+            LibraryNode.kind == "folder",
+        ))
+        if node is None:
+            raise SyncAccessDenied("company library node unavailable")
+        # Lock sync scopes before discovering provenance, including empty folders.
+        folders = list(session.scalars(select(WorkspaceFolder).where(
+            WorkspaceFolder.organization_id == organization_id,
+            WorkspaceFolder.source_id == node.source_id,
+        ).order_by(WorkspaceFolder.id).with_for_update()))
+        for folder in folders:
+            ingestion._require_no_active_job(scope=scope, workspace_folder_id=folder.id)
         documents = library.indexed_documents_under(scope=scope, user_id=user.id, node_id=node_id)
         for workspace_folder_id, document_ids in _documents_by_workspace(documents).items():
             for document_id in document_ids:
@@ -244,6 +263,7 @@ def remove_library_folder_from_index(
                 library.remove_file_if_unindexed(
                     scope=scope, source_id=removed.source_id, external_file_id=removed.external_file_id
                 )
+        library.remove_folder_catalog(scope=scope, node_id=node_id)
         session.commit()
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
@@ -254,6 +274,52 @@ def remove_library_folder_from_index(
     return {"documents": len(documents)}
 
 
+@router.get("/library/sync-history")
+def synchronization_history(
+    organization_id: UUID,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> dict[str, object]:
+    """Combine durable manual runs and ordinary jobs without duplicate workspace tasks."""
+    try:
+        LibraryService(session).require_member(scope=OrganizationScope(organization_id), user_id=user.id)
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=403, detail="not allowed") from error
+    runs = session.scalars(select(ManualSyncRun).where(
+        ManualSyncRun.organization_id == organization_id,
+    ).order_by(ManualSyncRun.created_at.desc(), ManualSyncRun.id.desc()).limit(100))
+    items = [serialize_run(run) for run in runs]
+    jobs = session.execute(select(ProcessingJob, WorkspaceFolder).join(
+        WorkspaceFolder, WorkspaceFolder.id == ProcessingJob.workspace_folder_id,
+    ).where(
+        ProcessingJob.organization_id == organization_id,
+        WorkspaceFolder.organization_id == organization_id,
+        ProcessingJob.manual_run_id.is_(None),
+        ~exists(select(ManualSyncRun.id).where(
+            ManualSyncRun.organization_id == organization_id,
+            ManualSyncRun.scope_kind == "sync",
+            # SQLite stores UUIDs without hyphens; PostgreSQL casts include them.
+            func.replace(ManualSyncRun.scope_external_id, "-", "") ==
+            func.replace(ProcessingJob.id.cast(ManualSyncRun.scope_external_id.type), "-", ""),
+        )),
+    ).order_by(ProcessingJob.created_at.desc(), ProcessingJob.id.desc()).limit(100))
+    for job, folder in jobs:
+        items.append({
+            "id": str(job.id), "source_id": str(folder.source_id), "operation": "sync",
+            "scope_kind": "workspace", "scope_name": folder.name,
+            # Ordinary jobs did not persist file counters or the requesting user.
+            "triggered_by": None, "triggered_by_user_id": None,
+            "status": job.status.value, "created_at": job.created_at.isoformat(),
+            "started_at": job.started_at.isoformat() if job.started_at else None,
+            "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+            "total": None, "processed": None, "failed": None, "failures": [],
+            "tasks": [{"workspace_folder_id": str(folder.id), "workspace_name": folder.name,
+                       "status": job.status.value, "error_code": job.error_code}],
+        })
+    items.sort(key=lambda item: (item["created_at"], item["id"]), reverse=True)
+    return {"items": items[:100]}
+
+
 @router.get("/library/manual-syncs")
 def manual_sync_history(organization_id: UUID, user: User = Depends(current_user),
                         session: Session = Depends(database_session)):
@@ -262,7 +328,8 @@ def manual_sync_history(organization_id: UUID, user: User = Depends(current_user
         LibraryService(session).require_member(scope=scope, user_id=user.id)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=403, detail="not allowed") from error
-    runs = session.scalars(select(ManualSyncRun).where(ManualSyncRun.organization_id == organization_id)
+    runs = session.scalars(select(ManualSyncRun).where(ManualSyncRun.organization_id == organization_id,
+                                                     ManualSyncRun.scope_kind != "sync")
                           .order_by(ManualSyncRun.created_at.desc(), ManualSyncRun.id.desc()).limit(100))
     return {"items": [serialize_run(run) for run in runs]}
 

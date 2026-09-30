@@ -14,7 +14,7 @@ from app.integrations.google_drive import RemoteFolder
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.questions import EMBEDDING_MODEL
-from app.library.models import LibraryNode
+from app.library.models import LibraryExclusion, LibraryNode
 from app.organizations.models import Membership
 from app.workspaces.models import WorkspaceFolder
 
@@ -193,6 +193,38 @@ class LibraryService:
         documents = self.documents_for_nodes(scope=scope, nodes=files)
         return [reference for references in documents.values() for reference in references]
 
+    def remove_folder_catalog(self, *, scope: OrganizationScope, node_id: UUID) -> None:
+        """Remove only the explicitly selected local subtree, retaining siblings and source."""
+        node = self.session.scalar(select(LibraryNode).where(
+            LibraryNode.id == node_id,
+            LibraryNode.organization_id == scope.organization_id,
+            LibraryNode.kind == "folder",
+        ))
+        if node is None:
+            raise SyncAccessDenied("company library node unavailable")
+        levels = [[node.id]]
+        while children := list(self.session.scalars(select(LibraryNode.id).where(
+            LibraryNode.organization_id == scope.organization_id,
+            LibraryNode.source_id == node.source_id,
+            LibraryNode.parent_id.in_(levels[-1]),
+        ))):
+            levels.append(children)
+        nodes = list(self.session.scalars(select(LibraryNode).where(
+            LibraryNode.organization_id == scope.organization_id,
+            LibraryNode.source_id == node.source_id,
+            LibraryNode.id.in_([item for level in levels for item in level]),
+        )))
+        self._remember_exclusions(scope=scope, source_id=node.source_id,
+                                  items={item.external_id: item.kind for item in nodes})
+        # Children first also works with databases enforcing immediate foreign keys.
+        for ids in reversed(levels):
+            self.session.execute(delete(LibraryNode).where(
+                LibraryNode.organization_id == scope.organization_id,
+                LibraryNode.source_id == node.source_id,
+                LibraryNode.id.in_(ids),
+            ))
+        self.session.flush()
+
     def workspace_provenance(self, *, scope: OrganizationScope, node: LibraryNode) -> list[UUID]:
         """Return only sync-scope UUIDs that currently index this file.
 
@@ -274,7 +306,7 @@ class LibraryService:
     def remove_file_if_unindexed(
         self, *, scope: OrganizationScope, source_id: UUID, external_file_id: str
     ) -> None:
-        """Keep provider metadata when an otherwise existing file loses its index."""
+        """Remove the last local copy and permanently exclude its provider identity."""
         source = self.session.scalar(
             select(DataSource.id).where(
                 DataSource.id == source_id,
@@ -283,15 +315,77 @@ class LibraryService:
         )
         if source is None:
             raise SyncAccessDenied("source tenant mismatch")
+        indexed = self.session.scalar(select(Document.id).join(
+            WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id,
+        ).where(
+            Document.organization_id == scope.organization_id,
+            WorkspaceFolder.organization_id == scope.organization_id,
+            WorkspaceFolder.source_id == source_id,
+            Document.external_file_id == external_file_id,
+            Document.index_status == "indexed",
+        ).limit(1))
+        if indexed is not None:
+            return
+        self._remember_exclusions(scope=scope, source_id=source_id, items={external_file_id: "file"})
+        self.session.execute(delete(LibraryNode).where(
+            LibraryNode.organization_id == scope.organization_id,
+            LibraryNode.source_id == source_id,
+            LibraryNode.external_id == external_file_id,
+            LibraryNode.kind == "file",
+        ))
+        self.session.flush()
 
     def remove_files_if_unindexed(
         self, *, scope: OrganizationScope, source_id: UUID, external_file_ids: tuple[str, ...]
     ) -> None:
         """Retain synchronized provider metadata after a workspace is removed."""
-        if external_file_ids:
-            self.remove_file_if_unindexed(
-                scope=scope, source_id=source_id, external_file_id=external_file_ids[0]
-            )
+        # Deleting a sync workspace is not an explicit removal of provider items.
+        if not self.session.scalar(select(DataSource.id).where(
+            DataSource.id == source_id, DataSource.organization_id == scope.organization_id,
+        )):
+            raise SyncAccessDenied("source tenant mismatch")
+
+    def _remember_exclusions(
+        self, *, scope: OrganizationScope, source_id: UUID, items: dict[str, str]
+    ) -> None:
+        existing = set(self.session.scalars(select(LibraryExclusion.external_id).where(
+            LibraryExclusion.organization_id == scope.organization_id,
+            LibraryExclusion.source_id == source_id,
+        )))
+        self.session.add_all([LibraryExclusion(organization_id=scope.organization_id,
+            source_id=source_id, external_id=external_id, kind=kind)
+            for external_id, kind in items.items() if external_id not in existing])
+        self.session.flush()
+
+    def filter_excluded_content(
+        self, *, organization_id: UUID, source_id: UUID,
+        documents: list[DiscoveredDocument], folders: list[RemoteFolder],
+    ) -> tuple[list[DiscoveredDocument], list[RemoteFolder]]:
+        """Filter discovery before indexing/projection, including newly discovered descendants."""
+        exclusions = list(self.session.scalars(select(LibraryExclusion).where(
+            LibraryExclusion.organization_id == organization_id,
+            LibraryExclusion.source_id == source_id,
+        )))
+        if not exclusions:
+            return documents, folders
+        blocked = {item.external_id for item in exclusions}
+        blocked_folders = {item.external_id for item in exclusions if item.kind == "folder"}
+        nodes = list(self.session.scalars(select(LibraryNode).where(
+            LibraryNode.organization_id == organization_id, LibraryNode.source_id == source_id,
+        )))
+        by_id = {node.id: node for node in nodes}
+        parents = {node.external_id: (by_id[node.parent_id].external_id,)
+                   if node.parent_id in by_id else () for node in nodes if node.kind == "folder"}
+        parents.update({folder.id: folder.parent_ids for folder in folders})
+        while descendants := {key for key, values in parents.items()
+                              if set(values) & blocked_folders} - blocked_folders:
+            blocked_folders.update(descendants)
+        blocked.update(blocked_folders)
+        return (
+            [item for item in documents if item.external_file_id not in blocked
+             and not set(item.parent_ids) & blocked_folders],
+            [folder for folder in folders if folder.id not in blocked],
+        )
 
     def search_names(
         self, *, scope: OrganizationScope, user_id: UUID, query: str, limit: int = SEARCH_RESULT_LIMIT
@@ -716,6 +810,8 @@ class LibraryService:
         """
         if source.organization_id != organization_id:
             raise SyncAccessDenied("source tenant mismatch")
+        documents, folders = self.filter_excluded_content(organization_id=organization_id,
+            source_id=source.id, documents=documents, folders=folders)
         root = self._root(organization_id=organization_id, source=source)
         folder_by_id = {folder.id: folder for folder in folders}
         for remote_folder in folders:
