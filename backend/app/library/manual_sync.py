@@ -1,4 +1,4 @@
-"""Durable synchronization snapshots; manual runs additionally force full reprocessing."""
+"""Durable synchronization snapshots; manual runs rescan fully and rebuild only changed files."""
 
 from datetime import UTC, datetime
 from uuid import UUID
@@ -40,6 +40,7 @@ def request_run(
     user: User,
     node_id: UUID | None = None,
     workspace_id: UUID | None = None,
+    reprocess_all: bool = False,
 ):
     ingestion = IngestionService(session)
     ingestion.require_admin(scope=scope, user_id=user.id)
@@ -150,6 +151,14 @@ def request_run(
             ],
         }
     run.progress = progress
+    if reprocess_all:
+        # Explicit opt-in: invalidate hashes so every indexed file is rebuilt.
+        for document in session.scalars(select(Document).where(
+            Document.organization_id == scope.organization_id,
+            Document.workspace_folder_id.in_([folder.id for folder in folders]),
+            Document.index_status == "indexed",
+        )):
+            document.content_hash = ""
     session.flush()
     return run, jobs
 

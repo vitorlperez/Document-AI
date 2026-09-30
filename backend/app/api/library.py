@@ -201,19 +201,22 @@ def reprocess_library_folder(
     node_id: UUID,
     organization_id: UUID,
     request: Request,
+    reprocess_all: bool = False,
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
 ) -> dict[str, object]:
-    """Request full discovery and forced recursive reprocessing of a folder or integration."""
+    """Request full discovery of a folder or integration; rebuild only changed files.
+
+    ``reprocess_all`` is the explicit opt-in that rebuilds every file below the node.
+    """
     try:
         scope = OrganizationScope(organization_id)
         run, jobs = request_run(session, scope=scope, user=user, node_id=node_id)
         documents = LibraryService(session).indexed_documents_under(scope=scope, user_id=user.id, node_id=node_id, allow_source=True)
-        # Preserve the existing observable invalidation; the worker also forces
-        # all new and previously failed files from full remote discovery.
-        from app.knowledge.models import Document
-        for reference in documents:
-            session.get(Document, reference.document_id).content_hash = ""
+        if reprocess_all:
+            from app.knowledge.models import Document
+            for reference in documents:
+                session.get(Document, reference.document_id).content_hash = ""
         session.commit()
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
@@ -336,9 +339,11 @@ def manual_sync_history(organization_id: UUID, user: User = Depends(current_user
 
 @router.post("/library/workspaces/{workspace_id}/reprocess", status_code=202)
 def reprocess_library_workspace(workspace_id: UUID, organization_id: UUID, request: Request,
+                                reprocess_all: bool = False,
                                 user: User = Depends(current_user), session: Session = Depends(database_session)):
     try:
-        run, jobs = request_run(session, scope=OrganizationScope(organization_id), user=user, workspace_id=workspace_id)
+        run, jobs = request_run(session, scope=OrganizationScope(organization_id), user=user,
+                                workspace_id=workspace_id, reprocess_all=reprocess_all)
         session.commit()
     except SyncAccessDenied as error:
         raise HTTPException(status_code=403, detail="not allowed") from error

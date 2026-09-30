@@ -217,6 +217,13 @@ def test_admin_can_reprocess_and_remove_a_library_folder(api: tuple[TestClient, 
     assert reprocess.json()["documents"] == 1 and len(reprocess.json()["job_ids"]) == 1
     assert len(dispatched) == 1
     with factory() as session:
+        # A resync keeps hashes: only changed content is rebuilt.
+        assert session.query(Document).one().content_hash == "hash"
+        session.query(ProcessingJob).update({"status": ProcessingJobStatus.READY})
+        session.commit()
+    everything = client.post(f"/library/nodes/{outer_id}/reprocess?organization_id={organization}&reprocess_all=true")
+    assert everything.status_code == 202
+    with factory() as session:
         assert session.query(Document).one().content_hash == ""
         session.query(ProcessingJob).update({"status": ProcessingJobStatus.READY})
         session.commit()
@@ -270,7 +277,7 @@ def test_manual_recursive_run_persists_scope_progress_and_failures(api, kind):
     assert client.get(f"/library/manual-syncs?organization_id={organization}").status_code == 403
 
 
-def test_manual_source_queues_every_workspace_and_rebuilds_unchanged_chunks(api):
+def test_manual_source_queues_every_workspace_and_keeps_unchanged_chunks(api):
     from app.ingestion.service import IngestionService
     from app.knowledge.models import DocumentChunk
     from app.library.models import ManualSyncRun
@@ -295,14 +302,10 @@ def test_manual_source_queues_every_workspace_and_rebuilds_unchanged_chunks(api)
         service = IngestionService(session)
         for job_id in response.json()['job_ids']:
             job = service.claim(job_id=UUID(job_id))
-            # Restore the actual hash: explicit force must work independently of invalidation.
-            document = session.query(Document).filter_by(workspace_folder_id=job.workspace_folder_id).first()
-            if document:
-                from hashlib import sha256
-                document.content_hash = sha256(b'identical text').hexdigest()
             service.apply_reconciliation(job_id=job.id, run_token=job.run_token, documents=[DiscoveredDocument('brief', 'Brief.pdf', 'application/pdf', '', text='identical text')])
         session.commit()
-        assert chunk_id not in [item.id for item in session.query(DocumentChunk).all()]
+        # Unchanged hash and processing version: the manual resync keeps the chunks.
+        assert chunk_id in [item.id for item in session.query(DocumentChunk).all()]
         run = session.get(ManualSyncRun, UUID(response.json()['run_id']))
         assert run.status == 'ready'
         for folder in session.query(WorkspaceFolder).all():

@@ -482,7 +482,6 @@ class IngestionService:
         )
         from app.library.manual_sync import scoped_documents, update_progress
         manual_documents = scoped_documents(self.session, job, current_documents, manual_folders)
-        manual_ids = {item.external_file_id for item in manual_documents} if job.manual_run_id else set()
         if discovery.full_snapshot:
             seen_file_ids = {document.external_file_id for document in current_documents}
             # A full snapshot may safely remove any document missing from scope.
@@ -552,7 +551,9 @@ class IngestionService:
                     )
                     failures += 1
                     continue
-            self._upsert_indexed(job, discovered, indexed_at=now, force=discovered.external_file_id in manual_ids)
+            # Manual resyncs rescan everything but rebuild only changed content
+            # (hash + processing version); "reprocess all" clears the hashes.
+            self._upsert_indexed(job, discovered, indexed_at=now)
 
         update_progress(self.session, job, total=len(manual_documents), processed=len(manual_documents),
                 outcomes=[{"external_id": item.external_file_id, "name": item.name,
