@@ -105,6 +105,8 @@ def test_audit_covers_metadata_validation_and_limiter_failure(api):
     assert client.post("/v1/search", headers=bearer(key), json={"query": ""}).status_code == 422
     class Broken:
         def hit(self, **kwargs):
+            if kwargs["key"].startswith("ip:"):
+                return InMemoryRateLimiter().hit(**kwargs)
             raise RuntimeError("redis unavailable")
     client.app.state.rate_limiter = Broken()
     assert client.get("/v1/sources", headers=bearer(key)).status_code == 503

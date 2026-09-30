@@ -63,3 +63,33 @@ def test_review_3_empty_root_does_not_hide_indexed_roots(api):
     assert [h['id'] for h in response.json()['results']] == [str(tenant.document_id)]
     assert client.get(f'/v1/documents/{tenant.document_id}', headers=bearer(key)).status_code == 200
     assert [s['id'] for s in client.get('/v1/sources', headers=bearer(key)).json()['sources']] == [str(tenant.folder_id)]
+
+
+def test_review_5_invalid_credentials_are_limited_before_authentication(api, monkeypatch):
+    from app.access.principal import InvalidCredential
+    client, _factory = api
+    monkeypatch.setattr('app.api.public_v1.IP_RATE_LIMIT', 2, raising=False)
+    calls = []
+    def reject(*args):
+        calls.append(1)
+        raise InvalidCredential
+    monkeypatch.setattr('app.api.public_v1.ApiKeyAuthenticator.authenticate', reject)
+    replies = [client.get('/v1/whoami', headers=bearer('bad')) for _ in range(4)]
+    assert [r.status_code for r in replies] == [401, 401, 429, 429]
+    assert len(calls) == 2
+    assert replies[-1].headers['Retry-After']
+
+
+def test_review_5_denial_audit_is_bounded_per_credential_and_minute(api):
+    from app.access.models import ApiAuditEvent, SCOPE_SEARCH
+    client, factory = api
+    tenant = seed_tenant(factory, 'A', 'Aurora')
+    key = mint_key(factory, tenant, scopes={SCOPE_SEARCH}, rate=1)
+    for _ in range(4):
+        assert client.get(f'/v1/documents/{tenant.document_id}', headers=bearer(key)).status_code == 403
+    assert client.post('/v1/search', headers=bearer(key), json={'query': 'Aurora'}).status_code == 200
+    for _ in range(4):
+        assert client.post('/v1/search', headers=bearer(key), json={'query': 'Aurora'}).status_code == 429
+    with factory() as session:
+        statuses = [row.http_status for row in session.query(ApiAuditEvent)]
+    assert sorted(statuses) == [200, 403, 429]

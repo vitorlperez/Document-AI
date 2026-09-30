@@ -1,6 +1,9 @@
 """Persist call metadata in an independent transaction; never persist request content."""
 import hashlib
 import logging
+from datetime import UTC, datetime, timedelta
+
+from sqlalchemy import delete
 from uuid import UUID
 
 from app.access.models import ApiAuditEvent
@@ -24,6 +27,11 @@ class AuditWriter:
             return
         try:
             with self._factory.begin() as session:
+                # Retain at most 90 days for the active organization, including denial samples.
+                session.execute(delete(ApiAuditEvent).where(
+                    ApiAuditEvent.organization_id == organization_id,
+                    ApiAuditEvent.created_at < datetime.now(UTC) - timedelta(days=90),
+                ))
                 session.add(ApiAuditEvent(
                     organization_id=organization_id, channel=channel,
                     credential_id=principal.credential_id if principal else None,

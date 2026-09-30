@@ -35,6 +35,20 @@ from app.knowledge.untrusted import UNTRUSTED_NOTICE
 from app.library.service import LibraryService
 
 
+IP_RATE_LIMIT = 600  # Per peer IP, before any credential/database work.
+
+
+def _audit_allowed(request: Request, principal: Principal, code: int) -> bool:
+    if code not in {403, 429}:
+        return True
+    try:
+        return request.app.state.rate_limiter.hit(
+            key=f"audit:{principal.credential_id}:{request.scope['route'].name}:{code}", limit=1,
+        ).allowed
+    except Exception:
+        return False  # Do not turn a limiter outage into an unbounded denial audit stream.
+
+
 class AuditedRoute(APIRoute):
     def get_route_handler(self):
         original = super().get_route_handler()
@@ -54,7 +68,7 @@ class AuditedRoute(APIRoute):
                 raise
             finally:
                 principal = getattr(request.state, "principal", None)
-                if principal is not None:
+                if principal is not None and _audit_allowed(request, principal, code):
                     metadata = getattr(request.state, "audit_metadata", {})
                     outcome = "ok" if code < 400 else "rate_limited" if code == 429 else "denied" if code in {403, 404} else "error"
                     AuditWriter(request.app.state.session_factory).record(
@@ -88,8 +102,20 @@ class AskInput(BaseModel):
     node_ids: list[UUID] | None = Field(default=None, max_length=20)
 
 
+def limit_peer(request: Request) -> None:
+    # Use the server peer address; caller-controlled forwarded headers are not trusted here.
+    peer = request.client.host if request.client else "unknown"
+    try:
+        decision = request.app.state.rate_limiter.hit(key=f"ip:{peer}:api", limit=IP_RATE_LIMIT)
+    except Exception as error:
+        raise HTTPException(503, "rate limiter unavailable", headers={"Retry-After": "5"}) from error
+    if not decision.allowed:
+        raise HTTPException(429, "rate limit exceeded", headers={"Retry-After": str(decision.reset_seconds)})
+
+
 def principal_dep(
-    request: Request, credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    request: Request, _peer_limit: None = Depends(limit_peer),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     session: Session = Depends(database_session),
 ) -> Principal:
     if credentials is None:

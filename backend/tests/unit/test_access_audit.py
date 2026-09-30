@@ -39,3 +39,18 @@ def test_audit_failure_never_raises():
         principal=None, organization_id=None, channel="mcp", action="fetch", status="error",
         http_status=500, request_id=None, latency_ms=None,
     )
+
+
+def test_review_5_audit_retention_removes_only_expired_organization_events():
+    from datetime import UTC, datetime, timedelta
+    factory = _factory()
+    a, b = seed_tenant(factory, 'A', 'x'), seed_tenant(factory, 'B', 'x')
+    with factory.begin() as session:
+        session.add_all([ApiAuditEvent(organization_id=tenant.organization_id, channel='api_key',
+                        action='search', status='ok', http_status=200,
+                        created_at=datetime.now(UTC) - timedelta(days=91)) for tenant in [a, b]])
+    AuditWriter(factory).record(principal=None, organization_id=a.organization_id, channel='api_key',
+                               action='search', status='ok', http_status=200, request_id=None, latency_ms=1)
+    with factory() as session:
+        assert len(list(session.scalars(select(ApiAuditEvent).where(ApiAuditEvent.organization_id == a.organization_id)))) == 1
+        assert len(list(session.scalars(select(ApiAuditEvent).where(ApiAuditEvent.organization_id == b.organization_id)))) == 1
