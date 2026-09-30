@@ -1,3 +1,4 @@
+from app.access.models import ApiKey  # noqa: F401
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context

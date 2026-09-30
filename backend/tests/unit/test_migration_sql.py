@@ -38,3 +38,15 @@ def test_pgvector_expand_sql():
     assert 'ADD COLUMN embedding_vec vector(1536)' in result.stdout
     assert 'USING hnsw' not in result.stdout
     assert 'DROP COLUMN embedding' not in result.stdout
+
+
+def test_access_migrations_generate_postgresql_sql():
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
+        cwd=BACKEND_DIR, env=os.environ | {"DATABASE_URL": OFFLINE_DATABASE_URL},
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    for table in ("api_keys", "organization_access_settings", "api_audit_events"):
+        assert f"CREATE TABLE {table}" in result.stdout
+    assert "CREATE INDEX ix_api_audit_events_org_created" in result.stdout
