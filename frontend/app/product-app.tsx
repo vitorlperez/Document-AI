@@ -261,7 +261,7 @@ function Shell({ user, company, companies, children, alertMessage, alertTone, fi
 function CompanyDashboard({ company, onboarding, onOnboardingChange, onConnect, setError, setNotice }: { company: Company; onboarding: OnboardingState; onOnboardingChange: (state: OnboardingState) => void; onConnect: () => void; setError: (value: string | null) => void; setNotice: (value: string | null) => void }) {
   const [replayTour, setReplayTour] = useState(false);
   return <><ConversationLibraryWorkspace key={company.id} company={company} onConnect={onConnect} onShowTour={() => setReplayTour(true)} setError={setError} setNotice={setNotice} />
-    {(onboarding.tour_required || replayTour) && <ConversationTour key={company.id} onComplete={async () => {
+    {(onboarding.tour_required || replayTour) && <ConversationTour key={`tour-${company.id}`} onComplete={async () => {
       try {
         const progress = await api<OnboardingState>(`/organizations/${company.id}/onboarding/tour/complete`, { method: "POST" });
         onOnboardingChange(progress); setReplayTour(false);

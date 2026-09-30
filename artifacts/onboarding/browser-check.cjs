@@ -15,6 +15,7 @@ const path = require('node:path');
     page.setDefaultTimeout(20000);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
+    page.on('console', message => { if (message.type() === 'error' && message.text().includes('Encountered two children')) errors.push(message.text()); });
     const httpErrors = [];
     page.on('response', response => {
       const url = new URL(response.url());
@@ -86,6 +87,7 @@ const path = require('node:path');
       await page.screenshot({ path: path.join(__dirname, `tour-${width}-${index + 1}.png`) });
       await page.getByRole('button', { name: index === 3 ? 'Começar a conversar' : 'Próximo', exact: true }).click();
     }
+    await page.locator('dialog[open]').waitFor({ state: 'detached' });
     await page.getByRole('heading', { name: 'O que você quer descobrir?', exact: true }).waitFor();
     assert.equal((await state()).tour_required, false);
     assert.equal(new URL(page.url()).pathname, `/companies/${org}`);
