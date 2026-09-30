@@ -4,6 +4,8 @@ import logging
 import re
 from typing import TYPE_CHECKING
 
+from app.knowledge.untrusted import safe_label, strip_invisible
+
 if TYPE_CHECKING:
     from app.knowledge.questions import QuestionResult
 
@@ -40,8 +42,8 @@ def serialize_question_result(
     for item in result.citations:
         citation = {
             "document_id": str(item.document_id),
-            "document_name": item.document_name,
-            "excerpt": short_citation_excerpt(item.excerpt),
+            "document_name": safe_label(item.document_name),
+            "excerpt": short_citation_excerpt(strip_invisible(item.excerpt)),
             "page_number": item.page_number,
             "source_url": item.source_url,
         }
@@ -49,7 +51,7 @@ def serialize_question_result(
             citation["source_provider"] = item.source_provider
         citations.append(citation)
     payload: dict[str, object] = {
-        "answer": answer_without_source_links(result.answer),
+        "answer": answer_without_source_links(strip_invisible(result.answer) if result.answer is not None else None),
         "confidence": result.confidence,
         "citations": citations,
         "retrieval_status": result.retrieval_status,

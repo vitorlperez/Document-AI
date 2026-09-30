@@ -238,5 +238,6 @@ def ask(payload: AskInput, request: Request,
     except ValueError as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     body = serialize_question_result(result, include_provider=True)
+    body.update(content_trust="untrusted_document_content", notice=UNTRUSTED_NOTICE)
     _record(request, principal, "ask", "ok", 200, result_count=len(result.citations), query=payload.question)
     return body
