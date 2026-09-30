@@ -34,7 +34,7 @@ Worktree: Document-AI-integracoes, branch feat/integracoes. Sem push. Skills: in
 | `.venv/bin/python -m pytest tests/api/test_public_v1.py -q` | 0 | 15 passed; isolamento org/raízes, revogação, auth separada, limites, auditoria, ask seguro |
 | `.venv/bin/python scripts/export_openapi.py --check` | 0 | JSON coincide com /v1 e passa openapi-spec-validator |
 | `.venv/bin/ruff check` nos módulos e testes novos de acesso/API/recuperação | 0 | All checks passed |
-| `.venv/bin/alembic heads` | 0 | 20260930_0023 (head único) |
+| `.venv/bin/alembic heads` | 0 | 20260930_0024 (head único) |
 | `cd frontend && npm run lint && npm run build` | 0 | lint sem erros; build completo |
 | `cd frontend && npx tsc --noEmit` | 0 | sem erros |
 | `graphify update .` após cada commit | 0 | graph.json/graph.html/GRAPH_REPORT atualizados; artefatos graphify preexistentes sujos não incluídos nos commits |

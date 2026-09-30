@@ -1,6 +1,6 @@
 # pgvector — runbook (F5: expand, dual-write, backfill, flag)
 
-Escopo desta entrega: migração `20260930_0019_pgvector_expand`, dual-write em `EmbeddingService`, backfill `scripts/backfill_pgvector.py`, `SimilarityIndex` com backends Python e pgvector e a flag `VECTOR_BACKEND` (padrão `python`). Fora do escopo: o *contract* (0021, ≥ 7 dias após virar a leitura, D10) e o índice ANN (D7: sem HNSW no primeiro release; decidir só pelo benchmark da T5.8).
+Escopo desta entrega: migração `20260930_0020_pgvector_expand`, dual-write em `EmbeddingService`, backfill `scripts/backfill_pgvector.py`, `SimilarityIndex` com backends Python e pgvector e a flag `VECTOR_BACKEND` (padrão `python`). Fora do escopo: o *contract* (próximo id livre, ≥ 7 dias após virar a leitura, D10) e o índice ANN (D7: sem HNSW no primeiro release; decidir só pelo benchmark da T5.8).
 
 ## Pré-requisitos por ambiente
 

@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 from uuid import UUID
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog
@@ -18,7 +18,7 @@ from app.integrations.credentials import OAuthCredentials
 from app.integrations.errors import SourceItemUnavailable, SourceRemoteUnauthorized
 from app.integrations.google_drive import RemoteFolder
 from app.integrations.http import RemoteHttp
-from app.integrations.models import DataSource
+from app.integrations.models import DataSource, OAuthConnectionState
 from app.integrations.oauth_base import OAuthConnectionServiceBase
 
 
@@ -180,6 +180,27 @@ class NotionConnectionService(OAuthConnectionServiceBase):
     def __init__(self, session: Session, cipher, client: NotionOAuthClient):
         super().__init__(session, cipher)
         self.client = client
+
+    def disconnect(self, *, scope: OrganizationScope, user_id: UUID, source_id: UUID) -> DataSource:
+        self.require_admin(scope=scope, user_id=user_id)
+        source = self.session.scalar(select(DataSource).where(
+            DataSource.id == source_id,
+            DataSource.organization_id == scope.organization_id,
+            DataSource.provider == "notion",
+        ))
+        if source is None:
+            raise NotionAccessDenied("Notion source is invalid")
+        source.encrypted_credentials = None
+        source.account_email = None
+        source.status = "disconnected"
+        self.session.execute(update(OAuthConnectionState).where(
+            OAuthConnectionState.source_id == source.id,
+            OAuthConnectionState.consumed_at.is_(None),
+        ).values(consumed_at=datetime.now(UTC)))
+        self.session.add(AuditLog(organization_id=scope.organization_id, actor_user_id=user_id,
+            action="data_source.disconnected", target_type="data_source", target_id=source.id))
+        self.session.flush()
+        return source
 
     def begin(self, *, scope: OrganizationScope, user_id: UUID, session_secret: str, source_id: UUID | None = None) -> str:
         self.require_admin(scope=scope, user_id=user_id)

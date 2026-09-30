@@ -32,6 +32,24 @@ Index("uq_library_nodes_source_external", LibraryNode.source_id, LibraryNode.ext
 Index("ix_library_nodes_organization_parent", LibraryNode.organization_id, LibraryNode.parent_id)
 
 
+class LibraryExclusion(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
+    """An explicit removal survives every provider discovery and reprocessing run."""
+    __tablename__ = "library_exclusions"
+
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    source_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("data_sources.id", ondelete="CASCADE"), index=True
+    )
+    external_id: Mapped[str] = mapped_column(String(255))
+    kind: Mapped[str] = mapped_column(String(16))
+
+
+Index("uq_library_exclusions_source_external", LibraryExclusion.source_id,
+      LibraryExclusion.external_id, unique=True)
+
+
 class ManualSyncRun(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     """Historical snapshots survive removal of the workspace or source."""
     __tablename__ = "manual_sync_runs"

@@ -101,4 +101,4 @@ Referências Railway: [monorepo](https://docs.railway.com/deployments/monorepo),
 
 ## pgvector (F5)
 
-A migração `20260930_0019_pgvector_expand` executa `CREATE EXTENSION IF NOT EXISTS vector`. Crie o Postgres a partir do template com pgvector (https://railway.com/deploy/postgres-with-pgvector-engine) ou da imagem `pgvector/pgvector:pg16`; o Postgres padrão sem a extensão faz o pre-deploy falhar. Confira com `SELECT extversion FROM pg_extension WHERE extname = 'vector';`. Mantenha `VECTOR_BACKEND=python` até concluir o backfill e a paridade (ver `docs/operacao/pgvector-runbook.md`).
+A migração `20260930_0020_pgvector_expand` executa `CREATE EXTENSION IF NOT EXISTS vector`. Crie o Postgres a partir do template com pgvector (https://railway.com/deploy/postgres-with-pgvector-engine) ou da imagem `pgvector/pgvector:pg16`; o Postgres padrão sem a extensão faz o pre-deploy falhar. Confira com `SELECT extversion FROM pg_extension WHERE extname = 'vector';`. Mantenha `VECTOR_BACKEND=python` até concluir o backfill e a paridade (ver `docs/operacao/pgvector-runbook.md`).

@@ -68,4 +68,4 @@ O frontend é construído pelo Vinext e servido pelo comando de produção `vine
 
 ## pgvector (F5)
 
-A migração `20260930_0019_pgvector_expand` exige a extensão `vector`: troque a imagem `postgres:16-alpine` por `pgvector/pgvector:pg16` no compose de produção (mesmo volume de dados, mesma versão major 16) e faça o backup acima antes. O arquivo `docker-compose.production.yml` citado neste guia não está versionado no repositório; localize-o na VM e versione-o antes do rollout. Mantenha `VECTOR_BACKEND=python` até concluir o backfill e a paridade (ver `docs/operacao/pgvector-runbook.md`).
+A migração `20260930_0020_pgvector_expand` exige a extensão `vector`: troque a imagem `postgres:16-alpine` por `pgvector/pgvector:pg16` no compose de produção (mesmo volume de dados, mesma versão major 16) e faça o backup acima antes. O arquivo `docker-compose.production.yml` citado neste guia não está versionado no repositório; localize-o na VM e versione-o antes do rollout. Mantenha `VECTOR_BACKEND=python` até concluir o backfill e a paridade (ver `docs/operacao/pgvector-runbook.md`).

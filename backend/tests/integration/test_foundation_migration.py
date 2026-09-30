@@ -65,6 +65,9 @@ def test_foundation_migration_applies_and_reverts_on_disposable_postgres(test_da
             "conversations",
             "conversation_messages",
         } <= set(inspector.get_table_names())
+        exclusion_indexes = {index["name"]: index for index in inspector.get_indexes("library_exclusions")}
+        assert exclusion_indexes["uq_library_exclusions_source_external"]["unique"] is True
+        assert {fk["referred_table"] for fk in inspector.get_foreign_keys("library_exclusions")} == {"organizations", "data_sources"}
         membership_indexes = {index["name"] for index in inspector.get_indexes("memberships")}
         assert "uq_memberships_active_org_user" in membership_indexes
         invitation_indexes = {index["name"] for index in inspector.get_indexes("membership_invitations")}
@@ -114,6 +117,7 @@ def test_foundation_migration_applies_and_reverts_on_disposable_postgres(test_da
             "manual_sync_runs",
             "organizations",
             "workspace_folders",
+            "manual_sync_runs",
         }
         assert {foreign_key["referred_table"] for foreign_key in inspector.get_foreign_keys("documents")} == {
             "organizations",

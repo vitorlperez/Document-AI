@@ -1,5 +1,6 @@
 # Plano 02 — SharePoint/Microsoft 365 e decisão Google (CASA vs `drive.file` + Picker)
 
+> Migrações após integrar main (prevalece sobre propostas históricas abaixo): 0019 library_exclusions (main, imutável) → 0020 pgvector_expand → 0021 sharepoint_tenant_binding → 0022 extraction_cache → 0023 api_access → 0024 api_audit_events → 0025 mcp_connections. Contract e opcionais usam o próximo id livre.
 Data: 2026-09-29 · Base: `main` @ `c9cebf0` **mais alterações não commitadas** (working tree; citações `path:line` refletem o disco de hoje) · Origem: Recomendação 2 de `specs/research/integracoes-analise-2026-09-29.md` (§1, §2.3–2.5, §4.1, §6 D/E, §7 Onda 1, §8.1, §9) · Convenção: **[FATO]** verificado em código ou doc oficial aberta nesta sessão; **[INFERÊNCIA]** dedução; **[VALIDAR]** depende de tenant de teste / Google / lab; **[ESTIMATIVA]** julgamento.
 
 > Revisão (2026-09-29, pane-243): as alterações "não commitadas" já estão no `HEAD` `f5f3a1e` (e a renovação de token do Google em `25091aa`); `alembic heads` = `20260929_0018`. Numeração de ADR e de migração foi realinhada com os planos 01/03 (ver `00-indice.md`). Correções marcadas com "> Revisão:" ou "(Revisão: …)".
@@ -1298,6 +1299,6 @@ reais do Graph e piloto de sete dias continuam pendências externas explícitas.
 
 > Execução: A2/A3 em 59b6c29 (rascunhos da pane-251 corrigidos por ruff; red ModuleNotFoundError → green). A4 em 92d1349 (10 testes do plano; `drive_root_id`/`list_folders` no client; reprocesso também checa pertencimento). A5 em b5af2af: serviço/rotas/registry/worker; início/callback OAuth Microsoft viraram helpers `_microsoft_*` compartilhados entre OneDrive e SharePoint (sem mudança de contrato; suítes OneDrive verdes); sites também dão 422 na seleção. Suíte completa 602 passed com a 0019 presente.
 
-> Execução: migração = `20260930_0020_sharepoint_tenant_binding` (não 0022), `down_revision = 20260930_0019` (pgvector, pane F5, ainda não commitada no momento). Até a 0019 entrar no branch, o HEAD isolado falha em test_migration_sql/test_authentication_migration_sql (KeyError '20260930_0019'). Se a 0019 mudar de id, reencadear.
+> Execução após integrar main: `20260930_0021_sharepoint_tenant_binding`, `down_revision = 20260930_0020` (pgvector). A 0019 do main permanece intacta; a cadeia vigente está em `00-indice.md`.
 
 > Execução: A6 em 7def418 (tsc 0, eslint 0, `node --import tsx --test tests/*.test.mjs` 29/29, rodados num `npm ci` no scratchpad). Validação visual/responsiva pendente. A10 em 5a65534 + 8a2f7b9 (`.env.production.example` não tem variáveis Microsoft; não alterado). Rotas de admin consent (A8) e `Sites.Selected` (A9) não executadas (fora do escopo pedido). Piloto/tenant real: pendente.

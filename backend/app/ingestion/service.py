@@ -140,10 +140,12 @@ class IngestionService:
         return folder
 
     def enqueue(
-        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID
+        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID,
+        record_history: bool = True,
     ) -> ProcessingJob:
         self.require_admin(scope=scope, user_id=user_id)
-        return self._enqueue(scope=scope, workspace_folder_id=workspace_folder_id)
+        return self._enqueue(scope=scope, workspace_folder_id=workspace_folder_id,
+                             user_id=user_id, record_history=record_history)
 
     def enqueue_system(
         self, *, scope: OrganizationScope, workspace_folder_id: UUID
@@ -152,7 +154,8 @@ class IngestionService:
         return self._enqueue(scope=scope, workspace_folder_id=workspace_folder_id)
 
     def _enqueue(
-        self, *, scope: OrganizationScope, workspace_folder_id: UUID
+        self, *, scope: OrganizationScope, workspace_folder_id: UUID,
+        user_id: UUID | None = None, record_history: bool = True,
     ) -> ProcessingJob:
         folder = self.require_folder(
             scope=scope, workspace_folder_id=workspace_folder_id, lock=True
@@ -196,6 +199,9 @@ class IngestionService:
             raise
         if not self._has_indexed_documents(folder):
             folder.status = ProcessingJobStatus.QUEUED.value
+        if record_history:
+            from app.library.manual_sync import record_sync
+            record_sync(self.session, job, folder, user_id)
         return job
 
     def indexed_documents(
@@ -457,7 +463,12 @@ class IngestionService:
             if isinstance(documents, DiscoveryResult)
             else DiscoveryResult(documents=documents)
         )
-        current_documents = discovery.documents
+        from app.library.service import LibraryService
+        folder = self._folder_for_job(job)
+        current_documents, _ = LibraryService(self.session).filter_excluded_content(
+            organization_id=job.organization_id, source_id=folder.source_id,
+            documents=discovery.documents, folders=list(manual_folders),
+        )
         from app.library.manual_sync import scoped_documents, update_progress
         manual_documents = scoped_documents(self.session, job, current_documents, manual_folders)
         manual_ids = {item.external_file_id for item in manual_documents} if job.manual_run_id else set()
@@ -521,8 +532,7 @@ class IngestionService:
                     continue
             self._upsert_indexed(job, discovered, indexed_at=now, force=discovered.external_file_id in manual_ids)
 
-        if job.manual_run_id:
-            update_progress(self.session, job, total=len(manual_documents), processed=len(manual_documents),
+        update_progress(self.session, job, total=len(manual_documents), processed=len(manual_documents),
                 outcomes=[{"external_id": item.external_file_id, "name": item.name,
                            "processed": True, "error_code": item.error_code or
                            ("empty_extracted_text" if item.mime_type in self.eligible_mime_types and not (item.text or "").strip() else None)}

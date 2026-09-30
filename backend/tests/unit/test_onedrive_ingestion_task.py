@@ -94,7 +94,7 @@ def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) ->
             return job
 
         def apply_reconciliation(self, **kwargs):
-            assert kwargs["documents"] is discovery
+            assert kwargs["documents"] == discovery
             return job
 
         def has_failed_documents(self, **_: object) -> bool:
@@ -137,6 +137,9 @@ def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) ->
     class FakeLibraryService:
         def __init__(self, _: FakeSession) -> None:
             return None
+
+        def filter_excluded_content(self, *, documents, folders, **_: object):
+            return documents, folders
 
         def project_successful_sync(self, **_: object) -> None:
             return None

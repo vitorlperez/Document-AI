@@ -11,7 +11,7 @@ from app.ingestion.service import DiscoveredDocument, IngestionService, SyncAcce
 from app.integrations.google_drive import RemoteFolder
 from app.integrations.models import DataSource
 from app.knowledge.models import Document
-from app.library.models import LibraryNode
+from app.library.models import LibraryExclusion, LibraryNode
 from app.library.service import LibraryService
 from app.organizations.models import Membership, MembershipRole, Organization
 from app.workspaces.models import WorkspaceFolder
@@ -114,7 +114,8 @@ def test_projects_nested_drive_tree_and_merges_overlapping_syncs(session: Sessio
     service.remove_file_if_unindexed(
         scope=OrganizationScope(organization.id), source_id=removed_b.source_id, external_file_id=removed_b.external_file_id
     )
-    assert session.query(LibraryNode).filter_by(source_id=source.id, external_id="brief").count() == 1
+    assert session.query(LibraryNode).filter_by(source_id=source.id, external_id="brief").count() == 0
+    assert session.query(LibraryExclusion).filter_by(source_id=source.id, external_id="brief").count() == 1
 
 
 def test_projection_refreshes_remote_folder_names_and_parents(session: Session) -> None:

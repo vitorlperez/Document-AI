@@ -50,3 +50,28 @@ def test_access_migrations_generate_postgresql_sql():
     for table in ("api_keys", "organization_access_settings", "api_audit_events"):
         assert f"CREATE TABLE {table}" in result.stdout
     assert "CREATE INDEX ix_api_audit_events_org_created" in result.stdout
+
+
+def test_integration_migration_chain_preserves_main_revision():
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    config = Config(str(BACKEND_DIR / "alembic.ini"))
+    config.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
+    scripts = ScriptDirectory.from_config(config)
+    assert scripts.get_heads() == ["20260930_0025"]
+    expected = [
+        ("20260930_0019", "library_exclusions"),
+        ("20260930_0020", "pgvector_expand"),
+        ("20260930_0021", "sharepoint_tenant_binding"),
+        ("20260930_0022", "extraction_cache"),
+        ("20260930_0023", "api_access"),
+        ("20260930_0024", "api_audit_events"),
+        ("20260930_0025", "mcp_connections"),
+    ]
+    previous = "20260929_0018"
+    for revision, slug in expected:
+        migration = scripts.get_revision(revision)
+        assert Path(migration.path).name == f"{revision}_{slug}.py"
+        assert migration.down_revision == previous
+        previous = revision

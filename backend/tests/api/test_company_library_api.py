@@ -330,3 +330,326 @@ def test_manual_queue_failure_is_persisted_and_active_run_cannot_be_reused(api):
     client.app.state.ingestion_dispatcher = type('Dispatcher', (), {'dispatch': lambda self, job_id: None})()
     assert client.post(f'/library/nodes/{outer}/reprocess?organization_id={organization}').status_code == 202
     assert client.post(f'/library/nodes/{outer}/reprocess?organization_id={organization}').status_code == 409
+
+
+@pytest.mark.parametrize("indexed", [True, False])
+def test_remove_folder_removes_local_subtree_and_preserves_siblings(api, indexed):
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source = seed_library(factory, organization)
+    outer = _nest_file_under_folder(factory, organization, source)
+    with factory.begin() as session:
+        root = session.query(LibraryNode).filter_by(kind="source").one()
+        session.add(LibraryNode(organization_id=root.organization_id, source_id=root.source_id,
+                                parent_id=root.id, external_id="sibling", kind="folder", name="Sibling"))
+        if not indexed:
+            session.query(Document).delete()
+    removed = client.delete(f"/library/nodes/{outer}/index?organization_id={organization}")
+    assert removed.status_code == 200
+    assert removed.json() == {"documents": int(indexed)}
+    children = client.get(f"/library/nodes/{root.id}/children?organization_id={organization}").json()["items"]
+    assert [item["name"] for item in children] == ["Sibling"]
+    assert client.get(f"/library/search?organization_id={organization}&query=Inner").json()["items"] == []
+    with factory() as session:
+        assert session.query(Document).count() == 0
+        assert session.query(DataSource).one().status == "connected"
+        assert session.query(WorkspaceFolder).count() == 1
+
+
+def test_empty_folder_removal_requires_admin_and_rejects_active_sync(api):
+    from app.ingestion.service import IngestionService
+    from app.organizations.models import Membership, MembershipRole
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source = seed_library(factory, organization)
+    outer = _nest_file_under_folder(factory, organization, source)
+    with factory.begin() as session:
+        session.query(Document).delete()
+        session.query(Membership).one().role = MembershipRole.MEMBER
+    assert client.delete(f"/library/nodes/{outer}/index?organization_id={organization}").status_code == 403
+    with factory.begin() as session:
+        session.query(Membership).one().role = MembershipRole.OWNER
+        IngestionService(session).enqueue(scope=OrganizationScope(UUID(organization)),
+            user_id=session.query(User).one().id, workspace_folder_id=session.query(WorkspaceFolder).one().id)
+    assert client.delete(f"/library/nodes/{outer}/index?organization_id={organization}").status_code == 409
+    with factory() as session:
+        assert session.get(LibraryNode, UUID(outer)) is not None
+
+
+def test_owner_can_disconnect_notion_and_preserve_knowledge(api):
+    from datetime import UTC, datetime, timedelta
+
+    from app.audit_usage.models import AuditLog
+    from app.identity.auth import hash_secret
+    from app.integrations.models import OAuthConnectionState
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = seed_library(factory, organization)
+    with factory.begin() as session:
+        source = session.get(DataSource, UUID(source_id))
+        source.provider = "notion"
+        session.add(OAuthConnectionState(organization_id=source.organization_id,
+            user_id=source.connected_by_user_id, source_id=source.id,
+            session_hash=hash_secret("local"), state_hash=hash_secret("pending"),
+            expires_at=datetime.now(UTC) + timedelta(minutes=10)))
+    response = client.delete(f"/data-sources/{source_id}?organization_id={organization}")
+    assert response.status_code == 204
+    with factory() as session:
+        source = session.get(DataSource, UUID(source_id))
+        assert source.status == "disconnected" and source.encrypted_credentials is None
+        assert session.query(Document).count() == session.query(WorkspaceFolder).count() == 1
+        assert session.query(OAuthConnectionState).one().consumed_at is not None
+        assert session.query(AuditLog).filter_by(action="data_source.disconnected").count() == 1
+
+
+def test_history_contains_normal_sync_and_each_manual_resync_without_duplicates(api):
+    from app.ingestion.service import IngestionService
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source = seed_library(factory, organization)
+    outer = _nest_file_under_folder(factory, organization, source)
+    root = client.get(f"/library?organization_id={organization}").json()["items"][0]
+    client.app.state.ingestion_dispatcher = type("Dispatcher", (), {"dispatch": lambda self, job_id: None})()
+    with factory() as session:
+        workspace_id = str(session.query(WorkspaceFolder).one().id)
+    normal = client.post(f"/workspace-folders/{workspace_id}/sync?organization_id={organization}")
+    assert normal.status_code == 202
+    with factory.begin() as session:
+        IngestionService(session).reconcile(job_id=UUID(normal.json()["job_id"]), documents=[
+            DiscoveredDocument("brief", "Brief.pdf", "application/pdf", "", text="body", parent_ids=("inner",))])
+    manual_ids = []
+    for path in [f"nodes/{outer}", f"nodes/{root['id']}", f"workspaces/{workspace_id}"]:
+        response = client.post(f"/library/{path}/reprocess?organization_id={organization}")
+        assert response.status_code == 202
+        manual_ids.append(response.json()["run_id"])
+        with factory.begin() as session:
+            for job in session.query(ProcessingJob).filter_by(manual_run_id=UUID(manual_ids[-1])):
+                IngestionService(session).reconcile(job_id=job.id, documents=[
+                    DiscoveredDocument("brief", "Brief.pdf", "application/pdf", "", text="body", parent_ids=("inner",))])
+        # Each newly completed run remains separately visible after a fresh GET.
+        history = client.get(f"/library/sync-history?organization_id={organization}")
+        assert history.status_code == 200
+        ids = [item["id"] for item in history.json()["items"]]
+        assert set(manual_ids + [normal.json()["job_id"]]) == set(ids)
+        assert len(ids) == len(set(ids))
+        assert ids[0] == manual_ids[-1]
+    assert {item["operation"] for item in history.json()["items"]} == {"sync", "resync"}
+    assert all(item["status"] == "ready" for item in history.json()["items"])
+    login(client, "outsider")
+    assert client.get(f"/library/sync-history?organization_id={organization}").status_code == 403
+
+
+def test_normal_sync_history_survives_workspace_deletion_and_is_not_forced(api):
+    from app.ingestion.service import IngestionService
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    seed_library(factory, organization)
+    client.app.state.ingestion_dispatcher = type("Dispatcher", (), {"dispatch": lambda self, job_id: None})()
+    with factory() as session:
+        workspace_id = str(session.query(WorkspaceFolder).one().id)
+    result = client.post(f"/workspace-folders/{workspace_id}/sync?organization_id={organization}").json()
+    with factory.begin() as session:
+        service = IngestionService(session)
+        job = session.get(ProcessingJob, UUID(result["job_id"]))
+        assert job.manual_run_id is None
+        service.reconcile(job_id=job.id, documents=[DiscoveredDocument("brief", "Brief.pdf", "application/pdf", "", text="body")])
+        service.remove_workspace(scope=OrganizationScope(UUID(organization)),
+            user_id=session.query(User).one().id, workspace_folder_id=UUID(workspace_id))
+    history = client.get(f"/library/sync-history?organization_id={organization}").json()["items"]
+    assert len(history) == 1
+    assert history[0]["id"] == result["job_id"]
+    assert history[0]["operation"] == "sync" and history[0]["status"] == "ready"
+    assert history[0]["triggered_by"] == "member@example.test"
+    assert history[0]["total"] == history[0]["processed"] == 1
+
+
+@pytest.mark.parametrize("role", ["member", "inactive", "outsider"])
+def test_notion_disconnect_rejects_unauthorized_users(api, role):
+    from app.organizations.models import Membership, MembershipRole
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = seed_library(factory, organization)
+    with factory.begin() as session:
+        session.get(DataSource, UUID(source_id)).provider = "notion"
+        if role == "member": session.query(Membership).one().role = MembershipRole.MEMBER
+        if role == "inactive": session.query(Membership).one().is_active = False
+    if role == "outsider": login(client, "outsider")
+    assert client.delete(f"/data-sources/{source_id}?organization_id={organization}").status_code == 403
+    with factory() as session:
+        source = session.get(DataSource, UUID(source_id))
+        assert source.status == "connected" and source.encrypted_credentials == "encrypted"
+
+
+def test_scheduler_and_legacy_jobs_are_visible_once_in_history(api):
+    from app.ingestion.service import IngestionService
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    seed_library(factory, organization)
+    with factory.begin() as session:
+        folder = session.query(WorkspaceFolder).one()
+        legacy = ProcessingJob(organization_id=folder.organization_id, workspace_folder_id=folder.id,
+            idempotency_key="legacy-history", status=ProcessingJobStatus.READY)
+        session.add(legacy)
+        service = IngestionService(session)
+        job = service.enqueue_system(scope=OrganizationScope(UUID(organization)), workspace_folder_id=folder.id)
+        assert service.enqueue_system(scope=OrganizationScope(UUID(organization)), workspace_folder_id=folder.id).id == job.id
+        service.fail(job_id=job.id, error_code="sync_queue_unavailable")
+        legacy_id, scheduled_id = str(legacy.id), str(job.id)
+    items = client.get(f"/library/sync-history?organization_id={organization}").json()["items"]
+    assert len(items) == 2 and {item["id"] for item in items} == {legacy_id, scheduled_id}
+    scheduled = next(item for item in items if item["id"] == scheduled_id)
+    assert scheduled["triggered_by"] == "Agendamento automático"
+    assert scheduled["status"] == "failed" and scheduled["completed_at"]
+    assert scheduled["tasks"][0]["error_code"] == "sync_queue_unavailable"
+    old = next(item for item in items if item["id"] == legacy_id)
+    assert old["total"] is None and old["triggered_by"] is None
+
+
+@pytest.mark.parametrize("kind", ["file", "folder"])
+@pytest.mark.parametrize("sync_mode", ["normal", "scheduled", "resync"])
+def test_library_removal_persists_across_discovery_and_reprocessing(api, kind, sync_mode):
+    from app.ingestion.service import IngestionService
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = seed_library(factory, organization)
+    outer_id = _nest_file_under_folder(factory, organization, source_id)
+    root = client.get(f"/library?organization_id={organization}").json()["items"][0]
+    with factory() as session:
+        document = session.query(Document).one()
+        workspace_id, document_id = str(document.workspace_folder_id), str(document.id)
+    if kind == "folder":
+        removed = client.delete(f"/library/nodes/{outer_id}/index?organization_id={organization}")
+        assert removed.status_code == 200
+    else:
+        removed = client.delete(f"/workspace-folders/{workspace_id}/documents/{document_id}?organization_id={organization}")
+        assert removed.status_code == 204
+    # A fresh API session must see the item disappear from browse and name search.
+    assert client.get(f"/library/search?organization_id={organization}&query=Brief").json()["items"] == []
+    with factory() as session:
+        assert session.query(LibraryNode).filter_by(external_id="brief").count() == 0
+        if kind == "folder":
+            assert session.query(LibraryNode).filter(LibraryNode.kind != "source").count() == 0
+    client.app.state.ingestion_dispatcher = type("Dispatcher", (), {"dispatch": lambda self, job_id: None})()
+    if sync_mode == "resync":
+        response = client.post(f"/library/nodes/{root['id']}/reprocess?organization_id={organization}")
+        assert response.status_code == 202
+        job_id = UUID(response.json()["job_ids"][0])
+    elif sync_mode == "normal":
+        response = client.post(f"/workspace-folders/{workspace_id}/sync?organization_id={organization}")
+        assert response.status_code == 202
+        job_id = UUID(response.json()["job_id"])
+    else:
+        with factory.begin() as session:
+            job_id = IngestionService(session).enqueue_system(scope=OrganizationScope(UUID(organization)),
+                workspace_folder_id=UUID(workspace_id)).id
+    documents = [
+        DiscoveredDocument("brief", "Brief.pdf", "application/pdf", "", text="remote unchanged", parent_ids=("inner",)),
+        DiscoveredDocument("new-child", "New Child.pdf", "application/pdf", "", text="new remote child", parent_ids=("new-inner",)),
+        DiscoveredDocument("safe", "Safe.pdf", "application/pdf", "", text="unrelated file"),
+    ]
+    folders = [RemoteFolder("outer", "Outer"), RemoteFolder("inner", "Inner", ("outer",)),
+               RemoteFolder("new-inner", "New Inner", ("inner",))]
+    # Re-open a session: exclusions must be persisted, not an in-memory UI filter.
+    with factory.begin() as session:
+        service = IngestionService(session)
+        job = service.claim(job_id=job_id)
+        service.apply_reconciliation(job_id=job.id, run_token=job.run_token,
+            documents=documents, manual_folders=folders)
+        LibraryService(session).project_successful_sync(organization_id=UUID(organization),
+            source=session.get(DataSource, UUID(source_id)), documents=documents, folders=folders)
+    assert client.get(f"/library/search?organization_id={organization}&query=Brief").json()["items"] == []
+    with factory() as session:
+        assert session.query(Document).filter_by(external_file_id="brief").count() == 0
+        assert session.query(LibraryNode).filter_by(external_id="brief").count() == 0
+        assert session.get(DataSource, UUID(source_id)).encrypted_credentials == "encrypted"
+        assert session.query(Document).filter_by(external_file_id="safe").one().index_status == "indexed"
+        if kind == "folder":
+            assert {node.external_id for node in session.query(LibraryNode)} == {root["external_id"], "safe"}
+            assert session.query(Document).filter_by(external_file_id="new-child").count() == 0
+            for query in ["Outer", "Inner", "Child"]:
+                assert client.get(f"/library/search?organization_id={organization}&query={query}").json()["items"] == []
+
+
+@pytest.mark.parametrize("kind", ["source", "folder"])
+def test_resync_without_sync_workspace_returns_clear_error_and_no_run(api, kind):
+    from app.library.models import ManualSyncRun
+
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = seed_library(factory, organization)
+    with factory.begin() as session:
+        source = session.get(DataSource, UUID(source_id))
+        LibraryService(session).project_successful_sync(
+            organization_id=UUID(organization), source=source, documents=[],
+            folders=[RemoteFolder("unsynced", "Unsynced")],
+        )
+        session.query(Document).filter_by(organization_id=UUID(organization)).delete()
+        session.query(WorkspaceFolder).filter_by(organization_id=UUID(organization)).delete()
+        node_id = session.query(LibraryNode).filter_by(source_id=UUID(source_id), kind=kind).one().id
+    response = client.post(f"/library/nodes/{node_id}/reprocess?organization_id={organization}")
+    assert response.status_code == 400
+    assert "espaço sincronizado" in response.json()["detail"]
+    with factory() as session:
+        assert session.query(ManualSyncRun).count() == 0
+        assert session.query(ProcessingJob).count() == 0
+
+
+def test_production_click_sequence_is_visible_in_history_while_running_and_after_removal(api):
+    """Replays the production timeline of 2026-09-30 02:59-03:09 UTC.
+
+    A tool resync (POST /library/nodes/{root}/reprocess) was followed by syncs
+    triggered from the integration screen (POST /workspace-folders/{id}/sync)
+    and by the removal of those workspaces. The modal only read manual runs, so
+    the integration syncs never had an entry or progress to show.
+    """
+    from app.ingestion.service import IngestionService
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    seed_library(factory, organization)
+    root = client.get(f"/library?organization_id={organization}").json()["items"][0]
+    client.app.state.ingestion_dispatcher = type("Dispatcher", (), {"dispatch": lambda self, job_id: None})()
+    with factory() as session:
+        workspace_id = str(session.query(WorkspaceFolder).one().id)
+
+    def history() -> dict[str, dict]:
+        response = client.get(f"/library/sync-history?organization_id={organization}")
+        assert response.status_code == 200
+        return {item["id"]: item for item in response.json()["items"]}
+
+    def finish(job_id: str) -> None:
+        with factory.begin() as session:
+            IngestionService(session).reconcile(job_id=UUID(job_id), documents=[
+                DiscoveredDocument("brief", "Brief.pdf", "application/pdf", "", text="body")])
+
+    tool = client.post(f"/library/nodes/{root['id']}/reprocess?organization_id={organization}")
+    assert tool.status_code == 202
+    queued = history()[tool.json()["run_id"]]
+    # The click must be visible right away, with a task whose progress can be followed.
+    assert queued["operation"] == "resync" and queued["status"] == "queued"
+    assert [task["workspace_folder_id"] for task in queued["tasks"]] == [workspace_id]
+    finish(tool.json()["job_ids"][0])
+    assert history()[tool.json()["run_id"]]["status"] == "ready"
+
+    integration_sync = client.post(f"/workspace-folders/{workspace_id}/sync?organization_id={organization}")
+    assert integration_sync.status_code == 202
+    job_id = integration_sync.json()["job_id"]
+    running = history()[job_id]
+    assert running["operation"] == "sync" and running["status"] == "queued"
+    assert running["triggered_by"] == "member@example.test"
+    finish(job_id)
+    done = history()[job_id]
+    assert done["status"] == "ready" and done["total"] == done["processed"] == 1
+
+    assert client.delete(f"/workspace-folders/{workspace_id}?organization_id={organization}").status_code == 204
+    # Removing the workspace deletes its jobs; the history snapshots must remain.
+    assert set(history()) == {tool.json()["run_id"], job_id}

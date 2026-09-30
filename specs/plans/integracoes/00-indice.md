@@ -101,14 +101,16 @@ Os três planos criavam `…_0019` (`pgvector_expand`, `sharepoint_tenant_bindin
 
 | Nº | Slug | Plano/tarefa | Semana prevista |
 |---|---|---|---|
-| 0019 | `pgvector_expand` | 01-F5.3 | S3 |
-| 0020 | `extraction_cache` | 01-F4.5 | S5 |
-| 0021 | `pgvector_contract` | 01-F5.7 (≥ 7 d após virar a leitura) | S5 |
-| 0022 | `sharepoint_tenant_binding` | 02-A5.1 | S6 |
+| 0019 | `library_exclusions` | main (já aplicada; preservada) | — |
+| 0020 | `pgvector_expand` | 01-F5.3 | S3 |
+| 0021 | `sharepoint_tenant_binding` | 02-A5.1 | S6 |
+| 0022 | `extraction_cache` | 01-F4.5 | S5 |
 | 0023 | `api_access` | 03-A1 | S7 |
 | 0024 | `api_audit_events` | 03-A1 | S7 |
 | 0025 | `mcp_connections` | 03-B2 | S9 |
 | próx. livre | `org_ocr_consent`, `embedding_hnsw` (condicionais, 01), `provider_settings` (02-A9, se decidido) | — | — |
+
+A cadeia efetivamente entregue é `0018 → 0019 (main) → 0020 → 0021 → 0022 → 0023 → 0024 → 0025`. `pgvector_contract` permanece pendente do gate operacional e deve usar o próximo id livre. Esta tabela prevalece sobre a numeração histórica dos planos.
 
 **Regra que vale sobre a tabela:** o número é o próximo livre e `down_revision` vem da saída de `alembic heads` no dia do merge. Nunca haverá duas revisões com o mesmo `revision`. Antes de mergear, rode `alembic upgrade head --sql` (teste `tests/unit/test_migration_sql.py`) e `upgrade → downgrade -1 → upgrade` em Postgres descartável. O que importa é a cadeia linear. A migração `channels` (03-C1) saiu da alocação com o adiamento do Slack; ao retomá-lo, use o próximo número livre.
 

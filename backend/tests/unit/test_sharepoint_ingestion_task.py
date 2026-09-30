@@ -97,6 +97,9 @@ def _run_worker(monkeypatch, *, provider_name: str, provider) -> dict:
         def __init__(self, _: FakeSession) -> None:
             return None
 
+        def filter_excluded_content(self, *, documents, folders, **_: object):
+            return documents, folders
+
         def project_successful_sync(self, **kwargs: object) -> None:
             projected.update(kwargs)
 

@@ -1,15 +1,15 @@
 """OCR extraction cache per organization.
 
-Revision ID: 20260930_0021
-Revises: 20260930_0020
+Revision ID: 20260930_0022
+Revises: 20260930_0021
 """
 
 import sqlalchemy as sa
 
 from alembic import op
 
-revision = "20260930_0021"
-down_revision = "20260930_0020"
+revision = "20260930_0022"
+down_revision = "20260930_0021"
 branch_labels = None
 depends_on = None
 

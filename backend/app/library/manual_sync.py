@@ -1,4 +1,4 @@
-"""Durable manual runs; automatic synchronization keeps its existing path."""
+"""Durable synchronization snapshots; manual runs additionally force full reprocessing."""
 
 from datetime import UTC, datetime
 from uuid import UUID
@@ -13,6 +13,24 @@ from app.ingestion.service import DiscoveredDocument, IngestionService, SyncAcce
 from app.knowledge.models import Document
 from app.library.models import LibraryNode, ManualSyncRun
 from app.workspaces.models import WorkspaceFolder
+
+
+def record_sync(
+    session: Session, job: ProcessingJob, folder: WorkspaceFolder, user_id: UUID | None
+) -> None:
+    """Snapshot an ordinary job without assigning the manual reprocessing flag."""
+    user = session.get(User, user_id) if user_id else None
+    session.add(ManualSyncRun(
+        organization_id=job.organization_id, source_id=folder.source_id,
+        created_at=job.created_at,
+        scope_kind="sync", scope_external_id=str(job.id), scope_name=folder.name,
+        triggered_by_user_id=user_id, triggered_by=user.email if user else "Agendamento automático",
+        status="queued", progress={str(job.id): {
+            "workspace_name": folder.name, "workspace_folder_id": str(folder.id),
+            "status": "queued", "total": 0, "processed": 0, "outcomes": [], "error_code": None,
+        }},
+    ))
+    session.flush()
 
 
 def request_run(
@@ -52,6 +70,8 @@ def request_run(
                 .order_by(WorkspaceFolder.id)
             )
         )
+    if not folders:
+        raise ValueError("Nenhum espaço sincronizado nesta ferramenta. Selecione um espaço na integração antes de ressincronizar.")
     for folder in folders:
         ingestion.require_folder(scope=scope, workspace_folder_id=folder.id, lock=True)
         ingestion._require_no_active_job(scope=scope, workspace_folder_id=folder.id)
@@ -63,15 +83,17 @@ def request_run(
         scope_name=name,
         triggered_by_user_id=user.id,
         triggered_by=user.email,
-        status="queued" if folders else "ready",
-        completed_at=None if folders else datetime.now(UTC),
+        status="queued",
+        completed_at=None,
         progress={},
+        created_at=datetime.now(UTC),
     )
     session.add(run)
     session.flush()
     jobs = []
     for folder in folders:
-        job = ingestion.enqueue(scope=scope, user_id=user.id, workspace_folder_id=folder.id)
+        job = ingestion.enqueue(scope=scope, user_id=user.id, workspace_folder_id=folder.id,
+                                record_history=False)
         job.manual_run_id = run.id
         jobs.append(job)
     run.progress = {
@@ -164,19 +186,28 @@ def scoped_documents(session: Session, job: ProcessingJob, documents, folders=()
 
 
 def update_progress(session: Session, job: ProcessingJob, **values):
-    if not job.manual_run_id:
-        return
+    condition = (
+        ManualSyncRun.id == job.manual_run_id
+        if job.manual_run_id else
+        (ManualSyncRun.organization_id == job.organization_id)
+        & (ManualSyncRun.scope_kind == "sync")
+        & (ManualSyncRun.scope_external_id == str(job.id))
+    )
     # Serialize sibling workspace workers updating the same aggregate snapshot.
     run = session.scalar(
         select(ManualSyncRun)
-        .where(ManualSyncRun.id == job.manual_run_id)
+        .where(condition)
         .with_for_update()
         .execution_options(populate_existing=True)
     )
+    if run is None:
+        # Jobs created before history snapshots were introduced remain readable
+        # through the legacy ProcessingJob fallback in synchronization_history.
+        return
     progress = dict(run.progress)
     current = dict(progress[str(job.id)])
     current.update(values, status=job.status.value, error_code=job.error_code)
-    if current["status"] in {"ready", "partial_failure"}:
+    if run.scope_kind != "sync" and current["status"] in {"ready", "partial_failure"}:
         current["status"] = (
             "partial_failure"
             if any(item["error_code"] for item in current["outcomes"])
@@ -216,7 +247,8 @@ def serialize_run(run: ManualSyncRun):
             }
     failures = [item for item in outcomes.values() if item["error_code"]]
     return {
-        "id": str(run.id),
+        "id": run.scope_external_id if run.scope_kind == "sync" else str(run.id),
+        "operation": "sync" if run.scope_kind == "sync" else "resync",
         "source_id": str(run.source_id),
         "scope_kind": run.scope_kind,
         "scope_name": run.scope_name,

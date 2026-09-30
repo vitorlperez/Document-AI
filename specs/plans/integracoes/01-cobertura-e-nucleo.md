@@ -1,5 +1,6 @@
 # Plano 01 — Cobertura de formatos, OCR e endurecimento do núcleo — Implementation Plan
 
+> Migrações após integrar main (prevalece sobre propostas históricas abaixo): 0019 library_exclusions (main, imutável) → 0020 pgvector_expand → 0021 sharepoint_tenant_binding → 0022 extraction_cache → 0023 api_access → 0024 api_audit_events → 0025 mcp_connections. Contract e opcionais usam o próximo id livre.
 > Origem: Recomendação 1 de `specs/research/integracoes-analise-2026-09-29.md` (§1, 2.4, 2.5, 5.4, 6 itens A/B/C/N/L, 7 Onda 1, 9).
 > Base de código: `main` @ `c9cebf0` **com alterações não commitadas** em `backend/app/{api,ingestion,integrations,library}` e a migração nova `20260929_0018_manual_sync_runs.py`. Todas as citações `path:linha` refletem o **disco em 2026-09-29**; depois do merge das alterações pendentes, reancore pelo **nome do símbolo** (sempre citado junto).
 > Revisão (2026-09-29, pane-243): as alterações que eram "não commitadas" já estão no `HEAD` `f5f3a1e` (feat(library)…) — `git status --short backend` está limpo e `alembic heads` = `20260929_0018`; P1 está satisfeito e as linhas citadas continuam válidas. Correções de âncora feitas nesta revisão estão marcadas com "> Revisão:" ou "(Revisão: …)".
@@ -136,7 +137,7 @@ Cada decisão tem **recomendação** e *default seguro* usado no plano se ningu�
 | `backend/app/core/vector.py` | `EmbeddingVector` (TypeDecorator), `EMBEDDING_DIMENSIONS` |
 | `backend/app/knowledge/similarity.py` | `SimilarityIndex` + `PythonSimilarity` + `PgVectorSimilarity` |
 | `backend/app/knowledge/untrusted.py` | `fence_sources()`, `safe_label()`, `strip_links()`, `neutralize()` |
-| `backend/alembic/versions/2026…_0019_pgvector_expand.py` | extensão + `embedding_vec` |
+| `backend/alembic/versions/2026…_0020_pgvector_expand.py` | extensão + `embedding_vec` |
 | `backend/alembic/versions/2026…_0020_extraction_cache.py` | cache de OCR |
 | `backend/alembic/versions/2026…_0021_pgvector_contract.py` | drop JSON + rename |
 | `backend/scripts/rekey_sources.py`, `backfill_pgvector.py`, `requeue_ignored.py`, `ocr_eval.py`, `make_ocr_corpus.py`, `bench_vector_search.py`, `injection_eval.py` | operação e avaliação |
@@ -2115,7 +2116,7 @@ def _register_vector(dbapi_connection, _record):
 - [ ] Step 4 — `pytest -q tests/unit/test_embedding_vector_type.py`; com `TEST_DATABASE_URL` definido: `pytest -q tests/integration/test_pgvector_search.py -k type`. Step 5 — `git add backend/app/core backend/tests && git commit -m "feat(vector): tipo EmbeddingVector com variante SQLite e registro do pgvector"`
 
 ### Task 5.3: Migração *expand* e coluna `embedding_vec`
-**Files:** Create `backend/alembic/versions/2026…_0019_pgvector_expand.py` · Modify `backend/app/knowledge/models.py:59` · Test `backend/tests/unit/test_migration_sql.py` (padrão existente) + `backend/tests/integration/test_pgvector_search.py`
+**Files:** Create `backend/alembic/versions/2026…_0020_pgvector_expand.py` · Modify `backend/app/knowledge/models.py:59` · Test `backend/tests/unit/test_migration_sql.py` (padrão existente) + `backend/tests/integration/test_pgvector_search.py`
 **Interfaces:** Produces: coluna `document_chunks.embedding_vec vector(1536) NULL` (sem índice); atributo ORM `DocumentChunk.embedding_vec: Mapped[list[float] | None] = mapped_column(EmbeddingVector())`. A coluna JSON `embedding` **continua**.
 - [ ] Step 1 — teste no padrão de `tests/unit/test_migration_sql.py` (ler o arquivo para copiar o helper de renderização offline): o SQL gerado para Postgres contém `CREATE EXTENSION IF NOT EXISTS vector` e `ADD COLUMN embedding_vec vector(1536)`; teste Postgres: `alembic upgrade head` → `\d document_chunks` mostra a coluna; `alembic downgrade -1` remove.
 - [ ] Step 2 — FAIL. Step 3 — migração:
@@ -2125,7 +2126,7 @@ def _register_vector(dbapi_connection, _record):
 import sqlalchemy as sa
 from alembic import op
 
-revision = "20260930_0019"          # ajustar ao merge; down_revision = cabeça vigente (20260929_0018 em 2026-09-29)
+revision = "20260930_0020"          # down_revision = "20260930_0019" (library_exclusions do main)
 down_revision = "20260929_0018"
 branch_labels = None
 depends_on = None
