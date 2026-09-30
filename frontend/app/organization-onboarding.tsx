@@ -23,7 +23,7 @@ export function OrganizationOnboarding({ name, state, onAdvance, children, alert
   const [error, setError] = useState<string | null>(null);
   const title = useRef<HTMLHeadingElement>(null);
   const integrations = state.step === "integrations";
-  useEffect(() => { title.current?.focus(); }, [state.step]);
+  useEffect(() => { title.current?.focus({ preventScroll: true }); window.scrollTo({ top: 0, behavior: "instant" }); }, [state.step]);
   async function advance(step: OnboardingState["step"]) {
     setBusy(true); setError(null);
     try { await onAdvance(step); }

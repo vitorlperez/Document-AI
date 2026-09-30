@@ -1,7 +1,6 @@
 .onboarding-page { min-height: 100dvh; background: var(--color-paper, #f7f8f3); color: var(--color-ink, #1f3529); }
 .onboarding-header { max-width: 1200px; margin: auto; padding: 24px; display: flex; align-items: center; justify-content: space-between; }
 .onboarding-content { max-width: 960px; margin: 32px auto 0; padding: 24px 32px 48px; }
-.onboarding-integrations { max-width: 1200px; margin-top: 0; }
 .onboarding-progress { display: flex; gap: 24px; padding: 0; list-style: none; flex-wrap: wrap; font-size: 13px; color: #536557; }
 .onboarding-progress li { display: flex; align-items: center; gap: 8px; }
 .onboarding-progress li[aria-current="step"] { color: #224b35; font-weight: 700; }

@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const output = path.join(__dirname, 'qa', 'fixed');
 fs.mkdirSync(output, { recursive: true });
-const checks = new Set((process.env.CHECK_ITEMS ?? 'F-001,F-002,F-003,F-004,F-005').split(','));
+const checks = new Set((process.env.CHECK_ITEMS ?? 'F-001,F-002,F-003,F-004,F-005,F-006').split(','));
 const check = (id, fn) => checks.has(id) ? fn() : undefined;
 
 (async () => {
@@ -38,11 +38,31 @@ const check = (id, fn) => checks.has(id) ? fn() : undefined;
     };
     const fit = async () => assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await fit();
+    const alignment = async () => page.evaluate(() => {
+      const bounds = selector => {
+        const element = document.querySelector(selector);
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        const left = parseFloat(style.paddingLeft), right = parseFloat(style.paddingRight);
+        return { x: rect.x + left, width: rect.width - left - right, y: rect.y };
+      };
+      return { progress: bounds('.onboarding-progress'), title: bounds('.onboarding-intro h1'), actions: bounds('.onboarding-actions') };
+    });
+    const welcomeAlignment = await alignment();
     await page.screenshot({ path: path.join(output, `welcome-${width}.png`), fullPage: true });
     {
       await page.getByRole('button', { name: 'Vamos começar', exact: true }).click();
       await page.getByRole('heading', { name: 'Traga o conhecimento da sua equipe', exact: true }).waitFor();
       assert.equal((await state()).step, 'integrations');
+      await check('F-006', async () => {
+        const integrationAlignment = await alignment();
+        for (const key of ['progress', 'title', 'actions']) {
+          assert.equal(integrationAlignment[key].x, welcomeAlignment[key].x, `F-006: ${key} left edge`);
+          assert.equal(integrationAlignment[key].width, welcomeAlignment[key].width, `F-006: ${key} width`);
+        }
+        assert.equal(integrationAlignment.progress.y, welcomeAlignment.progress.y, 'F-006: stepper vertical position');
+        assert.equal(integrationAlignment.title.y, welcomeAlignment.title.y, 'F-006: title vertical position');
+      });
       await page.reload();
       await page.getByRole('heading', { name: 'Traga o conhecimento da sua equipe', exact: true }).waitFor();
       await page.getByRole('button', { name: 'Voltar', exact: true }).click();
