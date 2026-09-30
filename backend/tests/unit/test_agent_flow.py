@@ -202,7 +202,8 @@ def test_unmentioned_profile_question_keeps_sources_when_answer_provider_times_o
         semantic_session, provider, scope, user, "O que sabemos sobre o Vitor?", mentions=[],
     )
 
-    assert result.answer and "Software Engineer" in result.answer
+    assert result.answer and len(result.answer) < 250
+    assert "Software Engineer" not in result.answer  # A timeout must not dump the indexed profile.
     assert "síntese" in result.answer.casefold()
     assert ("Profile.pdf", profile_document.source_url) in _linked(result)
 

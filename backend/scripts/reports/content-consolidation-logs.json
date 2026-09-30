@@ -1,0 +1,75 @@
+[
+  {
+    "elapsed_ms": 6249.99,
+    "event": "agent_phase",
+    "level": "INFO",
+    "logger": "document_intelligence.questions",
+    "message": "agent phase complete",
+    "phase": "provider_http_responses",
+    "provider_call_count": 1,
+    "remaining_ms": 1749.94,
+    "request_id": "b5bb9b00-9c05-41d8-8560-67045c0d04d7"
+  },
+  {
+    "elapsed_ms": 6251.51,
+    "event": "agent_phase",
+    "level": "INFO",
+    "logger": "document_intelligence.agent",
+    "message": "agent phase complete",
+    "phase": "intent_classifier",
+    "provider_call_count": 1,
+    "remaining_ms": 1748.47,
+    "request_id": "b5bb9b00-9c05-41d8-8560-67045c0d04d7"
+  },
+  {
+    "elapsed_ms": 964.03,
+    "event": "agent_phase",
+    "level": "INFO",
+    "logger": "document_intelligence.questions",
+    "message": "agent phase complete",
+    "phase": "provider_http_embeddings",
+    "provider_call_count": 2,
+    "remaining_ms": 14302.2,
+    "request_id": "b5bb9b00-9c05-41d8-8560-67045c0d04d7"
+  },
+  {
+    "elapsed_ms": 12899.05,
+    "event": "agent_phase",
+    "failure_kind": "read_timeout",
+    "level": "INFO",
+    "logger": "document_intelligence.questions",
+    "message": "agent phase complete",
+    "phase": "provider_http_responses",
+    "provider_call_count": 3,
+    "remaining_ms": 0.0,
+    "request_id": "b5bb9b00-9c05-41d8-8560-67045c0d04d7"
+  },
+  {
+    "compatible_embedding_count": 1204,
+    "elapsed_ms": 19067.81,
+    "event": "semantic_question",
+    "indexed_chunk_count": 1204,
+    "level": "INFO",
+    "lexical_candidate_count": 100,
+    "logger": "document_intelligence.questions",
+    "message": "semantic question complete",
+    "provider_outcome": "provider_unavailable_extractive_fallback",
+    "request_id": "b5bb9b00-9c05-41d8-8560-67045c0d04d7",
+    "result": "supported",
+    "retrieval_status": "sufficient_evidence",
+    "selected_candidate_count": 43,
+    "semantic_candidate_count": 100,
+    "top_score_bucket": "0_4_to_0_59"
+  },
+  {
+    "elapsed_ms": 19084.92,
+    "event": "agent_phase",
+    "level": "INFO",
+    "logger": "document_intelligence.agent",
+    "message": "agent phase complete",
+    "phase": "tool_execution",
+    "provider_call_count": 3,
+    "remaining_ms": 0.0,
+    "request_id": "b5bb9b00-9c05-41d8-8560-67045c0d04d7"
+  }
+]

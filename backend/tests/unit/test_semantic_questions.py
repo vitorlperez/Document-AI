@@ -18,6 +18,7 @@ from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.questions import (
     ANSWER_FORMAT_GUIDANCE,
     ANSWER_MODEL,
+    CONTENT_ANSWER_FORMAT_GUIDANCE,
     EMBEDDING_MODEL,
     MAX_SEMANTIC_CANDIDATES,
     RETRIEVAL_STATUS_BELOW_THRESHOLD,
@@ -756,7 +757,7 @@ def test_openai_evidence_includes_tool_and_file_provenance(monkeypatch: pytest.M
     assert "Brief.pdf" in requests[0]["input"]
     assert source.source_url not in requests[0]["input"]
     assert "not an exhaustive inventory" in requests[0]["instructions"]
-    assert ANSWER_FORMAT_GUIDANCE in requests[0]["instructions"]
+    assert CONTENT_ANSWER_FORMAT_GUIDANCE in requests[0]["instructions"]
 
 
 def test_openai_inventory_prompt_treats_scoped_file_names_as_authoritative(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -778,6 +779,7 @@ def test_openai_inventory_prompt_treats_scoped_file_names_as_authoritative(monke
 
     assert "document names are authoritative" in requests[0]["instructions"]
     assert "List every supplied source exactly once" in requests[0]["instructions"]
+    assert ANSWER_FORMAT_GUIDANCE in requests[0]["instructions"]
 
 
 def test_broad_scope_empty_context_authorizes_membership_before_returning_empty(session: Session) -> None:
