@@ -64,3 +64,25 @@ def test_scope_node_expiry_and_csrf_validation(admin_api):
     assert client.post(path, json={"name": "x", "scopes": ["search:read"]}, headers={"Origin": "https://evil.example"}).status_code == 403
     client.cookies.clear()
     assert client.get(path).status_code == 401
+
+
+def test_listed_key_dates_have_explicit_timezone(admin_api):
+    from datetime import UTC, datetime, timedelta
+    client, _factory, org = admin_api
+    path = f"/organizations/{org}/api-keys"
+    expires = datetime.now(UTC) + timedelta(days=1)
+    assert client.post(path, json={"name": "expiring", "scopes": ["search:read"],
+                                   "expires_at": expires.isoformat()}).status_code == 201
+    value = client.get(path).json()[0]["expires_at"]
+    assert value.endswith(("Z", "+00:00"))
+
+
+def test_browser_preflight_allows_access_switch_put(admin_api):
+    client, _factory, org = admin_api
+    response = client.options(f"/organizations/{org}/access-settings", headers={
+        "Origin": client.app.state.settings.public_app_url,
+        "Access-Control-Request-Method": "PUT",
+        "Access-Control-Request-Headers": "content-type",
+    })
+    assert response.status_code == 200
+    assert "PUT" in response.headers["access-control-allow-methods"]

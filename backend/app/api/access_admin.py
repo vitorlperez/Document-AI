@@ -60,10 +60,14 @@ def _audit(session, org, user_id, action, target_type, target_id):
                          target_type=target_type, target_id=target_id))
 
 
+def _date(value: datetime | None):
+    return value.replace(tzinfo=UTC) if value is not None and value.tzinfo is None else value
+
+
 def _serialize(key: ApiKey):
     return {"id": str(key.id), "name": key.name, "prefix": key.prefix, "scopes": key.scopes,
-            "node_ids": key.node_ids, "expires_at": key.expires_at, "last_used_at": key.last_used_at,
-            "revoked_at": key.revoked_at, "rate_limit_per_minute": key.rate_limit_per_minute}
+            "node_ids": key.node_ids, "expires_at": _date(key.expires_at), "last_used_at": _date(key.last_used_at),
+            "revoked_at": _date(key.revoked_at), "rate_limit_per_minute": key.rate_limit_per_minute}
 
 
 @router.post("/api-keys", status_code=201)
