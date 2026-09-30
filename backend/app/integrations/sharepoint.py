@@ -12,6 +12,7 @@ from app.integrations.onedrive import (
     GRAPH_ROOT,
     DeltaPage,
     MicrosoftGraphClient,
+    OneDriveConnectionService,
     OneDriveCredentials,
     OneDriveCursorInvalid,
     OneDriveDeltaExpired,
@@ -59,6 +60,7 @@ def _drive(drive_id: str) -> str:
 class SharePointGraphClient(MicrosoftGraphClient):
     AUTHORITY = SHAREPOINT_AUTHORITY
     SCOPES = SHAREPOINT_SCOPES
+    max_sites = 200
 
     @staticmethod
     def _external_id(item: dict[str, Any], *, fallback_drive_id: str | None = None) -> str:
@@ -92,10 +94,10 @@ class SharePointGraphClient(MicrosoftGraphClient):
         return list(unique.values())
 
     def catalog(
-        self, *, credentials: OneDriveCredentials, max_sites: int = 200
+        self, *, credentials: OneDriveCredentials, max_sites: int | None = None
     ) -> list[RemoteFolder]:
         nodes: list[RemoteFolder] = []
-        for site in self._sites(credentials)[:max_sites]:
+        for site in self._sites(credentials)[: max_sites or self.max_sites]:
             site_id = str(site["id"])
             drives = [
                 drive
@@ -388,3 +390,13 @@ class SharePointDocumentProvider(OneDriveDocumentProvider):
             delta_links=links,
             full_snapshot=snapshot,
         )
+
+
+class SharePointConnectionService(OneDriveConnectionService):
+    """Delegated OAuth bound to one Microsoft 365 tenant (SharePoint hostname)."""
+
+    provider = "sharepoint"
+    document_provider = SharePointDocumentProvider
+
+    def bind_identity(self, credentials: OneDriveCredentials) -> str:
+        return self.client.tenant_hostname(credentials=credentials)

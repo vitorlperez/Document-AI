@@ -295,7 +295,14 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             # Keep remote metadata and the document snapshot in the same unit
             # of work. A failed projection retries the job and never leaves a
             # ready sync that cannot be browsed from the Company Library.
-            source_folders = provider.folders(encrypted_credentials=source.encrypted_credentials)
+            folders_for = getattr(provider, "folders_for_selections", None)
+            source_folders = (
+                folders_for(
+                    encrypted_credentials=source.encrypted_credentials, selections=selections
+                )
+                if folders_for
+                else provider.folders(encrypted_credentials=source.encrypted_credentials)
+            )
             if getattr(job, "manual_run_id", None):
                 from app.library.manual_sync import scoped_documents, update_progress
                 manual_documents = scoped_documents(session, job, document_results, source_folders)

@@ -780,6 +780,7 @@ class LibraryService:
             "google_drive": "Google Drive",
             "notion": "Notion",
             "onedrive": "OneDrive",
+            "sharepoint": "SharePoint",
         }.get(source.provider, source.provider.replace("_", " ").title())
         if root is None:
             root = LibraryNode(

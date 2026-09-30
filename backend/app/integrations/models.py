@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, Uuid
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, CreatedAtMixin, UUIDPrimaryKeyMixin
@@ -17,6 +17,18 @@ class DataSource(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     provider_account_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     connected_by_user_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        # One SharePoint source per organization and Microsoft tenant (ADR-0016, D-A3).
+        Index(
+            "uq_data_sources_sharepoint_tenant",
+            "organization_id",
+            "provider_account_id",
+            unique=True,
+            postgresql_where=text("provider = 'sharepoint' AND provider_account_id IS NOT NULL"),
+            sqlite_where=text("provider = 'sharepoint' AND provider_account_id IS NOT NULL"),
+        ),
+    )
 
 
 class OAuthConnectionState(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):

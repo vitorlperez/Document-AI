@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     microsoft_oauth_client_secret: SecretStr | None = None
     microsoft_oauth_redirect_uri: str | None = None
     microsoft_token_encryption_key: SecretStr | None = None
+    microsoft_sharepoint_redirect_uri: str | None = None
+    sharepoint_download_workers: int = Field(default=2, ge=1, le=8)
+    sharepoint_max_file_bytes: int = Field(default=52_428_800, ge=0)
+    sharepoint_catalog_max_sites: int = Field(default=200, ge=1)
     redis_url: str = "redis://localhost:6379/0"
     sync_scheduler_interval_minutes: int = 15
     sync_freshness_hours: int = 24
@@ -76,6 +80,7 @@ class Settings(BaseSettings):
     def cipher_keys(self, provider: str) -> list[str | None]:
         key = {"google_drive": self.google_token_encryption_key,
                "onedrive": self.microsoft_token_encryption_key,
+               "sharepoint": self.microsoft_token_encryption_key,
                "notion": self.notion_token_encryption_key}[provider]
         keys = [key.get_secret_value() if key else None]
         if provider == "notion" and self.notion_token_encryption_legacy_fallback:

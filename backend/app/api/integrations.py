@@ -36,6 +36,11 @@ from app.integrations.onedrive import (
     OneDriveReauthRequired,
 )
 from app.integrations.registry import IntegrationRegistry
+from app.integrations.sharepoint import (
+    SharePointConnectionService,
+    SharePointGraphClient,
+    is_site_node,
+)
 from app.workspaces.service import WorkspaceScope, WorkspaceService
 
 router = APIRouter(tags=["integrations"])
@@ -99,19 +104,38 @@ def onedrive_service(request: Request, session: Session) -> OneDriveConnectionSe
     )
 
 
-@router.get("/data-sources/onedrive/oauth/start")
-def start_onedrive(
-    organization_id: UUID,
-    request: Request,
-    source_id: UUID | None = None,
-    user: User = Depends(current_user),
-    session: Session = Depends(database_session),
+def sharepoint_service(request: Request, session: Session) -> SharePointConnectionService:
+    settings = request.app.state.settings
+    keys = settings.cipher_keys("sharepoint")
+    client = SharePointGraphClient(
+        client_id=settings.microsoft_oauth_client_id,
+        client_secret=settings.microsoft_oauth_client_secret.get_secret_value()
+        if settings.microsoft_oauth_client_secret
+        else None,
+        redirect_uri=settings.microsoft_sharepoint_redirect_uri,
+    )
+    client.max_sites = settings.sharepoint_catalog_max_sites
+    return SharePointConnectionService(
+        session, OneDriveCipher(keys[0], fallback_keys=keys[1:]), client
+    )
+
+
+MICROSOFT_SERVICES = {"onedrive": onedrive_service, "sharepoint": sharepoint_service}
+MICROSOFT_MISMATCH = {
+    "onedrive": ("onedrive_account_mismatch", "OneDrive account does not match the existing source"),
+    "sharepoint": ("sharepoint_tenant_mismatch", "Microsoft tenant does not match the existing source"),
+}
+
+
+def _microsoft_start(
+    provider: str, organization_id: UUID, request: Request, source_id: UUID | None, user: User,
+    session: Session,
 ) -> RedirectResponse:
     secret = request.cookies.get(request.app.state.settings.auth_session_cookie_name)
     if not secret:
         raise HTTPException(401, "authentication required")
     try:
-        url = onedrive_service(request, session).begin(
+        url = MICROSOFT_SERVICES[provider](request, session).begin(
             scope=OrganizationScope(organization_id),
             user_id=user.id,
             session_secret=secret,
@@ -124,20 +148,17 @@ def start_onedrive(
     return RedirectResponse(url, status_code=302)
 
 
-@router.get("/data-sources/onedrive/oauth/callback", response_model=None)
-def onedrive_callback(
-    request: Request,
-    code: str | None = None,
-    state: str | None = None,
-    error: str | None = None,
-    session: Session = Depends(database_session),
+def _microsoft_callback(
+    provider: str, request: Request, code: str | None, state: str | None, error: str | None,
+    session: Session,
 ) -> dict[str, str] | RedirectResponse:
+    build_service = MICROSOFT_SERVICES[provider]
     secret = request.cookies.get(request.app.state.settings.auth_session_cookie_name)
     if not secret or not state:
         raise HTTPException(401, "Microsoft authorization failed")
     if error or not code:
         try:
-            organization_id = onedrive_service(request, session).cancel(
+            organization_id = build_service(request, session).cancel(
                 raw_state=state, session_secret=secret,
             )
         except OneDriveOAuthInvalid as exception:
@@ -146,23 +167,30 @@ def onedrive_callback(
             raise HTTPException(403, "not allowed") from exception
         if "text/html" in request.headers.get("accept", "").lower():
             app_url = request.app.state.settings.public_app_url.rstrip("/")
+            # A tenant that blocks user consent answers with an admin-consent error.
+            reason = (
+                "sharepoint_admin_consent"
+                if provider == "sharepoint" and error in {"access_denied", "consent_required"}
+                else provider
+            )
             return RedirectResponse(
-                f"{app_url}/companies/{organization_id}/integrations?error=onedrive", status_code=303,
+                f"{app_url}/companies/{organization_id}/integrations?error={reason}", status_code=303,
             )
         raise HTTPException(400, "Microsoft authorization was canceled")
     try:
-        source = onedrive_service(request, session).complete(
+        source = build_service(request, session).complete(
             raw_state=state, code=code, session_secret=secret
         )
     except OneDriveAccountMismatch as exception:
         session.commit()
+        mismatch_code, mismatch_message = MICROSOFT_MISMATCH[provider]
         if "text/html" in request.headers.get("accept", "").lower():
             app_url = request.app.state.settings.public_app_url.rstrip("/")
             return RedirectResponse(
-                f"{app_url}/companies/{exception.organization_id}/integrations?error=onedrive_account_mismatch",
+                f"{app_url}/companies/{exception.organization_id}/integrations?error={mismatch_code}",
                 status_code=303,
             )
-        raise HTTPException(409, "OneDrive account does not match the existing source") from exception
+        raise HTTPException(409, mismatch_message) from exception
     except OneDriveOAuthInvalid as exception:
         raise HTTPException(401, "Microsoft authorization failed") from exception
     except OneDriveAccessDenied as exception:
@@ -172,10 +200,54 @@ def onedrive_callback(
     if "text/html" in request.headers.get("accept", "").lower():
         app_url = request.app.state.settings.public_app_url.rstrip("/")
         return RedirectResponse(
-            f"{app_url}/companies/{source.organization_id}/integrations?connected=onedrive",
+            f"{app_url}/companies/{source.organization_id}/integrations?connected={provider}",
             status_code=303,
         )
     return {"id": str(source.id), "status": source.status}
+
+
+@router.get("/data-sources/onedrive/oauth/start")
+def start_onedrive(
+    organization_id: UUID,
+    request: Request,
+    source_id: UUID | None = None,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> RedirectResponse:
+    return _microsoft_start("onedrive", organization_id, request, source_id, user, session)
+
+
+@router.get("/data-sources/onedrive/oauth/callback", response_model=None)
+def onedrive_callback(
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    session: Session = Depends(database_session),
+) -> dict[str, str] | RedirectResponse:
+    return _microsoft_callback("onedrive", request, code, state, error, session)
+
+
+@router.get("/data-sources/sharepoint/oauth/start")
+def start_sharepoint(
+    organization_id: UUID,
+    request: Request,
+    source_id: UUID | None = None,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> RedirectResponse:
+    return _microsoft_start("sharepoint", organization_id, request, source_id, user, session)
+
+
+@router.get("/data-sources/sharepoint/oauth/callback", response_model=None)
+def sharepoint_callback(
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    session: Session = Depends(database_session),
+) -> dict[str, str] | RedirectResponse:
+    return _microsoft_callback("sharepoint", request, code, state, error, session)
 
 
 @router.get("/data-sources/notion/oauth/start")
@@ -360,7 +432,7 @@ def disconnect_source(
             DataSource.organization_id == organization_id,
         )
     )
-    services = {"onedrive": onedrive_service, "notion": notion_service}
+    services = {**MICROSOFT_SERVICES, "notion": notion_service}
     build_service = services.get(source.provider if source is not None else "", service)
     try:
         build_service(request, session).disconnect(
@@ -384,9 +456,9 @@ def folders(
             DataSource.organization_id == organization_id,
         )
     )
-    if source is not None and source.provider == "onedrive":
+    if source is not None and source.provider in MICROSOFT_SERVICES:
         try:
-            rows = onedrive_service(request, session).folders(
+            rows = MICROSOFT_SERVICES[source.provider](request, session).folders(
                 scope=OrganizationScope(organization_id),
                 user_id=user.id,
                 source_id=source_id,
@@ -450,9 +522,9 @@ def scope_catalog(
             "root_files": {"available": False, "label": "Páginas acessíveis"},
             "all_accessible": {"available": True, "label": "Todas as páginas acessíveis"},
         }
-    if source is not None and source.provider == "onedrive":
+    if source is not None and source.provider in MICROSOFT_SERVICES:
         try:
-            rows = onedrive_service(request, session).folders(
+            rows = MICROSOFT_SERVICES[source.provider](request, session).folders(
                 scope=OrganizationScope(organization_id),
                 user_id=user.id,
                 source_id=source_id,
@@ -465,6 +537,21 @@ def scope_catalog(
             raise HTTPException(403, "not allowed") from error
         except OneDriveOAuthUnavailable as error:
             raise HTTPException(503, "integration unavailable") from error
+        if source.provider == "sharepoint":
+            # Sites are grouping headers; only libraries and folders are selectable (D-A5, D-A8).
+            return {
+                "folders": [
+                    {
+                        "id": item.id,
+                        "name": item.name,
+                        "selectable": not is_site_node(item.id),
+                        "parent_ids": list(item.parent_ids),
+                    }
+                    for item in rows
+                ],
+                "root_files": {"available": False, "label": "Arquivos avulsos da raiz"},
+                "all_accessible": {"available": False, "label": "Todo o SharePoint acessível"},
+            }
         return {
             "folders": [{"id": item.id, "name": item.name} for item in rows],
             "root_files": {"available": True, "label": "Arquivos avulsos da raiz"},
@@ -553,6 +640,18 @@ def select_scope(
                 user_id=user.id,
                 source_id=payload.source_id,
             )
+        elif selected_source.provider == "sharepoint":
+            sharepoint = sharepoint_service(request, session)
+            sharepoint.require_admin(scope=scoped, user_id=user.id)
+            if payload.mode == "all_accessible" or payload.include_root_files:
+                raise ValueError("SharePoint requires explicit libraries or folders")
+            remote = [
+                item
+                for item in sharepoint.folders(
+                    scope=scoped, user_id=user.id, source_id=payload.source_id
+                )
+                if not is_site_node(item.id)
+            ]
         else:
             remote = service(request, session).folders(
                 scope=scoped,

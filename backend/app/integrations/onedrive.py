@@ -611,6 +611,7 @@ class OneDriveConnectionService(OAuthConnectionServiceBase):
     access_denied = OneDriveAccessDenied
     invalid = OneDriveOAuthInvalid
     retain_identity_on_disconnect = True
+    document_provider = OneDriveDocumentProvider
 
     def __init__(self, session: Session, cipher: OneDriveCipher, client: MicrosoftGraphClient):
         super().__init__(session, cipher)
@@ -754,7 +755,7 @@ class OneDriveConnectionService(OAuthConnectionServiceBase):
         )
         if source is None or source.encrypted_credentials is None:
             raise OneDriveOAuthInvalid("OneDrive source is invalid")
-        provider = OneDriveDocumentProvider(self.client, self.cipher)
+        provider = self.document_provider(self.client, self.cipher)
         try:
             result = provider.folders(encrypted_credentials=source.encrypted_credentials)
         except SourceRemoteUnauthorized as error:

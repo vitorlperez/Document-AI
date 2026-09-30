@@ -9,6 +9,7 @@ from app.integrations.base import ProviderCapabilities, ProviderNotConfigured, S
 from app.integrations.google_drive import CredentialCipher, GoogleDriveOAuthClient
 from app.integrations.notion import NotionDocumentProvider, NotionOAuthClient
 from app.integrations.onedrive import MicrosoftGraphClient, OneDriveCipher, OneDriveDocumentProvider
+from app.integrations.sharepoint import SharePointDocumentProvider, SharePointGraphClient
 
 
 class GoogleDriveProviderAdapter:
@@ -147,6 +148,32 @@ class OneDriveProviderAdapter:
         return self._provider.folders(encrypted_credentials=encrypted_credentials)
 
 
+class SharePointProviderAdapter(OneDriveProviderAdapter):
+    key = "sharepoint"
+
+    def __init__(self, settings: Settings):
+        keys = settings.cipher_keys("sharepoint")
+        client = SharePointGraphClient(
+            client_id=settings.microsoft_oauth_client_id,
+            client_secret=settings.microsoft_oauth_client_secret.get_secret_value()
+            if settings.microsoft_oauth_client_secret
+            else None,
+            redirect_uri=settings.microsoft_sharepoint_redirect_uri,
+        )
+        client.max_sites = settings.sharepoint_catalog_max_sites
+        self._provider = SharePointDocumentProvider(
+            client, OneDriveCipher(keys[0], fallback_keys=keys[1:])
+        )
+        self._provider.max_workers = settings.sharepoint_download_workers
+        self._provider.max_file_bytes = settings.sharepoint_max_file_bytes
+        self.eligible_mime_types = eligible_mime_types(settings)
+
+    def folders_for_selections(self, *, encrypted_credentials, selections):
+        return self._provider.folders_for_selections(
+            encrypted_credentials=encrypted_credentials, selections=selections
+        )
+
+
 class IntegrationRegistry:
     def __init__(self, settings: Settings):
         self._settings = settings
@@ -154,6 +181,7 @@ class IntegrationRegistry:
             "google_drive": lambda: GoogleDriveProviderAdapter(settings),
             "notion": lambda: NotionProviderAdapter(settings),
             "onedrive": lambda: OneDriveProviderAdapter(settings),
+            "sharepoint": lambda: SharePointProviderAdapter(settings),
         }
 
     def get(self, provider: str, *, session=None, source_id=None) -> SourceProvider:
