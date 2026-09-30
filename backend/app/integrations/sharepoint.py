@@ -2,15 +2,20 @@
 
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
+from app.ingestion.service import DiscoveryResult
 from app.integrations.google_drive import RemoteFolder
 from app.integrations.onedrive import (
     GRAPH_ROOT,
     DeltaPage,
     MicrosoftGraphClient,
     OneDriveCredentials,
+    OneDriveCursorInvalid,
+    OneDriveDeltaExpired,
+    OneDriveDocumentProvider,
     OneDriveOAuthInvalid,
 )
 
@@ -106,18 +111,43 @@ class SharePointGraphClient(MicrosoftGraphClient):
             nodes.append(RemoteFolder(node, str(site.get("displayName") or "Site"), ()))
             for drive in drives:
                 drive_id = str(drive["id"])
-                root = self._get_json(
-                    f"{GRAPH_ROOT}/drives/{_drive(drive_id)}/root?$select=id",
-                    credentials=credentials,
-                )
                 nodes.append(
                     RemoteFolder(
-                        composite_id(drive_id, str(root.get("id") or "")),
+                        composite_id(
+                            drive_id,
+                            self.drive_root_id(credentials=credentials, drive_id=drive_id),
+                        ),
                         str(drive.get("name") or "Documentos"),
                         (node,),
                     )
                 )
         return nodes
+
+    def drive_root_id(self, *, credentials: OneDriveCredentials, drive_id: str) -> str:
+        root = self._get_json(
+            f"{GRAPH_ROOT}/drives/{_drive(drive_id)}/root?$select=id",
+            credentials=credentials,
+        )
+        return str(root.get("id") or "")
+
+    def list_folders(self, *, credentials, drive_id: str) -> list[dict[str, Any]]:
+        pending = [self.drive_root_id(credentials=credentials, drive_id=drive_id)]
+        visited: set[str] = set()
+        folders: list[dict[str, Any]] = []
+        while pending:
+            parent = pending.pop()
+            if not parent or parent in visited:
+                continue
+            visited.add(parent)
+            url = (
+                f"{GRAPH_ROOT}/drives/{_drive(drive_id)}/items/{quote(parent, safe='')}"
+                f"/children?$select={ITEM_SELECT}&$top=200"
+            )
+            for item in self._all_pages(url, credentials=credentials):
+                if isinstance(item.get("folder"), dict) and item.get("id"):
+                    folders.append(item)
+                    pending.append(str(item["id"]))
+        return folders
 
     def list_files(self, *, credentials, scope_id: str) -> list[dict[str, Any]]:
         drive_id, root_item = split_composite(scope_id)
@@ -211,4 +241,150 @@ class SharePointGraphClient(MicrosoftGraphClient):
         return self._download(
             f"{GRAPH_ROOT}/drives/{_drive(drive_id)}/items/{quote(raw, safe='')}/content",
             credentials,
+        )
+
+
+class SharePointDocumentProvider(OneDriveDocumentProvider):
+    """Library/folder scopes over per-library root delta plus a membership filter."""
+
+    key = "sharepoint"
+    max_workers = 2
+    max_file_bytes = 50 * 1024 * 1024
+
+    def folders(self, *, encrypted_credentials: str | None) -> list[RemoteFolder]:
+        return self.client.catalog(credentials=self._credentials(encrypted_credentials))
+
+    def folders_for_selections(
+        self, *, encrypted_credentials: str | None, selections
+    ) -> list[RemoteFolder]:
+        credentials = self._credentials(encrypted_credentials)
+        wanted = {split_composite(s.external_folder_id)[0] for s in selections}
+        catalog = self.client.catalog(credentials=credentials)
+        libraries = [
+            node
+            for node in catalog
+            if not is_site_node(node.id) and split_composite(node.id)[0] in wanted
+        ]
+        sites = {parent for node in libraries for parent in node.parent_ids}
+        nodes = [node for node in catalog if node.id in sites] + libraries
+        for drive_id in sorted(wanted):
+            for item in self.client.list_folders(credentials=credentials, drive_id=drive_id):
+                nodes.append(
+                    RemoteFolder(
+                        self.client._external_id(item, fallback_drive_id=drive_id),
+                        str(item.get("name") or "Untitled"),
+                        self.client._parent_ids(item.get("parentReference") or {}),
+                    )
+                )
+        return nodes
+
+    def _in_scope(self, credentials, selection, item, root_id, cache) -> bool:
+        _, scope_item = split_composite(selection.external_folder_id)
+        if scope_item == root_id or item.get("id") == scope_item:
+            return True
+        return self.client.within_scope(
+            credentials=credentials,
+            drive_id=split_composite(selection.external_folder_id)[0],
+            parent_id=str((item.get("parentReference") or {}).get("id") or ""),
+            scope_item_id=scope_item,
+            drive_root_id=root_id,
+            cache=cache,
+        )
+
+    def discover(
+        self,
+        *,
+        encrypted_credentials: str | None,
+        selections,
+        force_file_ids: set[str] | None = None,
+        force_full: bool = False,
+    ) -> DiscoveryResult:
+        credentials = self._credentials(encrypted_credentials)
+        changes: dict[str, dict[str, Any]] = {}
+        removals: set[str] = set()
+        links: dict[UUID, str | None] = {}
+        roots: dict[str, str] = {}
+        caches: dict[UUID, dict[str, bool]] = {}
+
+        def root_of(drive_id: str) -> str:
+            if drive_id not in roots:
+                roots[drive_id] = self.client.drive_root_id(
+                    credentials=credentials, drive_id=drive_id
+                )
+            return roots[drive_id]
+
+        snapshot = force_full or any(not s.encrypted_delta_link for s in selections)
+        if not snapshot:
+            try:
+                for selection in selections:
+                    drive_id, _ = split_composite(selection.external_folder_id)
+                    page = self.client.delta_root(
+                        credentials=credentials,
+                        drive_id=drive_id,
+                        cursor=self.cipher.decrypt_cursor(selection.encrypted_delta_link),
+                    )
+                    links[selection.id] = page.delta_link
+                    cache = caches.setdefault(selection.id, {})
+                    sel_changes: dict[str, dict[str, Any]] = {}
+                    sel_removals: set[str] = set()
+                    for item in page.items:
+                        ext = self.client._external_id(item, fallback_drive_id=drive_id)
+                        if "deleted" in item:
+                            sel_changes.pop(ext, None)
+                            sel_removals.add(ext)
+                            snapshot = snapshot or isinstance(item.get("folder"), dict)
+                            continue
+                        inside = self._in_scope(
+                            credentials, selection, item, root_of(drive_id), cache
+                        )
+                        if isinstance(item.get("folder"), dict):
+                            # Delta does not return descendants of a moved/renamed folder.
+                            snapshot = snapshot or inside
+                        elif "file" in item and inside:
+                            sel_removals.discard(ext)
+                            sel_changes[ext] = item
+                        elif "file" in item:
+                            sel_changes.pop(ext, None)
+                            sel_removals.add(ext)
+                    changes.update(sel_changes)
+                    removals.update(sel_removals)
+                    removals.difference_update(changes)
+            except (OneDriveCursorInvalid, OneDriveDeltaExpired):
+                snapshot = True
+        if snapshot:
+            files: dict[str, dict[str, Any]] = {}
+            links = {}
+            for selection in selections:
+                drive_id, _ = split_composite(selection.external_folder_id)
+                # Take the checkpoint first: changes during the walk reappear next delta.
+                links[selection.id] = self.client.latest_delta_link(
+                    credentials=credentials, drive_id=drive_id
+                )
+                for item in self.client.list_files(
+                    credentials=credentials, scope_id=selection.external_folder_id
+                ):
+                    files[self.client._external_id(item, fallback_drive_id=drive_id)] = item
+            changes, removals = files, set()
+        for ext in sorted((force_file_ids or set()) - set(changes) - removals):
+            item = self.client.get_item(credentials=credentials, item_id=ext)
+            drive_id, _ = split_composite(ext)
+            if (
+                item is not None
+                and "file" in item
+                and any(
+                    split_composite(s.external_folder_id)[0] == drive_id
+                    and self._in_scope(
+                        credentials, s, item, root_of(drive_id), caches.setdefault(s.id, {})
+                    )
+                    for s in selections
+                )
+            ):
+                changes[ext] = item
+            else:
+                removals.add(ext)
+        return DiscoveryResult(
+            documents=self._read_changed(credentials, changes),
+            removed_file_ids=tuple(sorted(removals)),
+            delta_links=links,
+            full_snapshot=snapshot,
         )

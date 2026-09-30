@@ -1,13 +1,23 @@
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
+from uuid import uuid4
 
 import httpx
 import pytest
+from cryptography.fernet import Fernet
 
 from app.integrations.google_drive import RemoteFolder
-from app.integrations.onedrive import GRAPH_ROOT, OneDriveCredentials, OneDriveDeltaExpired
+from app.integrations.onedrive import (
+    GRAPH_ROOT,
+    DeltaPage,
+    OneDriveCipher,
+    OneDriveCredentials,
+    OneDriveDeltaExpired,
+)
 from app.integrations.sharepoint import (
     ITEM_SELECT,
     SHAREPOINT_SCOPES,
+    SharePointDocumentProvider,
     SharePointGraphClient,
     SharePointIdInvalid,
     composite_id,
@@ -204,3 +214,223 @@ def test_delta_root_raises_expired_on_410() -> None:
             drive_id=DRIVE,
             cursor=f"{GRAPH_ROOT}/drives/b%21d1/root/delta?token=old",
         )
+
+
+# --- A4: provider -------------------------------------------------------------
+
+CIPHER = OneDriveCipher(Fernet.generate_key().decode())
+LATEST = f"{GRAPH_ROOT}/drives/b%21d1/root/delta?token=T1"
+NEXT = f"{GRAPH_ROOT}/drives/b%21d1/root/delta?token=T2"
+
+
+def _file(item_id: str, parent: str, *, drive: str = DRIVE, size: int = 10) -> dict:
+    return {
+        "id": item_id,
+        "name": f"{item_id}.pdf",
+        "file": {"mimeType": "application/pdf"},
+        "size": size,
+        "webUrl": f"https://c.sharepoint.com/{item_id}.pdf",
+        "lastModifiedDateTime": "2026-09-01T10:00:00+00:00",
+        "parentReference": {"driveId": drive, "id": parent},
+    }
+
+
+class InMemoryGraph(SharePointGraphClient):
+    """High-level Graph fake: records the order of remote operations."""
+
+    def __init__(
+        self,
+        *,
+        files=(),
+        delta=(),
+        parents=None,
+        items=None,
+        expired=False,
+        catalog_nodes=(),
+        folders=(),
+    ) -> None:
+        super().__init__(client_id="c", client_secret="s", redirect_uri="https://x.test/cb")
+        self.files, self.delta, self.expired = list(files), list(delta), expired
+        self.parents, self.items = parents or {}, items or {}
+        self.catalog_nodes, self.folder_items = list(catalog_nodes), list(folders)
+        self.latest, self.order, self.reads = LATEST, [], []
+
+    def latest_delta_link(self, *, credentials, drive_id):
+        self.order.append("latest")
+        return self.latest
+
+    def list_files(self, *, credentials, scope_id):
+        self.order.append("children")
+        return list(self.files)
+
+    def delta_root(self, *, credentials, drive_id, cursor):
+        self.order.append("delta")
+        if self.expired:
+            raise OneDriveDeltaExpired()
+        return DeltaPage(list(self.delta), NEXT)
+
+    def drive_root_id(self, *, credentials, drive_id):
+        return "01ROOT"
+
+    def _get_or_none(self, url, credentials):
+        self.order.append("parent")
+        item_id = url.split("/items/", 1)[1].split("?", 1)[0]
+        parent = self.parents.get(item_id)
+        return None if parent is None else {"id": item_id, "parentReference": {"id": parent}}
+
+    def get_item(self, *, credentials, item_id):
+        self.order.append("get_item")
+        return self.items.get(item_id)
+
+    def read_file(self, *, credentials, item_id):
+        self.reads.append(item_id)
+        return b"body"
+
+    def catalog(self, *, credentials, max_sites=200):
+        return list(self.catalog_nodes)
+
+    def list_folders(self, *, credentials, drive_id):
+        return [f for f in self.folder_items if f["parentReference"]["driveId"] == drive_id]
+
+
+def make_provider(graph: InMemoryGraph) -> SharePointDocumentProvider:
+    return SharePointDocumentProvider(graph, CIPHER)
+
+
+def fake_selection(*, external_folder_id: str, encrypted_delta_link: str | None):
+    return SimpleNamespace(
+        id=uuid4(),
+        kind="folder",
+        external_folder_id=external_folder_id,
+        encrypted_delta_link=encrypted_delta_link,
+    )
+
+
+def _discover(graph, selection, **kwargs):
+    return make_provider(graph).discover(
+        encrypted_credentials=CIPHER.encrypt_credentials(CREDS), selections=[selection], **kwargs
+    )
+
+
+def _incremental(scope: str = "b!d1|01S"):
+    return fake_selection(
+        external_folder_id=scope, encrypted_delta_link=CIPHER.encrypt_cursor(LATEST)
+    )
+
+
+def test_first_sync_takes_latest_token_before_traversal_and_returns_full_snapshot() -> None:
+    graph = InMemoryGraph(files=[_file("01A", "01ROOT")])
+    selection = fake_selection(external_folder_id="b!d1|01ROOT", encrypted_delta_link=None)
+    result = _discover(graph, selection)
+    assert graph.order == ["latest", "children"]
+    assert result.full_snapshot is True
+    assert [d.external_file_id for d in result.documents] == ["b!d1|01A"]
+    assert result.documents[0].parent_ids == ("b!d1|01ROOT",)
+    assert result.delta_links == {selection.id: graph.latest}
+
+
+def test_incremental_delta_reads_only_changed_file_inside_scope() -> None:
+    graph = InMemoryGraph(
+        delta=[_file("01A", "01S"), _file("01Z", "01X")], parents={"01X": "01ROOT"}
+    )
+    selection = _incremental()
+    result = _discover(graph, selection)
+    assert [d.external_file_id for d in result.documents] == ["b!d1|01A"]
+    assert result.removed_file_ids == ("b!d1|01Z",)
+    assert result.full_snapshot is False
+    assert result.delta_links == {selection.id: NEXT}
+    assert graph.reads == ["b!d1|01A"]
+
+
+def test_moved_out_of_scope_file_is_reported_as_removed() -> None:
+    graph = InMemoryGraph(delta=[_file("01M", "01OTHER")], parents={"01OTHER": "01ROOT"})
+    result = _discover(graph, _incremental())
+    assert result.documents == []
+    assert result.removed_file_ids == ("b!d1|01M",)
+
+
+def test_deleted_item_is_removed_without_membership_calls() -> None:
+    deleted = {"id": "01D", "deleted": {}, "parentReference": {"driveId": DRIVE, "id": "01S"}}
+    graph = InMemoryGraph(delta=[deleted])
+    result = _discover(graph, _incremental())
+    assert result.removed_file_ids == ("b!d1|01D",)
+    assert "parent" not in graph.order and "get_item" not in graph.order
+
+
+def test_folder_event_inside_scope_forces_snapshot() -> None:
+    folder = {"id": "01G", "folder": {}, "parentReference": {"driveId": DRIVE, "id": "01S"}}
+    graph = InMemoryGraph(delta=[folder], files=[_file("01N", "01G")])
+    selection = _incremental()
+    result = _discover(graph, selection)
+    assert result.full_snapshot is True
+    assert graph.order == ["delta", "latest", "children"]
+    assert [d.external_file_id for d in result.documents] == ["b!d1|01N"]
+    assert result.delta_links == {selection.id: LATEST}
+
+
+def test_expired_cursor_falls_back_to_snapshot_with_new_token() -> None:
+    graph = InMemoryGraph(expired=True, files=[_file("01A", "01S")])
+    selection = _incremental()
+    result = _discover(graph, selection)
+    assert result.full_snapshot is True
+    assert graph.order == ["delta", "latest", "children"]
+    assert result.delta_links == {selection.id: LATEST}
+
+
+def test_library_root_scope_skips_membership_calls() -> None:
+    graph = InMemoryGraph(delta=[_file("01A", "01DEEP")])
+    result = _discover(graph, _incremental("b!d1|01ROOT"))
+    assert [d.external_file_id for d in result.documents] == ["b!d1|01A"]
+    assert "parent" not in graph.order and "get_item" not in graph.order
+
+
+def test_force_file_ids_reads_unchanged_file_when_in_scope_and_removes_when_gone() -> None:
+    graph = InMemoryGraph(
+        items={"b!d1|01A": _file("01A", "01S"), "b!d1|01OUT": _file("01OUT", "01X")},
+        parents={"01X": "01ROOT"},
+    )
+    result = _discover(
+        graph, _incremental(), force_file_ids={"b!d1|01A", "b!d1|01GONE", "b!d1|01OUT"}
+    )
+    assert graph.reads == ["b!d1|01A"]
+    assert [d.external_file_id for d in result.documents] == ["b!d1|01A"]
+    assert result.removed_file_ids == ("b!d1|01GONE", "b!d1|01OUT")
+
+
+def test_oversized_file_becomes_file_too_large_without_download() -> None:
+    too_big = SharePointDocumentProvider.max_file_bytes + 1
+    graph = InMemoryGraph(delta=[_file("01A", "01S", size=too_big)])
+    result = _discover(graph, _incremental())
+    assert [d.error_code for d in result.documents] == ["file_too_large"]
+    assert graph.reads == []
+
+
+def test_folders_for_selections_returns_site_library_and_folder_nodes_only_for_selected_drives() -> (
+    None
+):
+    s1, s2 = site_node_id("h,s1,1"), site_node_id("h,s2,2")
+    graph = InMemoryGraph(
+        catalog_nodes=[
+            RemoteFolder(s1, "Jurídico", ()),
+            RemoteFolder("b!d1|01ROOT", "Documentos", (s1,)),
+            RemoteFolder(s2, "RH", ()),
+            RemoteFolder("b!d2|02ROOT", "Pessoas", (s2,)),
+        ],
+        folders=[
+            {
+                "id": "01F",
+                "name": "Contratos",
+                "parentReference": {"driveId": DRIVE, "id": "01ROOT"},
+            },
+            {"id": "02F", "name": "Folha", "parentReference": {"driveId": "b!d2", "id": "02ROOT"}},
+        ],
+    )
+    nodes = make_provider(graph).folders_for_selections(
+        encrypted_credentials=CIPHER.encrypt_credentials(CREDS),
+        selections=[fake_selection(external_folder_id="b!d1|01F", encrypted_delta_link=None)],
+    )
+    assert nodes == [
+        RemoteFolder(s1, "Jurídico", ()),
+        RemoteFolder("b!d1|01ROOT", "Documentos", (s1,)),
+        RemoteFolder("b!d1|01F", "Contratos", ("b!d1|01ROOT",)),
+    ]
