@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const output = path.join(__dirname, 'qa', 'fixed');
 fs.mkdirSync(output, { recursive: true });
-const checks = new Set((process.env.CHECK_ITEMS ?? 'F-001,F-002,F-003').split(','));
+const checks = new Set((process.env.CHECK_ITEMS ?? 'F-001,F-002,F-003,F-004').split(','));
 const check = (id, fn) => checks.has(id) ? fn() : undefined;
 
 (async () => {
@@ -99,6 +99,7 @@ const check = (id, fn) => checks.has(id) ? fn() : undefined;
       }, ['composer', 'tools', 'new-conversation', 'navigation'][index]);
       const focused = await page.evaluate(() => document.querySelector('dialog[open]').contains(document.activeElement));
       assert.equal(focused, true);
+      if (index === 3) await check('F-004', async () => assert.equal(await page.locator('[data-tour="navigation"]').getByText('Navegar', { exact: true }).isVisible(), true, 'F-004: navigation target needs the label used by the tour'));
       await page.screenshot({ path: path.join(output, `tour-${width}-${index + 1}.png`) });
       await page.getByRole('button', { name: index === 3 ? 'Começar a conversar' : 'Próximo', exact: true }).click();
     }
