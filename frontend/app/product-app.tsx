@@ -143,13 +143,36 @@ export function ProductApp({ screen }: { screen: Screen }) {
   const router = useRouter(); const pathname = usePathname(); const searchParams = useSearchParams(); const params = useParams<{ companyId?: string; token?: string }>();
   const [onboarding, setOnboarding] = useState<(OnboardingState & { organizationId: string }) | null>(null);
   const [user, setUser] = useState<User | null>(null); const [companies, setCompanies] = useState<Company[]>([]); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState<string | null>(null); const [error, setError] = useState<string | null>(null);
-    const loadSession = useCallback(async () => {
-      setLoading(true); setError(null); setOnboarding(null);
-    try { const current = await api<User | null>(SESSION_PATH); setUser(current); if (!current) { setCompanies([]); return; } const memberships = await api<Company[]>("/organizations"); setCompanies(memberships); if (params.companyId && memberships.some((item) => item.id === params.companyId)) { const progress = await api<OnboardingState>(`/organizations/${params.companyId}/onboarding`, { cache: "no-store" }); setOnboarding({ ...progress, organizationId: params.companyId }); } if (screen === "home" && memberships[0]) router.replace(companyPath(memberships[0].id)); }
-    catch (caught) { if (!(caught instanceof ApiError && caught.status === 401)) setError(messageFor(caught)); }
-    finally { setLoading(false); }
+  const sessionRequest = useRef<AbortController | null>(null);
+  const loadSession = useCallback(async () => {
+    sessionRequest.current?.abort();
+    const controller = new AbortController();
+    sessionRequest.current = controller;
+    const options = { signal: controller.signal, cache: "no-store" as const };
+    setLoading(true); setError(null); setOnboarding(null);
+    try {
+      const current = await api<User | null>(SESSION_PATH, options);
+      if (controller.signal.aborted) return;
+      setUser(current);
+      if (!current) { setCompanies([]); return; }
+      const memberships = await api<Company[]>("/organizations", options);
+      if (controller.signal.aborted) return;
+      setCompanies(memberships);
+      if (params.companyId && memberships.some((item) => item.id === params.companyId)) {
+        const progress = await api<OnboardingState>(`/organizations/${params.companyId}/onboarding`, options);
+        if (controller.signal.aborted) return;
+        setOnboarding({ ...progress, organizationId: params.companyId });
+      }
+      if (screen === "home" && memberships[0]) router.replace(companyPath(memberships[0].id));
+    } catch (caught) {
+      if (!controller.signal.aborted && !(caught instanceof ApiError && caught.status === 401)) setError(messageFor(caught));
+    } finally { if (!controller.signal.aborted) setLoading(false); }
   }, [router, screen, params.companyId]);
-  useEffect(() => { void Promise.resolve().then(loadSession); }, [loadSession]);
+  useEffect(() => {
+    let mounted = true;
+    void Promise.resolve().then(() => { if (mounted) void loadSession(); });
+    return () => { mounted = false; sessionRequest.current?.abort(); };
+  }, [loadSession]);
   useEffect(() => {
     if (!onboarding?.required) return;
     const refresh = () => { void loadSession(); };
@@ -182,7 +205,9 @@ export function ProductApp({ screen }: { screen: Screen }) {
   if (!onboarding || onboarding.organizationId !== company.id) return <main className="auth-page"><section className="auth-card"><Brand /><p role="alert" className="mt-6">{error ?? "Preparando sua organização…"}</p><button onClick={() => { void loadSession(); }} className="onboarding-primary mt-4">Tentar novamente</button><button onClick={() => { void logout(); }} className="onboarding-text-button mt-4">Sair</button></section></main>;
   if (onboarding.required && company.role !== "member") return <OrganizationOnboarding key={company.id} name={company.name} state={onboarding} onLogout={() => { void logout(); }} alert={alertMessage ? <NotificationToast message={alertMessage} tone={error || oauthFailure ? "error" : "notice"} onDismiss={dismissAlert} /> : null} onAdvance={async (step) => {
     try {
-      const memberships = await api<Company[]>("/organizations", { cache: "no-store" });
+      const activeRequest = sessionRequest.current;
+      const memberships = await api<Company[]>("/organizations", { cache: "no-store", signal: activeRequest?.signal });
+      if (activeRequest?.signal.aborted) return;
       setCompanies(memberships);
       const currentMembership = memberships.find((item) => item.id === company.id);
       if (!currentMembership || currentMembership.role === "member") {
@@ -190,12 +215,13 @@ export function ProductApp({ screen }: { screen: Screen }) {
         throw new Error("Você não tem permissão para esta ação.");
       }
       const progress = await api<OnboardingState>(`/organizations/${company.id}/onboarding`, { method: "PATCH", body: JSON.stringify({ step }) });
+      if (activeRequest?.signal.aborted) return;
       setOnboarding({ ...progress, organizationId: company.id });
       if (!progress.required) router.replace(companyPath(company.id));
     } catch (caught) { throw new Error(messageFor(caught)); }
   }}><IntegrationScreen key={company.id} company={company} setError={setError} setNotice={setNotice} /></OrganizationOnboarding>;
   return <Shell user={user} company={company} companies={companies} alertMessage={alertMessage} alertTone={error || oauthFailure ? "error" : "notice"} fillViewport={screen === "company" || screen === "library"} pageSurface={screen === "team" || screen === "integrations"} onDismiss={dismissAlert} onCompanyChange={goCompany} onNavigate={(path) => router.push(path)} onLogout={() => { void logout(); }}>
-    {screen === "company" && <CompanyDashboard key={company.id} company={company} onboarding={onboarding} onOnboardingChange={(progress) => setOnboarding({ ...progress, organizationId: company.id })} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
+    {screen === "company" && <CompanyDashboard key={company.id} company={company} onboarding={onboarding} onOnboardingChange={(progress) => setOnboarding((current) => current?.organizationId === company.id ? { ...progress, organizationId: company.id } : current)} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "library" && <LibraryScreen key={company.id} company={company} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "team" && <TeamScreen key={company.id} company={company} setError={setError} setNotice={setNotice} />}
     {screen === "integrations" && (company.role === "member" ? <section role="alert" className="mx-auto max-w-lg rounded-lg border border-line bg-white p-8 text-center"><ShieldCheck className="mx-auto text-primary" size={28} /><h1 className="mt-4 text-xl font-semibold text-ink">Acesso restrito</h1><p className="mt-2 text-sm text-muted-foreground">Somente responsáveis e administradores podem gerenciar integrações.</p><button onClick={() => router.push(companyPath(company.id))} className="mt-5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white">Voltar à conversa</button></section> : <div><IntegrationScreen key={company.id} company={company} setError={setError} setNotice={setNotice} /><AccessSettings key={`access-${company.id}`} organizationId={company.id} api={api} /></div>)}
