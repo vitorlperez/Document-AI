@@ -48,3 +48,13 @@ def test_every_failure_is_the_same_invalid_credential(factory, case):
             session.query(Membership).filter_by(user_id=tenant.user_id).update({"is_active": False})
     with pytest.raises(InvalidCredential):
         _auth(factory, raw)
+
+
+def test_review_6_demoted_creator_invalidates_existing_keys(factory):
+    from app.organizations.models import MembershipRole
+    tenant = seed_tenant(factory, 'A', 'texto')
+    raw = mint_key(factory, tenant)
+    with factory.begin() as session:
+        session.query(Membership).filter_by(user_id=tenant.user_id).update({'role': MembershipRole.MEMBER})
+    with pytest.raises(InvalidCredential):
+        _auth(factory, raw)

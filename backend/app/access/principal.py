@@ -12,8 +12,7 @@ from app.access.keys import split_api_key
 from app.access.models import ApiKey, OrganizationAccessSettings
 from app.core.scoping import OrganizationScope
 from app.identity.auth import hash_secret
-from app.ingestion.service import SyncAccessDenied
-from app.library.service import LibraryService
+from app.organizations.models import Membership, MembershipRole
 
 _DUMMY_HASH = hash_secret("dummy-secret-for-constant-time")
 _LAST_USED_GRANULARITY = timedelta(minutes=5)
@@ -77,10 +76,14 @@ class ApiKeyAuthenticator:
             node_ids=tuple(UUID(item) for item in key.node_ids) if key.node_ids else None,
             rate_limit_per_minute=key.rate_limit_per_minute,
         )
-        try:
-            LibraryService(self.session).require_member(scope=principal.scope, user_id=principal.user_id)
-        except SyncAccessDenied as error:
-            raise InvalidCredential from error
+        member = self.session.scalar(select(Membership).where(
+            Membership.organization_id == principal.organization_id,
+            Membership.user_id == principal.user_id,
+            Membership.is_active.is_(True),
+            Membership.role.in_([MembershipRole.OWNER, MembershipRole.ADMIN]),
+        ))
+        if member is None:
+            raise InvalidCredential
         if key.last_used_at is None or now - _aware(key.last_used_at) > _LAST_USED_GRANULARITY:
             key.last_used_at = now
         return principal
