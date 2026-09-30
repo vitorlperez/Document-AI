@@ -143,9 +143,9 @@ def guarded(scope_name: str | None, bucket: str, *, cap: str | None = None):
         if cap == "ask":
             limit = min(limit, settings.api_ask_rate_limit_per_minute)
         try:
-            per_key = request.app.state.rate_limiter.hit(key=f"key:{principal.credential_id}:api", limit=limit)
+            per_key = request.app.state.rate_limiter.hit(key=f"key:{principal.credential_id}:{cap or 'api'}", limit=limit)
             per_org = request.app.state.rate_limiter.hit(
-                key=f"org:{principal.organization_id}:api", limit=settings.api_org_rate_limit_per_minute)
+                key=f"org:{principal.organization_id}:{cap or 'api'}", limit=min(settings.api_org_rate_limit_per_minute, settings.api_ask_rate_limit_per_minute) if cap == "ask" else settings.api_org_rate_limit_per_minute)
         except Exception as error:  # Redis down: fail closed, this endpoint can cost money
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "rate limiter unavailable",
                                 headers={"Retry-After": "5"}) from error

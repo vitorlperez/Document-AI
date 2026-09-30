@@ -124,3 +124,14 @@ def test_review_11_whoami_accepts_every_valid_scope(api):
         response = client.get('/v1/whoami', headers=bearer(mint_key(factory, tenant, scopes={scope})))
         assert response.status_code == 200
         assert response.json()['scopes'] == [scope]
+
+
+def test_review_12_search_does_not_consume_ask_bucket_and_ask_cap_is_org_wide(api, monkeypatch):
+    client, factory = api
+    tenant = seed_tenant(factory, 'A', 'Aurora')
+    stub_ask(client, monkeypatch, tenant)
+    client.app.state.settings.api_ask_rate_limit_per_minute = 1
+    key = mint_key(factory, tenant)
+    assert client.post('/v1/search', headers=bearer(key), json={'query': 'Aurora'}).status_code == 200
+    assert client.post('/v1/ask', headers=bearer(key), json={'question': 'Quando?'}).status_code == 200
+    assert client.post('/v1/ask', headers=bearer(mint_key(factory, tenant)), json={'question': 'Quando?'}).status_code == 429
