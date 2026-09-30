@@ -320,7 +320,10 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 document.external_file_id: (document.modified_at, document.index_status)
                 for document in known_rows
             }
-            if getattr(job, "manual_run_id", None):
+            # A space without data (new, emptied or cleared) must walk its whole
+            # tree: a cursor saved by an earlier empty run would return nothing.
+            has_data = any(document.index_status != "removed" for document in known_rows)
+            if getattr(job, "manual_run_id", None) or not has_data:
                 discover_kwargs["force_full"] = True
             discovered_documents = provider.discover(**discover_kwargs)
             discovery = (
