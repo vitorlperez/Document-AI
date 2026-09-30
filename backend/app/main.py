@@ -107,7 +107,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = build_engine(runtime_settings)
     app.state.session_factory = build_session_factory(app.state.engine)
     app.state.settings = runtime_settings
-    app.state.rate_limiter = RedisRateLimiter(redis.Redis.from_url(runtime_settings.redis_url))
+    app.state.rate_limiter = RedisRateLimiter(redis.Redis.from_url(runtime_settings.redis_url, socket_timeout=1, socket_connect_timeout=1))
     app.state.auth_gateway = WorkOSAuthKitGateway(
         api_key=runtime_settings.workos_api_key.get_secret_value() if runtime_settings.workos_api_key else None,
         client_id=runtime_settings.workos_client_id,
