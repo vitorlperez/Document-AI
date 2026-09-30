@@ -28,3 +28,12 @@ No TTL or purge policy was chosen for expired sessions, OAuth states, jobs,
 audit records, or indexed content after source disconnection. The product owner
 must define durations, deletion triggers, and backup treatment before a cleanup
 job or migration is implemented.
+
+
+## SharePoint R-A2 — projection drops nodes from other workspaces
+
+> Execução: A0.3 reproduced with OneDrive fixtures: projecting workspace B after A
+removes A's library node although its indexed Document remains. Test:
+`test_projection_of_a_second_sync_keeps_or_drops_nodes_of_other_workspace`.
+SharePoint multi-workspace rollout is blocked until projection receives the
+source-wide union or reconciles per workspace. No production fix in this plan.

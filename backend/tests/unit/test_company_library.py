@@ -286,3 +286,20 @@ def test_library_metadata_search_and_sync_statuses_are_member_scoped(session: Se
     contexts = service.question_contexts(scope=OrganizationScope(organization.id), user_id=user.id)
     assert [item.id for item in contexts] == [workspace.id]
     assert [item.query_status for item in contexts] == ["no_indexed_content"]
+
+
+def test_projection_of_a_second_sync_keeps_or_drops_nodes_of_other_workspace(session):
+    organization, _, source = seed_company(session)
+    source.provider = "onedrive"
+    seed_document(session, organization=organization, source=source, root="A", external_id="a1", name="A.pdf")
+    seed_document(session, organization=organization, source=source, root="B", external_id="b1", name="B.pdf")
+    service = LibraryService(session)
+    for external_id in ("a1", "b1"):
+        service.project_successful_sync(
+            organization_id=organization.id, source=source,
+            documents=[DiscoveredDocument(external_id, external_id + ".pdf", "application/pdf", "", text="content")],
+            folders=[],
+        )
+    # Characterization: projection receives only the current workspace and drops A.
+    assert service._by_external(source_id=source.id, external_id="a1") is None
+    assert service._by_external(source_id=source.id, external_id="b1") is not None
