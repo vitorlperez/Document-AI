@@ -205,13 +205,15 @@ def reprocess_library_folder(
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
 ) -> dict[str, object]:
-    """Request full discovery of a folder or integration; rebuild only changed files.
+    """Incremental sync of the spaces that contain a folder (or of the whole integration).
 
-    ``reprocess_all`` is the explicit opt-in that rebuilds every file below the node.
+    Only new/changed files are fetched and rebuilt. ``reprocess_all`` is the explicit opt-in
+    for a complete run: full discovery and a rebuild of every file below the node.
     """
     try:
         scope = OrganizationScope(organization_id)
-        run, jobs = request_run(session, scope=scope, user=user, node_id=node_id)
+        run, jobs = request_run(session, scope=scope, user=user, node_id=node_id,
+                                full_mode=reprocess_all)
         documents = LibraryService(session).indexed_documents_under(scope=scope, user_id=user.id, node_id=node_id, allow_source=True)
         if reprocess_all:
             from app.knowledge.models import Document

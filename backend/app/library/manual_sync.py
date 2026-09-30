@@ -1,4 +1,5 @@
-"""Durable synchronization snapshots; manual runs rescan fully and rebuild only changed files."""
+"""Durable synchronization snapshots. A run is incremental (provider delta, only what changed)
+or full (complete discovery and rebuild of every file)."""
 
 from datetime import UTC, datetime
 from uuid import UUID
@@ -12,7 +13,7 @@ from app.ingestion.models import ProcessingJob
 from app.ingestion.service import DiscoveredDocument, IngestionService, SyncAccessDenied
 from app.knowledge.models import Document
 from app.library.models import LibraryNode, ManualSyncRun
-from app.workspaces.models import WorkspaceFolder
+from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 
 def record_sync(
@@ -33,6 +34,52 @@ def record_sync(
     session.flush()
 
 
+def run_mode(session: Session, job: ProcessingJob) -> str:
+    """"incremental" or "full" for a manual job; legacy runs without a mode were full scans."""
+    run = session.get(ManualSyncRun, job.manual_run_id)
+    task = (run.progress or {}).get(str(job.id), {}) if run else {}
+    return task.get("mode", "full")
+
+
+def _containing_workspaces(session: Session, node: LibraryNode, folders: list[WorkspaceFolder]):
+    """Spaces whose selection overlaps ``node``: an ancestor-or-self selection, a
+    selection below the node, or an "all accessible" selection."""
+    nodes = {n.id: n for n in session.scalars(
+        select(LibraryNode).where(LibraryNode.source_id == node.source_id))}
+
+    def chain(start: LibraryNode) -> set[str]:
+        seen: set[str] = set()
+        current = start
+        while current is not None and current.external_id not in seen:
+            seen.add(current.external_id)
+            current = nodes.get(current.parent_id)
+        return seen
+
+    up = chain(node)
+    selections = session.scalars(select(WorkspaceFolderSelection).where(
+        WorkspaceFolderSelection.workspace_folder_id.in_([f.id for f in folders])))
+    keep: set[UUID] = set()
+    for selection in selections:
+        if selection.kind == "all_accessible" or selection.external_folder_id in up:
+            keep.add(selection.workspace_folder_id)
+        elif selection.kind == "folder":
+            selected = next((n for n in nodes.values() if n.external_id == selection.external_folder_id), None)
+            if selected is not None and node.external_id in chain(selected):
+                keep.add(selection.workspace_folder_id)
+    # Spaces that already hold files of the subtree (covers selections that predate the catalog).
+    below, pending = set(), [node.id]
+    while pending:
+        children = [n for n in nodes.values() if n.parent_id in pending]
+        below.update(n.external_id for n in children if n.kind == "file")
+        pending = [n.id for n in children if n.kind == "folder"]
+    if below:
+        keep.update(session.scalars(select(Document.workspace_folder_id).where(
+            Document.workspace_folder_id.in_([f.id for f in folders]),
+            Document.external_file_id.in_(below),
+        )))
+    return [folder for folder in folders if folder.id in keep]
+
+
 def request_run(
     session: Session,
     *,
@@ -41,7 +88,10 @@ def request_run(
     node_id: UUID | None = None,
     workspace_id: UUID | None = None,
     reprocess_all: bool = False,
+    full_mode: bool = False,
 ):
+    """``reprocess_all`` also clears every hash of the spaces; ``full_mode`` only labels the run
+    (and forces full discovery) for callers that clear a narrower set of hashes themselves."""
     ingestion = IngestionService(session)
     ingestion.require_admin(scope=scope, user_id=user.id)
     if workspace_id:
@@ -59,8 +109,8 @@ def request_run(
         if node is None:
             raise SyncAccessDenied("company library node unavailable")
         source_id, kind, external_id, name = node.source_id, node.kind, node.external_id, node.name
-        # Discover every authorized workspace of this integration. This also
-        # finds new/failed files absent from local indexed-document provenance.
+        # A source syncs every space of the integration; a folder only the spaces
+        # that contain it, so unrelated spaces are never touched.
         folders = list(
             session.scalars(
                 select(WorkspaceFolder)
@@ -71,6 +121,8 @@ def request_run(
                 .order_by(WorkspaceFolder.id)
             )
         )
+        if kind == "folder":
+            folders = _containing_workspaces(session, node, folders)
     if not folders:
         raise ValueError("Nenhum espaço sincronizado nesta ferramenta. Selecione um espaço na integração antes de ressincronizar.")
     for folder in folders:
@@ -106,6 +158,7 @@ def request_run(
             "processed": 0,
             "outcomes": [],
             "error_code": None,
+            "mode": "full" if reprocess_all or full_mode else "incremental",
         }
         for job, folder in zip(jobs, folders)
     }
@@ -260,6 +313,8 @@ def serialize_run(run: ManualSyncRun):
         "operation": "sync" if run.scope_kind == "sync" else "resync",
         "source_id": str(run.source_id),
         "scope_kind": run.scope_kind,
+        "mode": None if run.scope_kind == "sync" else next(
+            (task.get("mode", "full") for task in run.progress.values()), None),
         "scope_name": run.scope_name,
         "triggered_by": run.triggered_by,
         "triggered_by_user_id": str(run.triggered_by_user_id) if run.triggered_by_user_id else None,

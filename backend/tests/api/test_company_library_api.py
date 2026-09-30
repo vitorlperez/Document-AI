@@ -214,6 +214,8 @@ def test_admin_can_reprocess_and_remove_a_library_folder(api: tuple[TestClient, 
 
     reprocess = client.post(f"/library/nodes/{outer_id}/reprocess?organization_id={organization}")
     assert reprocess.status_code == 202
+    history = client.get(f"/library/manual-syncs?organization_id={organization}").json()["items"][0]
+    assert history["mode"] == "incremental"
     assert reprocess.json()["documents"] == 1 and len(reprocess.json()["job_ids"]) == 1
     assert len(dispatched) == 1
     with factory() as session:
@@ -223,6 +225,7 @@ def test_admin_can_reprocess_and_remove_a_library_folder(api: tuple[TestClient, 
         session.commit()
     everything = client.post(f"/library/nodes/{outer_id}/reprocess?organization_id={organization}&reprocess_all=true")
     assert everything.status_code == 202
+    assert client.get(f"/library/manual-syncs?organization_id={organization}").json()["items"][0]["mode"] == "full"
     with factory() as session:
         assert session.query(Document).one().content_hash == ""
         session.query(ProcessingJob).update({"status": ProcessingJobStatus.READY})

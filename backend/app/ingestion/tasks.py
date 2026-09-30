@@ -334,8 +334,14 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             # A space without data (new, emptied or cleared) must walk its whole
             # tree: a cursor saved by an earlier empty run would return nothing.
             has_data = any(document.index_status != "removed" for document in known_rows)
-            if getattr(job, "manual_run_id", None) or not has_data:
+            manual = getattr(job, "manual_run_id", None)
+            if not has_data:
                 discover_kwargs["force_full"] = True
+            elif manual:
+                from app.library.manual_sync import run_mode
+                # Incremental runs use the provider delta; only "full" rediscovers.
+                if run_mode(session, job) == "full":
+                    discover_kwargs["force_full"] = True
             discovered_documents = provider.discover(**discover_kwargs)
             discovery = (
                 discovered_documents if isinstance(discovered_documents, DiscoveryResult) else None

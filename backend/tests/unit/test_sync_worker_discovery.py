@@ -8,12 +8,13 @@ from app.ingestion.service import DiscoveryResult
 
 
 # (a) at the worker boundary: a space without data ignores a stale cursor.
-def _run_task(monkeypatch, *, known_rows: list) -> dict:
+def _run_task(monkeypatch, *, known_rows: list, manual_mode: str | None = None) -> dict:
     from app.ingestion import tasks
 
     organization_id, workspace_folder_id, source_id, job_id = (uuid4() for _ in range(4))
     job = SimpleNamespace(id=job_id, organization_id=organization_id,
-                          workspace_folder_id=workspace_folder_id, run_token="token")
+                          workspace_folder_id=workspace_folder_id, run_token="token",
+                          manual_run_id=uuid4() if manual_mode else None)
     folder = SimpleNamespace(id=workspace_folder_id, organization_id=organization_id, source_id=source_id)
     source = SimpleNamespace(id=source_id, provider="google_drive", encrypted_credentials="c",
                              status="connected", last_synced_at=None)
@@ -94,6 +95,11 @@ def _run_task(monkeypatch, *, known_rows: list) -> dict:
                         lambda *_: SimpleNamespace(embed_workspace=lambda **__: 0))
     monkeypatch.setattr(tasks, "OpenAIQuestionProvider", lambda _: object())
     monkeypatch.setattr(tasks, "LibraryService", Library)
+    if manual_mode:
+        from app.library import manual_sync
+        monkeypatch.setattr(manual_sync, "run_mode", lambda *_: manual_mode)
+        monkeypatch.setattr(manual_sync, "scoped_documents", lambda _s, _j, documents, *_: documents)
+        monkeypatch.setattr(manual_sync, "update_progress", lambda *_, **__: None)
     assert tasks.reconcile_workspace_folder.apply(args=[str(job_id)], throw=True).successful()
     seen["workspace_folder_id"] = workspace_folder_id
     return seen
@@ -111,3 +117,25 @@ def test_worker_keeps_incremental_discovery_for_space_with_data(monkeypatch) -> 
                               error_code=None, modified_at=None, name="a.pdf", mime_type="application/pdf")
     seen = _run_task(monkeypatch, known_rows=[indexed])
     assert "force_full" not in seen
+
+
+def _indexed():
+    return SimpleNamespace(external_file_id="a", index_status="indexed", content_hash="h",
+                           error_code=None, modified_at=None, name="a.pdf", mime_type="application/pdf")
+
+
+# Library resync is incremental: the provider delta decides, nothing is rediscovered.
+def test_manual_incremental_run_uses_the_provider_delta(monkeypatch) -> None:
+    seen = _run_task(monkeypatch, known_rows=[_indexed()], manual_mode="incremental")
+    assert "force_full" not in seen
+
+
+def test_manual_incremental_run_of_a_space_without_data_still_discovers_everything(monkeypatch) -> None:
+    seen = _run_task(monkeypatch, known_rows=[], manual_mode="incremental")
+    assert seen["force_full"] is True
+
+
+# Integration management re-sync is deep: full discovery.
+def test_manual_full_run_forces_full_discovery(monkeypatch) -> None:
+    seen = _run_task(monkeypatch, known_rows=[_indexed()], manual_mode="full")
+    assert seen["force_full"] is True
