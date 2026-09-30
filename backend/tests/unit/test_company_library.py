@@ -172,6 +172,8 @@ def test_projection_refreshes_remote_folder_names_and_parents(session: Session) 
 
 def test_projection_removes_nodes_missing_from_complete_remote_snapshot(session: Session) -> None:
     organization, _user, source = seed_company(session)
+    workspace = seed_document(session, organization=organization, source=source, root="A",
+                              external_id="obsolete", name="Obsolete.pdf")
     service = LibraryService(session)
     document = DiscoveredDocument(
         "obsolete",
@@ -181,12 +183,16 @@ def test_projection_removes_nodes_missing_from_complete_remote_snapshot(session:
         text="content",
     )
     service.project_successful_sync(
-        organization_id=organization.id, source=source, documents=[document], folders=[]
+        organization_id=organization.id, source=source, documents=[document], folders=[],
+        workspace_folder_id=workspace.id,
     )
     assert service._by_external(source_id=source.id, external_id=document.external_file_id) is not None
 
+    # The complete snapshot no longer has it, so reconciliation marked it removed.
+    session.query(Document).filter_by(external_file_id="obsolete").one().index_status = "removed"
     service.project_successful_sync(
-        organization_id=organization.id, source=source, documents=[], folders=[]
+        organization_id=organization.id, source=source, documents=[], folders=[],
+        workspace_folder_id=workspace.id,
     )
 
     assert service._by_external(source_id=source.id, external_id=document.external_file_id) is None
@@ -295,12 +301,13 @@ def test_projection_of_a_second_sync_keeps_or_drops_nodes_of_other_workspace(ses
     seed_document(session, organization=organization, source=source, root="A", external_id="a1", name="A.pdf")
     seed_document(session, organization=organization, source=source, root="B", external_id="b1", name="B.pdf")
     service = LibraryService(session)
+    workspaces = {item.external_file_id: item.workspace_folder_id for item in session.query(Document)}
     for external_id in ("a1", "b1"):
         service.project_successful_sync(
             organization_id=organization.id, source=source,
             documents=[DiscoveredDocument(external_id, external_id + ".pdf", "application/pdf", "", text="content")],
-            folders=[],
+            folders=[], workspace_folder_id=workspaces[external_id],
         )
-    # Characterization: projection receives only the current workspace and drops A.
-    assert service._by_external(source_id=source.id, external_id="a1") is None
+    # The catalog is shared by every space of the source: syncing B keeps A.
+    assert service._by_external(source_id=source.id, external_id="a1") is not None
     assert service._by_external(source_id=source.id, external_id="b1") is not None

@@ -905,21 +905,38 @@ class LibraryService:
                     document.source_url,
                 )
         self.session.flush()
-        remote_external_ids = {
-            SOURCE_ROOT_EXTERNAL_ID,
-            *(folder.id for folder in folders),
-            *(document.external_file_id for document in documents),
-        }
-        self.session.execute(
-            delete(LibraryNode).where(
-                LibraryNode.source_id == source.id,
-                LibraryNode.external_id.not_in(remote_external_ids),
-            )
+        if workspace_folder_id is None:
+            return
+        # A delta only carries what changed and the catalog is shared by every
+        # space of the source: prune just the files this space saw disappear
+        # at the source and that no other space still keeps.
+        live = select(Document.external_file_id).join(
+            WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id,
+        ).where(
+            WorkspaceFolder.source_id == source.id,
+            Document.index_status != "removed",
         )
+        gone = set(self.session.scalars(select(Document.external_file_id).where(
+            Document.organization_id == organization_id,
+            Document.workspace_folder_id == workspace_folder_id,
+            Document.index_status == "removed",
+            Document.external_file_id.not_in(live),
+        )))
+        if not gone:
+            return
+        stale = list(self.session.scalars(select(LibraryNode).where(
+            LibraryNode.source_id == source.id,
+            LibraryNode.kind == "file",
+            LibraryNode.external_id.in_(gone),
+        )))
+        parents = {node.parent_id for node in stale if node.parent_id is not None}
+        for node in stale:
+            self.session.delete(node)
         self.session.flush()
         self._remove_empty_folders(
             source_id=source.id,
             preserved_external_ids={folder.id for folder in folders},
+            candidate_ids=parents,
         )
         self.session.flush()
 
@@ -1025,8 +1042,13 @@ class LibraryService:
 
     def _remove_empty_folders(
         self, *, source_id: UUID, preserved_external_ids: set[str] | None = None,
+        candidate_ids: set[UUID] | None = None,
     ) -> None:
-        """Prune only orphaned folder metadata, never a source root."""
+        """Prune only orphaned folder metadata, never a source root.
+
+        With ``candidate_ids`` only those folders and, once emptied, their
+        ancestors are considered, so folders of other spaces stay untouched.
+        """
         while True:
             occupied_parent_ids = set(
                 self.session.scalars(
@@ -1042,9 +1064,12 @@ class LibraryService:
                 )
                 if node.id not in occupied_parent_ids
                 and node.external_id not in (preserved_external_ids or set())
+                and (candidate_ids is None or node.id in candidate_ids)
             ]
             if not empty:
                 return
+            if candidate_ids is not None:
+                candidate_ids = {node.parent_id for node in empty if node.parent_id is not None}
             for node in empty:
                 self.session.delete(node)
             self.session.flush()
