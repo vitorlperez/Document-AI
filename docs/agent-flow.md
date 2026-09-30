@@ -8,6 +8,7 @@ path: the stages below are the only way an answer is produced.
 | --- | --- | --- |
 | 1. Classify | `AgentService.classify` | message + `ConversationState` (files listed in the last answer, files attached in the previous turn, previous answer) → `IntentDecision` (closed schema in `intent.py`: intent, target, ordinals, tool, query) |
 | 2. Execute tools | `AgentService.execute` → one handler per intent in `_handlers` | decision + `AgentRequest` (authorized scope, providers, mentions) → `AgentRun` with the `ToolResult`s it read |
+| Security fence | `knowledge/untrusted.py` + `presentation.py` | nonce around untrusted sources, invisible-control cleanup, read-only tools and service output-link guard; see [RAG threat model](seguranca/prompt-injection-rag.md) |
 | 3. Synthesize | `AgentService._synthesize` | tool outputs (sources without URLs, catalog names) → one grounded, cited answer, or `None` when it cannot be verified |
 | 4. Cite | `AgentService.cite` | `AgentRun` → final `QuestionResult` whose `citations` always list the documents used, with their links |
 

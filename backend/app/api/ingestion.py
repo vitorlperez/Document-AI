@@ -1,6 +1,5 @@
 """Admin synchronization and member document-listing HTTP boundaries."""
 
-import re
 from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
@@ -29,33 +28,20 @@ from app.knowledge.agent import (
     FlowModels,
 )
 from app.knowledge.models import ConversationMessage
-from app.knowledge.questions import AIProviderUnavailable, QuestionResult, QuestionService
+from app.knowledge.presentation import (
+    answer_without_source_links as _answer_without_source_links,  # noqa: F401 — compatibility alias
+)
+from app.knowledge.presentation import (
+    serialize_question_result as _serialize_question_result,
+)
+from app.knowledge.presentation import (
+    short_citation_excerpt as _short_citation_excerpt,  # noqa: F401 — compatibility alias
+)
+from app.knowledge.questions import AIProviderUnavailable, QuestionService
 from app.knowledge.search import SearchUnavailable, TextSearchService
 from app.library.service import LibraryService
 
 router = APIRouter(tags=["ingestion"])
-MAX_CITATION_EXCERPT_LENGTH = 240
-_MARKDOWN_LINK_START = re.compile(r"\[([^\]]+)\]\(")
-_AUTOLINK = re.compile(r"<\s*(?:https?://|www\.)[^>]+>", re.IGNORECASE)
-_URL = re.compile(
-    r"\b(?:(?:https?://|www\.)[^\s<>]+|(?:drive|docs)\.google\.com/[^\s<>]+|"
-    r"(?:[A-Za-z0-9-]+\.)?notion\.(?:so|site)/[^\s<>]+)",
-    re.IGNORECASE,
-)
-_SOURCE_LINK_LINE = re.compile(
-    r"\s*(?:[-*]\s*)?(?:(?:fonte|fontes|source|sources|link|links|url)\s*[:\-]|\[\d+\]:)"
-    r"[^\n]*(?:https?://|www\.|(?:drive|docs)\.google\.com/|notion\.(?:so|site)/)[^\n]*",
-    re.IGNORECASE,
-)
-_SOURCE_ONLY_LINE = re.compile(
-    r"\s*(?:[-*]\s*)?(?:(?:fonte|fontes|source|sources|link|links|url)\s*[:\-]|\[\d+\]:)\s*[.,;:!?()\[\]\s]*",
-    re.IGNORECASE,
-)
-_PROVIDER_URL = re.compile(
-    r"\s*\(\s*[a-z][a-z0-9_]{1,40}\s*:\s*(?:https?://|www\.)[^)\n]*\)",
-    re.IGNORECASE,
-)
-_INLINE_CITATION_MARKER = re.compile(r"\[\d+\]")
 
 
 class TextSearchInput(BaseModel):
@@ -462,105 +448,6 @@ def _serialize_conversation_message(message: ConversationMessage) -> dict[str, o
         "response": message.response,
         "created_at": message.created_at.isoformat(),
     }
-
-
-def _serialize_question_result(result: QuestionResult, *, include_provider: bool) -> dict[str, object]:
-    citations = []
-    for item in result.citations:
-        citation = {
-            "document_id": str(item.document_id),
-            "document_name": item.document_name,
-            "excerpt": _short_citation_excerpt(item.excerpt),
-            "page_number": item.page_number,
-            "source_url": item.source_url,
-        }
-        if include_provider and item.source_provider:
-            citation["source_provider"] = item.source_provider
-        citations.append(citation)
-    payload: dict[str, object] = {
-        "answer": _answer_without_source_links(result.answer),
-        "confidence": result.confidence,
-        "citations": citations,
-        "retrieval_status": result.retrieval_status,
-    }
-    if result.coverage is not None:
-        payload["coverage"] = result.coverage
-    if result.resolved_context is not None:
-        payload["resolved_context"] = result.resolved_context
-    return payload
-
-
-def _short_citation_excerpt(value: str) -> str:
-    """Keep displayed quotes concise without shortening evidence sent to the model."""
-    excerpt = value.strip()
-    if len(excerpt) <= MAX_CITATION_EXCERPT_LENGTH:
-        return excerpt
-    cutoff = max(
-        excerpt.rfind(separator, 0, MAX_CITATION_EXCERPT_LENGTH)
-        for separator in (" ", "\n", "\t")
-    )
-    if cutoff < MAX_CITATION_EXCERPT_LENGTH * 0.65:
-        cutoff = MAX_CITATION_EXCERPT_LENGTH - 1
-    return f"{excerpt[:cutoff].rstrip()}…"
-
-
-def _answer_without_source_links(value: str | None) -> str | None:
-    """Strip accidental model-generated URLs; source links belong to citations."""
-    if value is None:
-        return None
-    answer = "\n".join(line for line in value.splitlines() if not _SOURCE_LINK_LINE.fullmatch(line))
-    answer = _strip_markdown_links(answer)
-    answer = _AUTOLINK.sub("", answer)
-    answer = _PROVIDER_URL.sub("", answer)
-    answer = _URL.sub(_remove_url_preserving_punctuation, answer)
-    # Current answers carry validated "fonte N" labels. Raw markers from older
-    # providers are still discarded; never guess a document from an unknown index.
-    answer = _INLINE_CITATION_MARKER.sub("", answer)
-    answer = re.sub(r"\(\s*[a-z][a-z0-9_]{1,40}\s*:\s*\)", "", answer, flags=re.IGNORECASE)
-    answer = re.sub(r"\(\s*\)", "", answer)
-    answer = re.sub(r"[ \t]+([,.;:!?])", r"\1", answer)
-    answer = re.sub(r"[ \t]{2,}", " ", answer)
-    answer = "\n".join(line for line in answer.splitlines() if not _SOURCE_ONLY_LINE.fullmatch(line))
-    # ":::" closes a presentation block (see ANSWER_FORMAT_GUIDANCE); keep it.
-    answer = re.sub(r"(?m)^\s*(?!:::\s*$)[.,;:!?]+\s*$", "", answer)
-    answer = re.sub(r"\n{3,}", "\n\n", answer)
-    return answer.strip()
-
-
-def _strip_markdown_links(value: str) -> str:
-    """Retain link labels while consuming balanced URL parentheses."""
-    parts: list[str] = []
-    cursor = 0
-    for match in _MARKDOWN_LINK_START.finditer(value):
-        if match.start() < cursor:
-            continue
-        depth = 1
-        end = match.end()
-        while end < len(value) and depth:
-            if value[end] == "(":
-                depth += 1
-            elif value[end] == ")":
-                depth -= 1
-            end += 1
-        if depth:
-            continue
-        parts.extend((value[cursor:match.start()], match.group(1)))
-        cursor = end
-    parts.append(value[cursor:])
-    return "".join(parts)
-
-
-def _remove_url_preserving_punctuation(match: re.Match[str]) -> str:
-    url = match.group()
-    suffix = ""
-    while url and url[-1] in ".,;:!?":
-        suffix = url[-1] + suffix
-        url = url[:-1]
-    while url.endswith(")") and url.count(")") > url.count("("):
-        suffix = ")" + suffix
-        url = url[:-1]
-    return suffix
-
 
 @router.get("/workspace-folders/{workspace_folder_id}/syncs/{job_id}")
 def sync_status(

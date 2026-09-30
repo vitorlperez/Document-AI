@@ -42,6 +42,7 @@ from app.knowledge.questions import (
     _number_answer_sources,
     _validate_citations,
 )
+from app.knowledge.untrusted import sanitize_label
 from app.library.models import LibraryNode
 from app.library.service import CatalogFileSnapshot, LibraryService, SyncAccessDenied
 from app.workspaces.models import WorkspaceFolder
@@ -805,7 +806,7 @@ class AgentService:
             )
         if citations:
             text += "\n\nArquivos consultados:\n" + "\n".join(
-                f"- {item.document_name} (fonte {index})" for index, item in enumerate(citations, 1)
+                f"- {sanitize_label(item.document_name)} (fonte {index})" for index, item in enumerate(citations, 1)
             )
         return QuestionResult(
             answer=text,

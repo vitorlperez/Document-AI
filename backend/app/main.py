@@ -119,6 +119,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.semantic_provider = OpenAIQuestionProvider(
         runtime_settings.openai_api_key.get_secret_value() if runtime_settings.openai_api_key else None,
         evidence_context_chars=runtime_settings.evidence_context_chars,
+        fence_sources_enabled=runtime_settings.source_fencing_enabled,
     )
     # The browser UI runs on a separate local port during development. Restrict
     # cross-origin requests to the configured public application origin and keep

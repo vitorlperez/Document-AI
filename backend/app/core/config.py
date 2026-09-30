@@ -23,6 +23,7 @@ class Settings(BaseSettings):
             return "postgresql+psycopg://" + value[len("postgresql://"):]
         return value
     environment: str = "development"
+    source_fencing_enabled: bool = True
     vector_backend: Literal["python", "pgvector"] = "python"
     new_formats_enabled: bool = False
     active_document_limit: int = Field(default=500, gt=0)

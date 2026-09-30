@@ -752,7 +752,7 @@ def test_openai_evidence_includes_tool_and_file_provenance(monkeypatch: pytest.M
         "https://example.test/brief", 0.9, "google_drive",
     )
     provider.answer(question="Where?", evidence=[source])
-    assert "tool: google_drive" in requests[0]["input"]
+    assert 'tool="google_drive"' in requests[0]["input"]
     assert "Brief.pdf" in requests[0]["input"]
     assert source.source_url not in requests[0]["input"]
     assert "not an exhaustive inventory" in requests[0]["instructions"]
