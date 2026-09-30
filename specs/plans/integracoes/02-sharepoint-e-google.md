@@ -1267,3 +1267,37 @@ Legenda: ✅ = aberta e lida nesta sessão · ◻ = URL oficial citada do relat�
 ## 9. Handoff de execução
 
 Duas formas: **(a)** um worker novo por task, com revisão entre tasks — no Overclock, um `oc-pilot` abrindo um `oc-builder` por task (A0→A1→…; a Parte B tem trilha de engenharia B2/B3/B4 e trilha humana B0/B5/B6); **(b)** execução inline com checkpoints após A1, A4, A5 e B3. Recomendação: **A e B em paralelo por pessoas diferentes**; dentro de A, começar por A0 (spike decide D-A7) e P0/B0 no dia 1 porque são os itens de lead time.
+
+## Execução parcial — 2026-09-30, pane-251
+
+> Execução: A0.3 passou (1 passed, exit 0) e confirmou R-A2: sincronizar B
+apaga nós de A na mesma fonte. Commit 39262de registra a caracterização,
+follow-up e spike real pendente. Rollout SharePoint multi-espaço bloqueado.
+
+> Execução: A1 em fe64cae parametriza autoridade/escopos, vínculo de identidade,
+workers e hooks de download/tamanho. O teste novo falhou antes da implementação
+(AttributeError AUTHORITY, exit 1). O commit foi feito enquanto a execução
+de regressão ainda estava pendente; ela terminou com erro de ambiente, não
+com testes verdes. Portanto A1 NÃO está validada nem entregue pelo aceite.
+
+> Execução: o worktree e backend/.venv contêm arquivos macOS compressed,dataless.
+pytest/__init__.py tem tamanho metadata 5373, mas read_bytes retorna zero;
+pytest termina com AttributeError console_main (exit 1). brctl download não
+hidratou os arquivos. uv pip --reinstall pytest e graphify update posterior
+a A1 ficaram pendentes. Graphify após A0 concluiu (exit 0, 4582 nodes).
+A2/A3 têm rascunhos não commitados em sharepoint.py e test_sharepoint.py;
+A4–A6 e A10 não executadas. Recuperar arquivos/venv antes de retomar e
+validar A1, depois retomar os testes A2/A3. Nenhuma migração criada.
+
+> Execução: tenant real, publisher verification, consentimento, formatos/limites
+reais do Graph e piloto de sete dias continuam pendências externas explícitas.
+
+## Execução — 2026-09-30, pane-255 (continuação)
+
+> Execução: A1 validada fora do iCloud (venv novo no scratchpad + export `git archive`): OneDrive/company_library 35 passed; suíte completa 564 passed (exit 0).
+
+> Execução: A2/A3 em 59b6c29 (rascunhos da pane-251 corrigidos por ruff; red ModuleNotFoundError → green). A4 em 92d1349 (10 testes do plano; `drive_root_id`/`list_folders` no client; reprocesso também checa pertencimento). A5 em b5af2af: serviço/rotas/registry/worker; início/callback OAuth Microsoft viraram helpers `_microsoft_*` compartilhados entre OneDrive e SharePoint (sem mudança de contrato; suítes OneDrive verdes); sites também dão 422 na seleção. Suíte completa 602 passed com a 0019 presente.
+
+> Execução: migração = `20260930_0020_sharepoint_tenant_binding` (não 0022), `down_revision = 20260930_0019` (pgvector, pane F5, ainda não commitada no momento). Até a 0019 entrar no branch, o HEAD isolado falha em test_migration_sql/test_authentication_migration_sql (KeyError '20260930_0019'). Se a 0019 mudar de id, reencadear.
+
+> Execução: A6 em 7def418 (tsc 0, eslint 0, `node --import tsx --test tests/*.test.mjs` 29/29, rodados num `npm ci` no scratchpad). Validação visual/responsiva pendente. A10 em 5a65534 + 8a2f7b9 (`.env.production.example` não tem variáveis Microsoft; não alterado). Rotas de admin consent (A8) e `Sites.Selected` (A9) não executadas (fora do escopo pedido). Piloto/tenant real: pendente.
