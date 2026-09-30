@@ -1,0 +1,66 @@
+{
+  "skills": "inline [oc-builder, oc-blackbox, oc-stamp]",
+  "checks": {
+    "numbering": "Before four ol elements start=1; after one ol with 4 items, desktop/390px, visually inspected.",
+    "sources": "6 clickable citations and 3 original links retained; provider 11px secondary vs filename12px; rows36/37/37 desktop48/37/37mobile; link centered; no horizontal overflow.",
+    "prompt": "Shared semantic detail calibration and sequential numbering in both generation stages, source markers/factual coverage retained. Mocked tests, no live LLM call.",
+    "boundary": "Protected pre-existing code diffs identical; requested commits preserved; no graph update or push; Docker stack unchanged."
+  },
+  "commands": [
+    {
+      "cmd": "node --import tsx --test tests/answer-blocks.test.mjs tests/answer-markdown.test.mjs (before fix)",
+      "exitCode": 1,
+      "result": "16 passed, 4 failed"
+    },
+    {
+      "cmd": ".venv/bin/pytest tests/unit/test_content_consolidation.py -q (before fix)",
+      "exitCode": 1,
+      "result": "8 passed, 10 failed"
+    },
+    {
+      "cmd": "node --import tsx --test tests/*.test.mjs",
+      "exitCode": 0,
+      "result": "39 passed, 0 failed"
+    },
+    {
+      "cmd": ".venv/bin/pytest tests/unit/test_content_consolidation.py tests/unit/test_answer_blocks.py -q",
+      "exitCode": 0,
+      "result": "25 passed"
+    },
+    {
+      "cmd": ".venv/bin/pytest -q",
+      "exitCode": 0,
+      "result": "911 passed, 13 skipped, 4 warnings"
+    },
+    {
+      "cmd": "npx tsc --noEmit --incremental false",
+      "exitCode": 0
+    },
+    {
+      "cmd": "npx eslint . --ignore-pattern dist --ignore-pattern .next",
+      "exitCode": 0
+    },
+    {
+      "cmd": "NODE_PATH=/tmp/document-ai-chat-qa/node_modules node artifacts/chat-answer-format/visual-check.cjs before",
+      "exitCode": 0
+    },
+    {
+      "cmd": "NODE_PATH=/tmp/document-ai-chat-qa/node_modules node artifacts/chat-answer-format/visual-check.cjs after",
+      "exitCode": 0
+    },
+    {
+      "cmd": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "screenshots": [
+    "artifacts/chat-answer-format/after-1440-answer.png",
+    "artifacts/chat-answer-format/after-1440-page.png",
+    "artifacts/chat-answer-format/after-390-answer.png",
+    "artifacts/chat-answer-format/after-390-page.png",
+    "artifacts/chat-answer-format/before-1440-answer.png",
+    "artifacts/chat-answer-format/before-1440-page.png",
+    "artifacts/chat-answer-format/before-390-answer.png",
+    "artifacts/chat-answer-format/before-390-page.png"
+  ]
+}

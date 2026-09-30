@@ -31,6 +31,32 @@ class MockLLM(OpenAIQuestionProvider):
 
 
 @pytest.mark.parametrize('stage', ['answer', 'synthesize_answer'])
+@pytest.mark.parametrize('question,intent', [
+    ('Quais são as experiências profissionais do Vitor?', 'ask_content'),
+    ('Quando Vitor trabalhou na Wasion?', 'ask_content'),
+    ('Quem trabalhou na Estoca?', 'ask_content'),
+    ('Explique em detalhes as experiências do Vitor.', 'ask_content'),
+    ('Resuma cada documento separadamente.', 'summarize_files'),
+])
+def test_prompts_calibrate_detail_semantically_and_keep_numbering_grounded(stage, question, intent):
+    provider = MockLLM('Wasion — Engineer — 2021 [1].', [1])
+    sources = [evidence('Wasion — Engineer — 2021.')]
+    if stage == 'answer':
+        result = provider.answer(question=question, evidence=sources)
+    else:
+        result = provider.synthesize_answer(question=question, intent=intent, sources=sources, catalog=[])
+    instructions = provider.body['instructions']
+    assert 'Calibrate detail to the information the user requests' in instructions
+    assert 'who/which/when' in instructions
+    assert 'company — role — period' in instructions
+    assert 'at most one short sentence' in instructions
+    assert 'explain/detail/summarize' in instructions
+    assert 'sequential markers (1., 2., 3., 4.)' in instructions
+    assert 'Every factual item needs an inline [N]' in instructions or 'Cite every factual item' in instructions
+    assert result.citation_indexes == [1]
+
+
+@pytest.mark.parametrize('stage', ['answer', 'synthesize_answer'])
 def test_both_generation_stages_receive_shared_pool_and_complete_passages(stage):
     sources = [evidence(('Context. ' * 400) + 'Acme — 2021–2023.', 'Old.pdf'),
                evidence('Acme — 2021–2023. Beta — 2023–Present.', 'New.pdf')]

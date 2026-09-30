@@ -1,7 +1,36 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 
 import { CITATION_MARKER, citationNumbers, parseAnswerBlocks } from "../app/answer-blocks.ts";
+
+const experienceFixture = JSON.parse(readFileSync(new URL("../../artifacts/chat-answer-format/fixture.json", import.meta.url)));
+
+test("screenshot: blank lines keep all four cited experiences in one ordered list", () => {
+  for (const text of [experienceFixture.raw, experienceFixture.answer, experienceFixture.answer.replace(/^\d+\./gm, "1.")]) {
+    const blocks = parseAnswerBlocks(text);
+    assert.equal(blocks.length, 1);
+    assert.equal(blocks[0].ordered, true);
+    assert.equal(blocks[0].items.length, 4);
+    assert.match(blocks[0].items[2].text, /Estoca/);
+    assert.match(blocks[0].items[3].text, /Allstacks/);
+  }
+});
+
+test("loose lists preserve an initial start and indented paragraphs and subitems", () => {
+  const [list] = parseAnswerBlocks("3. Empresa — cargo\n   período (fonte 1).\n\n   Destaque curto (fonte 2).\n\n   - Detalhe\n\n4. Outra empresa (fonte 3).");
+  assert.equal(list.start, 3);
+  assert.equal(list.items.length, 2);
+  assert.equal(list.items[0].text, "Empresa — cargo período (fonte 1).");
+  assert.deepEqual(list.items[0].paragraphs, ["Destaque curto (fonte 2)."]);
+  assert.deepEqual(list.items[0].sub, ["Detalhe"]);
+});
+
+test("lists stop at prose, headings and a changed marker type; explicit new sections restart", () => {
+  const blocks = parseAnswerBlocks("1. A\n\n2. B\n\nObservação independente.\n\n## Outra lista\n1. C\n- D");
+  assert.deepEqual(blocks.map(b => b.kind), ["list", "paragraph", "heading", "list", "list"]);
+  assert.deepEqual(blocks.filter(b => b.kind === "list").map(b => b.items.length), [2, 1, 1]);
+});
 
 test("renders the prompt's answer shape: lead summary, short sections, lists and tables", () => {
   const answer = [

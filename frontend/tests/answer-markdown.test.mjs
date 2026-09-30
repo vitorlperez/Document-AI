@@ -8,6 +8,15 @@ import { AnswerMarkdown } from "../app/answer-markdown.tsx";
 
 const render = (text, fileNames = [], onCite = () => {}) => renderToStaticMarkup(createElement(AnswerMarkdown, { text, fileNames, onCite }));
 
+test("loose numbered items render one continuous ol, preserving start and paragraph citations", () => {
+  const html = render("3. Wasion (fonte 1).\n\n   Destaque (fonte 2).\n\n4. Cloudiabot (fonte 1).\n\n5. Estoca (fonte 2).\n\n6. Allstacks (fonte 3).", ["A", "B", "C"]);
+  assert.equal((html.match(/<ol\b/g) ?? []).length, 1);
+  assert.match(html, /<ol[^>]*start="3"/);
+  assert.equal((html.match(/<li>/g) ?? []).length, 4);
+  assert.equal((html.match(/class="answer-cite"/g) ?? []).length, 5);
+  assert.match(html, /<p class="answer-list-paragraph">Destaque/);
+});
+
 test("file card: chip as header, summary and details inside the card body, no bullet on the chip", () => {
   const html = render("Resumo geral (fonte 1).\n\n::: file Profile.pdf\nCurrículo (fonte 1).\n- Python\n:::", ["Profile.pdf"]);
   assert.match(html, /<section class="answer-file-card" aria-label="Arquivo Profile.pdf"><h4 class="answer-file-card-header"><span class="answer-file-name">/);

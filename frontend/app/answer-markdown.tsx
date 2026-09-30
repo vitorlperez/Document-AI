@@ -31,6 +31,7 @@ function renderInline(text: string, context: InlineContext, keyPrefix: string, c
 function ListItems({ items, context, keyPrefix, chips }: { items: ListItem[]; context: InlineContext; keyPrefix: string; chips: boolean }) {
   return <>{items.map((item, i) => <li key={i}>
     {renderInline(item.text, context, `${keyPrefix}-${i}`, chips)}
+    {item.paragraphs?.map((paragraph, p) => <p key={`p${p}`} className="answer-list-paragraph">{renderInline(paragraph, context, `${keyPrefix}-${i}-p${p}`, chips)}</p>)}
     {item.sub.length > 0 && <ul className="answer-list answer-sublist">{item.sub.map((sub, j) => <li key={j}>{renderInline(sub, context, `${keyPrefix}-${i}-${j}`, chips)}</li>)}</ul>}
   </li>)}</>;
 }
@@ -44,12 +45,12 @@ function BlockView({ block, context, blockKey, lead, chips = true, defaultOpen =
         : <h4 className="answer-subheading">{inline(block.text)}</h4>;
     case "list": {
       const List = block.ordered ? "ol" : "ul";
-      return <List className={block.ordered ? "answer-list answer-list-ordered" : "answer-list"}><ListItems items={block.items} context={context} keyPrefix={blockKey} chips={chips} /></List>;
+      return <List start={block.ordered ? block.start : undefined} className={block.ordered ? "answer-list answer-list-ordered" : "answer-list"}><ListItems items={block.items} context={context} keyPrefix={blockKey} chips={chips} /></List>;
     }
     case "steps":
       return <section className="answer-steps" aria-label="Passo a passo">
         <p className="answer-steps-title"><ListChecks size={14} aria-hidden="true" />Passo a passo</p>
-        <ol><ListItems items={block.items} context={context} keyPrefix={blockKey} chips={chips} /></ol>
+        <ol start={block.start}><ListItems items={block.items} context={context} keyPrefix={blockKey} chips={chips} /></ol>
       </section>;
     case "fields":
       return <dl className="answer-fields">{block.items.map((field, i) => <div key={i} className="answer-field">

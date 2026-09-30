@@ -347,6 +347,16 @@ ANSWER_FORMAT_GUIDANCE = (
 )
 
 CONTENT_SYNTHESIS_GUIDANCE = (
+    " Calibrate detail to the information the user requests, by meaning rather than matching keywords. "
+    "For factual identification or enumeration (who/which/when; quem/quais/quando), give only the requested "
+    "entities and attributes. For professional experience, prefer company — role — period on one line "
+    "per item; include a relevant highlight in at most one short sentence, only if needed. Do not add "
+    "an Activities/Atividades section or a technology inventory unless requested. Requests to "
+    "explain/detail/summarize (explique/detalhe/resuma) may need fuller context, but include only details "
+    "that serve the requested explanation or summary. An explicit request for detail takes precedence "
+    "over the question's opening word. Concision must preserve every distinct requested fact, relevant "
+    "date discrepancy and inline [N] citation. For ordered lists, write sequential markers (1., 2., 3., 4.) "
+    "in one continuous list; indent any internal paragraphs under their item. "
     " Put the requested information first: be concise and direct, without a long introduction, "
     "repeated facts, unrelated attributes or closing recap. For several factual items, prefer a compact "
     "list or table containing only the requested attributes, with inline citations or a citation at the "

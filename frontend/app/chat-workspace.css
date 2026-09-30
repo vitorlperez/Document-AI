@@ -43,6 +43,7 @@
 .answer-list { display: grid; gap: 0.1875rem; padding-left: 1.125rem; list-style: disc; }
 .answer-list-ordered { list-style: decimal; }
 .answer-list li::marker { color: var(--color-primary); }
+.answer-list-paragraph { margin-top: 0.1875rem; }
 .answer-code { padding: 0.05rem 0.3rem; border-radius: 0.25rem; background: var(--color-sage); font-size: 0.78rem; }
 .answer-file-chip { display: inline-flex; align-items: center; gap: 0.25rem; max-width: 100%; margin-inline: 0.1rem; padding: 0 0.4rem; border: 1px solid var(--color-line); border-radius: 999px; background: var(--color-sage-selected); color: var(--color-primary); font-size: 0.78rem; font-weight: 600; line-height: 1.45; vertical-align: baseline; }
 .answer-file-chip svg { flex-shrink: 0; }
@@ -90,6 +91,12 @@
 .answer-cite::after { content: ""; position: absolute; inset: -0.5rem -0.25rem; }
 .source-row:focus { outline: none; }
 .source-row:focus-visible, .source-row:focus { background: var(--color-sage); box-shadow: inset 3px 0 0 var(--color-primary); }
+/* Provider metadata and the original link should not inflate compact source rows. */
+.source-row { padding-block: 0.25rem; }
+.source-row .citation-tool { flex: 0 0 auto; margin: 0; color: var(--color-muted-foreground); font-size: 0.6875rem; line-height: 1.25; }
+.product-app .source-row a { display: inline-flex; align-items: center; justify-content: center; align-self: center; min-height: 0; width: 1.75rem; height: 1.75rem; padding: 0; }
+.source-row a::after { content: ""; position: absolute; inset: -0.5rem; }
+.source-row a { position: relative; }
 @media (max-width: 639px) {
   .answer-fields { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .answer-field dd { margin-bottom: 0.5rem; }

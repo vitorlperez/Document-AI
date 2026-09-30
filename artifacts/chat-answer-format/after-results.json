@@ -1,0 +1,78 @@
+[
+  {
+    "stage": "after",
+    "width": 1440,
+    "lists": [
+      {
+        "start": 1,
+        "items": 4
+      }
+    ],
+    "rows": [
+      {
+        "height": 36,
+        "nameSize": "12px",
+        "providerSize": "11px",
+        "providerColor": "rgb(105, 116, 110)",
+        "linkCenterDelta": 0,
+        "href": "https://example.test/resume-1"
+      },
+      {
+        "height": 37,
+        "nameSize": "12px",
+        "providerSize": "11px",
+        "providerColor": "rgb(105, 116, 110)",
+        "linkCenterDelta": 0.5,
+        "href": "https://example.test/resume-2"
+      },
+      {
+        "height": 37,
+        "nameSize": "12px",
+        "providerSize": "11px",
+        "providerColor": "rgb(105, 116, 110)",
+        "linkCenterDelta": 0.5,
+        "href": "https://example.test/resume-3"
+      }
+    ],
+    "citations": 6,
+    "overflow": false
+  },
+  {
+    "stage": "after",
+    "width": 390,
+    "lists": [
+      {
+        "start": 1,
+        "items": 4
+      }
+    ],
+    "rows": [
+      {
+        "height": 48,
+        "nameSize": "12px",
+        "providerSize": "11px",
+        "providerColor": "rgb(105, 116, 110)",
+        "linkCenterDelta": 0,
+        "href": "https://example.test/resume-1"
+      },
+      {
+        "height": 37,
+        "nameSize": "12px",
+        "providerSize": "11px",
+        "providerColor": "rgb(105, 116, 110)",
+        "linkCenterDelta": 0.5,
+        "href": "https://example.test/resume-2"
+      },
+      {
+        "height": 37,
+        "nameSize": "12px",
+        "providerSize": "11px",
+        "providerColor": "rgb(105, 116, 110)",
+        "linkCenterDelta": 0.5,
+        "href": "https://example.test/resume-3"
+      }
+    ],
+    "citations": 6,
+    "overflow": false
+  }
+]
