@@ -11,12 +11,12 @@ Integrações futuras podem aparecer como "Em breve", mas somente fontes com ada
 ## OneDrive
 
 1. Owner/Admin conecta uma conta Microsoft pessoal, corporativa ou escolar com OAuth delegado e escolha explícita da conta no login.
-2. O acesso cobre o OneDrive padrão da conta conectada; SharePoint, drives compartilhados/de grupo e atalhos estão fora desta versão.
+2. O acesso cobre o OneDrive padrão da conta conectada; drives compartilhados/de grupo e atalhos estão fora desta versão. Bibliotecas SharePoint/Teams usam o provider separado `sharepoint` (ADR-0016).
 3. O backend usa `Files.Read` e `User.Read`, cifra tokens e cursores, lista pastas pelo Graph e sincroniza alterações com delta.
 4. O catálogo reutiliza seleção, sincronização e biblioteca existentes. Downloads e extração de documentos rodam em paralelo com concorrência limitada; embeddings seguem a fila e os limites já usados pelo produto.
 5. O registro do app Entra deve aceitar contas em qualquer diretório organizacional e contas Microsoft pessoais. Callbacks públicos e segredos são provisionados por ambiente, conforme README e guia do piloto.
 
-O conector está implementado para contas pessoais e organizacionais. Ainda é necessário observar rate limits e volumes reais em cada ambiente e decidir, em escopo próprio, se SharePoint ou drives compartilhados devem receber uma tela dedicada.
+O conector está implementado para contas pessoais e organizacionais. Ainda é necessário observar rate limits e volumes reais em cada ambiente. O SharePoint tem tela e provider próprios (ADR-0016, runbook `docs/integracoes/sharepoint-runbook-consentimento-admin.md`); piloto em tenant real e uso multi-espaço (R-A2) seguem pendentes.
 
 ## Histórico de implementação
 
