@@ -1,5 +1,5 @@
-from app.ingestion.extraction.ocr import OcrBudget
 from app.ingestion.extraction.engines.docling_serve import DoclingServeEngine
+from app.ingestion.extraction.ocr import OcrBudget
 
 
 def build_ocr(settings):

@@ -1,18 +1,18 @@
 from dataclasses import replace
 from datetime import UTC, datetime
-from types import SimpleNamespace
 
-import pytest
 from sqlalchemy import select
+from test_ingestion_embeddings import document, stage_sync, workspace
+from test_ingestion_embeddings import session as session  # noqa: PLC0414 — pytest fixture discovery
+from test_ingestion_scheduler import create_workspace, schedule
+from test_ingestion_scheduler import (
+    settings as settings,  # noqa: PLC0414 — pytest fixture discovery
+)
 
-from test_ingestion_embeddings import session, workspace, document, stage_sync
-from test_ingestion_scheduler import create_workspace, settings, schedule
 from app.audit_usage.models import UsageRecord
 from app.audit_usage.service import MONTHLY_LIMITS
 from app.ingestion.blocks import ExtractedBlock
 from app.knowledge.models import Document
-from app.ingestion.service import IngestionService
-from app.ingestion.extraction.ocr import OcrBudget
 
 
 def test_sync_debits_ocr_pages(session):
@@ -36,7 +36,7 @@ def test_monthly_budget_fails_document_and_continues(session, monkeypatch):
 
 def test_scheduler_retries_ocr_before_freshness(session, settings):
     now = datetime.now(UTC)
-    source, folder = create_workspace(session, last_synced_at=now)
+    _source, folder = create_workspace(session, last_synced_at=now)
     session.add(Document(organization_id=folder.organization_id,workspace_folder_id=folder.id,
         external_file_id="scan",name="scan.pdf",mime_type="application/pdf",source_url="https://example.test",
         index_status="failed",error_code="ocr_budget_exceeded",content_hash=""))

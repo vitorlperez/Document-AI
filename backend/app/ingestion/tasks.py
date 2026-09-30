@@ -16,13 +16,13 @@ from app.core.config import Settings, get_settings
 from app.core.database import build_engine, build_session_factory
 from app.core.scoping import OrganizationScope
 from app.ingestion.extraction import eligible_mime_types
+from app.ingestion.extraction.cache import purge_cache
 from app.ingestion.extraction.mime import normalize_mime_type
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveryResult, IngestionService
 from app.integrations.errors import SourceRemoteUnauthorized
 from app.integrations.http import RemoteThrottled
 from app.integrations.models import DataSource
-from app.ingestion.extraction.cache import purge_cache
 from app.integrations.registry import IntegrationRegistry
 from app.knowledge.models import Document
 from app.knowledge.questions import AIProviderUnavailable, EmbeddingService, OpenAIQuestionProvider

@@ -22,7 +22,7 @@ def pages_from_docling(payload: dict, page_count: int) -> list[str]:
         for item in texts:
             text = item["text"]
             if not isinstance(text, str):
-                raise ValueError()
+                raise TypeError()
             for page in {int(p["page_no"]) for p in item["prov"]}:
                 if not 1 <= page <= page_count:
                     raise ValueError()

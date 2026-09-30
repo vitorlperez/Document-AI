@@ -6,7 +6,7 @@ from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 from app.ingestion.extraction import extract_blocks
 from app.ingestion.extraction.errors import ExtractionError
-from app.ingestion.extraction.ocr import OcrBudget
+from app.ingestion.extraction.ocr import OcrBudget, OcrBudgetExceeded
 
 PDF = "application/pdf"
 
@@ -81,7 +81,7 @@ def test_deadline_counts_as_budget() -> None:
     budget = OcrBudget(pages=100, deadline_seconds=10, monotonic=lambda: now[0])
     budget.reserve(1)
     now[0] = 11.0
-    with pytest.raises(Exception):
+    with pytest.raises(OcrBudgetExceeded):
         budget.reserve(1)
 
 

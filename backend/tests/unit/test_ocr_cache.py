@@ -7,10 +7,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.models import Base
+from app.ingestion import service  # noqa: F401 — registers referenced models
 from app.ingestion.extraction.cache import CachingOcr, purge_cache
 from app.ingestion.models import ExtractionCache
-from app.organizations.models import Organization
-from app.ingestion import service  # registers referenced models
 
 
 class Engine:

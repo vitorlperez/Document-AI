@@ -91,17 +91,17 @@ def build(out: Path):
     table_lines = [" | ".join(row) for row in TABLE]
     plain = [[*LOREM]]
     specs = {
-        "01": (plain, dict(dpi=200)),
-        "02": (plain, dict(dpi=100)),
-        "03": (plain, dict(dpi=200, rotate=2.0)),
-        "04": (plain, dict(dpi=200, noise=0.02)),
-        "05": ([ACCENTS], dict(dpi=200)),
-        "06": ([table_lines], dict(dpi=200)),
-        "07": ([[*LOREM, *ACCENTS[:2]]], dict(dpi=200, columns=2)),
-        "08": (plain, dict(dpi=200, size=18, serif=True)),
-        "10": ([CONTRACT], dict(dpi=200)),
-        "11": ([[f"Relatório interno - página {p}", *LOREM[:2], "Confidencial - uso interno"] for p in (1, 2)], dict(dpi=200)),
-        "12": ([[]], dict(dpi=100)),
+        "01": (plain, {'dpi': 200}),
+        "02": (plain, {'dpi': 100}),
+        "03": (plain, {'dpi': 200, 'rotate': 2.0}),
+        "04": (plain, {'dpi': 200, 'noise': 0.02}),
+        "05": ([ACCENTS], {'dpi': 200}),
+        "06": ([table_lines], {'dpi': 200}),
+        "07": ([[*LOREM, *ACCENTS[:2]]], {'dpi': 200, 'columns': 2}),
+        "08": (plain, {'dpi': 200, 'size': 18, 'serif': True}),
+        "10": ([CONTRACT], {'dpi': 200}),
+        "11": ([[f"Relatório interno - página {p}", *LOREM[:2], "Confidencial - uso interno"] for p in (1, 2)], {"dpi": 200}),
+        "12": ([[]], {'dpi': 100}),
     }
     truths = {}
     for name, (pages, options) in specs.items():
@@ -119,7 +119,7 @@ def build(out: Path):
     text_layer_page(writer, "Terceira pagina com texto digital")
     buffer = BytesIO(); writer.write(buffer)
     (out / "pdf" / "09.pdf").write_bytes(buffer.getvalue())
-    truths["09"] = "\f".join(["Primeira pagina com texto digital", "Página escaneada da avaliação técnica de órgãos.", "Terceira pagina com texto digital"])
+    truths["09"] = "Primeira pagina com texto digital\fPágina escaneada da avaliação técnica de órgãos.\fTerceira pagina com texto digital"
     for name, text in truths.items():
         (out / "truth" / f"{name}.txt").write_text(text, encoding="utf-8")
     questions = []

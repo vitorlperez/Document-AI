@@ -1,7 +1,7 @@
-from app.access.models import ApiKey  # noqa: F401
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+from app.access.models import ApiKey  # noqa: F401
 from app.audit_usage.models import AuditLog  # noqa: F401
 from app.core.config import get_settings
 from app.core.models import Base

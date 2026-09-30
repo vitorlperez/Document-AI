@@ -14,7 +14,6 @@ from app.ingestion.blocks import ExtractedBlock
 from app.ingestion.extraction import docx, pdf, presentation, spreadsheet, text
 from app.ingestion.extraction.errors import ExtractionError
 from app.ingestion.extraction.limits import MAX_DOCUMENT_CHARS, guard_size, guard_zip
-from app.knowledge.untrusted import strip_invisible
 from app.ingestion.extraction.mime import (
     DOCX,
     GOOGLE_DOC,
@@ -25,6 +24,7 @@ from app.ingestion.extraction.mime import (
     XLSX,
     normalize_mime_type,
 )
+from app.knowledge.untrusted import strip_invisible
 
 EXTRACTORS = {
     GOOGLE_DOC: text.google_doc_blocks,

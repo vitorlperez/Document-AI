@@ -17,8 +17,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.vector import EmbeddingVector
 from app.core.models import Base, CreatedAtMixin, UUIDPrimaryKeyMixin
+from app.core.vector import EmbeddingVector
 
 
 class Document(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):

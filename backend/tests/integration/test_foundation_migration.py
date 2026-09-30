@@ -117,7 +117,6 @@ def test_foundation_migration_applies_and_reverts_on_disposable_postgres(test_da
             "manual_sync_runs",
             "organizations",
             "workspace_folders",
-            "manual_sync_runs",
         }
         assert {foreign_key["referred_table"] for foreign_key in inspector.get_foreign_keys("documents")} == {
             "organizations",

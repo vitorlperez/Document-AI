@@ -21,8 +21,8 @@ from app.ingestion.service import (
 )
 from app.integrations.google_drive import GoogleAccessDenied
 from app.knowledge.agent import (
-    agent_service_from_settings,
     ConversationService,
+    agent_service_from_settings,
 )
 from app.knowledge.models import ConversationMessage
 from app.knowledge.presentation import (

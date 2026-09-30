@@ -41,18 +41,24 @@ jobs:
       - name: Install backend dependencies
         working-directory: backend
         run: python -m pip install -e ".[dev]"
+      - name: Lint backend (excluding recorded legacy files)
+        working-directory: backend
+        # These pre-existing files are outside feat/integracoes; keep new code under Ruff.
+        run: >-
+          ruff check . --extend-exclude
+          alembic/versions/20260912_0011_oauth_reauth_source.py,alembic/versions/20260913_0012_company_library.py,alembic/versions/20260915_0014_workos_session_logout.py,alembic/versions/20260923_0015_onedrive_delta_checkpoints.py,alembic/versions/20260923_0016_onedrive_account_binding.py,alembic/versions/20260928_0017_agent_conversations.py,alembic/versions/20260929_0018_manual_sync_runs.py,tests/unit/test_answer_blocks.py
       - name: Run backend tests
         working-directory: backend
         run: python -m pytest -q tests/unit tests/api
       - name: Check public OpenAPI contract
         working-directory: backend
         run: python scripts/export_openapi.py --check
-      - name: Run PostgreSQL integration tests
-        working-directory: backend
-        run: python -m pytest -q -m postgres tests/integration
       - name: Apply database migrations
         working-directory: backend
         run: alembic upgrade head
+      - name: Run PostgreSQL integration tests
+        working-directory: backend
+        run: python -m pytest -q -m postgres tests/integration
       - name: Verify a single migration head
         working-directory: backend
         run: |

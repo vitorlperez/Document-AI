@@ -1,6 +1,8 @@
 import pytest
+
 from app.ingestion.extraction.engines.cloud_api import FallbackOcr
-from app.ingestion.extraction.ocr import OcrError, OcrBudgetExceeded
+from app.ingestion.extraction.ocr import OcrBudgetExceeded, OcrError
+
 
 class Engine:
     name, version = "fake", "1"

@@ -31,7 +31,7 @@ def test_pgvector_expand_sql():
     result = subprocess.run(
         [sys.executable, '-m', 'alembic', 'upgrade', 'head', '--sql'],
         cwd=BACKEND_DIR, env=os.environ | {'DATABASE_URL': OFFLINE_DATABASE_URL},
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     )
     assert result.returncode == 0, result.stderr
     assert 'CREATE EXTENSION IF NOT EXISTS vector' in result.stdout
@@ -44,7 +44,7 @@ def test_access_migrations_generate_postgresql_sql():
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
         cwd=BACKEND_DIR, env=os.environ | {"DATABASE_URL": OFFLINE_DATABASE_URL},
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     )
     assert result.returncode == 0, result.stderr
     for table in ("api_keys", "organization_access_settings", "api_audit_events"):
@@ -81,11 +81,10 @@ def test_mcp_migration_allows_rebinding_a_revoked_user_on_sqlite():
     import importlib.util
 
     import pytest
-    from sqlalchemy import create_engine, text
-    from sqlalchemy.exc import IntegrityError
-
     from alembic.migration import MigrationContext
     from alembic.operations import Operations
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.exc import IntegrityError
 
     path = BACKEND_DIR / "alembic/versions/20260930_0025_mcp_connections.py"
     spec = importlib.util.spec_from_file_location("mcp_migration", path)

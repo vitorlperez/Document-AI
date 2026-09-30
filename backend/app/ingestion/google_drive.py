@@ -143,7 +143,7 @@ class GoogleDriveDocumentProvider:
                 cursor = self.cipher.decrypt_cursor(selection.encrypted_delta_link)
                 page = self._remote_call(
                     encrypted_credentials,
-                    lambda credentials: self.client.changes(
+                    lambda credentials, cursor=cursor: self.client.changes(
                         credentials=credentials, page_token=cursor
                     ),
                 )
@@ -175,7 +175,7 @@ class GoogleDriveDocumentProvider:
                 try:
                     remote_file = self._remote_call(
                         encrypted_credentials,
-                        lambda credentials: self.client.get_file(
+                        lambda credentials, file_id=file_id: self.client.get_file(
                             credentials=credentials, file_id=file_id
                         ),
                     )
@@ -234,7 +234,7 @@ class GoogleDriveDocumentProvider:
             if selection.kind == "folder":
                 found = self._remote_call(
                     encrypted_credentials,
-                    lambda credentials: self.client.list_folder_files(
+                    lambda credentials, selection=selection: self.client.list_folder_files(
                         credentials=credentials, root_folder_id=selection.external_folder_id
                     ),
                 )

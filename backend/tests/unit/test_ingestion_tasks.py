@@ -282,6 +282,6 @@ def test_remote_throttling_keeps_source_connected(monkeypatch, retries):
 
 def test_persistent_source_unauthorized_still_requires_reauth(monkeypatch):
     from app.integrations.errors import SourceRemoteUnauthorized
-    result, session, failed, released, source = _run_remote_fault(monkeypatch, SourceRemoteUnauthorized(), 0)
+    result, _session, failed, released, source = _run_remote_fault(monkeypatch, SourceRemoteUnauthorized(), 0)
     assert result.successful() and source.status == "reauth_required"
     assert failed[0][1] == "source_reauth_required" and not released

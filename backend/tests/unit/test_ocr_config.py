@@ -1,8 +1,9 @@
 import pytest
 from pydantic import ValidationError
+
+from app.audit_usage.service import MONTHLY_LIMITS
 from app.core.config import Settings
 from app.ingestion.extraction.engines import build_ocr
-from app.audit_usage.service import MONTHLY_LIMITS
 
 DB = "postgresql+psycopg://u:p@localhost/db"
 
