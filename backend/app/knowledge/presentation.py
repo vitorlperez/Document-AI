@@ -24,6 +24,8 @@ _SOURCE_ONLY_LINE = re.compile(
     r"\s*(?:[-*]\s*)?(?:(?:fonte|fontes|source|sources|link|links|url)\s*[:\-]|\[\d+\]:)\s*[.,;:!?()\[\]\s]*",
     re.IGNORECASE,
 )
+# Links may already be stripped upstream, leaving "Fonte: <label>"; the interface builds that block.
+_SOURCE_LABEL_LINE = re.compile(r"\s*(?:[-*]\s*)?(?:fontes?|sources?)\s*:[^\n]*", re.IGNORECASE)
 _PROVIDER_URL = re.compile(
     r"\s*\(\s*[a-z][a-z0-9_]{1,40}\s*:\s*(?:https?://|www\.)[^)\n]*\)",
     re.IGNORECASE,
@@ -86,7 +88,9 @@ def answer_without_source_links(value: str | None) -> str | None:
     answer = re.sub(r"[ \t]+([,.;:!?])", r"\1", answer)
     answer = re.sub(r"[ \t]{2,}", " ", answer)
     answer = "\n".join(
-        line for line in answer.splitlines() if not _SOURCE_ONLY_LINE.fullmatch(line)
+        line
+        for line in answer.splitlines()
+        if not _SOURCE_ONLY_LINE.fullmatch(line) and not _SOURCE_LABEL_LINE.fullmatch(line)
     )
     # ":::" closes a presentation block (see ANSWER_FORMAT_GUIDANCE); keep it.
     answer = re.sub(r"(?m)^\s*(?!:::\s*$)[.,;:!?]+\s*$", "", answer)
