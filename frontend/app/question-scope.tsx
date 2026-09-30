@@ -31,6 +31,7 @@ export function QuestionScopePicker({ all, providers, contexts, loading, disable
   const available = [...new Set(contexts.filter((item) => item.query_status === "ready" || item.query_status === "no_compatible_embeddings").map((item) => providerKey(item.source_provider)))].sort((a, b) => toolLabel(a).localeCompare(toolLabel(b), "pt-BR"));
   const selected = contexts.filter((item) => all || providers.includes(providerKey(item.source_provider)));
   const ready = selected.filter(contextReady).length;
+  const readyTools = new Set(selected.filter(contextReady).map((item) => providerKey(item.source_provider))).size;
   const pending = selected.length - ready;
   const summary = all ? "Todas as ferramentas" : providers.length ? providers.map(toolLabel).join(", ") : "Escolha uma ferramenta";
   return <div ref={root} className="question-scope">
@@ -42,7 +43,7 @@ export function QuestionScopePicker({ all, providers, contexts, loading, disable
       {available.map((item) => <button type="button" key={item} className="question-scope-option" aria-pressed={!all && providers.includes(item)} onClick={() => onChange(false, all ? [item] : providers.includes(item) ? providers.filter((value) => value !== item) : [...providers, item])}><span className="question-scope-check">{!all && providers.includes(item) && <Check size={15} />}</span>{toolLabel(item)}</button>)}
       {available.length === 0 && <p className="question-scope-empty">Nenhuma ferramenta com conteúdo indexado.</p>}
     </div>}
-    <span className="question-scope-count" aria-live="polite">{ready} {ready === 1 ? "pasta disponível" : "pastas disponíveis"}</span>
+    <span className="question-scope-count" aria-live="polite">{readyTools} {readyTools === 1 ? "ferramenta disponível" : "ferramentas disponíveis"}</span>
     {error && <div role="alert" className="question-scope-warning">{error} <button type="button" onClick={onRetry}>Tentar novamente</button></div>}
     {!loading && !error && (ready === 0 || pending > 0) && <p className="question-scope-warning">{ready === 0 ? "Ainda não há conteúdo pronto para perguntas nesta seleção." : `Cobertura parcial: ${pending} ${pending === 1 ? "pasta indisponível" : "pastas indisponíveis"}.`}</p>}
   </div>;
