@@ -79,3 +79,15 @@ def test_oversized_and_zip_bomb_inputs_fail_with_a_code() -> None:
 def test_rows_over_the_cap_are_truncated_with_a_citable_notice() -> None:
     rows = [["id"]] + [[i] for i in range(5_005)]
     assert "Conteúdo truncado" in rows_to_blocks("S", rows)[-1].text
+
+
+def test_five_thousand_rows_stay_inside_document_text_budget():
+    from app.ingestion.extraction import sanitize_blocks
+    from app.ingestion.extraction.limits import MAX_DOCUMENT_CHARS
+
+    rows = [["Cliente", "Valor", "Descrição"]] + [
+        [f"Cliente {i}", i, "Licença anual"] for i in range(5000)
+    ]
+    blocks = sanitize_blocks(rows_to_blocks("Contratos", rows))
+    assert sum(len(b.text) for b in blocks) <= MAX_DOCUMENT_CHARS
+    assert len(blocks) == 200

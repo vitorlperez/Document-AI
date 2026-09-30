@@ -328,8 +328,9 @@ def test_provider_extracts_pdf_text(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakePdfReader:
         def __init__(self) -> None:
             self.pages = [Page()]
+            self.is_encrypted = False
 
-    monkeypatch.setattr("app.ingestion.google_drive.PdfReader", lambda _: FakePdfReader())
+    monkeypatch.setattr("app.ingestion.extraction.pdf.PdfReader", lambda _: FakePdfReader())
     client = FakeGoogleDriveClient([remote_file("report", PDF)], {"report": b"not-real-pdf"})
     cipher, credentials = encrypted_credentials()
 

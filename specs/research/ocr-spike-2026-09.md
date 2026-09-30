@@ -16,7 +16,7 @@ POST `/v1/convert/source`, JSON:
 {"sources":[{"kind":"file","filename":"clean.pdf","base64_string":"<PDF base64>"}],"options":{"to_formats":["json","text"],"do_ocr":true,"force_ocr":true,"ocr_preset":"tesseract","ocr_lang":["por","eng"],"do_table_structure":false,"document_timeout":180}}
 ```
 
-Resposta: `status`, `errors`, `processing_time`, `document`. Texto completo em `document.text_content`. Texto por página: `document.json_content.texts[*].text` e cada item `prov[*].page_no` (1-based), **não** separar `text_content` por form-feed. `json_content.pages` contém metadados por página. Tabelas usam `tables[*].data.table_cells[*].text`; preservar provenance ao extraí-las, sem depender só de `texts`. A fixture `backend/tests/fixtures/ocr_pt/docling_serve_response.json` é resposta real do PDF sintético de 3 páginas, sem dados de cliente. Engine/schema local: `DoclingDocument` 1.10.0.
+Resposta: `status`, `errors`, `processing_time`, `document`. Texto completo em `document.text_content`. Texto por página: `document.json_content.texts[*].text` e cada item `prov[*].page_no` (1-based), **não** separar `text_content` por form-feed. `json_content.pages` contém metadados por página. O corpus não contém tabela; F4 deve validar a representação de `tables` com fixture real antes de suportar tabelas OCR, preservando provenance. A fixture `backend/tests/fixtures/ocr_pt/docling_serve_response.json` é resposta real do PDF sintético de 3 páginas, sem dados de cliente. Engine/schema local: `DoclingDocument` 1.10.0.
 
 ## Corpus e medidas
 
@@ -41,6 +41,12 @@ PDF protegido e PDF corrompido: **HTTP 200, status="failure", errors[0].category
 Manter sidecar como candidato; não mudar D3 para API pelo desempenho local observado (<20 s/pág). **Gate definitivo pendente:** repetir corpus e medir p95/RSS em Railway 1 vCPU ou Oracle ARM, incluindo 50 páginas e prazo do job. RSS próximo de 1,8 GiB pode inviabilizar o plano pequeno. API externa continua condicionada a consentimento/DPA e escolha do dono; sem extrapolar esta medição para produção. Orçamento de páginas, cache e deadline da F4 continuam obrigatórios.
 
 ## Reprodução
+
+```sh
+docker run -d --name integracoes-docling-spike --cpus=1 -p 127.0.0.1:55019:5001 quay.io/docling-project/docling-serve-cpu:v1.35.0
+# Instalar por.traineddata no container em /usr/share/tesseract/tessdata antes da conversão.
+# Ao terminar: docker stop integracoes-docling-spike && docker rm integracoes-docling-spike
+```
 
 Imagem pinada; adicionar português antes do start/conversão; gerar imagens/PDF com Pillow, enviar payload acima por httpx com timeout 240 s, observar `/proc/1/status` e `/sys/fs/cgroup/memory.peak`. Script do ensaio, autocontido (deps de pesquisa Pillow/httpx/pypdf, sem produção):
 

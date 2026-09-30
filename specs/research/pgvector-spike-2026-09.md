@@ -19,6 +19,11 @@ Receita de registro: criar extensão em conexão inicial, descartar pool (`engin
 
 ## PoC reproduzível
 
+```sh
+docker run -d --name integracoes-pgvector-spike -e POSTGRES_PASSWORD=spike-local -p 127.0.0.1:55439:5432 pgvector/pgvector:0.8.2-pg16
+# Ao terminar: docker stop integracoes-pgvector-spike && docker rm integracoes-pgvector-spike
+```
+
 Credencial abaixo é fixa e exclusiva do container descartável local do spike. Nunca usar em ambientes reais.
 
 ```python

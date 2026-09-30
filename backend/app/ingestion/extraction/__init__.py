@@ -1,10 +1,13 @@
 """Bytes to located text blocks; one registry defines supported formats."""
 
 import csv
+from xml.etree.ElementTree import ParseError
 from zipfile import BadZipFile
 
 from docx.opc.exceptions import PackageNotFoundError
+from lxml.etree import XMLSyntaxError
 from openpyxl.utils.exceptions import InvalidFileException
+from pptx.exc import PackageNotFoundError as PptxPackageNotFoundError
 from pypdf.errors import PdfReadError
 
 from app.ingestion.blocks import ExtractedBlock
@@ -39,7 +42,9 @@ BASE_MIME_TYPES = frozenset({GOOGLE_DOC, PDF, DOCX, "text/markdown"})
 
 
 def eligible_mime_types(settings) -> frozenset[str]:
-    return ELIGIBLE_MIME_TYPES if settings.new_formats_enabled else BASE_MIME_TYPES
+    return (
+        ELIGIBLE_MIME_TYPES if getattr(settings, "new_formats_enabled", False) else BASE_MIME_TYPES
+    )
 
 
 def extract_blocks(
@@ -57,6 +62,9 @@ def extract_blocks(
     except ExtractionError:
         raise
     except (
+        XMLSyntaxError,
+        ParseError,
+        PptxPackageNotFoundError,
         BadZipFile,
         PackageNotFoundError,
         PdfReadError,
