@@ -67,12 +67,13 @@ class GoogleDriveDocumentProvider:
         encrypted_credentials: str,
         selections: list[WorkspaceFolderSelection],
         force_file_ids: set[str] | None = None,
+        force_full: bool = False,
     ) -> DiscoveryResult:
         self._folder_catalog = None
         links: dict[UUID, str | None] = {}
         # The first run (or a newly added selection) takes a complete snapshot.
         # Capture cursors first so edits during enumeration are picked up next run.
-        if any(not selection.encrypted_delta_link for selection in selections):
+        if force_full or any(not selection.encrypted_delta_link for selection in selections):
             for selection in selections:
                 links[selection.id] = self._remote_call(
                     encrypted_credentials,

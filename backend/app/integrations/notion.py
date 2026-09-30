@@ -248,6 +248,7 @@ class NotionDocumentProvider:
         selections,
         known_documents: dict[str, tuple[datetime | None, str]] | None = None,
         force_file_ids: set[str] | None = None,
+        force_full: bool = False,
     ) -> DiscoveryResult:
         credentials = self.cipher.decrypt(encrypted_credentials or "")
         pages = {page.id: page for page in self.client.list_pages(credentials=credentials)}
@@ -263,7 +264,7 @@ class NotionDocumentProvider:
         from app.ingestion.service import DiscoveredDocument
         selected_pages = [pages[page_id] for page_id in sorted(selected_ids) if page_id in pages]
 
-        known_documents = known_documents or {}
+        known_documents = {} if force_full else (known_documents or {})
         known_ids = set(known_documents)
         changed_pages = [
             page

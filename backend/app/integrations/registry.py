@@ -34,11 +34,12 @@ class GoogleDriveProviderAdapter:
             ),
         )
 
-    def discover(self, *, encrypted_credentials, selections, force_file_ids=None):
+    def discover(self, *, encrypted_credentials, selections, force_file_ids=None, force_full=False):
         return self._provider.discover(
             encrypted_credentials=encrypted_credentials or "",
             selections=selections,
             force_file_ids=force_file_ids,
+            force_full=force_full,
         )
 
     def folders(self, *, encrypted_credentials):
@@ -69,12 +70,13 @@ class NotionProviderAdapter:
             CredentialCipher(key.get_secret_value() if key else None),
         )
 
-    def discover(self, *, encrypted_credentials, selections, known_documents=None, force_file_ids=None):
+    def discover(self, *, encrypted_credentials, selections, known_documents=None, force_file_ids=None, force_full=False):
         return self._provider.discover(
             encrypted_credentials=encrypted_credentials,
             selections=selections,
             known_documents=known_documents,
             force_file_ids=force_file_ids,
+            force_full=force_full,
         )
 
     def folders(self, *, encrypted_credentials):
@@ -109,11 +111,12 @@ class OneDriveProviderAdapter:
     def encrypt_delta_link(self, value: str) -> str:
         return self._provider.cipher.encrypt_cursor(value)
 
-    def discover(self, *, encrypted_credentials, selections, force_file_ids=None):
+    def discover(self, *, encrypted_credentials, selections, force_file_ids=None, force_full=False):
         return self._provider.discover(
             encrypted_credentials=encrypted_credentials,
             selections=selections,
             force_file_ids=force_file_ids,
+            force_full=force_full,
         )
 
     def folders(self, *, encrypted_credentials):

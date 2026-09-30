@@ -23,6 +23,8 @@ class SourceProvider(Protocol):
         *,
         encrypted_credentials: str | None,
         selections: list[WorkspaceFolderSelection],
+        force_file_ids: set[str] | None = None,
+        force_full: bool = False,
     ) -> list[DiscoveredDocument] | DiscoveryResult: ...
 
     def folders(self, *, encrypted_credentials: str | None): ...

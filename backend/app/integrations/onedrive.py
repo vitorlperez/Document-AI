@@ -452,6 +452,7 @@ class OneDriveDocumentProvider:
         encrypted_credentials: str | None,
         selections: list[WorkspaceFolderSelection],
         force_file_ids: set[str] | None = None,
+        force_full: bool = False,
     ) -> DiscoveryResult:
         credentials = self._credentials(encrypted_credentials)
         changes: dict[str, dict[str, Any]] = {}
@@ -462,7 +463,7 @@ class OneDriveDocumentProvider:
             if any(item.kind == "root_files" for item in selections)
             else None
         )
-        fresh_snapshot_required = False
+        fresh_snapshot_required = force_full
         delta_expired = False
         if not fresh_snapshot_required:
             try:

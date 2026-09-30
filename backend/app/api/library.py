@@ -2,14 +2,21 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.auth import current_user, database_session
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
-from app.ingestion.service import SyncAccessDenied
-from app.library.models import LibraryNode
+from app.ingestion.service import (
+    IngestionService,
+    ManagedDocumentNotFound,
+    SyncAccessDenied,
+    SyncAlreadyActive,
+)
+from app.library.manual_sync import request_run, serialize_run
+from app.library.models import LibraryNode, ManualSyncRun
 from app.library.service import PAGE_SIZE_MAX, IndexedDocumentProvenance, LibraryService
 
 router = APIRouter(tags=["library"])
@@ -24,6 +31,7 @@ def _node(
         "source_id": str(node.source_id),
         **({"source_provider": source_provider} if node.kind == "source" else {}),
         "kind": node.kind,
+        "external_id": node.external_id,
         "name": node.name,
         "mime_type": node.mime_type,
         "source_url": node.source_url,
@@ -177,3 +185,110 @@ def library_children(
         "total": result.total,
         "pages": result.pages,
     }
+
+
+def _documents_by_workspace(documents: list[IndexedDocumentProvenance]) -> dict[UUID, list[UUID]]:
+    grouped: dict[UUID, list[UUID]] = {}
+    for item in documents:
+        grouped.setdefault(item.workspace_folder_id, []).append(item.document_id)
+    return grouped
+
+
+@router.post("/library/nodes/{node_id}/reprocess", status_code=status.HTTP_202_ACCEPTED)
+def reprocess_library_folder(
+    node_id: UUID,
+    organization_id: UUID,
+    request: Request,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> dict[str, object]:
+    """Request full discovery and forced recursive reprocessing of a folder or integration."""
+    try:
+        scope = OrganizationScope(organization_id)
+        run, jobs = request_run(session, scope=scope, user=user, node_id=node_id)
+        documents = LibraryService(session).indexed_documents_under(scope=scope, user_id=user.id, node_id=node_id, allow_source=True)
+        # Preserve the existing observable invalidation; the worker also forces
+        # all new and previously failed files from full remote discovery.
+        from app.knowledge.models import Document
+        for reference in documents:
+            session.get(Document, reference.document_id).content_hash = ""
+        session.commit()
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    except ManagedDocumentNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="document not found") from error
+    except SyncAlreadyActive as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="workspace sync already active") from error
+    _dispatch_manual_jobs(request=request, session=session, jobs=jobs)
+    return {"documents": len(documents), "run_id": str(run.id), "job_ids": [str(job.id) for job in jobs]}
+
+
+@router.delete("/library/nodes/{node_id}/index")
+def remove_library_folder_from_index(
+    node_id: UUID,
+    organization_id: UUID,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> dict[str, int]:
+    """Remove every indexed file below a folder from the local index; the source is untouched."""
+    try:
+        scope = OrganizationScope(organization_id)
+        library = LibraryService(session)
+        ingestion = IngestionService(session)
+        documents = library.indexed_documents_under(scope=scope, user_id=user.id, node_id=node_id)
+        for workspace_folder_id, document_ids in _documents_by_workspace(documents).items():
+            for document_id in document_ids:
+                removed = ingestion.remove_indexed_document(
+                    scope=scope, user_id=user.id, workspace_folder_id=workspace_folder_id, document_id=document_id
+                )
+                library.remove_file_if_unindexed(
+                    scope=scope, source_id=removed.source_id, external_file_id=removed.external_file_id
+                )
+        session.commit()
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    except ManagedDocumentNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="document not found") from error
+    except SyncAlreadyActive as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="workspace sync already active") from error
+    return {"documents": len(documents)}
+
+
+@router.get("/library/manual-syncs")
+def manual_sync_history(organization_id: UUID, user: User = Depends(current_user),
+                        session: Session = Depends(database_session)):
+    scope = OrganizationScope(organization_id)
+    try:
+        LibraryService(session).require_member(scope=scope, user_id=user.id)
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=403, detail="not allowed") from error
+    runs = session.scalars(select(ManualSyncRun).where(ManualSyncRun.organization_id == organization_id)
+                          .order_by(ManualSyncRun.created_at.desc(), ManualSyncRun.id.desc()).limit(100))
+    return {"items": [serialize_run(run) for run in runs]}
+
+
+@router.post("/library/workspaces/{workspace_id}/reprocess", status_code=202)
+def reprocess_library_workspace(workspace_id: UUID, organization_id: UUID, request: Request,
+                                user: User = Depends(current_user), session: Session = Depends(database_session)):
+    try:
+        run, jobs = request_run(session, scope=OrganizationScope(organization_id), user=user, workspace_id=workspace_id)
+        session.commit()
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=403, detail="not allowed") from error
+    except SyncAlreadyActive as error:
+        raise HTTPException(status_code=409, detail="workspace sync already active") from error
+    _dispatch_manual_jobs(request=request, session=session, jobs=jobs)
+    return {"run_id": str(run.id), "job_id": str(jobs[0].id), "status": "queued"}
+
+
+def _dispatch_manual_jobs(*, request: Request, session: Session, jobs):
+    queue_failed = False
+    for job in jobs:
+        try:
+            request.app.state.ingestion_dispatcher.dispatch(job_id=job.id)
+        except RuntimeError:
+            IngestionService(session).fail(job_id=job.id, error_code="sync_queue_unavailable")
+            queue_failed = True
+    if queue_failed:
+        session.commit()
+        raise HTTPException(status_code=503, detail="sync queue unavailable; consult synchronization history")

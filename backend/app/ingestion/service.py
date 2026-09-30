@@ -286,6 +286,36 @@ class IngestionService:
         self.session.flush()
         return self.enqueue(scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id)
 
+    def request_documents_reprocess(
+        self,
+        *,
+        scope: OrganizationScope,
+        user_id: UUID,
+        workspace_folder_id: UUID,
+        document_ids: list[UUID],
+    ) -> ProcessingJob:
+        """Mark several documents of one workspace stale and queue a single sync."""
+        managed = [
+            self._managed_document(
+                scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id, document_id=document_id
+            )
+            for document_id in document_ids
+        ]
+        self._require_no_active_job(scope=scope, workspace_folder_id=workspace_folder_id)
+        for document, _folder in managed:
+            document.content_hash = ""
+            self.session.add(
+                AuditLog(
+                    organization_id=scope.organization_id,
+                    actor_user_id=user_id,
+                    action="document_index.reprocess_requested",
+                    target_type="document",
+                    target_id=document.id,
+                )
+            )
+        self.session.flush()
+        return self.enqueue(scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id)
+
     def remove_workspace(
         self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID
     ) -> RemovedWorkspace:
@@ -392,6 +422,8 @@ class IngestionService:
         if not self._has_indexed_documents(folder):
             folder.status = ProcessingJobStatus.SYNCING.value
         self.session.flush()
+        from app.library.manual_sync import update_progress
+        update_progress(self.session, job)
         return job
 
     def reconcile(
@@ -416,6 +448,7 @@ class IngestionService:
         run_token: str | None,
         documents: list[DiscoveredDocument] | DiscoveryResult,
         finalize: bool = True,
+        manual_folders=(),
     ) -> ProcessingJob | None:
         """Persist a discovered snapshot only while this worker owns the job."""
         if run_token is None:
@@ -430,6 +463,9 @@ class IngestionService:
             else DiscoveryResult(documents=documents)
         )
         current_documents = discovery.documents
+        from app.library.manual_sync import scoped_documents, update_progress
+        manual_documents = scoped_documents(self.session, job, current_documents, manual_folders)
+        manual_ids = {item.external_file_id for item in manual_documents} if job.manual_run_id else set()
         if discovery.full_snapshot:
             seen_file_ids = {document.external_file_id for document in current_documents}
             # A full snapshot may safely remove any document missing from scope.
@@ -474,8 +510,14 @@ class IngestionService:
                 )
                 failures += 1
                 continue
-            self._upsert_indexed(job, discovered, indexed_at=now)
+            self._upsert_indexed(job, discovered, indexed_at=now, force=discovered.external_file_id in manual_ids)
 
+        if job.manual_run_id:
+            update_progress(self.session, job, total=len(manual_documents), processed=len(manual_documents),
+                outcomes=[{"external_id": item.external_file_id, "name": item.name,
+                           "processed": True, "error_code": item.error_code or
+                           ("empty_extracted_text" if item.mime_type in ELIGIBLE_MIME_TYPES and not (item.text or "").strip() else None)}
+                          for item in manual_documents])
         if finalize:
             return self.finalize_reconciliation(
                 job_id=job.id,
@@ -510,6 +552,8 @@ class IngestionService:
         folder.status = job.status.value
         folder.last_synced_at = final_time
         self.session.flush()
+        from app.library.manual_sync import update_progress
+        update_progress(self.session, job)
         return job
 
     def has_failed_documents(self, *, organization_id: UUID, workspace_folder_id: UUID) -> bool:
@@ -540,6 +584,8 @@ class IngestionService:
         folder.status = job.status.value
         folder.last_synced_at = completed_at
         self.session.flush()
+        from app.library.manual_sync import update_progress
+        update_progress(self.session, job)
         return job
 
     def fail(
@@ -565,6 +611,8 @@ class IngestionService:
             else ProcessingJobStatus.FAILED.value
         )
         self.session.flush()
+        from app.library.manual_sync import update_progress
+        update_progress(self.session, job)
         return job
 
     def release_for_retry(self, *, job_id: UUID, expected_run_token: str) -> ProcessingJob | None:
@@ -577,6 +625,8 @@ class IngestionService:
         if not self._has_indexed_documents(folder):
             folder.status = ProcessingJobStatus.QUEUED.value
         self.session.flush()
+        from app.library.manual_sync import update_progress
+        update_progress(self.session, job)
         return job
 
     def _has_indexed_documents(self, folder: WorkspaceFolder) -> bool:
@@ -743,7 +793,7 @@ class IngestionService:
         document.error_code = error_code
 
     def _upsert_indexed(
-        self, job: ProcessingJob, discovered: DiscoveredDocument, *, indexed_at: datetime
+        self, job: ProcessingJob, discovered: DiscoveredDocument, *, indexed_at: datetime, force: bool = False
     ) -> None:
         assert discovered.text is not None
         content_hash = sha256(discovered.text.encode()).hexdigest()
@@ -772,7 +822,8 @@ class IngestionService:
             self.session.flush()
         else:
             unchanged = (
-                document.content_hash == content_hash
+                not force
+                and document.content_hash == content_hash
                 and document.processing_version == PROCESSING_VERSION
                 and document.index_status == "indexed"
             )

@@ -690,3 +690,29 @@ def test_google_expired_cursor_falls_back_to_snapshot_and_replaces_cursor() -> N
     assert result.full_snapshot is True
     assert result.delta_links == {scope.id: "initial-cursor"}
     assert [document.external_file_id for document in result.documents] == ["snapshot-item"]
+
+
+def test_google_manual_reprocess_forces_remote_read_without_delta_change_full_snapshot() -> None:
+    item = remote_file("manual", GOOGLE_DOC)
+
+    class Client(FakeGoogleDriveClient):
+        def changes(self, *, credentials: GoogleCredentials, page_token: str) -> GoogleChangesPage:
+            return GoogleChangesPage(changes=[], new_start_page_token="next")
+
+        def get_file(self, *, credentials: GoogleCredentials, file_id: str) -> RemoteFile | None:
+            assert file_id == "manual"
+            return item
+
+    client = Client([item], {"manual": b"Reprocessed text"})
+    cipher, credentials = encrypted_credentials()
+    scope = selection("all_accessible")
+    scope.encrypted_delta_link = cipher.encrypt_cursor("previous")
+
+    result = GoogleDriveDocumentProvider(client, cipher).discover(
+        encrypted_credentials=credentials,
+        selections=[scope],
+        force_full=True,
+    )
+
+    assert [document.external_file_id for document in result.documents] == ["manual"]
+    assert client.read_calls == ["manual"]

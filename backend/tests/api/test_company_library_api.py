@@ -11,10 +11,12 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.config import Settings
 from app.core.models import Base
+from app.core.scoping import OrganizationScope
 from app.identity.auth import VerifiedIdentity
 from app.identity.models import User
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveredDocument
+from app.integrations.google_drive import RemoteFolder
 from app.integrations.models import DataSource
 from app.knowledge.models import Document
 from app.library.models import LibraryNode
@@ -89,6 +91,7 @@ def test_company_library_is_member_scoped_and_nodes_use_uuids(api: tuple[TestCli
             "parent_id": root["id"],
             "source_id": source_id,
             "kind": "file",
+            "external_id": children.json()["items"][0]["external_id"],
             "name": "Brief.pdf",
             "mime_type": "application/pdf",
             "source_url": "https://drive.example.test/brief",
@@ -184,3 +187,146 @@ def test_member_can_search_library_names_and_see_own_sync_phases(api: tuple[Test
     own_empty = client.get(f"/library/syncs?organization_id={outsider_org}")
     assert forbidden.status_code == 403 and "Brief.pdf" not in forbidden.text
     assert own_empty.status_code == 200 and own_empty.json()["items"] == []
+
+
+def _nest_file_under_folder(factory: sessionmaker[Session], organization: str, source_id: str) -> str:
+    with factory() as session:
+        root = session.query(LibraryNode).filter_by(kind="source").one()
+        outer = LibraryNode(organization_id=UUID(organization), source_id=UUID(source_id), parent_id=root.id, external_id="outer", kind="folder", name="Outer")
+        session.add(outer)
+        session.flush()
+        inner = LibraryNode(organization_id=UUID(organization), source_id=UUID(source_id), parent_id=outer.id, external_id="inner", kind="folder", name="Inner")
+        session.add(inner)
+        session.flush()
+        session.query(LibraryNode).filter_by(kind="file", external_id="brief").one().parent_id = inner.id
+        session.commit()
+        return str(outer.id)
+
+
+def test_admin_can_reprocess_and_remove_a_library_folder(api: tuple[TestClient, sessionmaker[Session]]) -> None:
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = seed_library(factory, organization)
+    outer_id = _nest_file_under_folder(factory, organization, source_id)
+    dispatched: list[UUID] = []
+    client.app.state.ingestion_dispatcher = type("Dispatcher", (), {"dispatch": lambda self, job_id: dispatched.append(job_id)})()
+
+    reprocess = client.post(f"/library/nodes/{outer_id}/reprocess?organization_id={organization}")
+    assert reprocess.status_code == 202
+    assert reprocess.json()["documents"] == 1 and len(reprocess.json()["job_ids"]) == 1
+    assert len(dispatched) == 1
+    with factory() as session:
+        assert session.query(Document).one().content_hash == ""
+        session.query(ProcessingJob).update({"status": ProcessingJobStatus.READY})
+        session.commit()
+
+    removed = client.delete(f"/library/nodes/{outer_id}/index?organization_id={organization}")
+    assert removed.status_code == 200 and removed.json() == {"documents": 1}
+    with factory() as session:
+        assert session.query(Document).count() == 0
+
+    file_node = client.post(f"/library/nodes/{source_id}/reprocess?organization_id={organization}")
+    assert file_node.status_code == 403
+
+
+@pytest.mark.parametrize("kind", ["folder", "source"])
+def test_manual_recursive_run_persists_scope_progress_and_failures(api, kind):
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source = seed_library(factory, organization)
+    outer = _nest_file_under_folder(factory, organization, source)
+    root = client.get(f"/library?organization_id={organization}").json()["items"][0]
+    node_id = outer if kind == "folder" else root["id"]
+    dispatched = []
+    client.app.state.ingestion_dispatcher = type("Dispatcher", (), {"dispatch": lambda self, job_id: dispatched.append(job_id)})()
+    response = client.post(f"/library/nodes/{node_id}/reprocess?organization_id={organization}")
+    assert response.status_code == 202
+    run_id = response.json()["run_id"]
+    history = client.get(f"/library/manual-syncs?organization_id={organization}").json()["items"][0]
+    assert history["id"] == run_id and history["scope_kind"] == kind
+    assert history["scope_name"] == ("Outer" if kind == "folder" else "Google Drive")
+    assert history["triggered_by"] == "member@example.test" and history["status"] == "queued"
+    from app.ingestion.service import IngestionService
+    with factory() as session:
+        service = IngestionService(session)
+        job = service.claim(job_id=dispatched[0])
+        assert str(job.manual_run_id) == run_id
+        session.commit()
+        assert client.get(f"/library/manual-syncs?organization_id={organization}").json()["items"][0]["status"] == "syncing"
+        service.apply_reconciliation(job_id=job.id, run_token=job.run_token, documents=[
+            DiscoveredDocument("brief", "Brief.pdf", "application/pdf", "", text="text", parent_ids=("inner",)),
+            DiscoveredDocument("new", "New.pdf", "application/pdf", "", error_code="download_failed", parent_ids=("new-inner",)),
+            DiscoveredDocument("outside", "Outside.pdf", "application/pdf", "", text="outside", parent_ids=("root",)),
+        ], manual_folders=[RemoteFolder("new-inner", "New Inner", ("inner",))])
+        session.commit()
+    history = client.get(f"/library/manual-syncs?organization_id={organization}").json()["items"][0]
+    assert history["status"] == "partial_failure"
+    assert history["total"] == history["processed"] == (2 if kind == "folder" else 3)
+    assert history["failed"] == 1 and history["failures"][0]["name"] == "New.pdf"
+    assert history["started_at"] and history["completed_at"]
+    login(client, "outsider")
+    assert client.get(f"/library/manual-syncs?organization_id={organization}").status_code == 403
+
+
+def test_manual_source_queues_every_workspace_and_rebuilds_unchanged_chunks(api):
+    from app.ingestion.service import IngestionService
+    from app.knowledge.models import DocumentChunk
+    from app.library.models import ManualSyncRun
+    client, factory = api
+    login(client)
+    organization = client.post('/organizations', json={'name': 'Acme'}).json()['id']
+    source = seed_library(factory, organization)
+    root = client.get(f'/library?organization_id={organization}').json()['items'][0]
+    with factory() as session:
+        folder = session.query(WorkspaceFolder).one()
+        service = IngestionService(session)
+        initial = service.enqueue(scope=OrganizationScope(UUID(organization)), user_id=session.query(User).one().id, workspace_folder_id=folder.id)
+        service.reconcile(job_id=initial.id, documents=[DiscoveredDocument('brief', 'Brief.pdf', 'application/pdf', '', text='identical text')])
+        chunk_id = session.query(DocumentChunk).one().id
+        other = WorkspaceFolder(organization_id=UUID(organization), source_id=UUID(source), external_folder_id='other', name='Other', uniform_access_confirmed=True, status='ready')
+        session.add(other)
+        session.commit()
+    client.app.state.ingestion_dispatcher = type('Dispatcher', (), {'dispatch': lambda self, job_id: None})()
+    response = client.post(f"/library/nodes/{root['id']}/reprocess?organization_id={organization}")
+    assert response.status_code == 202 and len(response.json()['job_ids']) == 2
+    with factory() as session:
+        service = IngestionService(session)
+        for job_id in response.json()['job_ids']:
+            job = service.claim(job_id=UUID(job_id))
+            # Restore the actual hash: explicit force must work independently of invalidation.
+            document = session.query(Document).filter_by(workspace_folder_id=job.workspace_folder_id).first()
+            if document:
+                from hashlib import sha256
+                document.content_hash = sha256(b'identical text').hexdigest()
+            service.apply_reconciliation(job_id=job.id, run_token=job.run_token, documents=[DiscoveredDocument('brief', 'Brief.pdf', 'application/pdf', '', text='identical text')])
+        session.commit()
+        assert chunk_id not in [item.id for item in session.query(DocumentChunk).all()]
+        run = session.get(ManualSyncRun, UUID(response.json()['run_id']))
+        assert run.status == 'ready'
+        for folder in session.query(WorkspaceFolder).all():
+            service.remove_workspace(scope=OrganizationScope(UUID(organization)), user_id=session.query(User).one().id, workspace_folder_id=folder.id)
+        session.commit()
+    history = client.get(f'/library/manual-syncs?organization_id={organization}').json()['items'][0]
+    assert history['status'] == 'ready' and history['total'] == history['processed'] == 1
+    assert len(history['tasks']) == 2
+
+
+def test_manual_queue_failure_is_persisted_and_active_run_cannot_be_reused(api):
+    client, factory = api
+    login(client)
+    organization = client.post('/organizations', json={'name': 'Acme'}).json()['id']
+    source = seed_library(factory, organization)
+    outer = _nest_file_under_folder(factory, organization, source)
+    class Dispatcher:
+        def dispatch(self, job_id):
+            raise RuntimeError('queue unavailable')
+    client.app.state.ingestion_dispatcher = Dispatcher()
+    assert client.post(f'/library/nodes/{outer}/reprocess?organization_id={organization}').status_code == 503
+    history = client.get(f'/library/manual-syncs?organization_id={organization}').json()['items'][0]
+    assert history['status'] == 'failed' and history['completed_at']
+    assert history['tasks'][0]['error_code'] == 'sync_queue_unavailable'
+    client.app.state.ingestion_dispatcher = type('Dispatcher', (), {'dispatch': lambda self, job_id: None})()
+    assert client.post(f'/library/nodes/{outer}/reprocess?organization_id={organization}').status_code == 202
+    assert client.post(f'/library/nodes/{outer}/reprocess?organization_id={organization}').status_code == 409

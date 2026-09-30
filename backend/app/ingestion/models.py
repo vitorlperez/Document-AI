@@ -37,6 +37,9 @@ class ProcessingJob(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         default=ProcessingJobStatus.QUEUED,
     )
     idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    manual_run_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("manual_sync_runs.id", ondelete="SET NULL"), index=True
+    )
     run_token: Mapped[str | None] = mapped_column(String(64))
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

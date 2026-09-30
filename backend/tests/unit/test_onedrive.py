@@ -631,3 +631,61 @@ def test_onedrive_manual_reprocess_forces_item_read_without_delta_change() -> No
 
     assert client.read_ids == ["manual-item"]
     assert [document.external_file_id for document in result.documents] == ["manual-item"]
+
+
+def test_onedrive_manual_reprocess_forces_item_read_without_delta_change_full_snapshot() -> None:
+    cipher = OneDriveCipher(Fernet.generate_key().decode())
+    credentials = OneDriveCredentials("access", "refresh", datetime.now(UTC) + timedelta(hours=1))
+    selection = type(
+        "Selection",
+        (),
+        {
+            "id": uuid4(),
+            "kind": "folder",
+            "external_folder_id": "folder-1",
+            "encrypted_delta_link": cipher.encrypt_cursor(
+                "https://graph.microsoft.com/v1.0/cursor/current"
+            ),
+        },
+    )()
+    item = {
+        "id": "manual-item",
+        "name": "manual.docx",
+        "file": {"mimeType": "application/vnd.google-apps.document"},
+        "parentReference": {"id": "folder-1"},
+        "lastModifiedDateTime": "2026-09-26T00:00:00Z",
+    }
+
+    class Client:
+        def __init__(self) -> None:
+            self.read_ids: list[str] = []
+
+        _external_id = staticmethod(MicrosoftGraphClient._external_id)
+        _parent_ids = staticmethod(MicrosoftGraphClient._parent_ids)
+
+        def delta(self, *, credentials, selection, cursor):
+            return DeltaPage(items=[], delta_link="https://graph.microsoft.com/v1.0/delta/next")
+
+        def list_files(self, *, credentials, selection):
+            return [item]
+
+        def read_file(self, *, credentials, item_id):
+            self.read_ids.append(item_id)
+            return b"reprocessed body"
+
+    class Cipher:
+        def decrypt_credentials(self, value: str) -> OneDriveCredentials:
+            return credentials
+
+        def decrypt_cursor(self, value: str) -> str:
+            return cipher.decrypt_cursor(value)
+
+    client = Client()
+    result = OneDriveDocumentProvider(client, Cipher()).discover(
+        encrypted_credentials="encrypted-credentials",
+        selections=[selection],
+        force_full=True,
+    )
+
+    assert client.read_ids == ["manual-item"]
+    assert [document.external_file_id for document in result.documents] == ["manual-item"]

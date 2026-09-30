@@ -302,6 +302,8 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                     for document in known_rows
                 }
                 discover_kwargs["known_documents"] = known_documents
+            if getattr(job, "manual_run_id", None):
+                discover_kwargs["force_full"] = True
             discovered_documents = provider.discover(**discover_kwargs)
             discovery = (
                 discovered_documents if isinstance(discovered_documents, DiscoveryResult) else None
@@ -311,6 +313,13 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             # of work. A failed projection retries the job and never leaves a
             # ready sync that cannot be browsed from the Company Library.
             source_folders = provider.folders(encrypted_credentials=source.encrypted_credentials)
+            if getattr(job, "manual_run_id", None):
+                from app.library.manual_sync import scoped_documents, update_progress
+                manual_documents = scoped_documents(session, job, document_results, source_folders)
+                update_progress(session, job, total=len(manual_documents), outcomes=[
+                    {"external_id": item.external_file_id, "name": item.name, "processed": False,
+                     "error_code": None} for item in manual_documents])
+                session.commit()
             session.refresh(source)
             if source.status != "connected":
                 service.fail(
@@ -322,6 +331,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 job_id=job.id,
                 run_token=run_token,
                 documents=discovered_documents,
+                manual_folders=source_folders,
                 finalize=False,
             )
             if projected_job is None:

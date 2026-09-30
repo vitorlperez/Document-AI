@@ -163,6 +163,36 @@ class LibraryService:
         )
         return BrowsePage(items=items, page=page, page_size=page_size, total=total)
 
+    def indexed_documents_under(
+        self, *, scope: OrganizationScope, user_id: UUID, node_id: UUID, allow_source: bool = False
+    ) -> list[IndexedDocumentProvenance]:
+        """Indexed documents of every file below one folder node (any depth)."""
+        self.require_member(scope=scope, user_id=user_id)
+        folder = self.session.scalar(
+            select(LibraryNode).where(
+                LibraryNode.id == node_id,
+                LibraryNode.organization_id == scope.organization_id,
+                LibraryNode.kind.in_(["folder", "source"] if allow_source else ["folder"]),
+            )
+        )
+        if folder is None:
+            raise SyncAccessDenied("company library node unavailable")
+        files: list[LibraryNode] = []
+        pending = [folder.id]
+        while pending:
+            children = list(
+                self.session.scalars(
+                    select(LibraryNode).where(
+                        LibraryNode.organization_id == scope.organization_id,
+                        LibraryNode.parent_id.in_(pending),
+                    )
+                )
+            )
+            files.extend(child for child in children if child.kind == "file")
+            pending = [child.id for child in children if child.kind == "folder"]
+        documents = self.documents_for_nodes(scope=scope, nodes=files)
+        return [reference for references in documents.values() for reference in references]
+
     def workspace_provenance(self, *, scope: OrganizationScope, node: LibraryNode) -> list[UUID]:
         """Return only sync-scope UUIDs that currently index this file.
 

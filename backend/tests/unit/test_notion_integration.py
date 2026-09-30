@@ -324,3 +324,33 @@ def test_notion_oauth_cannot_reconnect_a_google_source() -> None:
     finally:
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+def test_notion_manual_reprocess_forces_page_read_when_timestamp_is_unchanged_full_snapshot() -> None:
+    edited = datetime.now(UTC)
+
+    class Cipher:
+        def decrypt(self, value: str) -> GoogleCredentials:
+            return GoogleCredentials("token", None, None)
+
+    class Client:
+        def __init__(self) -> None:
+            self.read_ids: list[str] = []
+
+        def list_pages(self, *, credentials: GoogleCredentials) -> list[NotionPage]:
+            return [NotionPage("page", "Page", "", edited)]
+
+        def page_blocks(self, *, credentials: GoogleCredentials, page_id: str) -> list[dict[str, object]]:
+            self.read_ids.append(page_id)
+            return [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "body"}]}}]
+
+    client = Client()
+    discovery = NotionDocumentProvider(client, Cipher()).discover(
+        encrypted_credentials="encrypted",
+        selections=[type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()],
+        known_documents={"page": (edited, "indexed")},
+        force_full=True,
+    )
+
+    assert client.read_ids == ["page"]
+    assert [document.external_file_id for document in discovery.documents] == ["page"]
