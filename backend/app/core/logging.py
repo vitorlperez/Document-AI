@@ -77,6 +77,9 @@ class JsonFormatter(logging.Formatter):
     """Serialize approved operational fields without logging request content or secrets."""
 
     fields = (
+        "channel",
+        "tool",
+        "credential_id",
         "event",
         "request_id",
         "path",
