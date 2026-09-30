@@ -1,25 +1,19 @@
 """Google Drive discovery and text extraction behind the ingestion boundary."""
 
-import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
-from io import BytesIO
 from uuid import UUID
 from zipfile import BadZipFile
 
-from docx import Document as DocxDocument
 from docx.opc.exceptions import PackageNotFoundError
-from docx.oxml.table import CT_Tbl
-from docx.oxml.text.paragraph import CT_P
-from docx.table import Table
-from docx.text.paragraph import Paragraph
-from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.ingestion.extraction import BASE_MIME_TYPES, extract_blocks
+from app.ingestion.extraction.errors import ExtractionError
+from app.ingestion.extraction.mime import normalize_mime_type
 from app.ingestion.service import (
-    ELIGIBLE_MIME_TYPES,
     DiscoveredDocument,
     DiscoveryResult,
     ExtractedBlock,
@@ -291,18 +285,21 @@ class GoogleDriveDocumentProvider:
     def encrypt_delta_link(self, value: str) -> str:
         return self.cipher.encrypt_cursor(value)
 
+    eligible_mime_types = BASE_MIME_TYPES
+
     def _extract(
         self, *, encrypted_credentials: str, remote_file: RemoteFile
     ) -> DiscoveredDocument:
+        mime_type = normalize_mime_type(remote_file.name, remote_file.mime_type)
         base = {
             "external_file_id": remote_file.id,
             "name": remote_file.name,
-            "mime_type": remote_file.mime_type,
+            "mime_type": mime_type,
             "source_url": remote_file.source_url,
             "modified_at": remote_file.modified_at,
             "parent_ids": remote_file.parent_ids,
         }
-        if remote_file.mime_type not in ELIGIBLE_MIME_TYPES:
+        if mime_type not in self.eligible_mime_types:
             return DiscoveredDocument(**base)
         try:
             content = self._remote_call(
@@ -311,26 +308,18 @@ class GoogleDriveDocumentProvider:
                     credentials=credentials, remote_file=remote_file
                 ),
             )
-            blocks = _extract_blocks(remote_file.mime_type, content)
+            blocks = extract_blocks(mime_type, content)
         except (GoogleRemoteUnauthorized, SourceItemUnavailable):
             # A listing token can remain valid while one shared/export-restricted
             # file rejects its content request. Treat that as an item failure;
             # source-level authorization failures are still raised by discovery.
             return DiscoveredDocument(**base, error_code="source_file_unavailable")
+        except ExtractionError as error:
+            return DiscoveredDocument(**base, error_code=error.code)
         except (BadZipFile, PackageNotFoundError, PdfReadError, UnicodeDecodeError, ValueError):
             # Do not attach the remote body or exception to records/logs. The
             # document's explicit code is enough for an Admin to retry safely.
             return DiscoveredDocument(**base, error_code="text_extraction_failed")
-        # Google exports and PDF extractors can return NUL characters. PostgreSQL
-        # rejects them in text fields, which would otherwise fail the whole sync.
-        blocks = [
-            ExtractedBlock(
-                block.text.replace("\x00", ""),
-                page_number=block.page_number,
-                section_path=block.section_path.replace("\x00", "") if block.section_path else None,
-            )
-            for block in blocks
-        ]
         return DiscoveredDocument(**base, text="\n\n".join(block.text for block in blocks), blocks=tuple(blocks))
 
     @staticmethod
@@ -393,65 +382,12 @@ class GoogleDriveDocumentProvider:
 
 
 def _extract_blocks(mime_type: str, content: bytes) -> list[ExtractedBlock]:
-    if mime_type == "application/pdf":
-        return [
-            ExtractedBlock(page.extract_text() or "", page_number=index)
-            for index, page in enumerate(PdfReader(BytesIO(content)).pages, start=1)
-        ]
-    if mime_type == "application/vnd.google-apps.document":
-        return [ExtractedBlock(paragraph) for paragraph in content.decode("utf-8").splitlines()]
-    if mime_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-        docx = DocxDocument(BytesIO(content))
-        blocks: list[ExtractedBlock] = []
-        headings: list[tuple[int, str]] = []
-        for element in docx.element.body.iterchildren():
-            if isinstance(element, CT_P):
-                paragraph = Paragraph(element, docx)
-                if paragraph.style and paragraph.style.name.lower().startswith("heading") and paragraph.text.strip():
-                    level_match = re.search(r"(\d+)$", paragraph.style.name)
-                    level = int(level_match.group(1)) if level_match else 1
-                    headings = [(prior, title) for prior, title in headings if prior < level]
-                    headings.append((level, paragraph.text.strip()))
-                elif paragraph.text.strip():
-                    blocks.append(ExtractedBlock(paragraph.text, section_path=" › ".join(title for _, title in headings) or None))
-            elif isinstance(element, CT_Tbl):
-                table = Table(element, docx)
-                headers = [" ".join(cell.text.split()) for cell in table.rows[0].cells] if table.rows else []
-                for row in (table.rows[1:] if len(table.rows) > 1 else table.rows):
-                    cells = [" ".join(cell.text.split()) for cell in row.cells]
-                    if any(cells):
-                        row_text = " | ".join(
-                            f"{headers[index]}: {value}" if index < len(headers) and headers[index] else value
-                            for index, value in enumerate(cells)
-                        )
-                        blocks.append(ExtractedBlock(row_text, section_path=" › ".join(title for _, title in headings) or None))
-        return blocks
-    if mime_type == "text/markdown":
-        return _markdown_blocks(content.decode("utf-8"))
-    raise ValueError("unsupported file type")
+    return extract_blocks(mime_type, content)
 
 
 def _markdown_blocks(text: str) -> list[ExtractedBlock]:
-    blocks: list[ExtractedBlock] = []
-    headings: list[tuple[int, str]] = []
-    current: list[str] = []
-    for line in text.splitlines():
-        match = re.match(r"^(#{1,6})\s+(.+)$", line.strip())
-        if match:
-            if current:
-                blocks.append(ExtractedBlock("\n".join(current), section_path=" › ".join(name for _, name in headings)))
-                current = []
-            level, title = len(match.group(1)), match.group(2).strip()
-            headings = [(prior_level, name) for prior_level, name in headings if prior_level < level]
-            headings.append((level, title))
-        elif line.strip():
-            current.append(line)
-        elif current:
-            blocks.append(ExtractedBlock("\n".join(current), section_path=" › ".join(name for _, name in headings) or None))
-            current = []
-    if current:
-        blocks.append(ExtractedBlock("\n".join(current), section_path=" › ".join(name for _, name in headings) or None))
-    return blocks
+    from app.ingestion.extraction.text import markdown_blocks
+    return markdown_blocks(text)
 
 
 def _extract_text(mime_type: str, content: bytes) -> str:

@@ -1,10 +1,9 @@
 """Notion OAuth and API adapter."""
 
 import base64
-import secrets
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from urllib.parse import urlencode
 from uuid import UUID
 
@@ -14,14 +13,13 @@ from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
-from app.identity.auth import hash_secret
-from app.identity.models import UserSession
 from app.ingestion.service import DiscoveryResult
+from app.integrations.credentials import OAuthCredentials
 from app.integrations.errors import SourceItemUnavailable, SourceRemoteUnauthorized
-from app.integrations.google_drive import GoogleCredentials, RemoteFolder
+from app.integrations.google_drive import RemoteFolder
 from app.integrations.http import RemoteHttp
-from app.integrations.models import DataSource, OAuthConnectionState
-from app.organizations.models import Membership, MembershipRole
+from app.integrations.models import DataSource
+from app.integrations.oauth_base import OAuthConnectionServiceBase
 
 
 class NotionRemoteUnauthorized(SourceRemoteUnauthorized):
@@ -76,7 +74,7 @@ class NotionOAuthClient:
             }
         )
 
-    def exchange_code(self, *, code: str) -> GoogleCredentials:
+    def exchange_code(self, *, code: str) -> OAuthCredentials:
         self._configured()
         basic = base64.b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
         response = httpx.post(
@@ -89,9 +87,9 @@ class NotionOAuthClient:
             raise NotionOAuthInvalid("Notion authorization failed")
         response.raise_for_status()
         data = response.json()
-        return GoogleCredentials(access_token=str(data["access_token"]), refresh_token=None, expires_at=None)
+        return OAuthCredentials(access_token=str(data["access_token"]), refresh_token=None, expires_at=None)
 
-    def account_email(self, *, credentials: GoogleCredentials) -> str | None:
+    def account_email(self, *, credentials: OAuthCredentials) -> str | None:
         response = self._request("GET", "/v1/users/me", credentials=credentials)
         person = response.get("person") or {}
         email = person.get("email") if isinstance(person, dict) else None
@@ -103,7 +101,7 @@ class NotionOAuthClient:
             email = owner_person.get("email") if isinstance(owner_person, dict) else None
         return str(email).strip().lower() if isinstance(email, str) and email.strip() else None
 
-    def list_pages(self, *, credentials: GoogleCredentials) -> list[NotionPage]:
+    def list_pages(self, *, credentials: OAuthCredentials) -> list[NotionPage]:
         pages: list[NotionPage] = []
         cursor: str | None = None
         while True:
@@ -116,10 +114,10 @@ class NotionOAuthClient:
                 return pages
             cursor = str(data.get("next_cursor"))
 
-    def page_blocks(self, *, credentials: GoogleCredentials, page_id: str) -> list[dict[str, object]]:
+    def page_blocks(self, *, credentials: OAuthCredentials, page_id: str) -> list[dict[str, object]]:
         return self._children_tree(credentials=credentials, block_id=page_id)
 
-    def _children_tree(self, *, credentials: GoogleCredentials, block_id: str, depth: int = 0) -> list[dict[str, object]]:
+    def _children_tree(self, *, credentials: OAuthCredentials, block_id: str, depth: int = 0) -> list[dict[str, object]]:
         """Read a page's block tree, including toggles, columns and child pages.
 
         Notion pages often contain their useful text below a container block.
@@ -149,7 +147,7 @@ class NotionOAuthClient:
                 return blocks
             cursor = str(data.get("next_cursor"))
 
-    def _request(self, method: str, path: str, *, credentials: GoogleCredentials, **kwargs: object) -> dict[str, object]:
+    def _request(self, method: str, path: str, *, credentials: OAuthCredentials, **kwargs: object) -> dict[str, object]:
         headers = {"Authorization": f"Bearer {credentials.access_token}", "Notion-Version": "2022-06-28"}
         response = self.http.request(method, f"https://api.notion.com{path}", headers=headers, timeout=20, **kwargs)
         if response.status_code == 401:
@@ -174,14 +172,14 @@ class NotionOAuthClient:
         return NotionPage(str(item["id"]), title, str(item.get("url") or ""), datetime.fromisoformat(str(edited)) if edited else None)
 
 
-class NotionConnectionService:
-    def __init__(self, session: Session, cipher, client: NotionOAuthClient):
-        self.session, self.cipher, self.client = session, cipher, client
+class NotionConnectionService(OAuthConnectionServiceBase):
+    provider = "notion"
+    access_denied = NotionAccessDenied
+    invalid = NotionOAuthInvalid
 
-    def require_admin(self, *, scope: OrganizationScope, user_id: UUID) -> None:
-        member = self.session.scalar(select(Membership).where(Membership.organization_id == scope.organization_id, Membership.user_id == user_id, Membership.is_active.is_(True), Membership.role.in_([MembershipRole.OWNER, MembershipRole.ADMIN])))
-        if member is None:
-            raise NotionAccessDenied("integration access denied")
+    def __init__(self, session: Session, cipher, client: NotionOAuthClient):
+        super().__init__(session, cipher)
+        self.client = client
 
     def begin(self, *, scope: OrganizationScope, user_id: UUID, session_secret: str, source_id: UUID | None = None) -> str:
         self.require_admin(scope=scope, user_id=user_id)
@@ -193,17 +191,11 @@ class NotionConnectionService:
             ))
             if source is None:
                 raise NotionOAuthInvalid("Notion source is invalid")
-        raw = secrets.token_urlsafe(32)
-        self.session.add(OAuthConnectionState(organization_id=scope.organization_id, user_id=user_id, source_id=source_id, session_hash=hash_secret(session_secret), state_hash=hash_secret(raw), expires_at=datetime.now(UTC) + timedelta(minutes=10)))
-        self.session.flush()
+        raw = self._new_state(scope=scope, user_id=user_id, session_secret=session_secret, source_id=source_id)
         return self.client.authorization_url(state=raw)
 
     def complete(self, *, raw_state: str, code: str, session_secret: str) -> DataSource:
-        state = self.session.scalar(select(OAuthConnectionState).where(OAuthConnectionState.state_hash == hash_secret(raw_state), OAuthConnectionState.consumed_at.is_(None), OAuthConnectionState.expires_at > datetime.now(UTC)))
-        active_session = self.session.scalar(select(UserSession).where(UserSession.secret_hash == hash_secret(session_secret), UserSession.user_id == state.user_id if state else False, UserSession.revoked_at.is_(None), UserSession.expires_at > datetime.now(UTC))) if state else None
-        if state is None or state.session_hash != hash_secret(session_secret) or active_session is None:
-            raise NotionOAuthInvalid("OAuth state is invalid")
-        self.require_admin(scope=OrganizationScope(state.organization_id), user_id=state.user_id)
+        state = self._consume_state(raw_state=raw_state, session_secret=session_secret)
         credentials = self.client.exchange_code(code=code)
         account_email = self.client.account_email(credentials=credentials)
         source = self.session.scalar(select(DataSource).where(DataSource.id == state.source_id, DataSource.organization_id == state.organization_id, DataSource.provider == "notion")) if state.source_id else self.session.scalar(

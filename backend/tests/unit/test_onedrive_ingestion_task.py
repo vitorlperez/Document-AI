@@ -35,13 +35,15 @@ def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) ->
         encrypted_delta_link="old-cursor",
     )
     failed_document = SimpleNamespace(
-        external_file_id="failed-file", index_status="failed", content_hash=""
+        external_file_id="failed-file", index_status="failed", modified_at=None, content_hash=""
     )
     reprocess_document = SimpleNamespace(
-        external_file_id="manual-file", index_status="indexed", content_hash=""
+        external_file_id="manual-file", index_status="indexed",
+                modified_at=None, content_hash=""
     )
     clean_document = SimpleNamespace(
-        external_file_id="clean-file", index_status="indexed", content_hash="known-hash"
+        external_file_id="clean-file", index_status="indexed",
+                modified_at=None, content_hash="known-hash"
     )
     discovery = DiscoveryResult(
         documents=[],
@@ -121,7 +123,7 @@ def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) ->
         def __init__(self, _: object) -> None:
             return None
 
-        def get(self, name: str):
+        def get(self, name: str, **context):
             assert name == "onedrive"
             return provider
 

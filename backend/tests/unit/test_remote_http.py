@@ -123,3 +123,37 @@ def test_retry_after_is_not_capped_below_the_servers_requested_delay(monkeypatch
     script(monkeypatch, reply(429, {"Retry-After": "60"}), reply(200))
     assert http(clock).request("GET", URL).status_code == 200
     assert clock.slept == [60.0]
+
+
+def test_exhausted_429_still_blocks_sibling_requests(monkeypatch):
+    clock = Clock()
+    client = http(clock, policy=RetryPolicy(max_attempts=1))
+    script(monkeypatch, reply(429, {'Retry-After':'4'}), reply(200))
+    with pytest.raises(RemoteThrottled):
+        client.request('GET', URL)
+    assert client.request('GET',URL).status_code == 200
+    assert clock.slept == [4.0]
+
+
+def test_shared_gate_cannot_exceed_request_wait_budget(monkeypatch):
+    clock = Clock()
+    client = http(clock, policy=RetryPolicy(max_total_wait=5))
+    client._block_for(10)
+    calls = script(monkeypatch,reply(200))
+    with pytest.raises(RemoteThrottled):
+        client.request('GET',URL)
+    assert calls == [] and clock.slept == []
+
+
+def test_sibling_can_extend_a_gate_while_another_request_is_sleeping(monkeypatch):
+    clock = Clock()
+    client = http(clock)
+    client._block_for(2)
+    def sleep(seconds):
+        clock.sleep(seconds)
+        if len(clock.slept) == 1:
+            client._block_for(5)
+    client._sleep = sleep
+    script(monkeypatch,reply(200))
+    client.request('GET',URL)
+    assert clock.slept == [2.0,5.0]

@@ -62,20 +62,17 @@ class ScopeInput(BaseModel):
 
 
 def service(request: Request, session: Session) -> GoogleConnectionService:
-    key = request.app.state.settings.google_token_encryption_key
+    keys = request.app.state.settings.cipher_keys("google_drive")
     return GoogleConnectionService(
-        session, CredentialCipher(key.get_secret_value() if key else None)
+        session, CredentialCipher(keys[0], fallback_keys=keys[1:])
     )
 
 
 def notion_service(request: Request, session: Session) -> NotionConnectionService:
-    key = (
-        request.app.state.settings.notion_token_encryption_key
-        or request.app.state.settings.google_token_encryption_key
-    )
+    keys = request.app.state.settings.cipher_keys("notion")
     return NotionConnectionService(
         session,
-        CredentialCipher(key.get_secret_value() if key else None),
+        CredentialCipher(keys[0], fallback_keys=keys[1:]),
         NotionOAuthClient(
             client_id=request.app.state.settings.notion_oauth_client_id,
             client_secret=request.app.state.settings.notion_oauth_client_secret.get_secret_value()
@@ -88,10 +85,10 @@ def notion_service(request: Request, session: Session) -> NotionConnectionServic
 
 def onedrive_service(request: Request, session: Session) -> OneDriveConnectionService:
     settings = request.app.state.settings
-    key = settings.microsoft_token_encryption_key
+    keys = settings.cipher_keys("onedrive")
     return OneDriveConnectionService(
         session,
-        OneDriveCipher(key.get_secret_value() if key else None),
+        OneDriveCipher(keys[0], fallback_keys=keys[1:]),
         MicrosoftGraphClient(
             client_id=settings.microsoft_oauth_client_id,
             client_secret=settings.microsoft_oauth_client_secret.get_secret_value()
@@ -363,23 +360,13 @@ def disconnect_source(
             DataSource.organization_id == organization_id,
         )
     )
-    if source is not None and source.provider == "onedrive":
-        try:
-            onedrive_service(request, session).disconnect(
-                scope=OrganizationScope(organization_id),
-                user_id=user.id,
-                source_id=source_id,
-            )
-        except OneDriveOAuthInvalid as error:
-            raise HTTPException(403, "not allowed") from error
-        except OneDriveAccessDenied as error:
-            raise HTTPException(403, "not allowed") from error
-        return
+    services = {"onedrive": onedrive_service, "notion": notion_service}
+    build_service = services.get(source.provider if source is not None else "", service)
     try:
-        service(request, session).disconnect(
+        build_service(request, session).disconnect(
             scope=OrganizationScope(organization_id), user_id=user.id, source_id=source_id
         )
-    except GoogleAccessDenied as error:
+    except (GoogleAccessDenied, OneDriveAccessDenied, OneDriveOAuthInvalid, NotionAccessDenied) as error:
         raise HTTPException(403, "not allowed") from error
 
 

@@ -2,7 +2,6 @@
 
 import json
 import logging
-import secrets
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -12,22 +11,24 @@ from uuid import UUID
 from zipfile import BadZipFile
 
 import httpx
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import InvalidToken
 from docx.opc.exceptions import PackageNotFoundError
 from pypdf.errors import PdfReadError
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
-from app.identity.auth import hash_secret
-from app.identity.models import UserSession
-from app.ingestion.service import ELIGIBLE_MIME_TYPES, DiscoveredDocument, DiscoveryResult
+from app.ingestion.extraction import BASE_MIME_TYPES, extract_blocks
+from app.ingestion.extraction.errors import ExtractionError
+from app.ingestion.extraction.mime import normalize_mime_type
+from app.ingestion.service import DiscoveredDocument, DiscoveryResult
 from app.integrations.errors import SourceRemoteUnauthorized
 from app.integrations.google_drive import RemoteFolder
 from app.integrations.http import RemoteHttp
-from app.integrations.models import DataSource, OAuthConnectionState
-from app.organizations.models import Membership, MembershipRole
+from app.integrations.keyring import build_fernet, rotate_token
+from app.integrations.models import DataSource
+from app.integrations.oauth_base import OAuthConnectionServiceBase
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 logger = logging.getLogger("document_intelligence.integration")
@@ -82,16 +83,10 @@ class DeltaPage:
 
 
 class OneDriveCipher:
-    def __init__(self, key: str | None):
+    def __init__(self, key: str | None, *, fallback_keys=()):
         self.key = key
+        self._keys = [key, *fallback_keys]
 
-    def _fernet(self) -> Fernet:
-        if not self.key:
-            raise OneDriveOAuthUnavailable("OneDrive encryption is not configured")
-        try:
-            return Fernet(self.key.encode())
-        except (ValueError, TypeError) as error:
-            raise OneDriveOAuthUnavailable("OneDrive encryption is not configured") from error
 
     def encrypt_credentials(self, credentials: OneDriveCredentials) -> str:
         payload = json.dumps(
@@ -123,6 +118,18 @@ class OneDriveCipher:
             return self._fernet().decrypt(value.encode()).decode()
         except (InvalidToken, ValueError) as error:
             raise OneDriveCursorInvalid("OneDrive sync cursor is unavailable") from error
+
+    def _fernet(self):
+        try:
+            fernet = build_fernet(self._keys)
+        except (ValueError, TypeError) as error:
+            raise OneDriveOAuthUnavailable("token encryption is not configured") from error
+        if fernet is None:
+            raise OneDriveOAuthUnavailable("token encryption is not configured")
+        return fernet
+
+    def rotate(self, value: str) -> str:
+        return rotate_token(self._fernet(), value)
 
 
 class MicrosoftGraphClient:
@@ -555,11 +562,14 @@ class OneDriveDocumentProvider:
         with ThreadPoolExecutor(max_workers=min(MAX_PAGE_WORKERS, len(files))) as executor:
             return list(executor.map(lambda item: self._read_one(credentials, item), files))
 
+    eligible_mime_types = BASE_MIME_TYPES
+
     def _read_one(
         self, credentials: OneDriveCredentials, item: dict[str, Any]
     ) -> DiscoveredDocument:
         remote_id = self.client._external_id(item)
         mime_type = str((item.get("file") or {}).get("mimeType") or "application/octet-stream")
+        mime_type = normalize_mime_type(str(item.get("name") or ""), mime_type)
         parent_reference = item.get("parentReference") or {}
         modified = item.get("lastModifiedDateTime")
         base = {
@@ -570,13 +580,14 @@ class OneDriveDocumentProvider:
             "modified_at": datetime.fromisoformat(str(modified)) if modified else None,
             "parent_ids": self.client._parent_ids(parent_reference),
         }
-        if mime_type not in ELIGIBLE_MIME_TYPES:
+        if mime_type not in self.eligible_mime_types:
             return DiscoveredDocument(**base)
         content = self.client.read_file(credentials=credentials, item_id=remote_id)
-        from app.ingestion.google_drive import _extract_blocks
 
         try:
-            blocks = _extract_blocks(mime_type, content)
+            blocks = extract_blocks(mime_type, content)
+        except ExtractionError as error:
+            return DiscoveredDocument(**base, error_code=error.code)
         except (BadZipFile, PackageNotFoundError, PdfReadError, UnicodeDecodeError, ValueError):
             # Remote bodies and exception details are deliberately not persisted.
             return DiscoveredDocument(**base, error_code="text_extraction_failed")
@@ -585,21 +596,15 @@ class OneDriveDocumentProvider:
         )
 
 
-class OneDriveConnectionService:
-    def __init__(self, session: Session, cipher: OneDriveCipher, client: MicrosoftGraphClient):
-        self.session, self.cipher, self.client = session, cipher, client
+class OneDriveConnectionService(OAuthConnectionServiceBase):
+    provider = "onedrive"
+    access_denied = OneDriveAccessDenied
+    invalid = OneDriveOAuthInvalid
+    retain_identity_on_disconnect = True
 
-    def require_admin(self, *, scope: OrganizationScope, user_id: UUID) -> None:
-        member = self.session.scalar(
-            select(Membership).where(
-                Membership.organization_id == scope.organization_id,
-                Membership.user_id == user_id,
-                Membership.is_active.is_(True),
-                Membership.role.in_([MembershipRole.OWNER, MembershipRole.ADMIN]),
-            )
-        )
-        if member is None:
-            raise OneDriveAccessDenied("integration access denied")
+    def __init__(self, session: Session, cipher: OneDriveCipher, client: MicrosoftGraphClient):
+        super().__init__(session, cipher)
+        self.client = client
 
     def begin(
         self,
@@ -623,82 +628,17 @@ class OneDriveConnectionService:
             is None
         ):
             raise OneDriveAccessDenied("OneDrive source is invalid")
-        raw_state = secrets.token_urlsafe(32)
-        self.session.add(
-            OAuthConnectionState(
-                organization_id=scope.organization_id,
-                user_id=user_id,
-                source_id=source_id,
-                session_hash=hash_secret(session_secret),
-                state_hash=hash_secret(raw_state),
-                expires_at=datetime.now(UTC) + timedelta(minutes=10),
-            )
-        )
-        self.session.flush()
+        raw_state = self._new_state(scope=scope, user_id=user_id, session_secret=session_secret, source_id=source_id)
         return self.client.authorization_url(state=raw_state)
 
     def cancel(self, *, raw_state: str, session_secret: str) -> UUID:
-        state = self.session.scalar(
-            select(OAuthConnectionState)
-            .where(
-                OAuthConnectionState.state_hash == hash_secret(raw_state),
-                OAuthConnectionState.consumed_at.is_(None),
-                OAuthConnectionState.expires_at > datetime.now(UTC),
-            )
-            .with_for_update()
-        )
-        active_session = (
-            self.session.scalar(
-                select(UserSession).where(
-                    UserSession.secret_hash == hash_secret(session_secret),
-                    UserSession.user_id == state.user_id if state else False,
-                    UserSession.revoked_at.is_(None),
-                    UserSession.expires_at > datetime.now(UTC),
-                )
-            )
-            if state
-            else None
-        )
-        if (
-            state is None
-            or state.session_hash != hash_secret(session_secret)
-            or active_session is None
-        ):
-            raise OneDriveOAuthInvalid("OAuth state is invalid")
-        self.require_admin(scope=OrganizationScope(state.organization_id), user_id=state.user_id)
+        state = self._consume_state(raw_state=raw_state, session_secret=session_secret)
         state.consumed_at = datetime.now(UTC)
         self.session.flush()
         return state.organization_id
 
     def complete(self, *, raw_state: str, code: str, session_secret: str) -> DataSource:
-        state = self.session.scalar(
-            select(OAuthConnectionState)
-            .where(
-                OAuthConnectionState.state_hash == hash_secret(raw_state),
-                OAuthConnectionState.consumed_at.is_(None),
-                OAuthConnectionState.expires_at > datetime.now(UTC),
-            )
-            .with_for_update()
-        )
-        active_session = (
-            self.session.scalar(
-                select(UserSession).where(
-                    UserSession.secret_hash == hash_secret(session_secret),
-                    UserSession.user_id == state.user_id if state else False,
-                    UserSession.revoked_at.is_(None),
-                    UserSession.expires_at > datetime.now(UTC),
-                )
-            )
-            if state
-            else None
-        )
-        if (
-            state is None
-            or state.session_hash != hash_secret(session_secret)
-            or active_session is None
-        ):
-            raise OneDriveOAuthInvalid("OAuth state is invalid")
-        self.require_admin(scope=OrganizationScope(state.organization_id), user_id=state.user_id)
+        state = self._consume_state(raw_state=raw_state, session_secret=session_secret)
         credentials = self.client.exchange_code(code=code)
         account_email = self.client.account_email(credentials=credentials)
         drive_id = self.client.drive_id(credentials=credentials)
@@ -776,29 +716,7 @@ class OneDriveConnectionService:
         self.session.flush()
         return source
 
-    def disconnect(self, *, scope: OrganizationScope, user_id: UUID, source_id: UUID) -> DataSource:
-        self.require_admin(scope=scope, user_id=user_id)
-        source = self.session.scalar(
-            select(DataSource).where(
-                DataSource.id == source_id,
-                DataSource.organization_id == scope.organization_id,
-                DataSource.provider == "onedrive",
-            )
-        )
-        if source is None:
-            raise OneDriveAccessDenied("OneDrive source is invalid")
-        source.encrypted_credentials = None
-        # Retain account identity so a later reconnect cannot silently bind
-        # existing scopes and indexed documents to a different drive.
-        source.status = "disconnected"
-        self.session.execute(
-            update(OAuthConnectionState)
-            .where(
-                OAuthConnectionState.source_id == source.id,
-                OAuthConnectionState.consumed_at.is_(None),
-            )
-            .values(consumed_at=datetime.now(UTC))
-        )
+    def _on_disconnect(self, source: DataSource) -> None:
         for selection in self.session.scalars(
             select(WorkspaceFolderSelection)
             .join(
@@ -808,17 +726,6 @@ class OneDriveConnectionService:
             .where(WorkspaceFolder.source_id == source.id)
         ):
             selection.encrypted_delta_link = None
-        self.session.add(
-            AuditLog(
-                organization_id=scope.organization_id,
-                actor_user_id=user_id,
-                action="data_source.disconnected",
-                target_type="data_source",
-                target_id=source.id,
-            )
-        )
-        self.session.flush()
-        return source
 
     def folders(
         self, *, scope: OrganizationScope, user_id: UUID, source_id: UUID

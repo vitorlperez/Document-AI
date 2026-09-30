@@ -14,14 +14,11 @@ from app.audit_usage.service import UsageLimitExceeded
 from app.core.config import Settings, get_settings
 from app.core.database import build_engine, build_session_factory
 from app.core.scoping import OrganizationScope
-from app.ingestion.google_drive import GoogleDriveDocumentProvider
+from app.ingestion.extraction import eligible_mime_types
+from app.ingestion.extraction.mime import normalize_mime_type
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveryResult, IngestionService
 from app.integrations.errors import SourceRemoteUnauthorized
-from app.integrations.google_drive import (
-    CredentialCipher,
-    GoogleDriveOAuthClient,
-)
 from app.integrations.http import RemoteThrottled
 from app.integrations.models import DataSource
 from app.integrations.registry import IntegrationRegistry
@@ -200,6 +197,8 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
     session_factory = build_session_factory(build_engine(settings))
     with session_factory() as session:
         service = IngestionService(session)
+        service.settings = settings
+        service.eligible_mime_types = eligible_mime_types(settings)
         source_provider = "unknown"
         source: DataSource | None = None
         run_token: str | None = None
@@ -241,27 +240,8 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 session.commit()
                 return
             source_provider = getattr(source, "provider", "google_drive")
-            if source_provider == "google_drive":
-                # Keep the established injection point for Google while new
-                # providers are resolved through the registry.
-                provider = GoogleDriveDocumentProvider(
-                    GoogleDriveOAuthClient(
-                        client_id=settings.google_oauth_client_id,
-                        client_secret=settings.google_oauth_client_secret.get_secret_value()
-                        if settings.google_oauth_client_secret
-                        else None,
-                        redirect_uri=settings.google_oauth_redirect_uri,
-                    ),
-                    CredentialCipher(
-                        settings.google_token_encryption_key.get_secret_value()
-                        if settings.google_token_encryption_key
-                        else None
-                    ),
-                    session=session,
-                    source_id=source.id,
-                )
-            else:
-                provider = IntegrationRegistry(settings).get(source_provider)
+            provider = IntegrationRegistry(settings).get(source_provider, session=session, source_id=source.id)
+            provider.eligible_mime_types = eligible_mime_types(settings)
             selections = list(
                 session.scalars(
                     select(WorkspaceFolderSelection)
@@ -292,18 +272,19 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 for document in known_rows
                 if document.index_status == "failed"
                 or (document.index_status == "indexed" and document.content_hash == "")
+                or (document.index_status == "ignored"
+                    and document.error_code == "unsupported_file_type"
+                    and normalize_mime_type(document.name, document.mime_type) in eligible_mime_types(settings))
             }
             discover_kwargs = {
                 "encrypted_credentials": source.encrypted_credentials,
                 "selections": selections,
                 "force_file_ids": force_file_ids,
             }
-            if source_provider == "notion":
-                known_documents = {
-                    document.external_file_id: (document.modified_at, document.index_status)
-                    for document in known_rows
-                }
-                discover_kwargs["known_documents"] = known_documents
+            discover_kwargs["known_documents"] = {
+                document.external_file_id: (document.modified_at, document.index_status)
+                for document in known_rows
+            }
             if getattr(job, "manual_run_id", None):
                 discover_kwargs["force_full"] = True
             discovered_documents = provider.discover(**discover_kwargs)

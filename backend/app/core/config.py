@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field, PostgresDsn, SecretStr, field_validator
+from pydantic import Field, PostgresDsn, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     notion_oauth_client_secret: SecretStr | None = None
     notion_oauth_redirect_uri: str | None = None
     notion_token_encryption_key: SecretStr | None = None
+    notion_token_encryption_legacy_fallback: bool = True
     microsoft_oauth_client_id: str | None = None
     microsoft_oauth_client_secret: SecretStr | None = None
     microsoft_oauth_redirect_uri: str | None = None
@@ -71,6 +72,26 @@ class Settings(BaseSettings):
     # Total evidence input for content answers (~16k tokens at the default).
     # Whole relevant chunks are packed by score; per-file brief length is separate.
     evidence_context_chars: int = Field(default=64_000, ge=1024)
+
+    def cipher_keys(self, provider: str) -> list[str | None]:
+        key = {"google_drive": self.google_token_encryption_key,
+               "onedrive": self.microsoft_token_encryption_key,
+               "notion": self.notion_token_encryption_key}[provider]
+        keys = [key.get_secret_value() if key else None]
+        if provider == "notion" and self.notion_token_encryption_legacy_fallback:
+            keys.append(self.google_token_encryption_key.get_secret_value() if self.google_token_encryption_key else None)
+        return keys
+
+    @model_validator(mode="after")
+    def validate_provider_keys(self):
+        if self.environment == "production":
+            keys = [self.cipher_keys(provider)[0] for provider in ("google_drive", "onedrive", "notion")]
+            populated = [key for key in keys if key]
+            if len(set(populated)) != len(populated):
+                raise ValueError("each provider requires a distinct encryption key")
+            if self.notion_oauth_client_id and not self.notion_token_encryption_key:
+                raise ValueError("Notion requires its own encryption key in production")
+        return self
 
 
 @lru_cache

@@ -42,6 +42,16 @@ services:
         sync: false
       - key: MICROSOFT_TOKEN_ENCRYPTION_KEY
         sync: false
+      - key: NOTION_OAUTH_CLIENT_ID
+        sync: false
+      - key: NOTION_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: NOTION_OAUTH_REDIRECT_URI
+        sync: false
+      - key: NOTION_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: NOTION_TOKEN_ENCRYPTION_LEGACY_FALLBACK
+        value: "true"
       - key: RESEND_API_KEY
         sync: false
       - key: INVITATION_FROM_EMAIL

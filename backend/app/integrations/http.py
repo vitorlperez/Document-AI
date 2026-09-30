@@ -72,6 +72,7 @@ class RemoteHttp:
         self._sleep, self._monotonic, self._jitter = sleep, monotonic, jitter
         self._lock = threading.Lock()
         self._not_before = 0.0
+        self._blocked_until = 0.0
 
     def request(
         self, method: str, url: str, *, idempotent: bool = True, **kwargs: object
@@ -79,13 +80,15 @@ class RemoteHttp:
         send = getattr(httpx, method.lower())  # module-level call: keeps existing monkeypatches valid
         waited = 0.0
         for attempt in range(self.policy.max_attempts):
-            self._wait_turn()
+            waited += self._wait_turn(self.policy.max_total_wait - waited)
             response = send(url, **kwargs)
             if not idempotent or not self._retryable(response):
                 return response
             retry_after = parse_retry_after(response.headers.get("Retry-After"))
             delay = self._delay(attempt, retry_after)
             last = attempt == self.policy.max_attempts - 1
+            if response.status_code in _THROTTLE_STATUSES:
+                self._block_for(delay)
             if last or waited + delay > self.policy.max_total_wait:
                 if response.status_code in _THROTTLE_STATUSES:
                     raise RemoteThrottled(retry_after, reason=f"http_{response.status_code}")
@@ -99,7 +102,6 @@ class RemoteHttp:
                     "delay_seconds": round(delay, 2),
                 },
             )
-            waited += delay
             self._block_for(delay)
         raise AssertionError("retry loop must return or raise")  # pragma: no cover
 
@@ -114,14 +116,27 @@ class RemoteHttp:
         cap = min(self.policy.max_delay, self.policy.base_delay * (2**attempt))
         return cap * (0.5 + 0.5 * self._jitter())  # "equal jitter": never ~0, never a herd
 
-    def _wait_turn(self) -> None:
+    def _wait_turn(self, remaining_wait: float) -> float:
         with self._lock:
             now = self._monotonic()
-            wait = max(0.0, self._not_before - now)
-            self._not_before = max(now, self._not_before) + self.min_interval_seconds
-        if wait:
-            self._sleep(wait)
+            target = max(now, self._not_before, self._blocked_until)
+            self._not_before = target + self.min_interval_seconds
+        waited = 0.0
+        while True:
+            wait = max(0.0, target - now)
+            if waited + wait > remaining_wait:
+                raise RemoteThrottled(wait, reason="shared_gate")
+            if wait:
+                self._sleep(wait)
+                waited += wait
+            with self._lock:
+                # A sibling may have extended the throttle while this call slept.
+                if self._blocked_until <= target:
+                    return waited
+                now = max(target, self._monotonic())
+                target = self._blocked_until
+                self._not_before = max(self._not_before, target + self.min_interval_seconds)
 
     def _block_for(self, seconds: float) -> None:
         with self._lock:
-            self._not_before = max(self._not_before, self._monotonic() + seconds)
+            self._blocked_until = max(self._blocked_until, self._monotonic() + seconds)

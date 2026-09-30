@@ -797,6 +797,8 @@ def test_throttled_source_releases_the_job_and_retries_after_the_remote_delay(mo
 
 ---
 
+> Execução: F1 commit 116aac8; 95 testes da frente verdes (exit 0). A suíte completa intermediária detectou fixtures da F3 em alteração; repetida integralmente ao fechar. O cancel do OneDrive já exigia admin no código: F2 preserva a exigência (o texto T2.3 dizia sem admin). Runbook próprio em docs/operacao/chaves-por-provider.md; nenhum outro docs é incluído nos commits desta frente. F2 não cria migração. A ligação F2/F3 exigiu propagar eligible_mime_types do adapter ao leitor interno; dois testes com flag habilitada reproduziram o descarte de TXT antes da correção. Na validação final, três testes adicionais expuseram falhas do exemplo RemoteHttp: gate não era atualizado no último 429, esperas compartilhadas escapavam do orçamento e um sibling podia prolongar o bloqueio durante sleep sem nova conferência. Corrigido no fechamento F2, com vermelho→verde.
+
 # FASE 2 — Base OAuth única e chave de cifra por provider (≈ 3 d)
 
 Achados de leitura que esta fase corrige (todos **[FATO por leitura de código]**, sem execução):
@@ -1307,6 +1309,8 @@ def primary_only(keys):
 - [ ] Step 1 — teste: `tasks.reconcile_workspace_folder` com `source.provider == "google_drive"` obtém o provider por `IntegrationRegistry(settings).get("google_drive", session=session, source_id=source.id)` (monkeypatch do registry); e `discover` recebe `known_documents` para **todos** os providers. Existente `test_exhausted_embedding_rate_limit…` (que monkeypatch `tasks.GoogleDriveDocumentProvider`) passa a monkeypatchear o registry.
 - [ ] Step 2 — FAIL. Step 3 — `GoogleDriveProviderAdapter.__init__(settings, *, session=None, source_id=None)` repassa `session`/`source_id` ao `GoogleDriveDocumentProvider`; `discover` aceita `known_documents=None`; `tasks.py` passa a `provider = IntegrationRegistry(settings).get(source_provider, session=session, source_id=source.id)`. Step 4 — `pytest -q tests/unit tests/api` verde.
 - [ ] Step 5 — `git add backend/app/ingestion/tasks.py backend/app/integrations/registry.py backend/app/integrations/base.py backend/tests/unit/test_ingestion_tasks.py && git commit -m "refactor(ingestion): Google resolvido pelo registry como os demais providers"`
+
+> Execução: F2/T2.1–T2.8 validadas em 2026-09-30: `cd backend && .venv/bin/python -m pytest -q tests/unit tests/api` → 562 passed, 2 warnings, exit 0; Ruff da frente e `git diff --check` → exit 0; CLI rekey `--help` → exit 0. Rekey dry-run/apply/idempotência e isolamento por provider provados em SQLite. FOR UPDATE presente; concorrência real em Postgres e observação de staging por 7 dias não executadas nesta frente. Sem configuração de banco remoto neste processo, F0.1 contagens dev/piloto permanecem não medidas. `graphify update .` → exit 0. Por coordenação do piloto, o commit F2 inclui ajustes F3 (pane-248) nos arquivos compartilhados, preservando MIME, export, ExtractionError, shim e reprocessamento de ignored. Sem push.
 
 **Aceite da Fase 2:** ver A-F2.
 
@@ -2376,7 +2380,7 @@ Suíte de regressão obrigatória por PR: `cd backend && .venv/bin/python -m pyt
 
 | ID | Critério | Como medir | Meta |
 |---|---|---|---|
-| **A-F1** | 403 de quota/arquivo não gera `reauth_required` | `test_remote_fault_injection.py` (3 providers × 3 falhas) + log `event="ingestion_sync" result="reauth_required"` em staging por 7 dias | **0** transições espúrias; 429 com `Retry-After: N` ⇒ exatamente 1 espera de `min(N,30)` s |
+| **A-F1** | 403 de quota/arquivo não gera `reauth_required` | `test_remote_fault_injection.py` (3 providers × 3 falhas) + log `event="ingestion_sync" result="reauth_required"` em staging por 7 dias | **0** transições espúrias; 429 com `Retry-After: N` ⇒ espera de `N` s se dentro do orçamento; libera job se excedê-lo |
 | **A-F1b** | Um só lugar de retry | `grep -rn "time.sleep\|Retry-After" backend/app/integrations` | só `http.py` (e o espaçamento do Notion via `min_interval_seconds`) |
 | **A-F2** | Base OAuth única | `wc -l` dos três serviços e `test_oauth_service_contract.py` verde | `complete()` sem validação de `state` duplicada (0 ocorrências de `UserSession.secret_hash ==` fora de `oauth_base.py`); disconnect de Notion = 204 |
 | **A-F2b** | Chave por provider | `Settings.cipher_keys`, rekey `--apply` seguido de dry-run | `rotated == 0` na 2ª execução; produção rejeita chave repetida; flag de fallback do Notion `false` em prod |

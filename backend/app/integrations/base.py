@@ -1,6 +1,7 @@
 """Provider-neutral contracts for external knowledge sources."""
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol
 
 from app.ingestion.service import DiscoveredDocument, DiscoveryResult
@@ -23,6 +24,7 @@ class SourceProvider(Protocol):
         *,
         encrypted_credentials: str | None,
         selections: list[WorkspaceFolderSelection],
+        known_documents: dict[str, tuple[datetime | None, str]] | None = None,
         force_file_ids: set[str] | None = None,
         force_full: bool = False,
     ) -> list[DiscoveredDocument] | DiscoveryResult: ...

@@ -1,7 +1,6 @@
 """Google Drive OAuth port; credentials never leave this module as plaintext."""
 
 import logging
-import secrets
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -10,18 +9,17 @@ from urllib.parse import quote, urlencode
 from uuid import UUID
 
 import httpx
-from cryptography.fernet import Fernet, InvalidToken
-from sqlalchemy import select, update
+from cryptography.fernet import InvalidToken
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
-from app.identity.auth import hash_secret
-from app.identity.models import UserSession
+from app.integrations.credentials import OAuthCredentials
 from app.integrations.errors import SourceItemUnavailable, SourceRemoteUnauthorized
 from app.integrations.http import RemoteHttp, RemoteThrottled, parse_retry_after
-from app.integrations.models import DataSource, OAuthConnectionState
-from app.organizations.models import Membership, MembershipRole
+from app.integrations.keyring import build_fernet, rotate_token
+from app.integrations.models import DataSource
+from app.integrations.oauth_base import OAuthConnectionServiceBase
 
 GOOGLE_DRIVE_READONLY_SCOPE = "https://www.googleapis.com/auth/drive.readonly"
 
@@ -59,12 +57,7 @@ class GoogleChangesPage:
 logger = logging.getLogger("document_intelligence.integration")
 
 
-@dataclass(frozen=True)
-class GoogleCredentials:
-    access_token: str
-    refresh_token: str | None
-    expires_at: datetime | None
-
+GoogleCredentials = OAuthCredentials
 
 @dataclass(frozen=True)
 class RemoteFolder:
@@ -96,8 +89,10 @@ class GoogleItemUnavailable(SourceItemUnavailable):
 
 QUOTA_REASONS = frozenset({"rateLimitExceeded", "userRateLimitExceeded", "sharingRateLimitExceeded"})
 DAILY_QUOTA_REASONS = frozenset({"dailyLimitExceeded"})
+from app.ingestion.extraction.mime import GOOGLE_EXPORT_MIME
+
 ITEM_FORBIDDEN_REASONS = frozenset(
-    {"insufficientFilePermissions", "appNotAuthorizedToFile", "cannotDownloadFile", "fileNotDownloadable"}
+    {"insufficientFilePermissions", "appNotAuthorizedToFile", "cannotDownloadFile", "fileNotDownloadable", "exportSizeLimitExceeded"}
 )
 
 
@@ -403,11 +398,12 @@ class GoogleDriveOAuthClient:
         return response
 
     def read_file(self, *, credentials: GoogleCredentials, remote_file: RemoteFile) -> bytes:
-        if remote_file.mime_type == "application/vnd.google-apps.document":
+        export_mime = GOOGLE_EXPORT_MIME.get(remote_file.mime_type)
+        if export_mime:
             url = f"https://www.googleapis.com/drive/v3/files/{remote_file.id}/export"
             response = self.http.request("GET",
                 url,
-                params={"mimeType": "text/plain"},
+                params={"mimeType": export_mime},
                 headers={"Authorization": f"Bearer {credentials.access_token}"},
                 timeout=30,
             )
@@ -423,12 +419,11 @@ class GoogleDriveOAuthClient:
 
 
 class CredentialCipher:
-    def __init__(self, key: str | None):
+    def __init__(self, key: str | None, *, fallback_keys=()):
         self.key = key
+        self._keys = [key, *fallback_keys]
 
     def encrypt(self, credentials: GoogleCredentials) -> str:
-        if not self.key:
-            raise GoogleOAuthUnavailable("Google token encryption is not configured")
         payload = "|".join(
             [
                 credentials.access_token,
@@ -436,14 +431,12 @@ class CredentialCipher:
                 credentials.expires_at.isoformat() if credentials.expires_at else "",
             ]
         )
-        return Fernet(self.key.encode()).encrypt(payload.encode()).decode()
+        return self._fernet().encrypt(payload.encode()).decode()
 
     def decrypt(self, value: str) -> GoogleCredentials:
-        if not self.key:
-            raise GoogleOAuthUnavailable("Google token encryption is not configured")
         try:
             access, refresh, expires = (
-                Fernet(self.key.encode()).decrypt(value.encode()).decode().split("|", 2)
+                self._fernet().decrypt(value.encode()).decode().split("|", 2)
             )
         except (InvalidToken, ValueError) as error:
             raise GoogleOAuthInvalid("credential unavailable") from error
@@ -452,34 +445,34 @@ class CredentialCipher:
         )
 
     def encrypt_cursor(self, value: str) -> str:
-        if not self.key:
-            raise GoogleOAuthUnavailable("Google token encryption is not configured")
-        return Fernet(self.key.encode()).encrypt(value.encode()).decode()
+        return self._fernet().encrypt(value.encode()).decode()
 
     def decrypt_cursor(self, value: str) -> str:
-        if not self.key:
-            raise GoogleOAuthUnavailable("Google token encryption is not configured")
         try:
-            return Fernet(self.key.encode()).decrypt(value.encode()).decode()
+            return self._fernet().decrypt(value.encode()).decode()
         except (InvalidToken, ValueError) as error:
             raise GoogleCursorInvalid("change cursor unavailable") from error
 
+    def _fernet(self):
+        try:
+            fernet = build_fernet(self._keys)
+        except (ValueError, TypeError) as error:
+            raise GoogleOAuthUnavailable("token encryption is not configured") from error
+        if fernet is None:
+            raise GoogleOAuthUnavailable("token encryption is not configured")
+        return fernet
 
-class GoogleConnectionService:
+    def rotate(self, value: str) -> str:
+        return rotate_token(self._fernet(), value)
+
+
+class GoogleConnectionService(OAuthConnectionServiceBase):
+    provider = "google_drive"
+    access_denied = GoogleAccessDenied
+    invalid = GoogleOAuthInvalid
+
     def __init__(self, session: Session, cipher: CredentialCipher):
-        self.session, self.cipher = session, cipher
-
-    def require_admin(self, *, scope: OrganizationScope, user_id: UUID) -> None:
-        member = self.session.scalar(
-            select(Membership).where(
-                Membership.organization_id == scope.organization_id,
-                Membership.user_id == user_id,
-                Membership.is_active.is_(True),
-                Membership.role.in_([MembershipRole.OWNER, MembershipRole.ADMIN]),
-            )
-        )
-        if member is None:
-            raise GoogleAccessDenied("integration access denied")
+        super().__init__(session, cipher)
 
     def begin(
         self,
@@ -503,18 +496,7 @@ class GoogleConnectionService:
             is None
         ):
             raise GoogleAccessDenied("source access denied")
-        raw = secrets.token_urlsafe(32)
-        self.session.add(
-            OAuthConnectionState(
-                organization_id=scope.organization_id,
-                user_id=user_id,
-                source_id=reauth_source_id,
-                session_hash=hash_secret(session_secret),
-                state_hash=hash_secret(raw),
-                expires_at=datetime.now(UTC) + timedelta(minutes=10),
-            )
-        )
-        self.session.flush()
+        raw = self._new_state(scope=scope, user_id=user_id, session_secret=session_secret, source_id=reauth_source_id)
         url = port.authorization_url(state=raw, scope=GOOGLE_DRIVE_READONLY_SCOPE)
         logger.info(
             "google connection started",
@@ -531,32 +513,7 @@ class GoogleConnectionService:
     def complete(
         self, *, raw_state: str, code: str, session_secret: str, port: GoogleDrivePort
     ) -> DataSource:
-        state = self.session.scalar(
-            select(OAuthConnectionState).where(
-                OAuthConnectionState.state_hash == hash_secret(raw_state),
-                OAuthConnectionState.consumed_at.is_(None),
-                OAuthConnectionState.expires_at > datetime.now(UTC),
-            )
-        )
-        active_session = (
-            self.session.scalar(
-                select(UserSession).where(
-                    UserSession.secret_hash == hash_secret(session_secret),
-                    UserSession.user_id == state.user_id if state else False,
-                    UserSession.revoked_at.is_(None),
-                    UserSession.expires_at > datetime.now(UTC),
-                )
-            )
-            if state
-            else None
-        )
-        if (
-            state is None
-            or state.session_hash != hash_secret(session_secret)
-            or active_session is None
-        ):
-            raise GoogleOAuthInvalid("OAuth state is invalid")
-        self.require_admin(scope=OrganizationScope(state.organization_id), user_id=state.user_id)
+        state = self._consume_state(raw_state=raw_state, session_secret=session_secret)
         started = time.perf_counter()
         try:
             credentials = port.exchange_code(code=code)
@@ -622,49 +579,6 @@ class GoogleConnectionService:
             )
         )
 
-    def disconnect(self, *, scope: OrganizationScope, user_id: UUID, source_id: UUID) -> DataSource:
-        self.require_admin(scope=scope, user_id=user_id)
-        source = self.session.scalar(
-            select(DataSource).where(
-                DataSource.id == source_id,
-                DataSource.organization_id == scope.organization_id,
-                DataSource.provider == "google_drive",
-            )
-        )
-        if source is None:
-            raise GoogleAccessDenied("source access denied")
-        source.encrypted_credentials = None
-        source.account_email = None
-        source.status = "disconnected"
-        self.session.execute(
-            update(OAuthConnectionState)
-            .where(
-                OAuthConnectionState.source_id == source.id,
-                OAuthConnectionState.consumed_at.is_(None),
-            )
-            .values(consumed_at=datetime.now(UTC))
-        )
-        self.session.add(
-            AuditLog(
-                organization_id=scope.organization_id,
-                actor_user_id=user_id,
-                action="data_source.disconnected",
-                target_type="data_source",
-                target_id=source.id,
-            )
-        )
-        self.session.flush()
-        logger.info(
-            "google source disconnected",
-            extra={
-                "event": "google_connection",
-                "provider": "google_drive",
-                "action": "disconnect",
-                "result": "disconnected",
-                "elapsed_ms": 0.0,
-            },
-        )
-        return source
 
     def folders(
         self, *, scope: OrganizationScope, user_id: UUID, source_id: UUID, port: GoogleDrivePort

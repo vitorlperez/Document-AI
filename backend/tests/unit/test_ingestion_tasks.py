@@ -121,7 +121,7 @@ def test_exhausted_embedding_rate_limit_rolls_back_and_marks_job_failed(
     monkeypatch.setattr(tasks, "build_engine", lambda _: object())
     monkeypatch.setattr(tasks, "build_session_factory", lambda _: lambda: session)
     monkeypatch.setattr(tasks, "IngestionService", FakeIngestionService)
-    monkeypatch.setattr(tasks, "GoogleDriveDocumentProvider", FakeDriveProvider)
+    monkeypatch.setattr(tasks, "IntegrationRegistry", lambda settings: SimpleNamespace(get=lambda provider, **context: FakeDriveProvider()))
     monkeypatch.setattr(tasks, "EmbeddingService", RateLimitedEmbeddingService)
     monkeypatch.setattr(tasks.reconcile_workspace_folder, "max_retries", 0)
 
@@ -214,7 +214,12 @@ def _run_remote_fault(monkeypatch, error, max_retries):
         def __init__(self, *_: object, **__: object) -> None:
             return None
 
-        def discover(self, **_: object) -> list[DiscoveredDocument]:
+        def discover(self, **kwargs) -> list[DiscoveredDocument]:
+            from app.integrations.errors import SourceRemoteUnauthorized
+            from app.integrations.http import RemoteThrottled
+            assert "known_documents" in kwargs
+            if isinstance(error, (RemoteThrottled, SourceRemoteUnauthorized)):
+                raise error
             return [
                 DiscoveredDocument(
                     external_file_id="file-1",
@@ -246,7 +251,7 @@ def _run_remote_fault(monkeypatch, error, max_retries):
     monkeypatch.setattr(tasks, "build_engine", lambda _: object())
     monkeypatch.setattr(tasks, "build_session_factory", lambda _: lambda: session)
     monkeypatch.setattr(tasks, "IngestionService", FakeIngestionService)
-    monkeypatch.setattr(tasks, "GoogleDriveDocumentProvider", FakeDriveProvider)
+    monkeypatch.setattr(tasks, "IntegrationRegistry", lambda settings: SimpleNamespace(get=lambda provider, **context: FakeDriveProvider()))
     monkeypatch.setattr(tasks, "EmbeddingService", RateLimitedEmbeddingService)
     monkeypatch.setattr(tasks.reconcile_workspace_folder, "max_retries", max_retries)
 
@@ -273,3 +278,10 @@ def test_remote_throttling_keeps_source_connected(monkeypatch, retries):
     else:
         assert isinstance(result.result, Retry) and result.result.when == 70
         assert released and not failed
+
+
+def test_persistent_source_unauthorized_still_requires_reauth(monkeypatch):
+    from app.integrations.errors import SourceRemoteUnauthorized
+    result, session, failed, released, source = _run_remote_fault(monkeypatch, SourceRemoteUnauthorized(), 0)
+    assert result.successful() and source.status == "reauth_required"
+    assert failed[0][1] == "source_reauth_required" and not released

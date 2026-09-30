@@ -738,3 +738,18 @@ def test_member_cannot_read_scope_catalog_or_create_scope(google_api) -> None:
 
     assert catalog.status_code == 403
     assert create.status_code == 403
+
+
+def test_notion_disconnect_uses_notion_service(google_api):
+    client, factory, auth_gateway, _ = google_api
+    login(client, auth_gateway, code='owner', email='owner@example.test', subject='owner')
+    organization_id = create_organization(client)
+    with factory() as session:
+        owner = session.scalar(select(User).where(User.email == 'owner@example.test'))
+        source = DataSource(organization_id=organization_id,connected_by_user_id=owner.id,provider='notion',status='connected',encrypted_credentials='x')
+        session.add(source);session.commit()
+        source_id = source.id
+    assert client.delete(f'/data-sources/{source_id}?organization_id={organization_id}').status_code == 204
+    with factory() as session:
+        source = session.get(DataSource,source_id)
+        assert source.status == 'disconnected' and source.encrypted_credentials is None
