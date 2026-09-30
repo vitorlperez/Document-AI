@@ -1,5 +1,4 @@
 import re
-from io import BytesIO
 
 from docx import Document as DocxDocument
 from docx.oxml.table import CT_Tbl
@@ -9,6 +8,7 @@ from docx.text.paragraph import Paragraph
 from docx.text.run import Run
 
 from app.ingestion.blocks import ExtractedBlock
+from app.ingestion.extraction import limits
 
 
 def _visible(paragraph: Paragraph) -> str:
@@ -24,8 +24,8 @@ def _cell(cell) -> str:
     return " ".join(" ".join(_visible(p) for p in cell.paragraphs).split())
 
 
-def docx_blocks(content: bytes) -> list[ExtractedBlock]:
-    docx = DocxDocument(BytesIO(content))
+def docx_blocks(content) -> list[ExtractedBlock]:
+    docx = DocxDocument(limits.as_stream(content))
     blocks: list[ExtractedBlock] = []
     headings: list[tuple[int, str]] = []
     for element in docx.element.body.iterchildren():

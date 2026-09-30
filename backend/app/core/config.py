@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     microsoft_token_encryption_key: SecretStr | None = None
     microsoft_sharepoint_redirect_uri: str | None = None
     sharepoint_download_workers: int = Field(default=2, ge=1, le=8)
-    max_file_bytes: int = Field(default=52_428_800, ge=0)  # MAX_FILE_BYTES: one cap for every provider
+    max_file_bytes: int = Field(default=104_857_600, ge=0)  # MAX_FILE_BYTES: one cap for every provider
     sharepoint_catalog_max_sites: int = Field(default=200, ge=1)
     api_org_rate_limit_per_minute: int = Field(default=600, gt=0)
     api_ask_rate_limit_per_minute: int = Field(default=10, gt=0)

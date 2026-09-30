@@ -22,9 +22,18 @@ def _subset(reader: PdfReader, indexes: list[int]) -> bytes:
     return out.getvalue()
 
 
+def _digest(stream) -> str:
+    stream.seek(0)
+    digest = hashlib.sha256()
+    while block := stream.read(1024 * 1024):
+        digest.update(block)
+    return digest.hexdigest()
+
+
 def pdf_blocks(content, *, ocr=None, budget=None):
     limits.guard_size(content)
-    reader = PdfReader(BytesIO(content))
+    stream = limits.as_stream(content)
+    reader = PdfReader(stream)
     if reader.is_encrypted and not reader.decrypt(""):
         raise ExtractionError("file_encrypted")
     texts = [page.extract_text() or "" for page in reader.pages]
@@ -33,7 +42,7 @@ def pdf_blocks(content, *, ocr=None, budget=None):
     if ocr is not None and low and _worth_ocr(len(texts), len(low)):
         if len(low) > limits.OCR_MAX_PAGES_PER_DOCUMENT:
             raise ExtractionError("ocr_document_too_large")
-        digest = hashlib.sha256(content).hexdigest()
+        digest = _digest(stream)
         step = limits.OCR_PAGES_PER_BATCH
         try:
             for start in range(0, len(low), step):

@@ -2,10 +2,11 @@
 
 import json
 import logging
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import IO, Any
 from urllib.parse import quote, urlencode, urlparse
 from uuid import UUID
 from zipfile import BadZipFile
@@ -19,13 +20,13 @@ from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
-from app.ingestion.extraction import BASE_MIME_TYPES, extract_blocks
+from app.ingestion.extraction import BASE_MIME_TYPES, extract_blocks, limits
 from app.ingestion.extraction.errors import ExtractionError
 from app.ingestion.extraction.mime import normalize_mime_type
 from app.ingestion.service import DiscoveredDocument, DiscoveryResult
 from app.integrations.errors import SourceRemoteUnauthorized
 from app.integrations.google_drive import RemoteFolder
-from app.integrations.http import RemoteHttp
+from app.integrations.http import DownloadIntegrityError, RemoteFileTooLarge, RemoteHttp
 from app.integrations.keyring import build_fernet, rotate_token
 from app.integrations.models import DataSource
 from app.integrations.oauth_base import OAuthConnectionServiceBase
@@ -268,9 +269,9 @@ class MicrosoftGraphClient:
             url = cursor
         elif selection.kind == "folder":
             folder_id = quote(selection.external_folder_id, safe="")
-            url = f"{GRAPH_ROOT}/me/drive/items/{folder_id}/delta?$select=id,name,file,folder,parentReference,webUrl,lastModifiedDateTime,deleted"
+            url = f"{GRAPH_ROOT}/me/drive/items/{folder_id}/delta?$select=id,name,file,folder,size,parentReference,webUrl,lastModifiedDateTime,deleted"
         else:
-            url = f"{GRAPH_ROOT}/me/drive/root/delta?$select=id,name,file,folder,parentReference,webUrl,lastModifiedDateTime,deleted"
+            url = f"{GRAPH_ROOT}/me/drive/root/delta?$select=id,name,file,folder,size,parentReference,webUrl,lastModifiedDateTime,deleted"
         items: list[dict[str, Any]] = []
         while url:
             data = self._get_json(url, credentials=credentials, allow_expired_delta=True)
@@ -293,12 +294,12 @@ class MicrosoftGraphClient:
         if selection.kind == "folder":
             pending = [selection.external_folder_id]
             endpoint = lambda parent: (
-                f"{GRAPH_ROOT}/me/drive/items/{quote(parent, safe='')}/children?$select=id,name,file,folder,parentReference,webUrl,lastModifiedDateTime"
+                f"{GRAPH_ROOT}/me/drive/items/{quote(parent, safe='')}/children?$select=id,name,file,folder,size,parentReference,webUrl,lastModifiedDateTime"
             )
         elif selection.kind == "root_files" or selection.kind == "all_accessible":
             pending = [self.root_id(credentials=credentials)]
             endpoint = lambda parent: (
-                f"{GRAPH_ROOT}/me/drive/items/{quote(parent, safe='')}/children?$select=id,name,file,folder,parentReference,webUrl,lastModifiedDateTime"
+                f"{GRAPH_ROOT}/me/drive/items/{quote(parent, safe='')}/children?$select=id,name,file,folder,size,parentReference,webUrl,lastModifiedDateTime"
             )
         else:
             raise ValueError("unsupported workspace selection")
@@ -324,22 +325,37 @@ class MicrosoftGraphClient:
                 files[key] = item
         return list(files.values())
 
-    def read_file(self, *, credentials: OneDriveCredentials, item_id: str) -> bytes:
+    def read_file(
+        self, *, credentials: OneDriveCredentials, item_id: str, size: int | None = None,
+        hashes: dict[str, str] | None = None,
+    ) -> IO[bytes]:
         url = f"{GRAPH_ROOT}/me/drive/items/{quote(item_id, safe='')}/content"
-        return self._download(url, credentials)
+        return self._download(url, credentials, size=size, hashes=hashes)
 
-    def _download(self, url: str, credentials: OneDriveCredentials) -> bytes:
-        response = self.http.request(
-            "GET", url, headers={"Authorization": f"Bearer {credentials.access_token}"},
-            timeout=30, follow_redirects=True,
-        )
-        if response.status_code in {401, 403}:
-            raise SourceRemoteUnauthorized()
-        response.raise_for_status()
-        return response.content
+    def _download(
+        self, url: str, credentials: OneDriveCredentials, *, size: int | None = None,
+        hashes: dict[str, str] | None = None,
+    ) -> IO[bytes]:
+        """Ranged download into a seekable temp file (Graph 302s to a pre-authenticated URL)."""
+
+        def on_error(response: httpx.Response) -> None:
+            if response.status_code in {401, 403}:
+                raise SourceRemoteUnauthorized()
+            response.raise_for_status()
+
+        dest = tempfile.TemporaryFile()
+        try:
+            self.http.download_to(
+                url, dest, headers={"Authorization": f"Bearer {credentials.access_token}"},
+                expected_size=size, hashes=hashes, max_bytes=limits.MAX_FILE_BYTES, on_error=on_error,
+            )
+            return dest
+        except BaseException:
+            dest.close()
+            raise
 
     def get_item(self, *, credentials: OneDriveCredentials, item_id: str) -> dict[str, Any] | None:
-        url = f"{GRAPH_ROOT}/me/drive/items/{quote(item_id, safe='')}?$select=id,name,file,folder,parentReference,webUrl,lastModifiedDateTime,deleted"
+        url = f"{GRAPH_ROOT}/me/drive/items/{quote(item_id, safe='')}?$select=id,name,file,folder,size,parentReference,webUrl,lastModifiedDateTime,deleted"
         try:
             return self._get_json(url, credentials=credentials)
         except httpx.HTTPStatusError as error:
@@ -594,15 +610,28 @@ class OneDriveDocumentProvider:
             return DiscoveredDocument(**base)
         if self.max_file_bytes and int(item.get("size") or 0) > self.max_file_bytes:
             return DiscoveredDocument(**base, error_code="file_too_large")
-        content = self.client.read_file(credentials=credentials, item_id=remote_id)
-
+        raw_hashes = (item.get("file") or {}).get("hashes") or {}
+        hashes = {name: raw_hashes[key] for name, key in (("sha1", "sha1Hash"), ("sha256", "sha256Hash"),
+                                                        ("quickxor", "quickXorHash")) if raw_hashes.get(key)}
+        content = None
         try:
+            content = self.client.read_file(
+                credentials=credentials, item_id=remote_id, size=int(item.get("size") or 0) or None,
+                hashes=hashes,
+            )
             blocks = extract_blocks(mime_type, content, ocr=self.ocr, budget=self.budget)
+        except RemoteFileTooLarge:
+            return DiscoveredDocument(**base, error_code="file_too_large")
+        except DownloadIntegrityError:
+            return DiscoveredDocument(**base, error_code="source_file_unavailable")
         except ExtractionError as error:
             return DiscoveredDocument(**base, error_code=error.code)
         except (BadZipFile, PackageNotFoundError, PdfReadError, UnicodeDecodeError, ValueError):
             # Remote bodies and exception details are deliberately not persisted.
             return DiscoveredDocument(**base, error_code="text_extraction_failed")
+        finally:
+            if hasattr(content, "close"):
+                content.close()
         return DiscoveredDocument(
             **base, text="\n\n".join(block.text for block in blocks), blocks=tuple(blocks)
         )

@@ -282,7 +282,7 @@ class InMemoryGraph(SharePointGraphClient):
         self.order.append("get_item")
         return self.items.get(item_id)
 
-    def read_file(self, *, credentials, item_id):
+    def read_file(self, *, credentials, item_id, **_):
         self.reads.append(item_id)
         return b"body"
 

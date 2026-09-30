@@ -759,7 +759,7 @@ def test_max_file_bytes_is_one_env_shared_by_sharepoint(monkeypatch) -> None:
     from app.core.config import Settings
     from app.ingestion.extraction import limits
 
-    assert limits.MAX_FILE_BYTES == 50 * 1024 * 1024
+    assert limits.MAX_FILE_BYTES == 100 * 1024 * 1024
     monkeypatch.setenv("MAX_FILE_BYTES", "1000")
     assert limits.env_int("MAX_FILE_BYTES", 1) == 1000
     assert Settings(database_url="postgresql+psycopg://u:p@localhost:5432/db").max_file_bytes == 1000

@@ -188,7 +188,7 @@ def test_graph_file_download_retries_throttling_with_retry_after(
 
     content = client.read_file(credentials=credentials, item_id="file-1")
 
-    assert content == b"document bytes"
+    assert content.read() == b"document bytes"
     assert calls == [f"{GRAPH_ROOT}/me/drive/items/file-1/content"] * 2
     assert waits == [2.0]
 
@@ -242,7 +242,7 @@ def test_graph_delta_follows_pages_and_returns_delta_link_and_deleted_items(
     assert page.items[1]["deleted"] == {"state": "deleted"}
     assert page.delta_link == delta_url
     assert calls == [
-        f"{GRAPH_ROOT}/me/drive/root/delta?$select=id,name,file,folder,parentReference,webUrl,lastModifiedDateTime,deleted",
+        f"{GRAPH_ROOT}/me/drive/root/delta?$select=id,name,file,folder,size,parentReference,webUrl,lastModifiedDateTime,deleted",
         next_url,
     ]
 
@@ -612,7 +612,7 @@ def test_onedrive_manual_reprocess_forces_item_read_without_delta_change() -> No
         def list_files(self, *, credentials, selection):
             return [item]
 
-        def read_file(self, *, credentials, item_id):
+        def read_file(self, *, credentials, item_id, **_):
             self.read_ids.append(item_id)
             return b"reprocessed body"
 
@@ -670,7 +670,7 @@ def test_onedrive_manual_reprocess_forces_item_read_without_delta_change_full_sn
         def list_files(self, *, credentials, selection):
             return [item]
 
-        def read_file(self, *, credentials, item_id):
+        def read_file(self, *, credentials, item_id, **_):
             self.read_ids.append(item_id)
             return b"reprocessed body"
 

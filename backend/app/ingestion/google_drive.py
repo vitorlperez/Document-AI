@@ -19,6 +19,7 @@ from app.ingestion.service import (
     ExtractedBlock,
 )
 from app.integrations.errors import SourceItemUnavailable
+from app.integrations.http import DownloadIntegrityError, RemoteFileTooLarge
 from app.integrations.google_drive import (
     CredentialCipher,
     GoogleCredentials,
@@ -307,6 +308,7 @@ class GoogleDriveDocumentProvider:
             return DiscoveredDocument(**base)
         if remote_file.size is not None and remote_file.size > limits.MAX_FILE_BYTES:
             return DiscoveredDocument(**base, error_code="file_too_large")
+        content = None
         try:
             content = self._remote_call(
                 encrypted_credentials,
@@ -315,9 +317,9 @@ class GoogleDriveDocumentProvider:
                 ),
             )
             blocks = extract_blocks(mime_type, content, ocr=self.ocr, budget=self.budget)
-        except GoogleItemTooLarge:
+        except (GoogleItemTooLarge, RemoteFileTooLarge):
             return DiscoveredDocument(**base, error_code="file_too_large")
-        except (GoogleRemoteUnauthorized, SourceItemUnavailable):
+        except (GoogleRemoteUnauthorized, SourceItemUnavailable, DownloadIntegrityError):
             # A listing token can remain valid while one shared/export-restricted
             # file rejects its content request. Treat that as an item failure;
             # source-level authorization failures are still raised by discovery.
@@ -328,6 +330,9 @@ class GoogleDriveDocumentProvider:
             # Do not attach the remote body or exception to records/logs. The
             # document's explicit code is enough for an Admin to retry safely.
             return DiscoveredDocument(**base, error_code="text_extraction_failed")
+        finally:
+            if hasattr(content, "close"):
+                content.close()
         return DiscoveredDocument(**base, text="\n\n".join(block.text for block in blocks), blocks=tuple(blocks))
 
     @staticmethod

@@ -33,7 +33,7 @@ def test_google_native_formats_export_to_office(mime, export):
     assert (
         client.read_file(
             credentials=GoogleCredentials("token", "refresh", None), remote_file=remote
-        )
+        ).read()
         == b"data"
     )
     assert calls[0][1].endswith("/id/export")

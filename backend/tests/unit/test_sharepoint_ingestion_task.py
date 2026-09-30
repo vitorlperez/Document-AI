@@ -160,6 +160,6 @@ def test_sharepoint_settings_defaults() -> None:
     settings = Settings(database_url="postgresql+psycopg://u:p@localhost:5432/db")
     assert settings.microsoft_sharepoint_redirect_uri is None
     assert settings.sharepoint_download_workers == 2
-    assert settings.max_file_bytes == 52_428_800
+    assert settings.max_file_bytes == 104_857_600
     assert settings.sharepoint_catalog_max_sites == 200
     assert settings.cipher_keys("sharepoint") == settings.cipher_keys("onedrive")

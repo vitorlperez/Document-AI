@@ -91,10 +91,10 @@ def csv_blocks(content: bytes) -> list[ExtractedBlock]:
     return rows_to_blocks("Tabela", csv.reader(io.StringIO(text), dialect))
 
 
-def xlsx_blocks(content: bytes) -> list[ExtractedBlock]:
+def xlsx_blocks(content) -> list[ExtractedBlock]:
     limits.guard_size(content)
     limits.guard_zip(content)
-    workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    workbook = load_workbook(limits.as_stream(content), read_only=True, data_only=True)
     try:
         blocks: list[ExtractedBlock] = []
         for sheet in workbook.worksheets[: limits.MAX_SHEETS]:

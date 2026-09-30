@@ -11,7 +11,7 @@ from pptx.exc import PackageNotFoundError as PptxPackageNotFoundError
 from pypdf.errors import PdfReadError
 
 from app.ingestion.blocks import ExtractedBlock
-from app.ingestion.extraction import docx, pdf, presentation, spreadsheet, text
+from app.ingestion.extraction import docx, limits, pdf, presentation, spreadsheet, text
 from app.ingestion.extraction.errors import ExtractionError
 from app.ingestion.extraction.limits import MAX_DOCUMENT_CHARS, guard_size, guard_zip
 from app.ingestion.extraction.mime import (
@@ -38,6 +38,7 @@ EXTRACTORS = {
     PPTX: presentation.pptx_blocks,
     SLIDES: presentation.pptx_blocks,
 }
+STREAMED = frozenset({PDF, DOCX, XLSX, SHEETS, PPTX, SLIDES})  # extractors that read a seekable file
 ELIGIBLE_MIME_TYPES = frozenset(EXTRACTORS)
 BASE_MIME_TYPES = frozenset({GOOGLE_DOC, PDF, DOCX, "text/markdown"})
 
@@ -49,7 +50,7 @@ def eligible_mime_types(settings) -> frozenset[str]:
 
 
 def extract_blocks(
-    mime_type: str, content: bytes, *, name: str = "", ocr=None, budget=None
+    mime_type: str, content, *, name: str = "", ocr=None, budget=None
 ) -> list[ExtractedBlock]:
     mime_type = normalize_mime_type(name, mime_type)
     extractor = EXTRACTORS.get(mime_type)
@@ -57,6 +58,8 @@ def extract_blocks(
         raise ValueError("unsupported file type")
     try:
         guard_size(content)
+        if mime_type not in STREAMED and not isinstance(content, bytes):
+            content = limits.as_stream(content).read()
         if mime_type == DOCX:
             guard_zip(content)
         return sanitize_blocks(extractor(content, ocr=ocr, budget=budget) if mime_type == PDF else extractor(content))

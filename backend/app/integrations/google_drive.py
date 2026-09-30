@@ -1,10 +1,11 @@
 """Google Drive OAuth port; credentials never leave this module as plaintext."""
 
 import logging
+import tempfile
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Protocol
+from typing import IO, Protocol
 from urllib.parse import quote, urlencode
 from uuid import UUID
 
@@ -14,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
+from app.ingestion.extraction import limits
 from app.integrations.credentials import OAuthCredentials
 from app.integrations.errors import SourceItemUnavailable, SourceRemoteUnauthorized
 from app.integrations.http import RemoteHttp, RemoteThrottled, parse_retry_after
@@ -75,6 +77,7 @@ class RemoteFile:
     modified_at: datetime | None
     parent_ids: tuple[str, ...] = ()
     size: int | None = None  # bytes; absent for Google-native files
+    md5: str | None = None  # md5Checksum; absent for Google-native files
 
 
 class GoogleDrivePort(Protocol):
@@ -258,7 +261,7 @@ class GoogleDriveOAuthClient:
     def get_file(self, *, credentials: GoogleCredentials, file_id: str) -> RemoteFile | None:
         response = self.http.request("GET",
             f"https://www.googleapis.com/drive/v3/files/{quote(file_id, safe='')}",
-            params={"fields": "id,name,mimeType,modifiedTime,webViewLink,parents,size,trashed", "supportsAllDrives": "true"},
+            params={"fields": "id,name,mimeType,modifiedTime,webViewLink,parents,size,md5Checksum,trashed", "supportsAllDrives": "true"},
             headers={"Authorization": f"Bearer {credentials.access_token}"},
             timeout=20,
         )
@@ -281,7 +284,7 @@ class GoogleDriveOAuthClient:
                     "spaces": "drive",
                     "includeItemsFromAllDrives": "true",
                     "supportsAllDrives": "true",
-                    "fields": "nextPageToken,newStartPageToken,changes(fileId,removed,file(id,name,mimeType,modifiedTime,webViewLink,parents,size,trashed))",
+                    "fields": "nextPageToken,newStartPageToken,changes(fileId,removed,file(id,name,mimeType,modifiedTime,webViewLink,parents,size,md5Checksum,trashed))",
                 },
                 headers={"Authorization": f"Bearer {credentials.access_token}"},
                 timeout=20,
@@ -319,7 +322,7 @@ class GoogleDriveOAuthClient:
                 response = self._list_response(
                     credentials=credentials,
                     query=f"'{folder_id}' in parents and trashed = false",
-                    fields="nextPageToken,files(id,name,mimeType,modifiedTime,webViewLink,parents,size)",
+                    fields="nextPageToken,files(id,name,mimeType,modifiedTime,webViewLink,parents,size,md5Checksum)",
                     page_token=page_token,
                 )
                 data = response.json()
@@ -362,7 +365,7 @@ class GoogleDriveOAuthClient:
             response = self._list_response(
                 credentials=credentials,
                 query=f"{query} and mimeType != 'application/vnd.google-apps.folder'",
-                fields="nextPageToken,files(id,name,mimeType,modifiedTime,webViewLink,parents,size)",
+                fields="nextPageToken,files(id,name,mimeType,modifiedTime,webViewLink,parents,size,md5Checksum)",
                 page_token=page_token,
             )
             data = response.json()
@@ -384,6 +387,7 @@ class GoogleDriveOAuthClient:
             modified_at=datetime.fromisoformat(str(modified)) if modified else None,
             parent_ids=tuple(str(parent) for parent in item.get("parents", [])),
             size=int(item["size"]) if str(item.get("size") or "").isdigit() else None,
+            md5=str(item["md5Checksum"]) if item.get("md5Checksum") else None,
         )
 
     def _list_response(
@@ -405,25 +409,31 @@ class GoogleDriveOAuthClient:
         raise_for_google(response)
         return response
 
-    def read_file(self, *, credentials: GoogleCredentials, remote_file: RemoteFile) -> bytes:
-        export_mime = GOOGLE_EXPORT_MIME.get(remote_file.mime_type)
-        if export_mime:
-            url = f"https://www.googleapis.com/drive/v3/files/{remote_file.id}/export"
-            response = self.http.request("GET",
-                url,
-                params={"mimeType": export_mime},
-                headers={"Authorization": f"Bearer {credentials.access_token}"},
-                timeout=30,
-            )
-        else:
-            response = self.http.request("GET",
-                f"https://www.googleapis.com/drive/v3/files/{remote_file.id}",
-                params={"alt": "media"},
-                headers={"Authorization": f"Bearer {credentials.access_token}"},
-                timeout=30,
-            )
-        raise_for_google(response)
-        return response.content
+    def read_file(self, *, credentials: GoogleCredentials, remote_file: RemoteFile) -> IO[bytes]:
+        """Seekable temp file with the content; the caller closes it."""
+        headers = {"Authorization": f"Bearer {credentials.access_token}"}
+        dest = tempfile.TemporaryFile()
+        try:
+            export_mime = GOOGLE_EXPORT_MIME.get(remote_file.mime_type)
+            if export_mime:  # generated on the fly: no Range, one request (retried by RemoteHttp)
+                response = self.http.request(
+                    "GET", f"https://www.googleapis.com/drive/v3/files/{remote_file.id}/export",
+                    params={"mimeType": export_mime}, headers=headers, timeout=30,
+                )
+                raise_for_google(response)
+                dest.write(response.content)
+                dest.seek(0)
+            else:
+                self.http.download_to(
+                    f"https://www.googleapis.com/drive/v3/files/{remote_file.id}?alt=media",
+                    dest, headers=headers, expected_size=remote_file.size,
+                    hashes={"md5": remote_file.md5} if remote_file.md5 else None,
+                    max_bytes=limits.MAX_FILE_BYTES, on_error=raise_for_google,
+                )
+            return dest
+        except BaseException:
+            dest.close()
+            raise
 
 
 class CredentialCipher:

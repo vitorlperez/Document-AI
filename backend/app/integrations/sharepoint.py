@@ -239,11 +239,11 @@ class SharePointGraphClient(MicrosoftGraphClient):
             cache[node] = result
         return result
 
-    def read_file(self, *, credentials, item_id: str) -> bytes:
+    def read_file(self, *, credentials, item_id: str, size=None, hashes=None):
         drive_id, raw = split_composite(item_id)
         return self._download(
             f"{GRAPH_ROOT}/drives/{_drive(drive_id)}/items/{quote(raw, safe='')}/content",
-            credentials,
+            credentials, size=size, hashes=hashes,
         )
 
 

@@ -1,5 +1,3 @@
-from io import BytesIO
-
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
@@ -15,10 +13,10 @@ def _shapes(shapes):
             yield shape
 
 
-def pptx_blocks(content: bytes) -> list[ExtractedBlock]:
+def pptx_blocks(content) -> list[ExtractedBlock]:
     limits.guard_size(content)
     limits.guard_zip(content)
-    presentation = Presentation(BytesIO(content))
+    presentation = Presentation(limits.as_stream(content))
     blocks: list[ExtractedBlock] = []
     for number, slide in enumerate(presentation.slides, start=1):
         title_shape = (
