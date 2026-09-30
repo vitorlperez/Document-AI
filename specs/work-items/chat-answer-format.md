@@ -19,7 +19,7 @@ sources. Without that rule, provider text inherits 16px vs 12px names. The globa
 minimum on product links also inflates every row to 64–65px (including padding).
 
 Acceptance: continuous loose lists, initial start preserved, paragraph continuations and
-citations retained; prompt calibrates detail without query routing; compact linked sources;
+citations retained; prompt reinforces sequential numbering; compact linked sources;
 before/after desktop and 390px screenshots; frontend tests, tsc, eslint and backend pytest.
 
 ## Changes and evidence
@@ -27,14 +27,15 @@ before/after desktop and 390px screenshots; frontend tests, tsc, eslint and back
 - The parser now keeps blank-separated items in one list, retains initial start (including
   ::: steps), and retains indented continuation paragraphs and their citations. Headings,
   independent prose and a changed base marker type still end the list.
-- Shared synthesis guidance calibrates detail semantically, including explicit detail
-  requests taking precedence over an opening question word. Professional experience is
-  company — role — period; highlights at most one short sentence. No runtime query rules.
+- User update canceled detail calibration. Its added guidance was removed in full;
+  only sequential list markers and indentation of internal paragraphs remain. All pre-existing
+  guidance (including 038b70f) is preserved. No new restrictions on answer detail or activities.
 - Source metadata is 11px secondary text vs 12px file names; original links are centered
   in compact rows with an enlarged invisible hit area. Links and citation focus still work.
-- Red before the fix: screenshot/list regression failed; prompt contracts 10 failed,
-  8 passed. Green: 39/39 frontend tests; 25/25 focused backend/prompt tests; full pytest
-  911 passed, 13 skipped, 4 deprecation warnings. tsc and eslint exit 0; diff --check exit 0.
+- Red before the fix: frontend 16 passed, 4 failed; numbering prompt contracts failed.
+  Green: 39/39 frontend tests; 25/25 focused backend/prompt tests; full pytest on isolated
+  main 904 passed, 13 skipped, 4 deprecation warnings (shared tree with concurrent onboarding:
+  911 passed). tsc and eslint exit 0; diff --check exit 0.
 - Playwright ran against a separate real Vite frontend at 127.0.0.1:3014, using only mocked
   API responses. Docker at :3000 was not restarted. The same long fixture is used before
   and after; screenshots do not claim a live LLM answer. All eight PNGs were captured;

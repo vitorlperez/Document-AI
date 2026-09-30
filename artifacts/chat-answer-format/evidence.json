@@ -3,7 +3,7 @@
   "checks": {
     "numbering": "Before four ol elements start=1; after one ol with 4 items, desktop/390px, visually inspected.",
     "sources": "6 clickable citations and 3 original links retained; provider 11px secondary vs filename12px; rows36/37/37 desktop48/37/37mobile; link centered; no horizontal overflow.",
-    "prompt": "Shared semantic detail calibration and sequential numbering in both generation stages, source markers/factual coverage retained. Mocked tests, no live LLM call.",
+    "prompt": "User canceled detail calibration; all added shortening instructions removed. Only sequential markers and internal paragraph indentation added; source markers/factual coverage retained. Mocked tests, no live LLM call.",
     "boundary": "Protected pre-existing code diffs identical; requested commits preserved; no graph update or push; Docker stack unchanged."
   },
   "commands": [
@@ -30,7 +30,7 @@
     {
       "cmd": ".venv/bin/pytest -q",
       "exitCode": 0,
-      "result": "911 passed, 13 skipped, 4 warnings"
+      "result": "main: 904 passed, 13 skipped, 4 warnings; shared tree with concurrent onboarding: 911 passed"
     },
     {
       "cmd": "npx tsc --noEmit --incremental false",

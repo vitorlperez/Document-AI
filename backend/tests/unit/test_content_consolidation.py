@@ -38,7 +38,7 @@ class MockLLM(OpenAIQuestionProvider):
     ('Explique em detalhes as experiências do Vitor.', 'ask_content'),
     ('Resuma cada documento separadamente.', 'summarize_files'),
 ])
-def test_prompts_calibrate_detail_semantically_and_keep_numbering_grounded(stage, question, intent):
+def test_prompts_require_sequential_numbering_without_new_detail_restrictions(stage, question, intent):
     provider = MockLLM('Wasion — Engineer — 2021 [1].', [1])
     sources = [evidence('Wasion — Engineer — 2021.')]
     if stage == 'answer':
@@ -46,11 +46,10 @@ def test_prompts_calibrate_detail_semantically_and_keep_numbering_grounded(stage
     else:
         result = provider.synthesize_answer(question=question, intent=intent, sources=sources, catalog=[])
     instructions = provider.body['instructions']
-    assert 'Calibrate detail to the information the user requests' in instructions
-    assert 'who/which/when' in instructions
-    assert 'company — role — period' in instructions
-    assert 'at most one short sentence' in instructions
-    assert 'explain/detail/summarize' in instructions
+    # The user canceled detail calibration; keep only the numbering addition.
+    assert 'Calibrate detail to the information the user requests' not in instructions
+    assert 'company — role — period' not in instructions
+    assert 'an Activities/Atividades section' not in instructions
     assert 'sequential markers (1., 2., 3., 4.)' in instructions
     assert 'Every factual item needs an inline [N]' in instructions or 'Cite every factual item' in instructions
     assert result.citation_indexes == [1]
