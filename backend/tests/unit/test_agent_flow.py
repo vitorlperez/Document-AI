@@ -752,3 +752,13 @@ def test_parse_intent_current_selection_discards_historical_ordinals(target: str
     decision = parse_intent(_intent("summarize_files", target, [50]), listed_files=2, mentioned=1)
     assert decision.target == "mentioned"
     assert decision.ordinals == ()
+
+
+def test_agent_service_from_settings_preserves_limits_and_models():
+    from app.core.config import Settings
+    from app.knowledge.agent import agent_service_from_settings
+    settings = Settings(database_url="postgresql+psycopg://test:test@localhost/test",
+                        agent_max_seconds=7, agent_planner_model="m1")
+    service = agent_service_from_settings(None, None, settings)
+    assert service.limits.max_seconds == 7
+    assert service.models.planner_model == "m1"

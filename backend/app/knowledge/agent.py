@@ -1194,3 +1194,18 @@ def _request_deadline(deadline: float):
     from app.knowledge.questions import request_deadline
 
     return request_deadline(deadline)
+
+
+def agent_service_from_settings(session: Session, provider: SemanticProvider, settings) -> AgentService:
+    """Build the same bounded agent for browser and programmatic requests."""
+    return AgentService(
+        session=session, provider=provider,
+        limits=AgentLimits(max_result_bytes=settings.agent_max_tool_result_bytes,
+                           max_seconds=settings.agent_max_seconds),
+        models=FlowModels(planner_model=settings.agent_planner_model,
+                          synthesis_model=settings.agent_synthesis_model,
+                          intent_timeout_seconds=settings.agent_intent_timeout_seconds),
+        file_summaries=FileSummaries(target_chars=settings.agent_file_summary_chars,
+                                    model=settings.agent_file_summary_model,
+                                    timeout_seconds=settings.agent_file_summary_timeout_seconds),
+    )

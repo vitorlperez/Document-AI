@@ -21,11 +21,8 @@ from app.ingestion.service import (
 )
 from app.integrations.google_drive import GoogleAccessDenied
 from app.knowledge.agent import (
-    AgentLimits,
-    AgentService,
+    agent_service_from_settings,
     ConversationService,
-    FileSummaries,
-    FlowModels,
 )
 from app.knowledge.models import ConversationMessage
 from app.knowledge.presentation import (
@@ -350,23 +347,8 @@ def ask_organization_question(
         if payload.scope == "selection":
             mentions = [(item.kind, item.node_id) for item in payload.mentions or []]
             if request.app.state.settings.agent_tools_enabled:
-                result, tool_results, references = AgentService(
-                    session=session,
-                    provider=request.app.state.semantic_provider,
-                    limits=AgentLimits(
-                        max_result_bytes=request.app.state.settings.agent_max_tool_result_bytes,
-                        max_seconds=request.app.state.settings.agent_max_seconds,
-                    ),
-                    models=FlowModels(
-                        planner_model=request.app.state.settings.agent_planner_model,
-                        synthesis_model=request.app.state.settings.agent_synthesis_model,
-                        intent_timeout_seconds=request.app.state.settings.agent_intent_timeout_seconds,
-                    ),
-                    file_summaries=FileSummaries(
-                        target_chars=request.app.state.settings.agent_file_summary_chars,
-                        model=request.app.state.settings.agent_file_summary_model,
-                        timeout_seconds=request.app.state.settings.agent_file_summary_timeout_seconds,
-                    ),
+                result, tool_results, references = agent_service_from_settings(
+                    session, request.app.state.semantic_provider, request.app.state.settings,
                 ).ask(
                     scope=scope,
                     user_id=user.id,
