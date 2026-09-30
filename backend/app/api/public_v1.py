@@ -262,7 +262,7 @@ def ask(payload: AskInput, request: Request,
         _record(request, principal, "ask", "error", 503, query=payload.question)
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "AI provider unavailable") from error
     except ValueError as error:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "question selection unavailable") from error
     body = serialize_question_result(result, include_provider=True)
     if principal.node_ids:
         body.pop("coverage", None)

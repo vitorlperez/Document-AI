@@ -135,3 +135,15 @@ def test_review_12_search_does_not_consume_ask_bucket_and_ask_cap_is_org_wide(ap
     assert client.post('/v1/search', headers=bearer(key), json={'query': 'Aurora'}).status_code == 200
     assert client.post('/v1/ask', headers=bearer(key), json={'question': 'Quando?'}).status_code == 200
     assert client.post('/v1/ask', headers=bearer(mint_key(factory, tenant)), json={'question': 'Quando?'}).status_code == 429
+
+
+def test_review_16_ask_does_not_expose_internal_validation_text(api, monkeypatch):
+    client, factory = api
+    tenant = seed_tenant(factory, 'A', 'Aurora')
+    client.app.state.settings.public_api_ask_enabled = True
+    def fail(*args, **kwargs):
+        raise ValueError('private internal diagnostic')
+    monkeypatch.setattr('app.api.public_v1.QuestionService.ask_selection', fail)
+    response = client.post('/v1/ask', headers=bearer(mint_key(factory, tenant)), json={'question': 'Quando?'})
+    assert response.status_code == 422
+    assert response.json()['detail'] == 'question selection unavailable'
