@@ -20,22 +20,27 @@ from app.core.config import Settings
 from app.core.models import Base
 from app.identity.auth import VerifiedIdentity
 from app.main import create_app
+from tests.api.test_auth_and_invitations import FakeInvitationDelivery
 from tests.api.test_google_integrations import FakeGooglePort
+
+QA_API_PORT = int(os.environ.get("QA_API_PORT", "8011"))
+QA_API_URL = f"http://localhost:{QA_API_PORT}"
+QA_APP_URL = os.environ.get("QA_APP_URL", "http://localhost:5173")
 
 
 class AuthGateway:
     def authorization_url(self, *, state, screen_hint=None, max_age=None):
         if screen_hint == "sign-up" or not hasattr(self, "subject"):
             self.subject = str(uuid4())
-        return "http://localhost:8011/auth/callback?" + urlencode({"state": state, "code": self.subject})
+        return f"{QA_API_URL}/auth/callback?" + urlencode({"state": state, "code": self.subject})
 
     def exchange_code(self, *, code):
-        return VerifiedIdentity(provider="workos", subject=code, email=f"qa-{code}@example.test")
+        return VerifiedIdentity(provider="workos", subject=code, email=f"qa-{code}@example.com")
 
 
 class GooglePort(FakeGooglePort):
     def authorization_url(self, *, state, scope):
-        return "http://localhost:8011/data-sources/google/oauth/callback?" + urlencode({"state": state, "code": "qa"})
+        return f"{QA_API_URL}/data-sources/google/oauth/callback?" + urlencode({"state": state, "code": "qa"})
 
 
 class Dispatcher:
@@ -45,7 +50,7 @@ class Dispatcher:
 
 app = create_app(Settings(
     database_url=os.environ["DATABASE_URL"], environment="development",
-    public_app_url="http://localhost:5173", google_token_encryption_key=Fernet.generate_key().decode(),
+    public_app_url=QA_APP_URL, google_token_encryption_key=Fernet.generate_key().decode(),
 ))
 # Each request gets its own connection, including concurrent library loads.
 # A shared StaticPool connection can roll back another request's transaction.
@@ -56,6 +61,13 @@ app.state.session_factory = sessionmaker(bind=engine, expire_on_commit=False)
 app.state.auth_gateway = AuthGateway()
 app.state.google_drive_port = GooglePort()
 app.state.ingestion_dispatcher = Dispatcher()
+app.state.invitation_delivery = FakeInvitationDelivery()
+
+
+@app.get("/qa/invitations")
+def delivered_invitations():
+    """Test-only outbox: this isolated QA server never sends real email."""
+    return app.state.invitation_delivery.messages
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8011, log_level="warning")
+    uvicorn.run(app, host="127.0.0.1", port=QA_API_PORT, log_level="warning")

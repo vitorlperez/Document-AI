@@ -1,47 +1,64 @@
-# M27 — Organization onboarding and conversation tour
+# M27 — Preparação do dono e tour dos convidados
 
-## Product decisions
+A preparação da organização (Boas-vindas + Integrações) pertence somente ao dono atual. Admins e membros convidados entram diretamente na conversa e recebem apenas o tour na primeira visita àquela organização, mesmo se o dono ainda não terminou a preparação. Concluir ou pular o tour persiste em `membership.tour_completed_at`; os logins seguintes abrem a conversa sem repetir os fluxos.
 
-- New organizations start with a welcome screen and an optional integrations step. Back, next and skip are available; skipping completes setup.
-- Setup belongs to the organization. Owners/admins can advance it; members go directly into the app. Partial setup resumes after reload, login or an OAuth callback.
-- The integrations step mounts the existing `IntegrationScreen`, preserving OAuth, folder selection, access confirmation, sync queue, history and progress behavior without a second implementation.
-- Completing setup always opens the normal conversation route. Sync can continue in the background; indexed content is required for questions.
-- Four coachmarks explain the composer, tool selector, new conversation and navigation. Completion/skip is stored on the active membership. A native modal traps focus and Escape skips the tour. “Conhecer o app” allows replay.
-- Migration `20260930_0026` backfills existing organizations/members as complete so established accounts keep their current experience.
+A migration `20260930_0026` continua marcando organizações e memberships anteriores como concluídas. Nenhuma migration nova ou reset foi introduzido: convites novos mantêm o default pendente do tour. Os testes de migration provam backfill, defaults e downgrade.
 
-## Fresh verification
+## Correções por item
 
-| Check | Result |
+| Item | Commit | Evidência |
+| --- | --- | --- |
+| R-1 | `1bfe67b` | Membership atualizada via `populate_existing` e bloqueada antes de cada avanço. Regressão falhou antes para membership antiga; passou depois. A regra final foi restringida ao dono no commit próprio de M27. |
+| R-2 | `e22bd82` | AbortController protege carregamento, erros, conclusão e callbacks antigos. `review-check.cjs` segurou a resposta de B, voltou para A e entregou B atrasada: falhou antes, passou depois. |
+| F-001 | `53cde38` | Rodapé fixo no celular, com reserva de espaço e safe-area; três ações acessíveis na primeira dobra. |
+| F-002 | `20e8dab` | Notice/error descartados junto da conclusão, antes do tour; toast ausente na mesma rota, sem esperar auto-dismiss. |
+| F-003 | `2836745` | Limite/scroll do painel empilhado existem antes de M27. A nota duplicada fica oculta abaixo de 1024px; orientação no compositor e nota desktop preservadas. |
+| F-004 | `8f76d10` | Navegar tem texto visível e nome acessível coerente no celular. |
+| F-005 | `aca6b8e` | Jobs queued/syncing já carregados mostram aviso persistente no painel Biblioteca e compositor, sem depender do toast. |
+| F-006 | `f56faf8` | Container compartilhado e foco sem deslocar scroll; x/largura de stepper, título e ações, além de y de stepper/título, iguais entre etapas. |
+
+Cada finding de QA tem causa, arquivos, commit e validação em `TASK/items/F-001..F-006.md`. Não há finding pendente de decisão de produto.
+
+## Verificação fresca
+
+| Comando | Resultado |
 | --- | --- |
-| Backend `.venv/bin/pytest -q` | 911 passed, 13 skipped, exit 0 |
-| Focused API + migration tests | 12 passed, exit 0; initial API tests failed 5/5 before implementation (404) |
-| Backend Ruff on changed files | clean, exit 0 |
-| Backend `.venv/bin/ruff check .` | exit 1: 18 preexisting findings, verified identical against an archived HEAD |
+| Backend `.venv/bin/pytest -q` | 919 passed, 13 skipped, exit 0 |
+| Backend `.venv/bin/pytest -q tests/api/test_onboarding.py tests/unit/test_onboarding_migration.py` | 15 passed, exit 0 |
+| Backend `.venv/bin/ruff check app/organizations/onboarding.py tests/api/test_onboarding.py` | 0 achados, exit 0 |
+| Backend `.venv/bin/ruff check .` | 18 achados, exit 1; idênticos ao checkout base `f659262`, nenhum novo |
 | Frontend `npx tsc --noEmit` | exit 0 |
 | Frontend `npm run lint` | exit 0 |
 | Frontend `node --import /tmp/document-ai-onboarding-tools/node_modules/tsx/dist/loader.mjs --test tests/*.test.mjs` | 39 passed, 0 failed, exit 0 |
-| Frontend `npm run build` | all five Vinext build stages complete, exit 0 |
-| `docker compose up --build -d migrate api worker beat frontend` | exit 0; API healthy |
-| `docker compose exec -T api alembic current` | `20260930_0026 (head)`, exit 0 |
-| PostgreSQL backfill check | 1/1 existing organization and 1/1 existing membership preserved as complete |
-| `graphify update .` | AST graph refreshed, exit 0; preexisting graph changes kept outside the feature commit |
+| Frontend `npm run build` | cinco etapas concluídas, exit 0 |
+| `QA_API_URL=http://localhost:8012 QA_APP_URL=http://localhost:5174 NODE_PATH=/tmp/document-ai-onboarding-tools/node_modules node artifacts/onboarding/browser-check.cjs` | exit 0: 1440×900 e 390×844; captura adicional a 768×1024 |
+| Mesmas variáveis + `node artifacts/onboarding/review-check.cjs` | R-1 e R-2 passaram, exit 0 |
+| `graphify update .` | exit 0; 5900 nodes, 17209 edges, 340 communities |
 
-Browser QA uses the actual frontend and FastAPI handlers. Only AuthKit, Drive's external provider and ingestion dispatch are replaced with test doubles. SQLite is isolated and stored in a temporary directory, with a separate connection per request. Mutations commit before returning progress. The actual Docker/PostgreSQL app was also rebuilt and migrated.
+`browser-check.cjs` cobre oito cenários: dono com preparação completa e dono que pula preparação/tour, admin convidado que pula o tour e membro convidado que conclui os quatro passos, em ambas as larguras. Todos fazem logout/login e abrem diretamente a conversa. Convites são criados e aceitos pelos handlers reais; a organização dos convidados permanece em welcome/required para o dono. Admins e membros recebem 403 ao tentar avançar sua preparação.
 
-`browser-check.cjs` runs at 1440×900 and 390×900 and writes `browser-results.json`. It asserts signup → organization → welcome → connect/sync (desktop) or skip (mobile) → normal chat → all four coachmarks → logout → login directly into chat. It also covers persisted back/next/reload, OAuth return, a real HTTP 202 sync with one durable queued history entry, replay, Escape, dialog focus, coachmark alignment and viewport bounds. Screenshots remain local QA artifacts. The final run had zero browser exceptions, zero duplicate React key warnings and zero unexpected HTTP errors. Coachmark completion is awaited before checking persistence. Test totals include concurrent unrelated work in the shared checkout; those files are outside this commit.
+Os testes de API cobrem convites aceitos com preparação pendente ou completa, tour independente, idempotência, isolamento por org/membership, rebaixamento do dono para admin/membro com identity map antigo e persistência entre logins. Antes da mudança de requisito, dois casos de admin convidado falharam: bloqueado na preparação pendente e autorizado a avançar a completa. Depois, os 15 casos passaram.
 
-## Reproduce browser QA
+## Capturas novas
 
-1. Install test-only tools outside the repo: `npm install --prefix /tmp/document-ai-onboarding-tools --no-save playwright tsx`.
-2. In `backend/`: `PYTHONPATH=. .venv/bin/python ../artifacts/onboarding/qa-server.py`.
-3. In `frontend/`: `VITE_API_BASE_URL=http://localhost:8011 npm run dev`.
-4. From the repo: `NODE_PATH=/tmp/document-ai-onboarding-tools/node_modules node artifacts/onboarding/browser-check.cjs`.
+Resultados: `qa/fixed/browser-results.json`. Comparação do lint: `qa/fixed/backend-lint-comparison.json`.
 
-## Limits
+- F-001: `qa/fixed/integrations-first-fold-390.png` (cards carregados e rodapé na primeira dobra).
+- F-002: `qa/fixed/tour-1440-1.png` e `tour-390-3.png` (alvos sem toast).
+- F-003/F-005: `qa/fixed/chat-390.png`, `chat-768.png`, `chat-1440.png`.
+- F-004: `qa/fixed/tour-390-4.png` (Navegar visível).
+- F-006: `qa/fixed/welcome-1440.png` e `integrations-1440.png`; também capturadas a 390px.
+- Convidados: `qa/fixed/invited-{admin,member}-{tour,second-login}-{1440,390}.png`.
+- Revisão: `qa/fixed-R-1.png`, `qa/fixed-R-2.png`.
 
-- Browser QA does not create real WorkOS/Google accounts or process external documents. It proves the application flow, session persistence, OAuth callback integration and durable sync scheduling. Real provider consent and ingestion remain covered by existing integration behavior/tests.
-- The full backend Ruff run reports 18 existing findings, identical in an archived HEAD; no new lint findings.
-- 13 PostgreSQL-only tests skip when no disposable `TEST_DATABASE_URL` is configured; the new migration was applied to the running local PostgreSQL instance and tested separately for backfill/defaults/downgrade.
-- No remote push was requested. Unrelated library files and existing graph/artifact changes are excluded from the commit.
+## Reproduzir
 
-Skills: inline [oc-builder, oc-stamp].
+Instale Playwright e tsx fora do repo, em `/tmp/document-ai-onboarding-tools`. Em `backend/`, inicie `QA_API_PORT=8012 QA_APP_URL=http://localhost:5174 PYTHONPATH=. .venv/bin/python ../artifacts/onboarding/qa-server.py`. Em uma cópia temporária de `frontend/` com o mesmo source e dependências, inicie `VITE_API_BASE_URL=http://localhost:8012 npm run dev -- --port 5174`. Rode os dois comandos de navegador acima a partir do repo. Os defaults continuam sendo 8011/5173.
+
+A cópia temporária foi usada porque o Vinext já estava rodando no checkout; esse processo foi preservado. Os servidores isolados foram encerrados após a validação. Os logs dos servidores de QA e o navegador não mostraram erros novos.
+
+## Limites
+
+AuthKit, Google e envio de e-mail usam doubles; o worker não processa documentos externos. A API, as sessões, os convites, a autorização, o progresso, a fila/histórico e o frontend são reais em SQLite temporário. Os 13 testes de PostgreSQL continuam pulados sem `TEST_DATABASE_URL`. O Ruff global ainda tem os 18 achados anteriores. Mudanças alheias e os artefatos anteriores de graphify permaneceram fora dos commits; nenhum push foi solicitado.
+
+Skills: inline [qa-fix-protocol, oc-blackbox, oc-stamp].

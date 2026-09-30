@@ -27,7 +27,7 @@ class OnboardingService:
         organization, membership = self._rows(organization_id, user_id)
         required = (
             organization.onboarding_completed_at is None
-            and membership.role != MembershipRole.MEMBER
+            and membership.role == MembershipRole.OWNER
         )
         return {
             "step": "complete" if organization.onboarding_completed_at else organization.onboarding_step,
@@ -37,8 +37,8 @@ class OnboardingService:
 
     def advance(self, *, organization_id: UUID, user_id: UUID, step: OnboardingStep):
         organization, membership = self._rows(organization_id, user_id, lock=True)
-        if membership.role == MembershipRole.MEMBER:
-            raise OnboardingNotAllowed("only owners and admins configure onboarding")
+        if membership.role != MembershipRole.OWNER:
+            raise OnboardingNotAllowed("only the current owner configures onboarding")
         if organization.onboarding_completed_at is None:
             organization.onboarding_step = step
             if step == "complete":
@@ -48,7 +48,7 @@ class OnboardingService:
 
     def complete_tour(self, *, organization_id: UUID, user_id: UUID):
         organization, membership = self._rows(organization_id, user_id, lock=True)
-        if organization.onboarding_completed_at is None and membership.role != MembershipRole.MEMBER:
+        if organization.onboarding_completed_at is None and membership.role == MembershipRole.OWNER:
             raise OnboardingPending("complete organization setup first")
         if membership.tour_completed_at is None:
             membership.tour_completed_at = datetime.now(UTC)

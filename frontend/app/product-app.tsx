@@ -203,14 +203,14 @@ export function ProductApp({ screen }: { screen: Screen }) {
   if (screen === "staff") return <StaffCenter user={user} onBack={() => router.push(companies[0] ? companyPath(companies[0].id) : "/")} />;
   if (!isUuid(params.companyId) || !company) return <InvalidCompany companies={companies} onChoose={goCompany} />;
   if (!onboarding || onboarding.organizationId !== company.id) return <main className="auth-page"><section className="auth-card"><Brand /><p role="alert" className="mt-6">{error ?? "Preparando sua organização…"}</p><button onClick={() => { void loadSession(); }} className="onboarding-primary mt-4">Tentar novamente</button><button onClick={() => { void logout(); }} className="onboarding-text-button mt-4">Sair</button></section></main>;
-  if (onboarding.required && company.role !== "member") return <OrganizationOnboarding key={company.id} name={company.name} state={onboarding} onLogout={() => { void logout(); }} alert={alertMessage ? <NotificationToast message={alertMessage} tone={error || oauthFailure ? "error" : "notice"} onDismiss={dismissAlert} /> : null} onAdvance={async (step) => {
+  if (onboarding.required && company.role === "owner") return <OrganizationOnboarding key={company.id} name={company.name} state={onboarding} onLogout={() => { void logout(); }} alert={alertMessage ? <NotificationToast message={alertMessage} tone={error || oauthFailure ? "error" : "notice"} onDismiss={dismissAlert} /> : null} onAdvance={async (step) => {
     try {
       const activeRequest = sessionRequest.current;
       const memberships = await api<Company[]>("/organizations", { cache: "no-store", signal: activeRequest?.signal });
       if (activeRequest?.signal.aborted) return;
       setCompanies(memberships);
       const currentMembership = memberships.find((item) => item.id === company.id);
-      if (!currentMembership || currentMembership.role === "member") {
+      if (!currentMembership || currentMembership.role !== "owner") {
         await loadSession();
         throw new Error("Você não tem permissão para esta ação.");
       }

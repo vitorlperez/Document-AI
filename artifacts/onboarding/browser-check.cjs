@@ -3,6 +3,8 @@
 // NODE_PATH=/tmp/document-ai-onboarding-tools/node_modules node artifacts/onboarding/browser-check.cjs
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
+const apiBase = process.env.QA_API_URL ?? 'http://localhost:8011';
+const appBase = process.env.QA_APP_URL ?? 'http://localhost:5173';
 const fs = require('node:fs');
 const path = require('node:path');
 const output = path.join(__dirname, 'qa', 'fixed');
@@ -23,16 +25,16 @@ const check = (id, fn) => checks.has(id) ? fn() : undefined;
     const httpErrors = [];
     page.on('response', response => {
       const url = new URL(response.url());
-      if (url.port === '8011' && url.pathname !== '/me' && response.status() >= 400) httpErrors.push({ path: url.pathname, status: response.status() });
+      if (url.origin === new URL(apiBase).origin && url.pathname !== '/me' && response.status() >= 400) httpErrors.push({ path: url.pathname, status: response.status() });
     });
-    await page.goto('http://localhost:5173/login');
+    await page.goto(`${appBase}/login`);
     await page.getByRole('button', { name: 'Criar uma conta', exact: true }).click();
     await page.getByLabel('Nome da organização').fill(`QA onboarding ${width}`);
     await page.getByRole('button', { name: 'Criar organização', exact: true }).click();
     await page.getByRole('heading', { name: 'Boas-vindas ao Arquivio', exact: true }).waitFor();
     const org = new URL(page.url()).pathname.split('/')[2];
     const state = async () => {
-      const response = await context.request.get(`http://localhost:8011/organizations/${org}/onboarding`);
+      const response = await context.request.get(`${apiBase}/organizations/${org}/onboarding`);
       assert.equal(response.status(), 200);
       return response.json();
     };
@@ -68,6 +70,8 @@ const check = (id, fn) => checks.has(id) ? fn() : undefined;
       await page.getByRole('button', { name: 'Voltar', exact: true }).click();
       await page.getByRole('heading', { name: 'Boas-vindas ao Arquivio', exact: true }).waitFor();
       await page.getByRole('button', { name: 'Vamos começar', exact: true }).click();
+      await page.locator('.integration-tool-card').first().waitFor();
+      await page.getByText('Carregando fontes conectadas.', { exact: true }).waitFor({ state: 'detached' });
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: path.join(output, `integrations-first-fold-${width}.png`) });
       await check('F-001', async () => {
@@ -81,7 +85,7 @@ const check = (id, fn) => checks.has(id) ? fn() : undefined;
       await page.getByRole('dialog', { name: 'Google Drive', exact: true }).waitFor();
       assert.equal((await state()).step, 'integrations'); // OAuth returns into the pending wizard.
       // Resume setup on the conversation route so finishing it preserves the same ProductApp.
-      await page.goto(`http://localhost:5173/companies/${org}`);
+      await page.goto(`${appBase}/companies/${org}`);
       await page.getByRole('heading', { name: 'Traga o conhecimento da sua equipe', exact: true }).waitFor();
       await page.getByRole('button', { name: 'Gerenciar', exact: true }).last().click();
       const syncDialog = page.getByRole('dialog', { name: 'Google Drive', exact: true });
@@ -91,7 +95,7 @@ const check = (id, fn) => checks.has(id) ? fn() : undefined;
       await syncDialog.getByRole('button', { name: /Sincronizar selecionados/ }).click();
       assert.equal((await syncResponse).status(), 202);
       await page.getByText('Sincronização iniciada.', { exact: false }).waitFor();
-      const history = await context.request.get(`http://localhost:8011/library/sync-history?organization_id=${org}`);
+      const history = await context.request.get(`${apiBase}/library/sync-history?organization_id=${org}`);
       const entries = (await history.json()).items;
       assert.equal(entries.length, 1);
       assert.equal(entries[0].status, 'queued');
@@ -162,10 +166,73 @@ const check = (id, fn) => checks.has(id) ? fn() : undefined;
     assert.equal(await page.locator('dialog[open]').count(), 0);
     assert.deepEqual(errors, []);
     assert.deepEqual(httpErrors, []);
-    results.push({ width, signupAndOrg: true, welcome: true, skip: false, oauthResumeAndSyncQueued: true, tourSteps: 4, focusTrapped: true, viewportFit: true, secondLoginDirectChat: true, replayAndEscape: true, pageErrors: 0, httpErrors: 0 });
+    const pendingOrgResponse = await context.request.post(`${apiBase}/organizations`, { data: { name: `Pending owner setup ${width}` } });
+    assert.equal(pendingOrgResponse.status(), 201);
+    const pendingOrg = (await pendingOrgResponse.json()).id;
+    for (const role of ['admin', 'member']) {
+      const invited = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 } });
+      const guest = await invited.newPage();
+      guest.setDefaultTimeout(20000);
+      guest.on('pageerror', error => errors.push(error.message));
+      await guest.goto(`${appBase}/login`);
+      await guest.getByRole('button', { name: 'Criar uma conta', exact: true }).click();
+      await guest.getByRole('heading', { name: 'Crie sua primeira organização', exact: true }).waitFor();
+      const identity = await invited.request.get(`${apiBase}/me`);
+      const { email } = await identity.json();
+      const invitation = await context.request.post(`${apiBase}/organizations/${pendingOrg}/members/invitations`, { data: { email, role } });
+      assert.equal(invitation.status(), 202);
+      const outbox = await context.request.get(`${apiBase}/qa/invitations`);
+      const invitationURL = (await outbox.json()).findLast(item => item.recipient === email).invitation_url;
+      await guest.goto(invitationURL);
+      await guest.getByRole('button', { name: 'Aceitar convite', exact: true }).click();
+      await guest.getByRole('dialog', { name: 'Pergunte aos seus documentos', exact: true }).waitFor();
+      assert.equal(await guest.locator('.onboarding-page').count(), 0, `${role}: no owner setup`);
+      assert.equal(await guest.getByRole('heading', { name: 'O que você quer descobrir?', exact: true }).count(), 1);
+      const guestState = async () => (await invited.request.get(`${apiBase}/organizations/${pendingOrg}/onboarding`)).json();
+      assert.deepEqual(await guestState(), { step: 'welcome', required: false, tour_required: true });
+      for (const step of ['integrations', 'complete']) {
+        const forbidden = await invited.request.patch(`${apiBase}/organizations/${pendingOrg}/onboarding`, { data: { step } });
+        assert.equal(forbidden.status(), 403);
+      }
+      await guest.screenshot({ path: path.join(output, `invited-${role}-tour-${width}.png`) });
+      if (role === 'admin') {
+        await guest.getByRole('button', { name: 'Pular tour', exact: true }).click();
+      } else {
+        for (let index = 0; index < 4; index++) await guest.getByRole('button', { name: index === 3 ? 'Começar a conversar' : 'Próximo', exact: true }).click();
+      }
+      await guest.locator('dialog[open]').waitFor({ state: 'detached' });
+      assert.equal((await guestState()).tour_required, false);
+      await guest.getByRole('button', { name: 'Sair da conta', exact: true }).click();
+      await guest.getByRole('button', { name: 'Entrar na minha conta', exact: true }).click();
+      await guest.getByRole('heading', { name: 'O que você quer descobrir?', exact: true }).waitFor();
+      assert.equal(await guest.locator('.onboarding-page, dialog[open]').count(), 0);
+      assert.equal((await guestState()).tour_required, false);
+      await guest.screenshot({ path: path.join(output, `invited-${role}-second-login-${width}.png`) });
+      results.push({ width, role, setupStillPending: true, onlyTour: true, tourSkipped: role === 'admin', secondLoginDirectChat: true });
+      await invited.close();
+    }
+    const ownerState = await context.request.get(`${apiBase}/organizations/${pendingOrg}/onboarding`);
+    assert.deepEqual(await ownerState.json(), { step: 'welcome', required: true, tour_required: false });
+    assert.deepEqual(errors, []);
+    results.push({ width, role: 'owner', signupAndOrg: true, welcome: true, skip: false, oauthResumeAndSyncQueued: true, tourSteps: 4, focusTrapped: true, viewportFit: true, secondLoginDirectChat: true, replayAndEscape: true, pageErrors: 0, httpErrors: 0 });
+    const skipping = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 } });
+    const skipPage = await skipping.newPage();
+    await skipPage.goto(`${appBase}/login`);
+    await skipPage.getByRole('button', { name: 'Criar uma conta', exact: true }).click();
+    await skipPage.getByLabel('Nome da organização').fill(`Owner skipping ${width}`);
+    await skipPage.getByRole('button', { name: 'Criar organização', exact: true }).click();
+    await skipPage.getByRole('button', { name: 'Pular introdução', exact: true }).click();
+    await skipPage.getByRole('button', { name: 'Pular tour', exact: true }).click();
+    await skipPage.locator('dialog[open]').waitFor({ state: 'detached' });
+    await skipPage.getByRole('button', { name: 'Sair da conta', exact: true }).click();
+    await skipPage.getByRole('button', { name: 'Entrar na minha conta', exact: true }).click();
+    await skipPage.getByRole('heading', { name: 'O que você quer descobrir?', exact: true }).waitFor();
+    assert.equal(await skipPage.locator('.onboarding-page, dialog[open]').count(), 0);
+    results.push({ width, role: 'owner', skipSetupAndTour: true, secondLoginDirectChat: true });
+    await skipping.close();
     await context.close();
   }
   fs.writeFileSync(path.join(output, 'browser-results.json'), JSON.stringify(results, null, 2));
   await browser.close();
-  console.log('PASS: desktop/mobile signup → organization → welcome/connect-or-skip → chat → 4 coachmarks → logout/login direct chat. OAuth resume, real sync queue/history, replay, Escape, focus and viewport checks passed.');
+  console.log('PASS: owner full setup; invited admin/member tour with owner setup pending; all second logins direct chat. Desktop/mobile signup → organization → welcome/connect-or-skip → chat → 4 coachmarks → logout/login direct chat. OAuth resume, real sync queue/history, replay, Escape, focus and viewport checks passed.');
 })().catch(error => { console.error(error); process.exit(1); });
