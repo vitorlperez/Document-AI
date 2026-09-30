@@ -111,6 +111,7 @@ def test_foundation_migration_applies_and_reverts_on_disposable_postgres(test_da
         }
         assert "uq_conversation_messages_position" in conversation_constraints
         assert {foreign_key["referred_table"] for foreign_key in inspector.get_foreign_keys("processing_jobs")} == {
+            "manual_sync_runs",
             "organizations",
             "workspace_folders",
         }

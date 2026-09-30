@@ -34,6 +34,6 @@ class AuditWriter:
                     query_sha256=hashlib.sha256(query.encode()).hexdigest() if query else None,
                     query_length=len(query) if query is not None else None,
                 ))
-        except Exception:
+        except Exception:  # noqa: BLE001 — fail open without logging SQL parameters
             # Exception messages can contain SQL parameters: emit only a fixed message.
             logger.error("audit write failed", extra={"event": "api_audit_failed"})

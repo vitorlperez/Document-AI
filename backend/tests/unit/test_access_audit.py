@@ -25,7 +25,7 @@ def test_records_hash_and_length_but_never_the_query_text():
     )
     with factory() as session:
         row = session.scalars(select(ApiAuditEvent)).one()
-    assert row.query_sha256 == hashlib.sha256("segredo Aurora".encode()).hexdigest()
+    assert row.query_sha256 == hashlib.sha256(b"segredo Aurora").hexdigest()
     assert row.query_length == len("segredo Aurora")
     assert "Aurora" not in repr(row.__dict__)
 

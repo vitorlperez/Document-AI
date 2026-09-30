@@ -21,8 +21,8 @@ def test_prefix_is_unique_and_scopes_round_trip():
         org, user = Organization(name="A"), User(email="a@example.test")
         session.add_all([org, user])
         session.flush()
-        common = dict(organization_id=org.id, created_by_user_id=user.id, secret_hash="0" * 64,
-                      scopes=["search:read"], name="k")
+        common = {"organization_id": org.id, "created_by_user_id": user.id, "secret_hash": "0" * 64,
+                  "scopes": ["search:read"], "name": "k"}
         session.add(ApiKey(prefix="arq_deadbeef", **common))
         session.flush()
         assert session.query(ApiKey).one().scopes == ["search:read"]

@@ -23,7 +23,8 @@ def _ctx(session, tenant):
 
 
 def test_search_returns_only_the_callers_organization(factory):
-    a, b = seed_tenant(factory, "A", "Projeto Aurora entrega em setembro"), seed_tenant(factory, "B", "Projeto Zenite sigiloso")
+    a = seed_tenant(factory, "A", "Projeto Aurora entrega em setembro")
+    seed_tenant(factory, "B", "Projeto Zenite sigiloso")
     with factory() as session:
         principal, selection = _ctx(session, a)
         service = RetrievalService(session)

@@ -2,10 +2,10 @@ from datetime import timedelta
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.access.models import OrganizationAccessSettings, SCOPE_SEARCH
+from app.access.models import SCOPE_SEARCH
 from app.access.principal import ApiKeyAuthenticator, InsufficientScope, InvalidCredential
 from app.core.models import Base
 from app.organizations.models import Membership
