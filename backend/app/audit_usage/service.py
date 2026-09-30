@@ -13,7 +13,7 @@ from app.integrations.google_drive import GoogleAccessDenied
 from app.workspaces.service import WorkspaceService
 
 ACTIVE_DOCUMENT_LIMIT = 500
-MONTHLY_LIMITS = {"processed_bytes": 2_000_000_000, "embedding_tokens": 1_000_000, "questions": 1_000}
+MONTHLY_LIMITS = {"processed_bytes": 2_000_000_000, "embedding_tokens": 1_000_000, "questions": 1_000, "ocr_pages": 2_000}
 
 
 class UsageLimitExceeded(RuntimeError):

@@ -4,7 +4,7 @@ import enum
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Uuid
+from sqlalchemy import JSON, DateTime, Enum, ForeignKey, Index, String, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, CreatedAtMixin, UUIDPrimaryKeyMixin
@@ -54,3 +54,22 @@ Index(
     postgresql_where=ProcessingJob.status.in_([ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING]),
     sqlite_where=ProcessingJob.status.in_([ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING]),
 )
+
+
+class ExtractionCache(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
+    """Recognized page texts per tenant; client text, so same retention class as chunks."""
+
+    __tablename__ = "extraction_cache"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "engine", "engine_version", "cache_key", name="uq_extraction_cache_key"
+        ),
+    )
+
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    engine: Mapped[str] = mapped_column(String(40), nullable=False)
+    engine_version: Mapped[str] = mapped_column(String(40), nullable=False)
+    cache_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    page_texts: Mapped[list[str]] = mapped_column(JSON, nullable=False)

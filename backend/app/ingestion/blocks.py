@@ -8,3 +8,4 @@ class ExtractedBlock:
     text: str
     page_number: int | None = None
     section_path: str | None = None
+    ocr: bool = False

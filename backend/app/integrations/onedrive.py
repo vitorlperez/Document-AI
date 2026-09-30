@@ -419,6 +419,8 @@ class OneDriveDocumentProvider:
     key = "onedrive"
     max_workers = MAX_PAGE_WORKERS
     max_file_bytes = 0
+    ocr = None
+    budget = None
 
     def __init__(self, client: MicrosoftGraphClient, cipher: OneDriveCipher):
         self.client, self.cipher = client, cipher
@@ -595,7 +597,7 @@ class OneDriveDocumentProvider:
         content = self.client.read_file(credentials=credentials, item_id=remote_id)
 
         try:
-            blocks = extract_blocks(mime_type, content)
+            blocks = extract_blocks(mime_type, content, ocr=self.ocr, budget=self.budget)
         except ExtractionError as error:
             return DiscoveredDocument(**base, error_code=error.code)
         except (BadZipFile, PackageNotFoundError, PdfReadError, UnicodeDecodeError, ValueError):

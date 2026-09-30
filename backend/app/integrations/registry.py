@@ -4,6 +4,8 @@ from collections.abc import Callable
 
 from app.core.config import Settings
 from app.ingestion.extraction import eligible_mime_types
+from app.ingestion.extraction.cache import CachingOcr
+from app.ingestion.extraction.engines import build_ocr
 from app.ingestion.google_drive import GoogleDriveDocumentProvider
 from app.integrations.base import ProviderCapabilities, ProviderNotConfigured, SourceProvider
 from app.integrations.google_drive import CredentialCipher, GoogleDriveOAuthClient
@@ -184,10 +186,25 @@ class IntegrationRegistry:
             "sharepoint": lambda: SharePointProviderAdapter(settings),
         }
 
-    def get(self, provider: str, *, session=None, source_id=None) -> SourceProvider:
+    def get(
+        self, provider: str, *, session=None, source_id=None, organization_id=None, session_factory=None
+    ) -> SourceProvider:
         if provider == "google_drive":
-            return GoogleDriveProviderAdapter(self._settings, session=session, source_id=source_id)
-        factory = self._factories.get(provider)
-        if factory is None:
-            raise ProviderNotConfigured(f"integration provider is not configured: {provider}")
-        return factory()
+            adapter = GoogleDriveProviderAdapter(self._settings, session=session, source_id=source_id)
+        else:
+            factory = self._factories.get(provider)
+            if factory is None:
+                raise ProviderNotConfigured(f"integration provider is not configured: {provider}")
+            adapter = factory()
+        self._attach_ocr(adapter, organization_id, session_factory)
+        return adapter
+
+    def _attach_ocr(self, adapter, organization_id, session_factory) -> None:
+        target = getattr(adapter, "_provider", None)
+        if target is None or not hasattr(target, "ocr"):
+            return
+        engine, budget = build_ocr(self._settings)
+        if engine is not None and organization_id is not None and session_factory is not None:
+            engine = CachingOcr(engine, session_factory, organization_id)
+        # One budget per provider instance, i.e. per sync job.
+        target.ocr, target.budget = engine, budget()

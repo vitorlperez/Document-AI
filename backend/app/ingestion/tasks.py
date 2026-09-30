@@ -21,6 +21,7 @@ from app.ingestion.service import DiscoveryResult, IngestionService
 from app.integrations.errors import SourceRemoteUnauthorized
 from app.integrations.http import RemoteThrottled
 from app.integrations.models import DataSource
+from app.ingestion.extraction.cache import purge_cache
 from app.integrations.registry import IntegrationRegistry
 from app.knowledge.models import Document
 from app.knowledge.questions import AIProviderUnavailable, EmbeddingService, OpenAIQuestionProvider
@@ -42,13 +43,20 @@ celery_app.conf.update(
 )
 
 
+TERMINAL_ERROR_CODES = frozenset({"file_encrypted", "file_too_large", "ocr_document_too_large"})
+
+
 def create_celery_app(settings: Settings) -> Celery:
     celery_app.conf.broker_url = settings.redis_url
     celery_app.conf.beat_schedule = {
         "schedule-connected-source-reconciliation": {
             "task": "document_intelligence.ingestion.schedule",
             "schedule": timedelta(minutes=settings.sync_scheduler_interval_minutes),
-        }
+        },
+        "purge-extraction-cache": {
+            "task": "document_intelligence.ingestion.purge_extraction_cache",
+            "schedule": timedelta(days=1),
+        },
     }
     return celery_app
 
@@ -102,10 +110,21 @@ def schedule_connected_source_reconciliations(
                 },
             )
 
+    ocr_backlog = set(
+        session.scalars(
+            select(Document.workspace_folder_id)
+            .where(Document.index_status == "failed", Document.error_code == "ocr_budget_exceeded")
+            .distinct()
+        )
+    )
     for folder in folders:
         source = sources_by_id[folder.source_id]
         last_synced_at = _as_utc(source.last_synced_at)
-        if last_synced_at is not None and last_synced_at >= freshness_cutoff:
+        if (
+            last_synced_at is not None
+            and last_synced_at >= freshness_cutoff
+            and folder.id not in ocr_backlog
+        ):
             counts["skipped"] += 1
             continue
         if (
@@ -186,6 +205,15 @@ def schedule_periodic_reconciliation() -> dict[str, int]:
         )
 
 
+@celery_app.task(name="document_intelligence.ingestion.purge_extraction_cache")
+def purge_extraction_cache_task() -> int:
+    session_factory = build_session_factory(build_engine(get_settings()))
+    with session_factory() as session:
+        removed = purge_cache(session)
+        session.commit()
+        return removed
+
+
 @celery_app.task(
     bind=True,
     name="document_intelligence.ingestion.reconcile",
@@ -240,7 +268,13 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 session.commit()
                 return
             source_provider = getattr(source, "provider", "google_drive")
-            provider = IntegrationRegistry(settings).get(source_provider, session=session, source_id=source.id)
+            provider = IntegrationRegistry(settings).get(
+                source_provider,
+                session=session,
+                source_id=source.id,
+                organization_id=job.organization_id,
+                session_factory=session_factory,
+            )
             provider.eligible_mime_types = eligible_mime_types(settings)
             selections = list(
                 session.scalars(
@@ -270,7 +304,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             force_file_ids = {
                 document.external_file_id
                 for document in known_rows
-                if document.index_status == "failed"
+                if (document.index_status == "failed" and getattr(document, "error_code", None) not in TERMINAL_ERROR_CODES)
                 or (document.index_status == "indexed" and document.content_hash == "")
                 or (document.index_status == "ignored"
                     and document.error_code == "unsupported_file_type"

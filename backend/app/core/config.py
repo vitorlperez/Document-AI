@@ -25,6 +25,22 @@ class Settings(BaseSettings):
     environment: str = "development"
     source_fencing_enabled: bool = True
     vector_backend: Literal["python", "pgvector"] = "python"
+    ocr_engine: Literal["none", "docling_serve"] = "none"
+    docling_serve_url: str | None = None
+    docling_serve_version: str = "v1.35.0-pt1"
+    docling_serve_timeout_seconds: float = Field(default=120, gt=0)
+    ocr_max_pages_per_job: int = Field(default=200, ge=0)
+    ocr_job_deadline_seconds: float = Field(default=600, gt=0)
+    ocr_languages: str = "por,eng"
+    ocr_cloud_fallback_enabled: bool = False
+    ocr_cloud_dpa_approved: bool = False
+
+    @model_validator(mode="after")
+    def validate_ocr(self):
+        if self.ocr_engine == "docling_serve" and not self.docling_serve_url:
+            raise ValueError("Docling requires its private endpoint")
+        return self
+
     new_formats_enabled: bool = False
     active_document_limit: int = Field(default=500, gt=0)
     service_name: str = "document-intelligence-api"

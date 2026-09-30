@@ -14,6 +14,7 @@ from app.ingestion.blocks import ExtractedBlock
 from app.ingestion.extraction import docx, pdf, presentation, spreadsheet, text
 from app.ingestion.extraction.errors import ExtractionError
 from app.ingestion.extraction.limits import MAX_DOCUMENT_CHARS, guard_size, guard_zip
+from app.knowledge.untrusted import strip_invisible
 from app.ingestion.extraction.mime import (
     DOCX,
     GOOGLE_DOC,
@@ -58,7 +59,7 @@ def extract_blocks(
         guard_size(content)
         if mime_type == DOCX:
             guard_zip(content)
-        return sanitize_blocks(extractor(content))
+        return sanitize_blocks(extractor(content, ocr=ocr, budget=budget) if mime_type == PDF else extractor(content))
     except ExtractionError:
         raise
     except (
@@ -82,11 +83,11 @@ def sanitize_blocks(blocks: list[ExtractedBlock]) -> list[ExtractedBlock]:
     cleaned: list[ExtractedBlock] = []
     remaining = MAX_DOCUMENT_CHARS
     for block in blocks:
-        text = block.text.replace("\x00", "")
+        text = strip_invisible(block.text.replace("\x00", ""))
         section = block.section_path.replace("\x00", "") if block.section_path else None
         if len(text) > remaining:
             if remaining:
-                cleaned.append(ExtractedBlock(text[:remaining], block.page_number, section))
+                cleaned.append(ExtractedBlock(text[:remaining], block.page_number, section, block.ocr))
             cleaned.append(
                 ExtractedBlock(
                     "[Conteúdo truncado: limite de texto do documento atingido.]",
@@ -95,6 +96,6 @@ def sanitize_blocks(blocks: list[ExtractedBlock]) -> list[ExtractedBlock]:
                 )
             )
             break
-        cleaned.append(ExtractedBlock(text, block.page_number, section))
+        cleaned.append(ExtractedBlock(text, block.page_number, section, block.ocr))
         remaining -= len(text)
     return cleaned

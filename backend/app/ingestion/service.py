@@ -505,6 +505,20 @@ class IngestionService:
                 )
                 failures += 1
                 continue
+            ocr_pages = sum(1 for block in discovered.blocks if block.ocr)
+            if ocr_pages:
+                try:
+                    UsageService(self.session).check_and_record(
+                        scope=OrganizationScope(job.organization_id),
+                        metric="ocr_pages",
+                        increment=ocr_pages,
+                    )
+                except UsageLimitExceeded:
+                    self._upsert_nonindexed(
+                        job, discovered, status="failed", error_code="ocr_budget_exceeded"
+                    )
+                    failures += 1
+                    continue
             self._upsert_indexed(job, discovered, indexed_at=now, force=discovered.external_file_id in manual_ids)
 
         if job.manual_run_id:

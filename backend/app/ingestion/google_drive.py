@@ -46,7 +46,10 @@ class GoogleDriveDocumentProvider:
         extraction_workers: int = MAX_EXTRACTION_WORKERS,
         session: Session | None = None,
         source_id: UUID | None = None,
+        ocr=None,
+        budget=None,
     ):
+        self.ocr, self.budget = ocr, budget
         self.client = client
         self.cipher = cipher
         self.extraction_workers = min(MAX_EXTRACTION_WORKERS, max(1, extraction_workers))
@@ -308,7 +311,7 @@ class GoogleDriveDocumentProvider:
                     credentials=credentials, remote_file=remote_file
                 ),
             )
-            blocks = extract_blocks(mime_type, content)
+            blocks = extract_blocks(mime_type, content, ocr=self.ocr, budget=self.budget)
         except (GoogleRemoteUnauthorized, SourceItemUnavailable):
             # A listing token can remain valid while one shared/export-restricted
             # file rejects its content request. Treat that as an item failure;

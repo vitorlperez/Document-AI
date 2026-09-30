@@ -25,3 +25,7 @@ def guard_zip(content: bytes) -> None:
         total = sum(item.file_size for item in archive.infolist())
     if total > MAX_UNCOMPRESSED_BYTES or (content and total / len(content) > MAX_ZIP_RATIO):
         raise ExtractionError("file_too_large")
+
+MIN_CHARS_PER_PAGE = 25
+OCR_MIN_LOW_PAGE_RATIO = 0.3
+OCR_MAX_PAGES_PER_DOCUMENT = 60
