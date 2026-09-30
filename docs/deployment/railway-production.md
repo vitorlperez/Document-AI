@@ -1,6 +1,6 @@
 # Preparar a produção na Railway
 
-Este guia prepara o Arquivio para a Railway sem usar o `docker-compose.yml` de desenvolvimento. O projeto Railway contém cinco serviços no mesmo ambiente e região: `frontend`, `api`, `worker`, `Postgres` e `Redis`. Somente `frontend` e `api` recebem domínios públicos. PostgreSQL e Redis da Railway são serviços em containers com volumes; habilite e teste os backups antes de armazenar dados de clientes.
+Este guia prepara o Arquivio para a Railway sem usar o `docker-compose.yml` de desenvolvimento. O projeto Railway contém cinco serviços no mesmo ambiente e região: `frontend`, `api`, `worker`, `Postgres` e `Redis`. Somente `frontend` e `api` recebem domínios públicos (o serviço opcional `mcp`, um 6º serviço com domínio próprio, está em `docs/deployment/mcp-server.md`). PostgreSQL e Redis da Railway são serviços em containers com volumes; habilite e teste os backups antes de armazenar dados de clientes.
 
 ## 1. Definir os valores de produção
 
