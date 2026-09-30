@@ -414,6 +414,41 @@ def test_document_failures_are_visible_without_failing_eligible_documents(sessio
     assert rows["unsupported"].error_code == "unsupported_file_type"
 
 
+def test_empty_native_document_is_not_reported_as_a_scanned_pdf(session: Session) -> None:
+    organization, admin, folder = create_workspace(session)
+    service = IngestionService(session)
+    job = service.enqueue(
+        scope=OrganizationScope(organization.id),
+        user_id=admin.id,
+        workspace_folder_id=folder.id,
+    )
+
+    service.reconcile(
+        job_id=job.id,
+        documents=[
+            DiscoveredDocument(
+                external_file_id="blank-doc",
+                name="Untitled document",
+                mime_type="application/vnd.google-apps.document",
+                source_url="https://docs.example.test/blank",
+                text="",
+            ),
+            DiscoveredDocument(
+                external_file_id="scan",
+                name="Scan.pdf",
+                mime_type="application/pdf",
+                source_url="https://drive.example.test/scan",
+                text="",
+            ),
+        ],
+    )
+
+    rows = {row.external_file_id: row for row in session.scalars(select(Document))}
+    assert rows["blank-doc"].index_status == "failed"
+    assert rows["blank-doc"].error_code == "empty_document"
+    assert rows["scan"].error_code == "empty_extracted_text"
+
+
 def test_terminal_reconcile_is_a_noop_that_preserves_document_and_folder_state(session: Session) -> None:
     organization, admin, folder = create_workspace(session)
     service = IngestionService(session)

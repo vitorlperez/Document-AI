@@ -58,6 +58,11 @@ class DiscoveredDocument:
     parent_ids: tuple[str, ...] = ()
 
 
+def _empty_text_code(mime_type: str) -> str:
+    """Only a PDF can be "scanned"; an empty native document/text file is simply empty."""
+    return "empty_extracted_text" if mime_type == "application/pdf" else "empty_document"
+
+
 @dataclass(frozen=True)
 class DiscoveryResult:
     """Either a complete scope snapshot or one provider's incremental delta."""
@@ -512,7 +517,7 @@ class IngestionService:
                     job,
                     discovered,
                     status="failed",
-                    error_code=discovered.error_code or "empty_extracted_text",
+                    error_code=discovered.error_code or _empty_text_code(discovered.mime_type),
                 )
                 failures += 1
                 continue
@@ -535,7 +540,7 @@ class IngestionService:
         update_progress(self.session, job, total=len(manual_documents), processed=len(manual_documents),
                 outcomes=[{"external_id": item.external_file_id, "name": item.name,
                            "processed": True, "error_code": item.error_code or
-                           ("empty_extracted_text" if item.mime_type in self.eligible_mime_types and not (item.text or "").strip() else None)}
+                           (_empty_text_code(item.mime_type) if item.mime_type in self.eligible_mime_types and not (item.text or "").strip() else None)}
                           for item in manual_documents])
         if finalize:
             return self.finalize_reconciliation(
