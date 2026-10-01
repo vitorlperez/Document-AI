@@ -32,12 +32,13 @@ def _answers(intent: str, target: str, **nouls: float) -> dict:
 
 def _classifier(monkeypatch: pytest.MonkeyPatch, payload: dict, sent: list | None = None) -> JevIntentClassifier:
     def fake_post(url, *, headers, json, timeout):
+        assert url == "https://api.typesafe.ai/v1/systemone" and headers == {"Authorization": "Bearer ts-test"}
         if sent is not None:
             sent.append(json)
         return httpx.Response(200, json=payload, request=httpx.Request("POST", url))
 
     monkeypatch.setattr(jev.httpx, "post", fake_post)
-    return JevIntentClassifier("sk-or-test")
+    return JevIntentClassifier("ts-test")
 
 
 def _context(**overrides) -> dict:
@@ -53,7 +54,7 @@ def test_choices_map_to_the_closed_schema_and_pass_validation(monkeypatch: pytes
     decision = parse_intent(raw, listed_files=0, mentioned=1)
 
     assert (decision.intent, decision.target, decision.tool) == ("summarize_files", "mentioned", "summarize_documents")
-    assert sent[0]["model"] == "jev-1.13"
+    assert sent[0]["model"] == "jev-1.13.0"
     assert sent[0]["questions"]["intent"]["criteria"].keys() == set(jev.INTENT_CRITERIA)
 
 
@@ -136,12 +137,12 @@ def test_provider_failure_is_reported_as_unavailable(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(jev.httpx, "post", failing_post)
 
     with pytest.raises(AIProviderUnavailable):
-        JevIntentClassifier("sk-or-test").classify_intent(question="oi", history=[], context=_context())
+        JevIntentClassifier("ts-test").classify_intent(question="oi", history=[], context=_context())
 
 
-def test_jev_engine_requires_the_openrouter_key() -> None:
-    with pytest.raises(ValidationError, match="OPENROUTER_API_KEY"):
-        Settings(_env_file=None, database_url=DATABASE_URL, agent_intent_engine="jev", openrouter_api_key=None)
+def test_jev_engine_requires_the_typesafe_key() -> None:
+    with pytest.raises(ValidationError, match="TYPESAFE_API_KEY"):
+        Settings(_env_file=None, database_url=DATABASE_URL, agent_intent_engine="jev", typesafe_api_key=None)
 
 
 def test_settings_select_the_intent_engine(semantic_session: Session) -> None:  # noqa: F811
@@ -150,7 +151,7 @@ def test_settings_select_the_intent_engine(semantic_session: Session) -> None:  
     )
     with_jev = agent_service_from_settings(
         semantic_session, IntentProvider(),
-        Settings(_env_file=None, database_url=DATABASE_URL, agent_intent_engine="jev", openrouter_api_key="sk-or-x"),
+        Settings(_env_file=None, database_url=DATABASE_URL, agent_intent_engine="jev", typesafe_api_key="ts-x"),
     )
 
     assert default.intent_classifier is None

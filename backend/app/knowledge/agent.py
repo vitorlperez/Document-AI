@@ -1206,7 +1206,7 @@ def agent_service_from_settings(session: Session, provider: SemanticProvider, se
         from app.knowledge.jev import JevIntentClassifier
 
         intent_classifier = JevIntentClassifier(
-            settings.openrouter_api_key.get_secret_value() if settings.openrouter_api_key else None,
+            settings.typesafe_api_key.get_secret_value() if settings.typesafe_api_key else None,
             model=settings.agent_jev_model,
         )
     return AgentService(

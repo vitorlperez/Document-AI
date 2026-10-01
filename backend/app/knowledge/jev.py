@@ -1,8 +1,8 @@
 """Intent classification by Jev, a decision model that returns typed choices instead of text.
 
 Enabled with AGENT_INTENT_ENGINE=jev. Jev answers closed questions (intent, target, which
-previously listed files the message points at) with calibrated probabilities, via the
-OpenRouter System One API. It writes no text, so the two free-text fields of the LLM
+previously listed files the message points at) with calibrated probabilities, through
+TypeSafe's System One API (TYPESAFE_API_KEY). It writes no text, so the two free-text fields of the LLM
 classifier are built without a model:
 
 - standalone_query: for a fact question that depends on the conversation, the message is
@@ -29,8 +29,9 @@ from app.knowledge.questions import _REQUEST_DEADLINE, AIProviderUnavailable
 
 logger = logging.getLogger(__name__)
 
-OPENROUTER_SYSTEM_ONE_URL = "https://openrouter.ai/api/v1/systemone"
-JEV_MODEL = "jev-1.13"
+TYPESAFE_SYSTEM_ONE_URL = "https://api.typesafe.ai/v1/systemone"
+# Pinned version, not the jev-latest alias, so decisions do not shift under a silent upgrade.
+JEV_MODEL = "jev-1.13.0"
 # Probability above which a yes/no answer counts as yes.
 NOUL_THRESHOLD = 0.5
 MAX_STANDALONE_CHARS = 1000
@@ -85,7 +86,7 @@ _CITATION_MARK = re.compile(r"\s*\[\d+(?:\s*,\s*\d+)*\]|\s*\(fontes?\s[\d ,e]+\)
 class JevIntentClassifier:
     """IntentClassifierAdapter backed by Jev; `model` from the agent is ignored (Jev has its own)."""
 
-    def __init__(self, api_key: str | None, *, model: str = JEV_MODEL, url: str = OPENROUTER_SYSTEM_ONE_URL):
+    def __init__(self, api_key: str | None, *, model: str = JEV_MODEL, url: str = TYPESAFE_SYSTEM_ONE_URL):
         self.api_key, self.model, self.url = api_key, model, url
 
     def classify_intent(
