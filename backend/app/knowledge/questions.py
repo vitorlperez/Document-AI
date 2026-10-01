@@ -1662,11 +1662,21 @@ def _select_diverse_evidence(
     """Pack whole passages by relevance, then present them in original document order."""
     budget = MAX_EVIDENCE_CONTEXT_CHARS if max_chars is None else max_chars
     selected: list[Evidence] = []
+    # Merging never crosses documents, so the merged size is a per-document sum: a candidate
+    # re-merges only its own document's passages instead of everything selected so far.
+    by_document: dict[UUID, list[Evidence]] = {}
+    document_chars: dict[UUID, int] = {}
+    total = 0
     # Stable ties preserve the caller's inventory/document order.
     for item in sorted(evidence, key=lambda item: -item.score):
-        proposed = _merge_contiguous_evidence([*selected, item])
-        if sum(_evidence_context_chars(passage) for passage in proposed) <= budget:
+        same_document = [*by_document.get(item.document_id, []), item]
+        merged_chars = sum(_evidence_context_chars(passage) for passage in _merge_contiguous_evidence(same_document))
+        proposed_total = total - document_chars.get(item.document_id, 0) + merged_chars
+        if proposed_total <= budget:
             selected.append(item)
+            by_document[item.document_id] = same_document
+            document_chars[item.document_id] = merged_chars
+            total = proposed_total
     # Keep the retrieval's exact-entity/document priority for presentation, while
     # the packing decision above prioritizes score within the shared budget.
     document_order = {item.document_id: index for index, item in reversed(list(enumerate(evidence)))}
