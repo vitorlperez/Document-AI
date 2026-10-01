@@ -664,3 +664,31 @@ def test_production_click_sequence_is_visible_in_history_while_running_and_after
     assert client.delete(f"/workspace-folders/{workspace_id}?organization_id={organization}").status_code == 204
     # Removing the workspace deletes its jobs; the history snapshots must remain.
     assert set(history()) == {tool.json()["run_id"], job_id}
+
+
+def test_notion_catalog_exposes_page_hierarchy_and_saves_provider_specific_scope_name(api, monkeypatch):
+    from types import SimpleNamespace
+
+    from app.api import integrations
+
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = seed_library(factory, organization)
+    with factory.begin() as session:
+        session.get(DataSource, UUID(source_id)).provider = "notion"
+    rows = [RemoteFolder("parent", "Parent", kind="page"),
+            RemoteFolder("child", "Child", ("parent",), kind="page"),
+            RemoteFolder("db", "Projects", ("parent",), kind="database")]
+    monkeypatch.setattr(integrations, "IntegrationRegistry", lambda _: SimpleNamespace(
+        get=lambda _: SimpleNamespace(folders=lambda **_: rows)))
+    catalog = client.get(f"/data-sources/{source_id}/scope-catalog?organization_id={organization}")
+    assert catalog.status_code == 200
+    assert catalog.json()["folders"][1] == {"id": "child", "name": "Child", "parent_ids": ["parent"], "kind": "page"}
+    selected = client.post(f"/workspace-folders/selections?organization_id={organization}", json={
+        "source_id": source_id, "mode": "all_accessible", "uniform_access_confirmed": True,
+    })
+    assert selected.status_code == 201
+    with factory() as session:
+        workspace = session.get(WorkspaceFolder, UUID(selected.json()["id"]))
+        assert workspace.name == "Todas as páginas acessíveis do Notion"

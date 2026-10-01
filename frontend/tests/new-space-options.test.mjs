@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { newSpaceOptions } from "../app/new-space-options.ts";
+import { catalogItemPath, newSpaceOptions } from "../app/new-space-options.ts";
 
 const catalog = [
   { id: "tda", name: "Test Document-AI", parent_ids: ["root"] },
@@ -44,4 +44,18 @@ test("cyclic or missing parents do not hang", () => {
   const cyclic = [{ id: "a", name: "A", parent_ids: ["b"] }, { id: "b", name: "B", parent_ids: ["a"] }, { id: "c", name: "C" }];
   const { folders } = newSpaceOptions(cyclic, [{ name: "X", selection_kind: "selected", selection_folder_ids: ["zzz"] }]);
   assert.deepEqual(folders.map((item) => item.coveredBy), [null, null, null]);
+});
+
+test("Notion page paths disambiguate equal titles and preserve item types", () => {
+  const pages = [
+    { id: "a", name: "Operations", kind: "page" },
+    { id: "b", name: "Sales", kind: "page" },
+    { id: "x", name: "Runbook", kind: "page", parent_ids: ["a"] },
+    { id: "y", name: "Runbook", kind: "page", parent_ids: ["b"] },
+    { id: "db", name: "Tasks", kind: "database", parent_ids: ["a"] },
+  ];
+  assert.equal(catalogItemPath(pages[2], pages), "Operations / Runbook");
+  assert.equal(catalogItemPath(pages[3], pages), "Sales / Runbook");
+  assert.equal(newSpaceOptions(pages, []).folders[4].kind, "database");
+  assert.equal(catalogItemPath({ id: "c", name: "C", parent_ids: ["c"] }, pages), "C");
 });

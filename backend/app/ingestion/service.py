@@ -71,6 +71,9 @@ class DiscoveryResult:
     removed_file_ids: tuple[str, ...] = ()
     delta_links: dict[UUID, str | None] | None = None
     full_snapshot: bool = True
+    # Complete safe metadata for providers whose incremental content delta
+    # does not carry unchanged pages that moved or changed grouping role.
+    catalog_documents: list[DiscoveredDocument] | None = None
 
 
 @dataclass(frozen=True)

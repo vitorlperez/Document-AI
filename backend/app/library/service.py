@@ -379,6 +379,11 @@ class LibraryService:
             return documents, folders
         blocked = {item.external_id for item in exclusions}
         blocked_folders = {item.external_id for item in exclusions if item.kind == "folder"}
+        source = self.session.get(DataSource, source_id)
+        if source is not None and source.provider == "notion":
+            from app.integrations.notion import NOTION_CONTAINER_PREFIX
+            blocked_folders.update(NOTION_CONTAINER_PREFIX + id for id in tuple(blocked_folders)
+                                   if not id.startswith(NOTION_CONTAINER_PREFIX))
         nodes = list(self.session.scalars(select(LibraryNode).where(
             LibraryNode.organization_id == organization_id, LibraryNode.source_id == source_id,
         )))
@@ -898,6 +903,7 @@ class LibraryService:
                 )
                 self.session.add(node)
             else:
+                node.kind = "file"
                 node.parent_id, node.name, node.mime_type, node.source_url = (
                     parent.id,
                     document.name,
@@ -907,6 +913,10 @@ class LibraryService:
         self.session.flush()
         if workspace_folder_id is None:
             return
+        if source.provider == "notion":
+            self._remove_notion_legacy_folders(source=source, root=root)
+            self._remove_empty_folders(source_id=source.id,
+                                      preserved_external_ids={folder.id for folder in folders})
         # A delta only carries what changed and the catalog is shared by every
         # space of the source: prune just the files this space saw disappear
         # at the source and that no other space still keeps.
@@ -938,6 +948,32 @@ class LibraryService:
             preserved_external_ids={folder.id for folder in folders},
             candidate_ids=parents,
         )
+        self.session.flush()
+
+    def _remove_notion_legacy_folders(self, *, source: DataSource, root: LibraryNode) -> None:
+        """Discard old search placeholders once their document ID is repaired.
+
+        Keep legacy folders backed by another unsynchronized space until its
+        own content is rebuilt. Never delete a live file from that space.
+        """
+        from app.integrations.notion import NOTION_CONTAINER_PREFIX
+
+        live = set(self.session.scalars(select(Document.external_file_id).join(
+            WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id,
+        ).where(WorkspaceFolder.source_id == source.id, Document.index_status != "removed")))
+        legacy = list(self.session.scalars(select(LibraryNode).where(
+            LibraryNode.source_id == source.id, LibraryNode.kind == "folder",
+            ~LibraryNode.external_id.startswith(NOTION_CONTAINER_PREFIX),
+        )))
+        for node in legacy:
+            if node.external_id in live:
+                continue
+            replacement = self._by_external(source_id=source.id,
+                                            external_id=NOTION_CONTAINER_PREFIX + node.external_id)
+            for child in self.session.scalars(select(LibraryNode).where(LibraryNode.parent_id == node.id)):
+                child.parent_id = replacement.id if replacement else root.id
+            self.session.flush()
+            self.session.delete(node)
         self.session.flush()
 
     def _root(self, *, organization_id: UUID, source: DataSource) -> LibraryNode:
@@ -1017,6 +1053,8 @@ class LibraryService:
         if existing is not None:
             existing.parent_id = parent.id
             existing.name = remote.name
+            if remote.kind in {"page", "database", "data_source"}:
+                existing.mime_type = f"application/x-notion-{remote.kind}"
             return existing
         node = LibraryNode(
             organization_id=organization_id,
@@ -1025,7 +1063,7 @@ class LibraryService:
             external_id=external_id,
             kind="folder",
             name=remote.name,
-            mime_type=None,
+            mime_type=f"application/x-notion-{remote.kind}" if remote.kind in {"page", "database", "data_source"} else None,
             source_url=None,
         )
         self.session.add(node)

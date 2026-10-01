@@ -8,7 +8,8 @@ from app.ingestion.service import DiscoveryResult
 
 
 # (a) at the worker boundary: a space without data ignores a stale cursor.
-def _run_task(monkeypatch, *, known_rows: list, manual_mode: str | None = None) -> dict:
+def _run_task(monkeypatch, *, known_rows: list, manual_mode: str | None = None,
+              source_provider="google_drive", legacy_catalog=False, catalog_documents=None) -> dict:
     from app.ingestion import tasks
 
     organization_id, workspace_folder_id, source_id, job_id = (uuid4() for _ in range(4))
@@ -16,14 +17,14 @@ def _run_task(monkeypatch, *, known_rows: list, manual_mode: str | None = None) 
                           workspace_folder_id=workspace_folder_id, run_token="token",
                           manual_run_id=uuid4() if manual_mode else None)
     folder = SimpleNamespace(id=workspace_folder_id, organization_id=organization_id, source_id=source_id)
-    source = SimpleNamespace(id=source_id, provider="google_drive", encrypted_credentials="c",
+    source = SimpleNamespace(id=source_id, provider=source_provider, encrypted_credentials="c",
                              status="connected", last_synced_at=None)
     selection = SimpleNamespace(id=uuid4(), kind="folder", external_folder_id="tda",
                                 encrypted_delta_link="stale-cursor")
     seen: dict = {}
 
     class FakeSession:
-        scalar_values = iter([folder, source])
+        scalar_values = iter([folder, source, uuid4() if legacy_catalog else None])
         calls = 0
 
         def __enter__(self):
@@ -55,7 +56,8 @@ def _run_task(monkeypatch, *, known_rows: list, manual_mode: str | None = None) 
         def claim(self, **_):
             return job
 
-        def apply_reconciliation(self, **_):
+        def apply_reconciliation(self, **kwargs):
+            seen["ingested_documents"] = kwargs["documents"].documents
             return job
 
         def has_failed_documents(self, **_):
@@ -69,7 +71,8 @@ def _run_task(monkeypatch, *, known_rows: list, manual_mode: str | None = None) 
 
         def discover(self, **kwargs):
             seen.update(kwargs)
-            return DiscoveryResult(documents=[], delta_links={}, full_snapshot=True)
+            return DiscoveryResult(documents=[], delta_links={}, full_snapshot=True,
+                                   catalog_documents=catalog_documents)
 
         def folders(self, **_):
             return []
@@ -138,4 +141,19 @@ def test_manual_incremental_run_of_a_space_without_data_still_discovers_everythi
 # Integration management re-sync is deep: full discovery.
 def test_manual_full_run_forces_full_discovery(monkeypatch) -> None:
     seen = _run_task(monkeypatch, known_rows=[_indexed()], manual_mode="full")
+    assert seen["force_full"] is True
+
+
+def test_worker_projects_unchanged_metadata_without_reindexing_it(monkeypatch) -> None:
+    from app.ingestion.service import DiscoveredDocument
+    metadata = [DiscoveredDocument("a", "Renamed", "text/markdown", "https://notion.so/a")]
+    seen = _run_task(monkeypatch, known_rows=[_indexed()], source_provider="notion",
+                     catalog_documents=metadata)
+    assert seen["ingested_documents"] == []
+    assert seen["project_kwargs"]["documents"] == metadata
+    assert "force_full" not in seen
+
+
+def test_worker_rebuilds_legacy_notion_parent_bodies_once(monkeypatch) -> None:
+    seen = _run_task(monkeypatch, known_rows=[_indexed()], source_provider="notion", legacy_catalog=True)
     assert seen["force_full"] is True

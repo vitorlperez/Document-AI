@@ -26,6 +26,7 @@ from app.integrations.models import DataSource
 from app.integrations.registry import IntegrationRegistry
 from app.knowledge.models import Document
 from app.knowledge.questions import AIProviderUnavailable, EmbeddingService, OpenAIQuestionProvider
+from app.library.models import LibraryNode
 from app.library.service import LibraryService
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
@@ -331,6 +332,13 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 document.external_file_id: (document.modified_at, document.index_status)
                 for document in known_rows
             }
+            if source_provider == "notion" and session.scalar(select(LibraryNode.id).where(
+                LibraryNode.source_id == source.id, LibraryNode.kind == "folder",
+                ~LibraryNode.external_id.startswith("notion:container:"),
+                LibraryNode.external_id.in_([document.external_file_id for document in known_rows]),
+            ).limit(1)) is not None:
+                # One-time repair: old parent bodies included their subpages.
+                discover_kwargs["force_full"] = True
             # A space without data (new, emptied or cleared) must walk its whole
             # tree: a cursor saved by an earlier empty run would return nothing.
             has_data = any(document.index_status != "removed" for document in known_rows)
@@ -421,7 +429,8 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             LibraryService(session).project_successful_sync(
                 organization_id=job.organization_id,
                 source=source,
-                documents=document_results,
+                documents=(discovery.catalog_documents
+                           if discovery and discovery.catalog_documents is not None else document_results),
                 folders=source_folders,
                 workspace_folder_id=job.workspace_folder_id,
             )

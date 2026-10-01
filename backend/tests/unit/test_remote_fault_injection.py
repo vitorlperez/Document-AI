@@ -60,6 +60,7 @@ def test_transient_fault_mid_sync_retains_all_three_documents(monkeypatch, provi
     else:
         client = NotionOAuthClient(**args,http=client_http)
         monkeypatch.setattr(client,'list_pages',lambda **kw:[NotionPage(str(i),str(i),f'https://source.test/{i}',None) for i in range(1,4)])
+        monkeypatch.setattr(client,'list_databases',lambda **kw:[])
         cipher = CredentialCipher(key)
         credentials = cipher.encrypt(GoogleCredentials('a',None,None))
         port = NotionDocumentProvider(client,cipher)

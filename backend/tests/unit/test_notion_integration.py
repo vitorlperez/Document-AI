@@ -70,6 +70,226 @@ def test_notion_blocks_are_normalized_to_searchable_text() -> None:
     assert _blocks_to_text(blocks) == "First paragraph\n\nA heading\n\nprint('ok')"
 
 
+def test_notion_page_retains_parent_and_complete_title() -> None:
+    page = NotionOAuthClient._page({
+        "id": "child", "parent": {"type": "page_id", "page_id": "parent"},
+        "properties": {"Name": {"type": "title", "title": [
+            {"plain_text": "Run"}, {"plain_text": "book"},
+        ]}},
+    })
+    assert page.title == "Runbook"
+    assert page.parent_ids == ("parent",)
+
+
+def test_notion_child_pages_are_boundaries_not_parent_content(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = NotionOAuthClient(client_id="i", client_secret="s", redirect_uri="cb")
+    calls = []
+
+    def request(method, path, **kwargs):
+        calls.append(path)
+        return {"results": [{"id": "child", "type": "child_page", "has_children": True,
+                             "child_page": {"title": "Child"}}], "has_more": False}
+
+    monkeypatch.setattr(client, "_request", request)
+    blocks = client.page_blocks(credentials=GoogleCredentials("token", None, None), page_id="parent")
+    assert calls == ["/v1/blocks/parent/children"]
+    assert _blocks_to_text(blocks) == ""
+
+
+def test_notion_tables_equations_and_references_keep_their_data() -> None:
+    text = _blocks_to_text([
+        {"type": "table_row", "table_row": {"cells": [[{"plain_text": "Product"}], [{"plain_text": "Price"}]]}},
+        {"type": "equation", "equation": {"expression": "x = 2"}},
+        {"type": "link_to_page", "link_to_page": {"type": "page_id", "page_id": "other"}},
+        {"type": "bookmark", "bookmark": {"url": "https://example.test/reference"}},
+    ])
+    assert "Product | Price" in text
+    assert "x = 2" in text
+    assert "https://www.notion.so/other" in text
+    assert "https://example.test/reference" in text
+
+
+def test_notion_selection_indexes_descendants_and_uses_distinct_container_ids(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = NotionOAuthClient(client_id="i", client_secret="s", redirect_uri="cb")
+    reads = []
+
+    def page(id, title, parent=None):
+        return {"id": id, "object": "page", "url": f"https://notion.so/{id}",
+                "parent": {"type": "page_id", "page_id": parent} if parent else {"type": "workspace"},
+                "properties": {"Name": {"type": "title", "title": [{"plain_text": title}]}}}
+
+    def request(method, path, **kwargs):
+        if path == "/v1/search":
+            objects = [page("parent", "Parent"), page("unrelated", "Unrelated")]
+            if kwargs["json"].get("filter", {}).get("value") == "data_source":
+                objects = []
+            return {"results": objects, "has_more": False}
+        if path == "/v1/pages/child":
+            return page("child", "Child", "parent")
+        if path == "/v1/blocks/parent/children":
+            reads.append("parent")
+            return {"results": [
+                {"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "Parent body"}]}},
+                {"id": "child", "type": "child_page", "has_children": True, "child_page": {"title": "Child"}},
+                {"type": "link_to_page", "link_to_page": {"type": "page_id", "page_id": "unrelated"}},
+            ], "has_more": False}
+        if path == "/v1/blocks/child/children":
+            reads.append("child")
+            return {"results": [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "Child body"}]}}], "has_more": False}
+        raise AssertionError(path)
+
+    class Cipher:
+        def decrypt(self, value):
+            return GoogleCredentials("token", None, None)
+
+    monkeypatch.setattr(client, "_request", request)
+    provider = NotionDocumentProvider(client, Cipher())
+    selections = [type("Selection", (), {"kind": "folder", "external_folder_id": "parent"})()]
+    result = provider.discover(encrypted_credentials="encrypted", selections=selections)
+    assert sorted(reads) == ["child", "parent"]
+    docs = {doc.external_file_id: doc for doc in result.documents}
+    assert set(docs) == {"parent", "child"}
+    assert "Child body" not in docs["parent"].text
+    assert "unrelated" in docs["parent"].text
+    assert docs["child"].parent_ids == ("notion:container:parent",)
+    assert docs["parent"].parent_ids == ("notion:container:parent",)
+    assert docs["parent"].name == "Conteúdo de Parent"
+    folders = provider.folders_for_selections(encrypted_credentials="encrypted", selections=selections)
+    assert [(folder.id, folder.name) for folder in folders] == [("notion:container:parent", "Parent")]
+
+
+def test_notion_unchanged_pages_still_refresh_library_metadata() -> None:
+    edited = datetime.now(UTC)
+
+    class Cipher:
+        def decrypt(self, value):
+            return GoogleCredentials("token", None, None)
+
+    class Client:
+        def list_pages(self, **kwargs):
+            return [NotionPage("parent", "Parent", "", edited),
+                    NotionPage("child", "Renamed", "", edited, ("parent",))]
+
+        def page_blocks(self, **kwargs):
+            raise AssertionError("unchanged content must not be read")
+
+    provider = NotionDocumentProvider(Client(), Cipher())
+    result = provider.discover(encrypted_credentials="encrypted",
+        selections=[type("Selection", (), {"kind": "folder", "external_folder_id": "parent"})()],
+        known_documents={"parent": (edited, "indexed"), "child": (edited, "indexed")})
+    assert result.documents == []
+    assert result.removed_file_ids == ()
+    assert [(doc.external_file_id, doc.name, doc.parent_ids) for doc in result.catalog_documents] == [
+        ("child", "Renamed", ("notion:container:parent",)),
+        ("parent", "Conteúdo de Parent", ("notion:container:parent",)),
+    ]
+
+
+def test_notion_database_rows_and_block_children_are_paginated_without_flattening(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = NotionOAuthClient(client_id="i", client_secret="s", redirect_uri="cb")
+    requests = []
+    database = {"object": "database", "id": "db", "title": [{"plain_text": "Projects"}], "parent": {"type": "workspace"}, "data_sources": [{"id": "collection", "name": "Items"}, {"id": "collection2", "name": "Other"}]}
+    data_source = {"object": "data_source", "id": "collection", "title": [{"plain_text": "Items"}], "parent": {"type": "database_id", "database_id": "db"}}
+    row = {"object": "page", "id": "row", "parent": {"type": "data_source_id", "data_source_id": "collection"},
+           "properties": {"Name": {"type": "title", "title": [{"plain_text": "Apollo"}]},
+                          "Status": {"type": "select", "select": {"name": "Ready"}},
+                          "Budget": {"type": "number", "number": 0}}}
+
+    def request(method, path, **kwargs):
+        requests.append((path, kwargs))
+        if path == "/v1/search":
+            return {"results": [data_source] if kwargs["json"]["filter"]["value"] == "data_source" else [], "has_more": False}
+        if path == "/v1/databases/db":
+            return database
+        if path == "/v1/data_sources/collection2":
+            return dict(data_source, id="collection2", title=[{"plain_text": "Other"}])
+        if path == "/v1/data_sources/collection2/query":
+            return {"results": [], "has_more": False}
+        if path == "/v1/data_sources/collection/query":
+            if kwargs["json"].get("start_cursor") == "next-row":
+                return {"results": [dict(row, id="row2")], "has_more": False}
+            return {"results": [row], "has_more": True, "next_cursor": "next-row"}
+        if path == "/v1/blocks/row/children":
+            if kwargs["params"].get("start_cursor") == "next-block":
+                return {"results": [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "Second"}]}}], "has_more": False}
+            return {"results": [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "First"}]}}], "has_more": True, "next_cursor": "next-block"}
+        if path == "/v1/blocks/row2/children":
+            return {"results": [], "has_more": False}
+        raise AssertionError(path)
+
+    class Cipher:
+        def decrypt(self, value):
+            return GoogleCredentials("token", None, None)
+
+    monkeypatch.setattr(client, "_request", request)
+    provider = NotionDocumentProvider(client, Cipher())
+    selections = [type("Selection", (), {"kind": "folder", "external_folder_id": "db"})()]
+    result = provider.discover(encrypted_credentials="encrypted", selections=selections)
+    docs = {doc.external_file_id: doc for doc in result.documents}
+    assert set(docs) == {"row", "row2"}
+    assert "Status: Ready" in docs["row"].text
+    assert "Budget: 0" in docs["row"].text
+    assert "First\n\nSecond" in docs["row"].text
+    assert docs["row2"].parent_ids == ("notion:container:collection",)
+    assert [f.id for f in provider.folders_for_selections(encrypted_credentials="encrypted", selections=selections)] == ["notion:container:collection", "notion:container:collection2", "notion:container:db"]
+
+
+def test_notion_rich_text_links_are_references_not_descendants() -> None:
+    text = _blocks_to_text([{"type": "paragraph", "paragraph": {"rich_text": [
+        {"plain_text": "Policy", "href": "https://www.notion.so/policy"},
+    ]}}])
+    assert "Policy" in text
+    assert "https://www.notion.so/policy" in text
+
+
+def test_notion_new_child_of_unchanged_page_is_discovered_before_search_indexes_it(monkeypatch) -> None:
+    edited = datetime.now(UTC)
+    client = NotionOAuthClient(client_id="i", client_secret="s", redirect_uri="cb")
+    monkeypatch.setattr(client, "list_pages", lambda **_: [NotionPage("parent", "Parent", "", edited)])
+    monkeypatch.setattr(client, "list_databases", lambda **_: [])
+    monkeypatch.setattr(client, "retrieve_page", lambda **_: NotionPage("child", "Child", "", edited, ("parent",), "page_id"))
+    monkeypatch.setattr(client, "page_blocks", lambda *, page_id, **_: [
+        {"id": "child", "type": "child_page", "child_page": {"title": "Child"}}
+    ] if page_id == "parent" else [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "New body"}]}}])
+    cipher = type("Cipher", (), {"decrypt": lambda *_: GoogleCredentials("token", None, None)})()
+    result = NotionDocumentProvider(client, cipher).discover(encrypted_credentials="encrypted",
+        selections=[type("Selection", (), {"kind": "folder", "external_folder_id": "parent"})()],
+        known_documents={"parent": (edited, "indexed")})
+    assert [document.external_file_id for document in result.documents] == ["child"]
+    assert {document.external_file_id for document in result.catalog_documents} == {"parent", "child"}
+    assert result.removed_file_ids == ()
+
+
+def test_notion_search_absence_does_not_remove_a_still_accessible_known_page(monkeypatch) -> None:
+    client = NotionOAuthClient(client_id="i", client_secret="s", redirect_uri="cb")
+    edited = datetime.now(UTC)
+    monkeypatch.setattr(client, "list_pages", lambda **_: [])
+    monkeypatch.setattr(client, "list_databases", lambda **_: [])
+    monkeypatch.setattr(client, "retrieve_page", lambda **_: NotionPage("known", "Known", "", edited))
+    monkeypatch.setattr(client, "page_blocks", lambda **_: [])
+    cipher = type("Cipher", (), {"decrypt": lambda *_: GoogleCredentials("token", None, None)})()
+    result = NotionDocumentProvider(client, cipher).discover(encrypted_credentials="encrypted",
+        selections=[type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()],
+        known_documents={"known": (edited, "indexed")})
+    assert result.removed_file_ids == ()
+    assert [document.external_file_id for document in result.catalog_documents] == ["known"]
+
+
+def test_notion_cyclic_parents_do_not_create_a_cyclic_library_tree() -> None:
+    class Client:
+        def list_pages(self, **_):
+            return [NotionPage("a", "A", "", None, ("b",)), NotionPage("b", "B", "", None, ("a",))]
+
+        def page_blocks(self, **_):
+            return [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "body"}]}}]
+
+    cipher = type("Cipher", (), {"decrypt": lambda *_: GoogleCredentials("token", None, None)})()
+    provider = NotionDocumentProvider(Client(), cipher)
+    selections = [type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()]
+    provider.discover(encrypted_credentials="encrypted", selections=selections)
+    assert all(not folder.parent_ids for folder in provider.folders_for_selections(encrypted_credentials="encrypted", selections=selections))
+
+
 def test_notion_page_keeps_source_metadata() -> None:
     page = NotionPage("page-id", "Runbook", "https://notion.so/page-id", datetime.now(UTC))
     assert page.id == "page-id"

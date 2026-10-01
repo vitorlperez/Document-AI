@@ -11,6 +11,7 @@ from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveredDocument, IngestionService, SyncAccessDenied
+from app.integrations.models import DataSource
 from app.knowledge.models import Document
 from app.library.models import LibraryNode, ManualSyncRun
 from app.organizations.models import Membership
@@ -66,12 +67,22 @@ def _containing_workspaces(session: Session, node: LibraryNode, folders: list[Wo
     selection below the node, or an "all accessible" selection."""
     nodes = {n.id: n for n in session.scalars(
         select(LibraryNode).where(LibraryNode.source_id == node.source_id))}
+    source = session.get(DataSource, node.source_id)
+
+    def scope_id(external_id: str) -> str:
+        if source is not None and source.provider == "notion":
+            from app.integrations.notion import notion_scope_id
+            return notion_scope_id(external_id)
+        return external_id
 
     def chain(start: LibraryNode) -> set[str]:
         seen: set[str] = set()
+        visited: set[UUID] = set()
         current = start
-        while current is not None and current.external_id not in seen:
+        while current is not None and current.id not in visited:
+            visited.add(current.id)
             seen.add(current.external_id)
+            seen.add(scope_id(current.external_id))
             current = nodes.get(current.parent_id)
         return seen
 
@@ -83,7 +94,8 @@ def _containing_workspaces(session: Session, node: LibraryNode, folders: list[Wo
         if selection.kind == "all_accessible" or selection.external_folder_id in up:
             keep.add(selection.workspace_folder_id)
         elif selection.kind == "folder":
-            selected = next((n for n in nodes.values() if n.external_id == selection.external_folder_id), None)
+            selected = next((n for n in nodes.values() if n.kind == "folder"
+                             and scope_id(n.external_id) == selection.external_folder_id), None)
             if selected is not None and node.external_id in chain(selected):
                 keep.add(selection.workspace_folder_id)
     # Spaces that already hold files of the subtree (covers selections that predate the catalog).

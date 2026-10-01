@@ -71,6 +71,70 @@ def seed_document(session: Session, *, organization: Organization, source: DataS
     return workspace
 
 
+def test_notion_legacy_folder_collision_is_repaired_without_changing_document_id(session: Session) -> None:
+    organization, _user, source = seed_company(session)
+    source.provider = "notion"
+    workspace = seed_document(session, organization=organization, source=source,
+                              root="page", external_id="page", name="Runbook")
+    service = LibraryService(session)
+    service.project_successful_sync(organization_id=organization.id, source=source,
+                                   documents=[], folders=[RemoteFolder("page", "Runbook")])
+    legacy = session.query(LibraryNode).filter_by(source_id=source.id, external_id="page").one()
+    legacy_id = legacy.id
+    service.project_successful_sync(
+        organization_id=organization.id, source=source, workspace_folder_id=workspace.id,
+        documents=[DiscoveredDocument("page", "Runbook", "text/markdown", "https://notion.so/page", text="body")],
+        folders=[],
+    )
+    page = session.query(LibraryNode).filter_by(source_id=source.id, external_id="page").one()
+    assert page.id == legacy_id
+    assert page.kind == "file"
+    assert service.document_provenance(scope=OrganizationScope(organization.id), node=page)
+
+
+def test_notion_tree_browses_content_and_children_and_resyncs_its_real_selection(session: Session) -> None:
+    from app.library.manual_sync import _containing_workspaces
+    from app.workspaces.models import WorkspaceFolderSelection
+
+    organization, user, source = seed_company(session)
+    source.provider = "notion"
+    workspace = seed_document(session, organization=organization, source=source,
+                              root="parent", external_id="child", name="Child")
+    session.add(WorkspaceFolderSelection(workspace_folder_id=workspace.id, kind="folder", external_folder_id="parent"))
+    documents = [
+        DiscoveredDocument("parent", "Conteúdo de Parent", "text/markdown", "https://notion.so/parent", parent_ids=("notion:container:parent",)),
+        DiscoveredDocument("child", "Child", "text/markdown", "https://notion.so/child", parent_ids=("notion:container:parent",)),
+    ]
+    service = LibraryService(session)
+    service.project_successful_sync(organization_id=organization.id, source=source,
+        workspace_folder_id=workspace.id, documents=documents,
+        folders=[RemoteFolder("notion:container:parent", "Parent")])
+    parent = session.query(LibraryNode).filter_by(source_id=source.id, external_id="notion:container:parent").one()
+    children = service.children(scope=OrganizationScope(organization.id), user_id=user.id,
+                                parent_id=parent.id, page=1, page_size=100).items
+    assert {(node.kind, node.name) for node in children} == {("file", "Child"), ("file", "Conteúdo de Parent")}
+    assert [w.id for w in _containing_workspaces(session, parent, [workspace])] == [workspace.id]
+    # Empty containers still resolve to their selections (no document-provenance fallback).
+    session.query(LibraryNode).filter_by(parent_id=parent.id).delete()
+    session.flush()
+    assert [w.id for w in _containing_workspaces(session, parent, [workspace])] == [workspace.id]
+
+
+def test_notion_legacy_folder_exclusions_apply_to_new_descendants(session: Session) -> None:
+    organization, _user, source = seed_company(session)
+    source.provider = "notion"
+    session.add(LibraryExclusion(organization_id=organization.id, source_id=source.id,
+                                external_id="parent", kind="folder"))
+    session.flush()
+    documents, folders = LibraryService(session).filter_excluded_content(
+        organization_id=organization.id, source_id=source.id,
+        documents=[DiscoveredDocument("child", "Child", "text/markdown", "", parent_ids=("notion:container:parent",))],
+        folders=[RemoteFolder("notion:container:parent", "Parent")],
+    )
+    assert documents == []
+    assert folders == []
+
+
 def test_projects_nested_drive_tree_and_merges_overlapping_syncs(session: Session) -> None:
     organization, user, source = seed_company(session)
     scope_a = seed_document(session, organization=organization, source=source, root="A", external_id="brief", name="Brief.pdf")

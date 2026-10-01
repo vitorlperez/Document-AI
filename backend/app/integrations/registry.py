@@ -98,6 +98,11 @@ class NotionProviderAdapter:
     def folders(self, *, encrypted_credentials):
         return self._provider.folders(encrypted_credentials=encrypted_credentials)
 
+    def folders_for_selections(self, *, encrypted_credentials, selections):
+        return self._provider.folders_for_selections(
+            encrypted_credentials=encrypted_credentials, selections=selections,
+        )
+
 
 class OneDriveProviderAdapter:
     key = "onedrive"

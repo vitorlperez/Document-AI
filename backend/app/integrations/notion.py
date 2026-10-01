@@ -2,7 +2,7 @@
 
 import base64
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from urllib.parse import urlencode
 from uuid import UUID
@@ -29,6 +29,48 @@ class NotionRemoteUnauthorized(SourceRemoteUnauthorized):
 NOTION_READ_SCOPE = ""
 MAX_PAGE_WORKERS = 2
 NOTION_REQUEST_INTERVAL_SECONDS = 0.35
+NOTION_CONTAINER_PREFIX = "notion:container:"
+NOTION_API_VERSION = "2025-09-03"
+
+
+def notion_item_id(value: str) -> str:
+    try:
+        return str(UUID(value))
+    except ValueError:
+        return value
+
+
+def notion_scope_id(value: str) -> str:
+    return value.removeprefix(NOTION_CONTAINER_PREFIX)
+
+
+def _rich_text(values: object) -> str:
+    if not isinstance(values, list):
+        return ""
+    return "".join(str(item.get("plain_text") or (item.get("text") or {}).get("content") or "")
+                   for item in values if isinstance(item, dict))
+
+
+def _property_text(prop: dict) -> str:
+    kind = prop.get("type")
+    value = prop.get(kind)
+    if kind == "rich_text":
+        return _rich_text(value)
+    if kind in {"select", "status"} and isinstance(value, dict):
+        return str(value.get("name") or "")
+    if kind in {"multi_select", "people", "files"} and isinstance(value, list):
+        return ", ".join(str(item.get("name") or "") for item in value if isinstance(item, dict))
+    if kind == "date" and isinstance(value, dict):
+        return " — ".join(str(value[key]) for key in ("start", "end") if value.get(key))
+    if kind in {"formula", "rollup"} and isinstance(value, dict):
+        return _property_text(value)
+    if kind == "relation" and isinstance(value, list):
+        text = ", ".join(f"https://www.notion.so/{str(item['id']).replace('-', '')}"
+                         for item in value if isinstance(item, dict) and item.get("id"))
+        return text + (" (referências adicionais no Notion)" if prop.get("has_more") else "")
+    if kind in {"number", "checkbox", "boolean", "url", "email", "phone_number", "string", "created_time", "last_edited_time"}:
+        return str(value) if value is not None else ""
+    return ""
 
 
 class NotionOAuthUnavailable(RuntimeError):
@@ -49,6 +91,11 @@ class NotionPage:
     title: str
     url: str
     last_edited_time: datetime | None
+    parent_ids: tuple[str, ...] = ()
+    parent_type: str | None = None
+    object_type: str = "page"
+    properties_text: str = ""
+    data_source_ids: tuple[str, ...] = ()
 
 
 class NotionOAuthClient:
@@ -102,23 +149,84 @@ class NotionOAuthClient:
         return str(email).strip().lower() if isinstance(email, str) and email.strip() else None
 
     def list_pages(self, *, credentials: OAuthCredentials) -> list[NotionPage]:
+        return self._search(credentials=credentials, object_type="page")
+
+    def list_databases(self, *, credentials: OAuthCredentials) -> list[NotionPage]:
+        # Search returns collections; their database containers are resolved
+        # through parent metadata. One database can contain several collections.
+        return self._search(credentials=credentials, object_type="data_source")
+
+    def _search(self, *, credentials: OAuthCredentials, object_type: str) -> list[NotionPage]:
         pages: list[NotionPage] = []
         cursor: str | None = None
         while True:
-            payload: dict[str, object] = {"filter": {"property": "object", "value": "page"}, "page_size": 100}
+            payload: dict[str, object] = {"filter": {"property": "object", "value": object_type}, "page_size": 100}
             if cursor:
                 payload["start_cursor"] = cursor
             data = self._request("POST", "/v1/search", credentials=credentials, json=payload)
-            pages.extend(self._page(item) for item in data.get("results", []) if isinstance(item, dict))
+            pages.extend(self._page(item) for item in data.get("results", [])
+                         if isinstance(item, dict) and not item.get("archived") and not item.get("in_trash"))
             if not data.get("has_more"):
                 return pages
             cursor = str(data.get("next_cursor"))
+
+    def retrieve_page(self, *, credentials: OAuthCredentials, page_id: str) -> NotionPage:
+        item = self._request("GET", f"/v1/pages/{page_id}", credentials=credentials)
+        if item.get("archived") or item.get("in_trash"):
+            raise SourceItemUnavailable("archived")
+        return self._page(item)
+
+    def retrieve_database(self, *, credentials: OAuthCredentials, database_id: str) -> NotionPage:
+        item = self._request("GET", f"/v1/databases/{database_id}", credentials=credentials)
+        if item.get("archived") or item.get("in_trash"):
+            raise SourceItemUnavailable("archived")
+        return self._page(item)
+
+    def retrieve_data_source(self, *, credentials: OAuthCredentials, data_source_id: str) -> NotionPage:
+        item = self._request("GET", f"/v1/data_sources/{data_source_id}", credentials=credentials)
+        if item.get("archived") or item.get("in_trash"):
+            raise SourceItemUnavailable("archived")
+        return self._page(item)
+
+    def data_source_pages(self, *, credentials: OAuthCredentials, data_source_id: str) -> list[NotionPage]:
+        pages: list[NotionPage] = []
+        cursor = None
+        while True:
+            payload: dict[str, object] = {"page_size": 100}
+            if cursor:
+                payload["start_cursor"] = cursor
+            data = self._request("POST", f"/v1/data_sources/{data_source_id}/query", credentials=credentials, json=payload)
+            pages.extend(self._page(item) for item in data.get("results", [])
+                         if isinstance(item, dict) and not item.get("archived") and not item.get("in_trash"))
+            if not data.get("has_more"):
+                return pages
+            cursor = str(data["next_cursor"])
+
+    def block_parent(self, *, credentials: OAuthCredentials, block_id: str) -> tuple[str, str] | None:
+        seen: set[str] = set()
+        while block_id not in seen and len(seen) < 32:
+            seen.add(block_id)
+            item = self._request("GET", f"/v1/blocks/{block_id}", credentials=credentials)
+            parent = item.get("parent") or {}
+            kind = parent.get("type")
+            value = parent.get(kind)
+            if kind in {"page_id", "database_id", "data_source_id"} and value:
+                return str(kind), notion_item_id(str(value))
+            if kind != "block_id" or not value:
+                return None
+            block_id = str(value)
+        return None
+
+    def page_references(self, *, credentials: OAuthCredentials, page_id: str) -> list[dict[str, object]]:
+        # Search is eventually consistent: unchanged parents must still expose
+        # new child pages/databases that search has not indexed yet.
+        return self.page_blocks(credentials=credentials, page_id=page_id)
 
     def page_blocks(self, *, credentials: OAuthCredentials, page_id: str) -> list[dict[str, object]]:
         return self._children_tree(credentials=credentials, block_id=page_id)
 
     def _children_tree(self, *, credentials: OAuthCredentials, block_id: str, depth: int = 0) -> list[dict[str, object]]:
-        """Read a page's block tree, including toggles, columns and child pages.
+        """Read a page's own block tree, including toggles and columns.
 
         Notion pages often contain their useful text below a container block.
         Reading only the first level makes those pages look empty and marks
@@ -126,8 +234,8 @@ class NotionOAuthClient:
         The depth guard protects the worker from malformed or cyclic remote
         trees while keeping the request bounded.
         """
-        if depth > 12:
-            return []
+        if depth > 32:
+            raise RuntimeError("notion_block_depth_limit")
         blocks: list[dict[str, object]] = []
         cursor: str | None = None
         while True:
@@ -138,8 +246,11 @@ class NotionOAuthClient:
             for item in data.get("results", []):
                 if not isinstance(item, dict):
                     continue
+                if item.get("archived") or item.get("in_trash"):
+                    continue
                 blocks.append(item)
-                if item.get("has_children") is True and item.get("id"):
+                if (item.get("has_children") is True and item.get("id")
+                        and item.get("type") not in {"child_page", "child_database", "link_to_page"}):
                     blocks.extend(
                         self._children_tree(credentials=credentials, block_id=str(item["id"]), depth=depth + 1)
                     )
@@ -148,7 +259,7 @@ class NotionOAuthClient:
             cursor = str(data.get("next_cursor"))
 
     def _request(self, method: str, path: str, *, credentials: OAuthCredentials, **kwargs: object) -> dict[str, object]:
-        headers = {"Authorization": f"Bearer {credentials.access_token}", "Notion-Version": "2022-06-28"}
+        headers = {"Authorization": f"Bearer {credentials.access_token}", "Notion-Version": NOTION_API_VERSION}
         response = self.http.request(method, f"https://api.notion.com{path}", headers=headers, timeout=20, **kwargs)
         if response.status_code == 401:
             raise NotionRemoteUnauthorized()
@@ -160,16 +271,24 @@ class NotionOAuthClient:
     @staticmethod
     def _page(item: dict[str, object]) -> NotionPage:
         properties = item.get("properties") or {}
-        title = "Untitled"
+        title = _rich_text(item.get("title")) or "Sem título"
+        property_lines: list[str] = []
         if isinstance(properties, dict):
-            for prop in properties.values():
+            for name, prop in properties.items():
                 if isinstance(prop, dict) and prop.get("type") == "title":
-                    values = prop.get("title") or []
-                    if values and isinstance(values[0], dict):
-                        title = str(values[0].get("plain_text") or "Untitled")
-                    break
+                    title = _rich_text(prop.get("title")) or "Sem título"
+                elif isinstance(prop, dict) and (value := _property_text(prop)):
+                    property_lines.append(f"{name}: {value}")
         edited = item.get("last_edited_time")
-        return NotionPage(str(item["id"]), title, str(item.get("url") or ""), datetime.fromisoformat(str(edited)) if edited else None)
+        parent = item.get("parent") or {}
+        parent_type = parent.get("type") if isinstance(parent, dict) else None
+        parent_id = parent.get(parent_type) if isinstance(parent, dict) and parent_type else None
+        return NotionPage(notion_item_id(str(item["id"])), title, str(item.get("url") or ""),
+                          datetime.fromisoformat(str(edited)) if edited else None,
+                          (notion_item_id(str(parent_id)),) if parent_type != "workspace" and parent_id else (),
+                          parent_type, str(item.get("object") or "page"), "\n".join(property_lines),
+                          tuple(notion_item_id(str(source["id"])) for source in item.get("data_sources", [])
+                                if isinstance(source, dict) and source.get("id")))
 
 
 class NotionConnectionService(OAuthConnectionServiceBase):
@@ -247,10 +366,67 @@ class NotionDocumentProvider:
     def __init__(self, client: NotionOAuthClient, cipher):
         self.client = client
         self.cipher = cipher
+        self._catalog: dict[str, NotionPage] | None = None
+        self._projection_folders: list[RemoteFolder] = []
+
+    def _load_catalog(self, credentials: OAuthCredentials) -> dict[str, NotionPage]:
+        pages = {page.id: page for page in self.client.list_pages(credentials=credentials)}
+        list_databases = getattr(self.client, "list_databases", None)
+        if list_databases:
+            pages.update({page.id: page for page in list_databases(credentials=credentials)})
+        return self._with_ancestors(pages, credentials)
+
+    def _with_ancestors(self, pages: dict[str, NotionPage], credentials: OAuthCredentials) -> dict[str, NotionPage]:
+        # Search may omit parents. Retrieve their metadata, never their body,
+        # so a selected subpage can retain a comprehensible path.
+        pending = list(pages.values())
+        attempted: set[str] = set(pages)
+        while pending:
+            page = pending.pop()
+            if page.parent_type == "block_id" and page.parent_ids:
+                try:
+                    parent = self.client.block_parent(credentials=credentials, block_id=page.parent_ids[0])
+                except SourceItemUnavailable:
+                    parent = None
+                page = replace(page, parent_ids=(parent[1],) if parent else (),
+                               parent_type=parent[0] if parent else None)
+                pages[page.id] = page
+            for parent_id in page.parent_ids:
+                if parent_id in attempted:
+                    continue
+                attempted.add(parent_id)
+                method, argument = {
+                    "database_id": ("retrieve_database", "database_id"),
+                    "data_source_id": ("retrieve_data_source", "data_source_id"),
+                }.get(page.parent_type, ("retrieve_page", "page_id"))
+                retrieve = getattr(self.client, method, None)
+                if retrieve is None:
+                    continue
+                try:
+                    ancestor = retrieve(credentials=credentials, **{argument: parent_id})
+                except SourceItemUnavailable:
+                    continue
+                pages[ancestor.id] = ancestor
+                pending.append(ancestor)
+        return pages
 
     def folders(self, *, encrypted_credentials: str | None) -> list[RemoteFolder]:
-        pages = self.client.list_pages(credentials=self.cipher.decrypt(encrypted_credentials or ""))
-        return [RemoteFolder(page.id, page.title) for page in pages]
+        pages = self._load_catalog(self.cipher.decrypt(encrypted_credentials or ""))
+        return [RemoteFolder(page.id, page.title, page.parent_ids, kind=page.object_type) for page in pages.values()]
+
+    def folders_for_selections(self, *, encrypted_credentials, selections) -> list[RemoteFolder]:
+        if self._catalog is None:
+            self.discover(encrypted_credentials=encrypted_credentials, selections=selections)
+        return self._projection_folders
+
+    @staticmethod
+    def _selected(pages: dict[str, NotionPage], selections) -> set[str]:
+        if any(selection.kind == "all_accessible" for selection in selections):
+            return set(pages)
+        selected = {notion_item_id(selection.external_folder_id) for selection in selections if selection.kind == "folder"}
+        while added := {page.id for page in pages.values() if set(page.parent_ids) & selected} - selected:
+            selected.update(added)
+        return selected & set(pages)
 
     def discover(
         self,
@@ -261,63 +437,162 @@ class NotionDocumentProvider:
         force_file_ids: set[str] | None = None,
         force_full: bool = False,
     ) -> DiscoveryResult:
-        credentials = self.cipher.decrypt(encrypted_credentials or "")
-        pages = {page.id: page for page in self.client.list_pages(credentials=credentials)}
-        selected_ids = (
-            set(pages)
-            if any(selection.kind == "all_accessible" for selection in selections)
-            else {
-                selection.external_folder_id
-                for selection in selections
-                if selection.kind == "folder" and selection.external_folder_id in pages
-            }
-        )
         from app.ingestion.service import DiscoveredDocument
-        selected_pages = [pages[page_id] for page_id in sorted(selected_ids) if page_id in pages]
 
-        known_documents = {} if force_full else (known_documents or {})
+        credentials = self.cipher.decrypt(encrypted_credentials or "")
+        pages = self._load_catalog(credentials)
+        known_documents = known_documents or {}
         known_ids = set(known_documents)
-        changed_pages = [
-            page
-            for page in selected_pages
-            if not (
-                (known := known_documents.get(page.id))
-                and known[1] == "indexed"
-                and page.id not in (force_file_ids or set())
-                and page.last_edited_time is not None
-                and known[0] == page.last_edited_time
-            )
-        ]
+        # Absence from search does not prove a deletion. Confirm known and
+        # explicitly selected pages directly before reconciling removals.
+        retrieve = getattr(self.client, "retrieve_page", None)
+        requested = {notion_item_id(s.external_folder_id) for s in selections if s.kind == "folder"}
+        if retrieve:
+            for page_id in sorted((known_ids | requested) - set(pages)):
+                try:
+                    pages[page_id] = retrieve(credentials=credentials, page_id=page_id)
+                except SourceItemUnavailable:
+                    if page_id in requested:
+                        try:
+                            pages[page_id] = self.client.retrieve_database(credentials=credentials, database_id=page_id)
+                        except SourceItemUnavailable:
+                            try:
+                                pages[page_id] = self.client.retrieve_data_source(credentials=credentials, data_source_id=page_id)
+                            except SourceItemUnavailable:
+                                pass
+        pages = self._with_ancestors(pages, credentials)
+        selected_ids = self._selected(pages, selections)
+        effective_known = {} if force_full else known_documents
+        outcomes: dict[str, DiscoveredDocument | None] = {}
+        processed: set[str] = set()
 
-        def read_page(page: NotionPage) -> tuple[str, DiscoveredDocument | None]:
+        def read_page(page: NotionPage):
+            known = effective_known.get(page.id)
+            unchanged = bool(known and known[1] == "indexed" and page.id not in (force_file_ids or set())
+                             and page.last_edited_time is not None and known[0] == page.last_edited_time)
+            references = getattr(self.client, "page_references", None)
             try:
-                text = _blocks_to_text(self.client.page_blocks(credentials=credentials, page_id=page.id))
+                blocks = (references(credentials=credentials, page_id=page.id) if unchanged and references
+                          else [] if unchanged else self.client.page_blocks(credentials=credentials, page_id=page.id))
             except SourceItemUnavailable:
-                return page.id, None
-            # Notion search also returns empty metadata pages (for example a
-            # person/profile page). They are valid remote objects, but there
-            # is no content to embed or cite. Skipping them keeps the sync
-            # ready while still indexing every page with actual blocks.
-            if not text.strip():
-                return page.id, None
-            return page.id, DiscoveredDocument(
-                external_file_id=page.id,
-                name=page.title,
-                mime_type="text/markdown",
-                source_url=page.url,
-                modified_at=page.last_edited_time,
-                text=text,
+                return page, [], None, False
+            text = "" if unchanged else "\n\n".join(value for value in (
+                page.properties_text, _blocks_to_text(blocks),
+            ) if value)
+            document = DiscoveredDocument(page.id, page.title, "text/markdown", page.url,
+                                          modified_at=page.last_edited_time, text=text) if text.strip() else None
+            return page, blocks, document, unchanged
+
+        while pending := sorted(selected_ids - processed):
+            database_ids = [id for id in pending if pages[id].object_type in {"database", "data_source"}]
+            for database_id in database_ids:
+                processed.add(database_id)
+                if pages[database_id].object_type == "database":
+                    for data_source_id in pages[database_id].data_source_ids:
+                        if data_source_id not in pages:
+                            try:
+                                pages[data_source_id] = self.client.retrieve_data_source(
+                                    credentials=credentials, data_source_id=data_source_id)
+                            except SourceItemUnavailable:
+                                continue
+                    continue
+                try:
+                    rows = self.client.data_source_pages(credentials=credentials, data_source_id=database_id)
+                except SourceItemUnavailable:
+                    continue
+                for row in rows:
+                    pages[row.id] = replace(row, parent_ids=(database_id,), parent_type="data_source_id")
+            selected_ids = self._selected(pages, selections)
+            batch = [pages[id] for id in sorted(selected_ids - processed) if pages[id].object_type == "page"]
+            with ThreadPoolExecutor(max_workers=min(MAX_PAGE_WORKERS, len(batch) or 1)) as executor:
+                results = list(executor.map(read_page, batch))
+            for page, blocks, document, unchanged in results:
+                processed.add(page.id)
+                if not unchanged:
+                    outcomes[page.id] = document
+                for block in blocks:
+                    kind, child_id = block.get("type"), block.get("id")
+                    if kind not in {"child_page", "child_database"} or not child_id:
+                        continue
+                    child_id = notion_item_id(str(child_id))
+                    if child_id not in pages:
+                        method = self.client.retrieve_database if kind == "child_database" else self.client.retrieve_page
+                        try:
+                            child = method(credentials=credentials, **{
+                                "database_id" if kind == "child_database" else "page_id": child_id})
+                        except SourceItemUnavailable:
+                            continue
+                    else:
+                        child = pages[child_id]
+                    if child.parent_type == "block_id" and child.parent_ids:
+                        try:
+                            parent = self.client.block_parent(credentials=credentials, block_id=child.parent_ids[0])
+                        except SourceItemUnavailable:
+                            continue
+                        child = replace(child, parent_ids=(parent[1],) if parent else ())
+                    if child.parent_ids and child.parent_ids != (page.id,):
+                        # A child-page block copied through a synced block is
+                        # a reference to its actual parent, not a new subtree.
+                        continue
+                    # A child block nested in a toggle still belongs to this page.
+                    pages[child_id] = replace(child, parent_ids=(page.id,), parent_type="page_id")
+            selected_ids = self._selected(pages, selections)
+
+        # Only ancestors of selected objects are projected, not every search
+        # result. A page is a grouping node only if it contains selected children.
+        container_ids = {id for id in selected_ids if pages[id].object_type in {"database", "data_source"}}
+        pending = list(selected_ids)
+        visited: set[str] = set()
+        while pending:
+            page_id = pending.pop()
+            if page_id in visited:
+                continue
+            visited.add(page_id)
+            for parent_id in pages[page_id].parent_ids:
+                if parent_id in pages:
+                    container_ids.add(parent_id)
+                    pending.append(parent_id)
+        self._projection_folders = [RemoteFolder(
+            NOTION_CONTAINER_PREFIX + id, pages[id].title,
+            tuple(NOTION_CONTAINER_PREFIX + parent for parent in pages[id].parent_ids
+                  if parent in container_ids and not self._cyclic_parent(id, parent, pages)),
+            kind=pages[id].object_type,
+        ) for id in sorted(container_ids)]
+
+        def metadata(page: NotionPage) -> DiscoveredDocument:
+            parents = (page.id,) if page.id in container_ids else page.parent_ids
+            return DiscoveredDocument(
+                page.id, f"Conteúdo de {page.title}" if page.id in container_ids else page.title,
+                "text/markdown", page.url, modified_at=page.last_edited_time,
+                parent_ids=tuple(NOTION_CONTAINER_PREFIX + id for id in parents if id in container_ids),
             )
 
-        with ThreadPoolExecutor(max_workers=min(MAX_PAGE_WORKERS, len(changed_pages) or 1)) as executor:
-            outcomes = list(executor.map(read_page, changed_pages))
-        empty_ids = {page_id for page_id, document in outcomes if document is None}
-        documents = [document for _, document in outcomes if document is not None]
+        empty_ids = {id for id, document in outcomes.items() if document is None}
+        catalog_ids = {id for id in selected_ids if pages[id].object_type == "page"
+                       and id not in empty_ids and (outcomes.get(id) is not None or
+                       (id in effective_known and effective_known[id][1] == "indexed"))}
+        catalog_documents = [metadata(pages[id]) for id in sorted(catalog_ids)]
+        documents = [replace(metadata(pages[id]), text=document.text)
+                     for id, document in sorted(outcomes.items()) if document is not None]
+        self._catalog = pages
         return DiscoveryResult(
             documents=documents,
             removed_file_ids=tuple(sorted((known_ids - selected_ids) | empty_ids)),
-            full_snapshot=not bool(known_ids),
+            full_snapshot=not bool(known_ids) or force_full,
+            catalog_documents=catalog_documents,
         )
+
+    @staticmethod
+    def _cyclic_parent(page_id: str, parent_id: str, pages: dict[str, NotionPage]) -> bool:
+        pending, seen = [parent_id], set()
+        while pending:
+            current = pending.pop()
+            if current == page_id:
+                return True
+            if current not in seen and current in pages:
+                seen.add(current)
+                pending.extend(pages[current].parent_ids)
+        return False
 
 
 def _blocks_to_text(blocks: list[dict[str, object]]) -> str:
@@ -325,10 +600,34 @@ def _blocks_to_text(blocks: list[dict[str, object]]) -> str:
     for block in blocks:
         kind = str(block.get("type") or "")
         payload = block.get(kind) or {}
-        if not isinstance(payload, dict):
+        if not isinstance(payload, dict) or kind in {"child_page", "child_database"}:
             continue
-        rich_text = payload.get("rich_text") or payload.get("title") or []
-        text = "".join(str(item.get("plain_text", "")) for item in rich_text if isinstance(item, dict))
+        text = _rich_text(payload.get("rich_text") or payload.get("caption"))
+        if kind == "table_row":
+            text = " | ".join(_rich_text(cell) for cell in payload.get("cells", []))
+        elif kind == "equation":
+            text = str(payload.get("expression") or "")
+        elif kind == "link_to_page":
+            target = payload.get(str(payload.get("type")))
+            if target:
+                text = f"Referência: https://www.notion.so/{str(target).replace('-', '')}"
+        elif kind in {"bookmark", "link_preview", "embed"}:
+            url = payload.get("url")
+            if url:
+                text = f"{text} ({url})" if text else f"Referência: {url}"
+        elif kind in {"file", "pdf", "image", "audio", "video"}:
+            # Signed attachment URLs expire. Keep the label/caption; do not
+            # embed ephemeral URLs or treat attachment bytes as page text.
+            name = payload.get("name")
+            text = " · ".join(str(value) for value in (name, text) if value)
+            text = f"Anexo: {text}" if text else ""
         if text:
             lines.append(text)
+        rich_text = payload.get("rich_text") or payload.get("caption") or []
+        for item in rich_text if isinstance(rich_text, list) else []:
+            if not isinstance(item, dict):
+                continue
+            href = item.get("href")
+            if isinstance(href, str) and href.startswith(("https://", "http://")) and href != item.get("plain_text"):
+                lines.append(f"Referência: {href}")
     return "\n\n".join(lines)

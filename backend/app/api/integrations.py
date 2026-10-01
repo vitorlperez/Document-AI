@@ -524,7 +524,8 @@ def scope_catalog(
         except (NotionOAuthInvalid, NotionOAuthUnavailable) as error:
             raise HTTPException(status_code=403, detail="not allowed") from error
         return {
-            "folders": [{"id": item.id, "name": item.name} for item in rows],
+            "folders": [{"id": item.id, "name": item.name, "kind": item.kind,
+                         "parent_ids": list(item.parent_ids)} for item in rows],
             "root_files": {"available": False, "label": "Páginas acessíveis"},
             "all_accessible": {"available": True, "label": "Todas as páginas acessíveis"},
         }
@@ -678,7 +679,8 @@ def select_scope(
             ),
             uniform_access_confirmed=payload.uniform_access_confirmed,
             available_folder_names={item.id: item.name for item in remote},
-            name=payload.name,
+            name=(payload.name or ("Todas as páginas acessíveis do Notion"
+                                  if selected_source.provider == "notion" and payload.mode == "all_accessible" else None)),
         )
     except GoogleAccessDenied as error:
         raise HTTPException(403, "not allowed") from error

@@ -66,6 +66,7 @@ class RemoteFolder:
     id: str
     name: str
     parent_ids: tuple[str, ...] = ()
+    kind: str = "folder"
 
 
 @dataclass(frozen=True)
