@@ -114,9 +114,9 @@ function ProductPreview() {
 }
 
 const questions = [
-  ["Quais ferramentas posso conectar?", "Google Drive, OneDrive, Notion e SharePoint. A integração SharePoint permite selecionar bibliotecas de documentos de sites SharePoint e Teams com uma conta corporativa ou escolar do Microsoft 365. O administrador pode precisar aprovar o acesso."],
+  ["Quais ferramentas posso conectar?", "Google Drive, OneDrive, Notion e SharePoint. Somente Owner/Admin da organização no Arquivio pode conectar fontes. No SharePoint, selecione bibliotecas de documentos de sites SharePoint e Teams com uma conta corporativa ou escolar do Microsoft 365; um administrador do Microsoft 365 pode precisar aprovar o acesso."],
   ["O Arquivio altera meus arquivos?", "Não. Os originais continuam no Google Drive, OneDrive, Notion ou SharePoint. As conexões são de leitura."],
-  ["Quem pode consultar os documentos?", "Todos os membros da organização podem consultar o conteúdo sincronizado. Conecte apenas materiais compartilháveis com a equipe."],
+  ["Quem pode consultar os documentos?", "Todos os membros da organização podem consultar o conteúdo sincronizado. O Arquivio não reproduz as permissões originais por documento do SharePoint. Conecte apenas materiais compartilháveis com a equipe."],
   ["E se faltar informação?", "O Arquivio informa quando não encontra evidência suficiente e mostra os documentos usados em cada resposta."],
   ["Que conteúdo é compatível?", "Documentos Google, PDFs com texto, DOCX, páginas do Notion e Markdown. Imagens escaneadas, planilhas e apresentações ainda não são indexadas."],
   ["Quando os documentos ficam disponíveis?", "Depois da sincronização e do processamento em segundo plano. Alterações nos originais exigem uma nova sincronização."],
