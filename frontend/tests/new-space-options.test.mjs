@@ -59,3 +59,35 @@ test("Notion page paths disambiguate equal titles and preserve item types", () =
   assert.equal(newSpaceOptions(pages, []).folders[4].kind, "database");
   assert.equal(catalogItemPath({ id: "c", name: "C", parent_ids: ["c"] }, pages), "C");
 });
+
+test("Notion management offers only accessible roots, including standalone databases", () => {
+  const pages = [
+    { id: "parent", name: "Parent", kind: "page" },
+    { id: "child", name: "Child", kind: "page", parent_ids: ["parent"] },
+    { id: "grandchild", name: "Grandchild", kind: "page", parent_ids: ["child"] },
+    { id: "nested-db", name: "Nested database", kind: "database", parent_ids: ["parent"] },
+    { id: "collection", name: "Collection", kind: "data_source", parent_ids: ["nested-db"] },
+    { id: "row", name: "Row", kind: "page", parent_ids: ["collection"] },
+    { id: "db", name: "Standalone database", kind: "database" },
+    { id: "shared", name: "Shared page", kind: "page", parent_ids: ["inaccessible"] },
+  ];
+  const spaces = [{ name: "Parent space", selection_kind: "selected", selection_folder_ids: ["parent"] }];
+  const { folders } = newSpaceOptions(pages, spaces, "notion");
+  assert.deepEqual(folders.map((item) => item.id), ["parent", "db", "shared"]);
+  assert.equal(folders[0].existingSpace, "Parent space");
+  assert.equal(folders[1].kind, "database");
+  assert.equal(pages.length, 8);
+  for (const provider of [undefined, "google_drive", "onedrive", "sharepoint"]) {
+    assert.equal(newSpaceOptions(pages, spaces, provider).folders.length, 8);
+  }
+});
+
+test("Notion root options retain all-content coverage and do not promote legacy child selections", () => {
+  const spaces = [{ name: "Legacy child", selection_kind: "selected", selection_folder_ids: ["pratico"] }];
+  const { folders } = newSpaceOptions(catalog, spaces, "notion");
+  assert.deepEqual(folders.map((item) => item.id), ["tda", "edicao"]);
+  assert.ok(folders.every((item) => item.existingSpace === null));
+  const all = newSpaceOptions(catalog, [{ name: "Everything", selection_kind: "all_accessible" }], "notion");
+  assert.equal(all.allAccessibleTaken, true);
+  assert.ok(all.folders.every((item) => item.coveredBy === "Everything"));
+});

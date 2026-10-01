@@ -109,7 +109,10 @@ def test_notion_tables_equations_and_references_keep_their_data() -> None:
     assert "https://example.test/reference" in text
 
 
-def test_notion_selection_indexes_descendants_and_uses_distinct_container_ids(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("selection_kind", ["folder", "all_accessible"])
+def test_notion_selection_indexes_descendants_and_uses_distinct_container_ids(
+    monkeypatch: pytest.MonkeyPatch, selection_kind: str,
+) -> None:
     client = NotionOAuthClient(client_id="i", client_secret="s", redirect_uri="cb")
     reads = []
 
@@ -126,6 +129,8 @@ def test_notion_selection_indexes_descendants_and_uses_distinct_container_ids(mo
             return {"results": objects, "has_more": False}
         if path == "/v1/pages/child":
             return page("child", "Child", "parent")
+        if path == "/v1/pages/grandchild":
+            return page("grandchild", "Grandchild", "child")
         if path == "/v1/blocks/parent/children":
             reads.append("parent")
             return {"results": [
@@ -135,7 +140,17 @@ def test_notion_selection_indexes_descendants_and_uses_distinct_container_ids(mo
             ], "has_more": False}
         if path == "/v1/blocks/child/children":
             reads.append("child")
-            return {"results": [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "Child body"}]}}], "has_more": False}
+            return {"results": [
+                {"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "Child body"}]}},
+                {"id": "grandchild", "type": "child_page", "has_children": True,
+                 "child_page": {"title": "Grandchild"}},
+            ], "has_more": False}
+        if path == "/v1/blocks/grandchild/children":
+            reads.append("grandchild")
+            return {"results": [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "Grandchild body"}]}}], "has_more": False}
+        if path == "/v1/blocks/unrelated/children":
+            reads.append("unrelated")
+            return {"results": [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "Unrelated body"}]}}], "has_more": False}
         raise AssertionError(path)
 
     class Cipher:
@@ -144,18 +159,26 @@ def test_notion_selection_indexes_descendants_and_uses_distinct_container_ids(mo
 
     monkeypatch.setattr(client, "_request", request)
     provider = NotionDocumentProvider(client, Cipher())
-    selections = [type("Selection", (), {"kind": "folder", "external_folder_id": "parent"})()]
+    selections = [type("Selection", (), {"kind": selection_kind, "external_folder_id": "parent"})()]
     result = provider.discover(encrypted_credentials="encrypted", selections=selections)
-    assert sorted(reads) == ["child", "parent"]
+    expected_ids = {"parent", "child", "grandchild"}
+    if selection_kind == "all_accessible":
+        expected_ids.add("unrelated")
+    assert set(reads) == expected_ids
     docs = {doc.external_file_id: doc for doc in result.documents}
-    assert set(docs) == {"parent", "child"}
+    assert set(docs) == expected_ids
     assert "Child body" not in docs["parent"].text
     assert "unrelated" in docs["parent"].text
-    assert docs["child"].parent_ids == ("notion:container:parent",)
+    assert "Unrelated body" not in docs["parent"].text
+    assert "Grandchild body" not in docs["child"].text
+    assert docs["child"].parent_ids == ("notion:container:child",)
+    assert docs["grandchild"].parent_ids == ("notion:container:child",)
     assert docs["parent"].parent_ids == ("notion:container:parent",)
     assert docs["parent"].name == "Conteúdo de Parent"
     folders = provider.folders_for_selections(encrypted_credentials="encrypted", selections=selections)
-    assert [(folder.id, folder.name) for folder in folders] == [("notion:container:parent", "Parent")]
+    assert [(folder.id, folder.name) for folder in folders] == [
+        ("notion:container:child", "Child"), ("notion:container:parent", "Parent"),
+    ]
 
 
 def test_notion_unchanged_pages_still_refresh_library_metadata() -> None:

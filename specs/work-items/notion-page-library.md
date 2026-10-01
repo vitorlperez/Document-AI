@@ -96,6 +96,25 @@ skills: inline [oc-builder, oc-blackbox, oc-stamp]
 
 skills: inline [oc-conveyor, oc-stamp]
 
+## M31 — seleção apenas das páginas pais
+
+- Status: implementado e verificado localmente; executor: pane-302; branch compartilhada: main.
+- Complemento solicitado: Gerenciar oferece apenas raízes acessíveis do Notion.
+  Selecionar uma raiz ou todo o conteúdo inclui filhos em todos os níveis.
+- Escopo desta etapa: opções e textos do gerenciador frontend; catálogo completo e
+  projeção hierárquica da biblioteca preservados para descoberta/sincronização.
+- Raízes incluem bases independentes e páginas cujo pai não esteja acessível no catálogo.
+- Correção de escopo do usuário respeitada: nenhuma mudança na apresentação da biblioteca.
+- Duas regressões frontend falharam antes da mudança e passaram depois; a suíte ficou
+  em 42/42. Demais provedores continuam oferecendo suas opções completas.
+- Regressão de descoberta estendida: seleção do pai e Todo o conteúdo percorrem
+  filho/neto ausentes da busca sem incorporar corpos dos descendentes ao pai.
+- Verificação: 43 testes backend focais; Ruff; TypeScript; ESLint dos arquivos
+  frontend alterados; build frontend (5 etapas); todos exit 0.
+- Limite: validação local com HTTP simulado; sem sincronização de workspace Notion real
+  nem nova inspeção visual de sessão autenticada.
+- skills: inline [oc-builder, oc-stamp].
+
 ## Referências oficiais
 
 - [Upgrade para bases com várias coleções](https://developers.notion.com/guides/get-started/upgrade-guide-2025-09-03).

@@ -22,11 +22,16 @@ export function catalogItemPath(item: CatalogFolder, catalog: CatalogFolder[]): 
 /** Folders offered for a space. One that already is a space is flagged (`existingSpace`) because
  * selecting it is a complete re-sync; a folder inside an existing space (or under "all accessible")
  * names that space in `coveredBy`. `allAccessibleTaken` flags that "all accessible" already exists. */
-export function newSpaceOptions(catalog: CatalogFolder[], spaces: ExistingSpace[]): { folders: NewSpaceFolder[]; allAccessibleTaken: boolean } {
+export function newSpaceOptions(catalog: CatalogFolder[], spaces: ExistingSpace[], provider?: string): { folders: NewSpaceFolder[]; allAccessibleTaken: boolean } {
   const allAccessible = spaces.find((space) => space.selection_kind === "all_accessible");
   const spaceByFolder = new Map<string, string>();
   for (const space of spaces) for (const id of space.selection_folder_ids ?? []) spaceByFolder.set(id, space.name);
   const parents = new Map(catalog.map((folder) => [folder.id, folder.parent_ids ?? []]));
+  // Notion selections include every descendant. Offer only accessible roots;
+  // keep the complete catalog for ancestry and the other providers' selectors.
+  const offered = provider === "notion"
+    ? catalog.filter((folder) => !(folder.parent_ids ?? []).some((id) => id !== folder.id && parents.has(id)))
+    : catalog;
   function coveringSpace(id: string): string | null {
     const seen = new Set<string>([id]);
     let pending = [...(parents.get(id) ?? [])];
@@ -44,7 +49,7 @@ export function newSpaceOptions(catalog: CatalogFolder[], spaces: ExistingSpace[
     return allAccessible?.name ?? null;
   }
   return {
-    folders: catalog.map((folder) => { const existingSpace = spaceByFolder.get(folder.id) ?? null; return { ...folder, existingSpace, coveredBy: existingSpace ? null : coveringSpace(folder.id) }; }),
+    folders: offered.map((folder) => { const existingSpace = spaceByFolder.get(folder.id) ?? null; return { ...folder, existingSpace, coveredBy: existingSpace ? null : coveringSpace(folder.id) }; }),
     allAccessibleTaken: Boolean(allAccessible),
   };
 }
