@@ -31,6 +31,7 @@ MAX_PAGE_WORKERS = 2
 NOTION_REQUEST_INTERVAL_SECONDS = 0.35
 NOTION_CONTAINER_PREFIX = "notion:container:"
 NOTION_API_VERSION = "2025-09-03"
+NOTION_PROCESSING_VERSION = "v2:notion-page-v1"
 
 
 def notion_item_id(value: str) -> str:
@@ -533,6 +534,16 @@ class NotionDocumentProvider:
                     if child.parent_ids and child.parent_ids != (page.id,):
                         # A child-page block copied through a synced block is
                         # a reference to its actual parent, not a new subtree.
+                        if not unchanged:
+                            target_url = child.url or f"https://www.notion.so/{child_id.replace('-', '')}"
+                            reference = f"Referência: {child.title} ({target_url})"
+                            previous = outcomes.get(page.id)
+                            values = (previous.text if previous else "", reference)
+                            outcomes[page.id] = DiscoveredDocument(
+                                page.id, page.title, "text/markdown", page.url,
+                                modified_at=page.last_edited_time,
+                                text="\n\n".join(value for value in values if value),
+                            )
                         continue
                     # A child block nested in a toggle still belongs to this page.
                     pages[child_id] = replace(child, parent_ids=(page.id,), parent_type="page_id")
@@ -565,6 +576,7 @@ class NotionDocumentProvider:
                 page.id, f"Conteúdo de {page.title}" if page.id in container_ids else page.title,
                 "text/markdown", page.url, modified_at=page.last_edited_time,
                 parent_ids=tuple(NOTION_CONTAINER_PREFIX + id for id in parents if id in container_ids),
+                processing_version=NOTION_PROCESSING_VERSION,
             )
 
         empty_ids = {id for id, document in outcomes.items() if document is None}

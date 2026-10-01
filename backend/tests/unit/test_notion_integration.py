@@ -297,6 +297,49 @@ def test_notion_page_keeps_source_metadata() -> None:
     assert page.url.endswith("page-id")
 
 
+def test_notion_discovery_carries_its_content_format_version() -> None:
+    class Client:
+        def list_pages(self, **_):
+            return [NotionPage("page", "Page", "", None)]
+
+        def page_blocks(self, **_):
+            return [{"type": "paragraph", "paragraph": {"rich_text": [{"plain_text": "body"}]}}]
+
+    cipher = type("Cipher", (), {"decrypt": lambda *_: GoogleCredentials("token", None, None)})()
+    result = NotionDocumentProvider(Client(), cipher).discover(encrypted_credentials="encrypted",
+        selections=[type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()])
+    assert getattr(result.documents[0], "processing_version", None) == "v2:notion-page-v1"
+
+
+@pytest.mark.parametrize("kind,object_type", [("child_page", "page"), ("child_database", "database")])
+def test_notion_synced_child_links_preserve_reference_without_importing_target(kind, object_type) -> None:
+    class Client:
+        def list_pages(self, **_):
+            source = NotionPage("source", "Source", "https://notion.so/source", None)
+            return [source, self.target()] if object_type == "page" else [source]
+
+        def list_databases(self, **_):
+            return [self.target()] if object_type == "database" else []
+
+        def target(self):
+            return NotionPage("target", "Target", "https://notion.so/target", None,
+                              ("actual-parent",), "page_id", object_type)
+
+        def page_blocks(self, *, page_id, **_):
+            assert page_id == "source", "a reference must not import its target"
+            # This child block was copied inside a synced block. Its actual
+            # parent is outside the selection, so it is only a reference here.
+            return [{"id": "target", "type": kind, kind: {"title": "Target"}}]
+
+    cipher = type("Cipher", (), {"decrypt": lambda *_: GoogleCredentials("token", None, None)})()
+    provider = NotionDocumentProvider(Client(), cipher)
+    selections = [type("Selection", (), {"kind": "folder", "external_folder_id": "source"})()]
+    result = provider.discover(encrypted_credentials="encrypted", selections=selections)
+    assert [doc.external_file_id for doc in result.documents] == ["source"]
+    assert "https://notion.so/target" in result.documents[0].text
+    assert provider.folders_for_selections(encrypted_credentials="encrypted", selections=selections) == []
+
+
 def test_notion_page_blocks_include_nested_children(monkeypatch: pytest.MonkeyPatch) -> None:
     client = NotionOAuthClient(client_id="id", client_secret="secret", redirect_uri="http://callback")
     calls: list[str] = []

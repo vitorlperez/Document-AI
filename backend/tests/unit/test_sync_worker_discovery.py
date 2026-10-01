@@ -124,7 +124,8 @@ def test_worker_keeps_incremental_discovery_for_space_with_data(monkeypatch) -> 
 
 def _indexed():
     return SimpleNamespace(external_file_id="a", index_status="indexed", content_hash="h",
-                           error_code=None, modified_at=None, name="a.pdf", mime_type="application/pdf")
+                           error_code=None, modified_at=None, name="a.pdf", mime_type="application/pdf",
+                           processing_version="v2:notion-page-v1")
 
 
 # Library resync is incremental: the provider delta decides, nothing is rediscovered.
@@ -155,5 +156,17 @@ def test_worker_projects_unchanged_metadata_without_reindexing_it(monkeypatch) -
 
 
 def test_worker_rebuilds_legacy_notion_parent_bodies_once(monkeypatch) -> None:
-    seen = _run_task(monkeypatch, known_rows=[_indexed()], source_provider="notion", legacy_catalog=True)
+    legacy_document = _indexed()
+    legacy_document.processing_version = "v2"
+    seen = _run_task(monkeypatch, known_rows=[legacy_document], source_provider="notion", legacy_catalog=True)
+    assert seen["force_full"] is True
+
+
+def test_worker_repairs_legacy_notion_content_after_another_space_updates_shared_catalog(monkeypatch) -> None:
+    # The other space already converted the shared node to a file. This space's
+    # body is still the old flattened parent, even though its timestamp matches.
+    legacy_document = _indexed()
+    legacy_document.processing_version = "v2"
+    seen = _run_task(monkeypatch, known_rows=[legacy_document], source_provider="notion",
+                     legacy_catalog=False)
     assert seen["force_full"] is True

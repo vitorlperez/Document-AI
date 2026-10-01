@@ -56,6 +56,9 @@ class DiscoveredDocument:
     blocks: tuple["ExtractedBlock", ...] = ()
     error_code: str | None = None
     parent_ids: tuple[str, ...] = ()
+    # Adapters can version their extraction format independently of the shared
+    # chunker. Persist this on each document, never on a shared library node.
+    processing_version: str | None = None
 
 
 def _empty_text_code(mime_type: str) -> str:
@@ -841,6 +844,7 @@ class IngestionService:
         self, job: ProcessingJob, discovered: DiscoveredDocument, *, indexed_at: datetime, force: bool = False
     ) -> None:
         assert discovered.text is not None
+        processing_version = discovered.processing_version or PROCESSING_VERSION
         content_hash = sha256(discovered.text.encode()).hexdigest()
         document = self._document_for(job, discovered.external_file_id)
         if document is None:
@@ -860,7 +864,7 @@ class IngestionService:
                 content_hash=content_hash,
                 modified_at=discovered.modified_at,
                 indexed_at=indexed_at,
-                processing_version=PROCESSING_VERSION,
+                processing_version=processing_version,
                 index_status="indexed",
             )
             self.session.add(document)
@@ -869,7 +873,7 @@ class IngestionService:
             unchanged = (
                 not force
                 and document.content_hash == content_hash
-                and document.processing_version == PROCESSING_VERSION
+                and document.processing_version == processing_version
                 and document.index_status == "indexed"
             )
             if unchanged:
@@ -893,7 +897,7 @@ class IngestionService:
             document.error_code = None
             document.content_hash = content_hash
             document.indexed_at = indexed_at
-            document.processing_version = PROCESSING_VERSION
+            document.processing_version = processing_version
             self.session.execute(
                 delete(DocumentChunk).where(DocumentChunk.document_id == document.id)
             )

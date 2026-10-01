@@ -42,8 +42,10 @@ skills: inline [oc-builder, oc-blackbox, oc-stamp]
   `folder`/`file`; não há migração de schema nem mudança no escopo das perguntas.
 - `DiscoveryResult.catalog_documents` separa metadados completos da lista de conteúdo
   alterado. A tarefa usa o delta para indexar e os metadados para a biblioteca.
-- Na próxima sincronização, um espaço com IDs antigos classificados como pastas faz
-  descoberta completa para eliminar conteúdo duplicado do pai; preserva IDs dos arquivos,
+- Na próxima sincronização, um espaço com documentos indexados sem a versão
+  `v2:notion-page-v1` faz descoberta completa para eliminar conteúdo duplicado do pai;
+  a versão é persistida por documento/espaço, independentemente do nó compartilhado da biblioteca.
+  Preserva IDs dos arquivos,
   remove placeholders sem índice e mantém documentos de outros espaços.
 - Exclusões antigas de pastas continuam valendo para os novos agrupamentos e descendentes.
 - Busca do Notion é eventual: ausência de um documento conhecido é confirmada por GET;
@@ -79,6 +81,20 @@ skills: inline [oc-builder, oc-blackbox, oc-stamp]
 - Propriedades de relações truncadas pelo Notion indicam referências adicionais na origem;
   não prometemos conteúdo completo dos alvos nem importação automática dessas páginas.
 - Páginas totalmente vazias não geram documentos artificiais.
+
+## Revisão independente de c059e1a — pane-299
+
+- A evidência inicial foi reproduzida: 1253 testes backend e 40 frontend passando.
+- Encontrados e corrigidos F-203 (migração por espaço), F-204 (referências de páginas/bases
+  copiadas em blocos sincronizados) e F-205 (poda de agrupamentos vazios de outros espaços).
+- Seis casos de regressão adicionados; os casos focais falharam antes das correções.
+- Após as correções: 1259 testes backend, 40 frontend, Ruff, TypeScript, ESLint dos arquivos
+  frontend alterados pelo commit original, build frontend e contrato OpenAPI aprovados.
+- Limite permanece: validação local de HTTP/Notion simulados e banco SQLite; sem sync de
+  workspace Notion real nem inspeção visual de uma biblioteca autenticada.
+- Evidência e matriz de requisitos: `TASK/evidence/notion-c059e1a-review.md`.
+
+skills: inline [oc-conveyor, oc-stamp]
 
 ## Referências oficiais
 

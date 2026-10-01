@@ -98,6 +98,27 @@ def test_admin_enqueue_is_idempotent_for_an_active_folder_job(session: Session) 
     assert folder.status == ProcessingJobStatus.QUEUED.value
 
 
+def test_provider_content_version_is_persisted_and_rebuilds_equal_text(session: Session) -> None:
+    from dataclasses import replace
+
+    organization, admin, folder = create_workspace(session)
+    service = IngestionService(session)
+    job = service.enqueue(scope=OrganizationScope(organization.id), user_id=admin.id,
+                          workspace_folder_id=folder.id)
+    document = DiscoveredDocument("page", "Page", "text/markdown", "", text="Own body")
+    service._upsert_indexed(job, document, indexed_at=datetime.now(UTC))
+    session.flush()
+    row = session.scalar(select(Document).where(Document.external_file_id == "page"))
+    chunk = session.scalar(select(DocumentChunk).where(DocumentChunk.document_id == row.id))
+    chunk.text = "stale content from a previous adapter version"
+    session.flush()
+    service._upsert_indexed(job, replace(document, processing_version="v2:notion-page-v1"),
+                           indexed_at=datetime.now(UTC))
+    session.flush()
+    assert row.processing_version == "v2:notion-page-v1"
+    assert list(session.scalars(select(DocumentChunk.text).where(DocumentChunk.document_id == row.id))) == ["Own body"]
+
+
 def test_member_and_cross_tenant_user_cannot_enqueue_a_sync(session: Session) -> None:
     organization, member, folder = create_workspace(session, role=MembershipRole.MEMBER)
     other_organization, outsider, _ = create_workspace(session)

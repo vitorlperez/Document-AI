@@ -135,6 +135,42 @@ def test_notion_legacy_folder_exclusions_apply_to_new_descendants(session: Sessi
     assert folders == []
 
 
+def test_notion_projection_preserves_empty_database_of_another_space(session: Session) -> None:
+    from app.workspaces.models import WorkspaceFolderSelection
+
+    organization, _user, source = seed_company(session)
+    source.provider = "notion"
+    workspace_a = seed_document(session, organization=organization, source=source,
+                                root="a", external_id="page-a", name="Page A")
+    workspace_b = seed_document(session, organization=organization, source=source,
+                                root="b", external_id="old-row", name="Removed", status="removed")
+    session.add_all([WorkspaceFolderSelection(workspace_folder_id=workspace_a.id,
+                    kind="folder", external_folder_id="a"),
+                    WorkspaceFolderSelection(workspace_folder_id=workspace_b.id,
+                    kind="folder", external_folder_id="b")])
+    session.flush()
+    service = LibraryService(session)
+    service.project_successful_sync(organization_id=organization.id, source=source,
+        workspace_folder_id=workspace_b.id, documents=[],
+        folders=[RemoteFolder("notion:container:b", "Empty database", kind="database")])
+    service.project_successful_sync(organization_id=organization.id, source=source,
+        workspace_folder_id=workspace_a.id,
+        documents=[DiscoveredDocument("page-a", "Page A", "text/markdown", "", text="body")],
+        folders=[RemoteFolder("notion:container:a", "Database A", kind="database")])
+    assert session.query(LibraryNode).filter_by(source_id=source.id,
+               external_id="notion:container:b").count() == 1
+    # The selected database A then disappears remotely. Its empty projection
+    # should be pruned without touching database B, even with no live rows in A.
+    service.project_successful_sync(organization_id=organization.id, source=source,
+        workspace_folder_id=workspace_a.id,
+        documents=[DiscoveredDocument("page-a", "Page A", "text/markdown", "", text="body")],
+        folders=[])
+    assert session.query(LibraryNode).filter_by(source_id=source.id,
+               external_id="notion:container:a").count() == 0
+    assert session.query(LibraryNode).filter_by(source_id=source.id,
+               external_id="notion:container:b").count() == 1
+
+
 def test_projects_nested_drive_tree_and_merges_overlapping_syncs(session: Session) -> None:
     organization, user, source = seed_company(session)
     scope_a = seed_document(session, organization=organization, source=source, root="A", external_id="brief", name="Brief.pdf")

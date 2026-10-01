@@ -16,7 +16,7 @@ from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.questions import EMBEDDING_MODEL
 from app.library.models import LibraryExclusion, LibraryNode
 from app.organizations.models import Membership
-from app.workspaces.models import WorkspaceFolder
+from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 SOURCE_ROOT_EXTERNAL_ID = "__company_library_source_root__"
 PAGE_SIZE_MAX = 100
@@ -871,6 +871,11 @@ class LibraryService:
             source_id=source.id, documents=documents, folders=folders,
             workspace_folder_id=workspace_folder_id)
         root = self._root(organization_id=organization_id, source=source)
+        notion_candidates = (
+            self._notion_projection_candidates(source_id=source.id,
+                                              workspace_folder_id=workspace_folder_id)
+            if source.provider == "notion" and workspace_folder_id is not None else set()
+        )
         folder_by_id = {folder.id: folder for folder in folders}
         for remote_folder in folders:
             self._folder(
@@ -916,7 +921,8 @@ class LibraryService:
         if source.provider == "notion":
             self._remove_notion_legacy_folders(source=source, root=root)
             self._remove_empty_folders(source_id=source.id,
-                                      preserved_external_ids={folder.id for folder in folders})
+                                      preserved_external_ids={folder.id for folder in folders},
+                                      candidate_ids=notion_candidates)
         # A delta only carries what changed and the catalog is shared by every
         # space of the source: prune just the files this space saw disappear
         # at the source and that no other space still keeps.
@@ -949,6 +955,39 @@ class LibraryService:
             candidate_ids=parents,
         )
         self.session.flush()
+
+    def _notion_projection_candidates(self, *, source_id: UUID,
+                                     workspace_folder_id: UUID) -> set[UUID]:
+        """Prune only the prior hierarchy of this space, including empty bases.
+
+        Empty containers have no document provenance. Use their saved selections
+        to distinguish this space's stale containers from another space's catalog.
+        Capture before upserting, while old document parents are still available.
+        """
+        from app.integrations.notion import NOTION_CONTAINER_PREFIX, notion_item_id
+
+        nodes = list(self.session.scalars(select(LibraryNode).where(
+            LibraryNode.source_id == source_id)))
+        by_id = {node.id: node for node in nodes}
+        selections = list(self.session.scalars(select(WorkspaceFolderSelection).where(
+            WorkspaceFolderSelection.workspace_folder_id == workspace_folder_id)))
+        if any(selection.kind == "all_accessible" for selection in selections):
+            return {node.id for node in nodes if node.kind == "folder"}
+        roots = {notion_item_id(selection.external_folder_id) for selection in selections
+                 if selection.kind == "folder"}
+        roots.update(NOTION_CONTAINER_PREFIX + id for id in tuple(roots))
+        scoped = {node.id for node in nodes if node.external_id in roots}
+        while children := {node.id for node in nodes if node.parent_id in scoped} - scoped:
+            scoped.update(children)
+        document_ids = set(self.session.scalars(select(Document.external_file_id).where(
+            Document.workspace_folder_id == workspace_folder_id)))
+        pending = [node.id for node in nodes if node.external_id in document_ids or node.id in scoped]
+        while pending:
+            node = by_id[pending.pop()]
+            if node.parent_id in by_id and node.parent_id not in scoped:
+                scoped.add(node.parent_id)
+                pending.append(node.parent_id)
+        return {id for id in scoped if by_id[id].kind == "folder"}
 
     def _remove_notion_legacy_folders(self, *, source: DataSource, root: LibraryNode) -> None:
         """Discard old search placeholders once their document ID is repaired.
