@@ -69,6 +69,7 @@ function ProductPreview() {
             <div className="landing-folder-row"><Folder size={14} aria-hidden="true" /><span>Projeto Aurora</span></div>
             <div className="landing-source-row"><ProviderLogo provider="notion" size={22} /> <span>Notion</span><ChevronRight size={13} /></div>
             <div className="landing-source-row"><ProviderLogo provider="onedrive" size={22} /> <span>OneDrive</span><ChevronRight size={13} /></div>
+            <div className="landing-source-row"><ProviderLogo provider="sharepoint" size={22} /> <span>SharePoint</span><ChevronRight size={13} /></div>
             <p className="landing-scope-note"><ShieldCheck size={14} />A conversa usa somente as ferramentas e menções selecionadas na mensagem.</p>
           </aside>
 
@@ -113,7 +114,8 @@ function ProductPreview() {
 }
 
 const questions = [
-  ["O Arquivio altera meus arquivos?", "Não. Os originais continuam no Google Drive, OneDrive ou Notion. As conexões são de leitura."],
+  ["Quais ferramentas posso conectar?", "Google Drive, OneDrive, Notion e SharePoint. A integração SharePoint permite selecionar bibliotecas de documentos de sites SharePoint e Teams com uma conta corporativa ou escolar do Microsoft 365. O administrador pode precisar aprovar o acesso."],
+  ["O Arquivio altera meus arquivos?", "Não. Os originais continuam no Google Drive, OneDrive, Notion ou SharePoint. As conexões são de leitura."],
   ["Quem pode consultar os documentos?", "Todos os membros da organização podem consultar o conteúdo sincronizado. Conecte apenas materiais compartilháveis com a equipe."],
   ["E se faltar informação?", "O Arquivio informa quando não encontra evidência suficiente e mostra os documentos usados em cada resposta."],
   ["Que conteúdo é compatível?", "Documentos Google, PDFs com texto, DOCX, páginas do Notion e Markdown. Imagens escaneadas, planilhas e apresentações ainda não são indexadas."],
@@ -146,13 +148,14 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
         <section id="integracoes" className="landing-integrations landing-container" aria-labelledby="landing-integrations-title">
           <div className="landing-integrations-intro">
             <p className="landing-eyebrow">INTEGRAÇÕES DISPONÍVEIS</p>
-            <h2 id="landing-integrations-title"><span>3</span> fontes.<br /><em>1 lugar para perguntar.</em></h2>
+            <h2 id="landing-integrations-title"><span>4</span> fontes.<br /><em>1 lugar para perguntar.</em></h2>
             <p>Conecte o que sua equipe já usa. Os arquivos originais permanecem nas suas ferramentas.</p>
           </div>
           <ul className="landing-integrations-list" aria-label="Ferramentas que você pode conectar">
             <li><ProviderLogo provider="google" size={32} /><span>Google Drive</span></li>
             <li><ProviderLogo provider="onedrive" size={32} /><span>OneDrive</span></li>
             <li><ProviderLogo provider="notion" size={32} /><span>Notion</span></li>
+            <li><ProviderLogo provider="sharepoint" size={32} /><span>SharePoint</span></li>
           </ul>
         </section>
 
@@ -168,7 +171,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
         <section className="landing-process" id="como-funciona" aria-labelledby="landing-process-title"><div className="landing-container">
           <div className="landing-process-heading"><p className="landing-eyebrow">COMO FUNCIONA</p><h2 id="landing-process-title">Seus arquivos continuam onde estão.<br /><em>As respostas ficam mais perto.</em></h2></div>
           <div className="landing-process-grid">
-            <article><span>01</span><h3>Conecte as fontes</h3><p>Escolha materiais compartilháveis no Google Drive, OneDrive ou Notion. As conexões são de leitura e preservam os originais.</p></article>
+            <article><span>01</span><h3>Conecte as fontes</h3><p>Escolha materiais compartilháveis no Google Drive, OneDrive, Notion ou SharePoint. As conexões são de leitura e preservam os originais.</p></article>
             <article><span>02</span><h3>Aguarde a sincronização</h3><p>O Arquivio processa o conteúdo selecionado em segundo plano. A consulta considera o que já foi sincronizado e indexado.</p></article>
             <article><span>03</span><h3>Pergunte com contexto</h3><p>Defina o escopo, faça sua pergunta e confira os documentos que sustentam a resposta.</p></article>
           </div>
