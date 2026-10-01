@@ -5,9 +5,11 @@ previously listed files the message points at) with calibrated probabilities, th
 TypeSafe's System One API (TYPESAFE_API_KEY). It writes no text, so the two free-text fields of the LLM
 classifier are built without a model:
 
-- standalone_query: for a fact question that depends on the conversation, the message is
-  joined with the previous user question and answer. Retrieval embeds the joined text and the
-  answer model reads it, so references such as "ele", "lá" or "e o prazo?" stay resolvable.
+- for a fact question that depends on the conversation, retrieval_query joins the message
+  with the previous user question and answer (what retrieval embeds and matches), while
+  standalone_query, what the answer model is asked, is the message plus the previous question
+  only: enough to resolve "ele", "lá" or "e o prazo?" without the previous answer's facts,
+  which made the answer model reply beyond what was asked.
 - query (file-name search): the name written after "chamado", "com nome", "named" and the
   like. Without such a marker the query is empty and the agent answers by relevance instead.
 
@@ -105,12 +107,12 @@ class JevIntentClassifier:
         if intent == "list_files" and _noul(answers, "name_search") >= NOUL_THRESHOLD:
             query = file_name_query(question)
             tool = "search_library" if query else "list_folder_inventory"
-        standalone = ""
+        standalone = retrieval = ""
         if intent == "ask_content" and history and _noul(answers, "needs_history") >= NOUL_THRESHOLD:
-            standalone = contextual_query(question, history)
+            standalone, retrieval = referenced_question(question, history), contextual_query(question, history)
         return {
             "intent": intent, "target": target, "ordinals": ordinals if target == "previous_ordinals" else [],
-            "tool": tool, "query": query, "standalone_query": standalone,
+            "tool": tool, "query": query, "standalone_query": standalone, "retrieval_query": retrieval,
         }
 
     def _decide(
@@ -192,8 +194,8 @@ def file_name_query(message: str) -> str:
     return match.group(1).strip().strip("\"'“”‘’").rstrip("?!. ").strip("\"'“”‘’")[:200]
 
 
-def contextual_query(message: str, history: list[dict[str, object]]) -> str:
-    """The message followed by the previous question and answer, as one retrieval/answer question."""
+def _previous_turn(history: list[dict[str, object]]) -> tuple[str, str]:
+    """The last user question and the assistant answer after it, whitespace-normalized."""
     previous_user = previous_answer = ""
     for item in reversed(history):
         content = item.get("content")
@@ -204,11 +206,25 @@ def contextual_query(message: str, history: list[dict[str, object]]) -> str:
         elif item.get("role") == "user" and not previous_user:
             previous_user = content
             break
-    previous_answer = " ".join(_CITATION_MARK.sub("", previous_answer).split())
-    context = " — ".join(part for part in (" ".join(previous_user.split()), previous_answer) if part)
+    return " ".join(previous_user.split()), " ".join(_CITATION_MARK.sub("", previous_answer).split())
+
+
+def _bounded(message: str, label: str, context: str) -> str:
     if not context:
         return ""
-    joined = f"{' '.join(message.split())} (contexto da conversa: {context})"
+    joined = f"{' '.join(message.split())} ({label}: {context})"
     if len(joined) <= MAX_STANDALONE_CHARS:
         return joined
     return joined[: MAX_STANDALONE_CHARS - 1].rsplit(" ", 1)[0] + ")"
+
+
+def contextual_query(message: str, history: list[dict[str, object]]) -> str:
+    """Retrieval text: the message followed by the previous question and answer."""
+    previous_user, previous_answer = _previous_turn(history)
+    return _bounded(message, "contexto da conversa", " — ".join(part for part in (previous_user, previous_answer) if part))
+
+
+def referenced_question(message: str, history: list[dict[str, object]]) -> str:
+    """Answer question: the message and the previous question it refers to, without the previous answer."""
+    previous_user, _previous_answer = _previous_turn(history)
+    return _bounded(message, "em referência a", previous_user)

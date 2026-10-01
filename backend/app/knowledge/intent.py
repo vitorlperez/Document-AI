@@ -124,6 +124,9 @@ class IntentDecision:
     # "llm" when the classifier decided; "fallback" when it failed and relevance search answers.
     decided_by: str = "llm"
     standalone_query: str = ""
+    # Search text when it differs from standalone_query (Jev joins the conversation for
+    # retrieval only); empty means retrieval searches for the question itself.
+    retrieval_query: str = ""
 
 
 class InvalidIntent(ValueError):
@@ -141,6 +144,7 @@ def parse_intent(raw: object, *, listed_files: int, mentioned: int = 0) -> Inten
     intent, target, tool = raw.get("intent"), raw.get("target"), raw.get("tool")
     ordinals, query = raw.get("ordinals", []), raw.get("query", "")
     standalone_query = raw.get("standalone_query", "")
+    retrieval_query = raw.get("retrieval_query", "")
     if intent not in INTENTS or target not in TARGETS:
         raise InvalidIntent("unknown intent or target")
     if not isinstance(ordinals, list) or not all(type(item) is int for item in ordinals):
@@ -149,6 +153,8 @@ def parse_intent(raw: object, *, listed_files: int, mentioned: int = 0) -> Inten
         raise InvalidIntent("query must be a string")
     if not isinstance(standalone_query, str) or len(standalone_query) > 1000:
         raise InvalidIntent("standalone_query must be a string of at most 1000 characters")
+    if not isinstance(retrieval_query, str) or len(retrieval_query) > 1000:
+        raise InvalidIntent("retrieval_query must be a string of at most 1000 characters")
     positions = tuple(dict.fromkeys(ordinals))
     if target == "previous_answer_files" and not listed_files:
         # Nothing was listed, so "those files" can only be the ones of the previous turn.
@@ -170,6 +176,7 @@ def parse_intent(raw: object, *, listed_files: int, mentioned: int = 0) -> Inten
         tool=chosen,
         query=query.strip()[:200] if chosen == "search_library" else "",
         standalone_query=standalone_query.strip() if intent == "ask_content" else "",
+        retrieval_query=retrieval_query.strip() if intent == "ask_content" else "",
     )
 
 

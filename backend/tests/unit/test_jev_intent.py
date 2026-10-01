@@ -87,11 +87,14 @@ def test_follow_up_fact_question_joins_the_conversation(monkeypatch: pytest.Monk
     classifier = _classifier(monkeypatch, _answers("ask_content", "previous_turn_files", needs_history=0.9))
 
     raw = classifier.classify_intent(question="quanto tempo ele ficou lá?", history=HISTORY, context=_context())
+    decision = parse_intent(raw, listed_files=0)
 
-    assert raw["standalone_query"] == (
+    assert decision.retrieval_query == (
         "quanto tempo ele ficou lá? (contexto da conversa: Onde o Vitor trabalhou de 2023 a 2025? — "
         "Na Estoca, como Software Engineer.)"
     )
+    # The answer model gets the referenced question, not the previous answer's facts.
+    assert decision.standalone_query == "quanto tempo ele ficou lá? (em referência a: Onde o Vitor trabalhou de 2023 a 2025?)"
 
 
 def test_self_contained_question_keeps_the_message(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -99,7 +102,7 @@ def test_self_contained_question_keeps_the_message(monkeypatch: pytest.MonkeyPat
 
     raw = classifier.classify_intent(question="Qual a política de férias?", history=HISTORY, context=_context())
 
-    assert raw["standalone_query"] == ""
+    assert raw["standalone_query"] == raw["retrieval_query"] == ""
 
 
 def test_name_search_uses_the_name_written_after_the_marker(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -179,3 +182,25 @@ def test_injected_classifier_decides_instead_of_the_provider(semantic_session: S
 
     assert Decider.calls == 1 and provider.intent_calls == []
     assert [tool["name"] for tool in tools] == ["retrieve_evidence"]
+
+
+def test_retrieval_searches_the_joined_text_and_the_answer_gets_the_question(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    scope, user, _node, _document = _profile_library(semantic_session)
+    retrieval = "quanto tempo ele ficou lá? (contexto da conversa: Onde o Vitor trabalhou?)"
+    answer_question = "quanto tempo ele ficou lá? (em referência a: Onde o Vitor trabalhou?)"
+    provider = IntentProvider(vectors={retrieval: [0.0, 1.0]})
+
+    class Decider:
+        def classify_intent(self, *, question, history, context, model=""):
+            return {**_intent("ask_content", target="library", tool="retrieve_evidence"),
+                    "standalone_query": answer_question, "retrieval_query": retrieval}
+
+    AgentService(semantic_session, provider, AgentLimits(), intent_classifier=Decider()).ask(
+        scope=scope, user_id=user.id, question="quanto tempo ele ficou lá?", providers=["google_drive"],
+        mentions=[], history=[],
+    )
+
+    assert provider.embed_calls == [[retrieval]]
+    assert [question for question, _evidence in provider.answer_calls] == [answer_question]

@@ -905,6 +905,7 @@ class QuestionService:
         providers: list[str],
         mentions: list[tuple[str, UUID]],
         answer_mode: str | None = None,
+        retrieval_question: str | None = None,
     ) -> QuestionResult:
         from app.ingestion.service import SyncAccessDenied
         from app.integrations.google_drive import GoogleAccessDenied
@@ -924,6 +925,7 @@ class QuestionService:
                 document_ids=selection.document_ids,
                 question=question,
                 answer_mode=answer_mode,
+                retrieval_question=retrieval_question,
                 read_selected_documents=bool(mentions) and all(kind == "file" for kind, _ in mentions),
             )
         else:
@@ -1023,6 +1025,7 @@ class QuestionService:
         question: str,
         answer_mode: str | None = None,
         read_selected_documents: bool | None = None,
+        retrieval_question: str | None = None,
     ) -> QuestionResult:
         """answer_mode "summary" or "relevance" is a decision already made by the
         agent's intent classifier; None keeps the keyword rules. "evidence" returns
@@ -1035,6 +1038,11 @@ class QuestionService:
         normalized_question = " ".join(question.split())
         if not normalized_question or len(normalized_question) > 1000:
             raise ValueError("question must contain between 1 and 1000 characters")
+        # What retrieval searches for, when it differs from what the answer model is asked
+        # (a follow-up joined with the conversation); the answer always gets the question.
+        retrieval_text = " ".join((retrieval_question or "").split()) or normalized_question
+        if len(retrieval_text) > 1000:
+            raise ValueError("retrieval question must contain at most 1000 characters")
         if workspace_folder_ids is not None and workspace_folder_id is not None:
             raise ValueError("select one folder scope representation")
         folder_ids = list(
@@ -1289,9 +1297,9 @@ class QuestionService:
                 retrieval_strategy="document_inventory",
             )
         UsageService(self.session).check_and_record(
-            scope=scope, metric="embedding_tokens", increment=_estimated_tokens(normalized_question)
+            scope=scope, metric="embedding_tokens", increment=_estimated_tokens(retrieval_text)
         )
-        question_embedding = self.provider.embed(texts=[normalized_question])[0]
+        question_embedding = self.provider.embed(texts=[retrieval_text])[0]
         similarities = similarity.scores(
             self.session, filters=scoped_filters,
             question_embedding=question_embedding, rows=scoped_rows,
@@ -1303,7 +1311,7 @@ class QuestionService:
                 str(row[1].id),
             ),
         )[:MAX_SEMANTIC_CANDIDATES]
-        query_terms = _query_terms(normalized_question)
+        query_terms = _query_terms(retrieval_text)
         lexical_candidates = (
             list(
                 self.session.execute(
@@ -1342,7 +1350,7 @@ class QuestionService:
                     document,
                     chunk,
                     _hybrid_score(
-                        normalized_question, document, chunk, similarities.get(chunk.id, 0.0)
+                        retrieval_text, document, chunk, similarities.get(chunk.id, 0.0)
                     ),
                     _lexical_score(document, chunk, query_terms),
                 )
@@ -1376,7 +1384,7 @@ class QuestionService:
                 _evidence(
                     document, chunk,
                     _hybrid_score(
-                        normalized_question, document, chunk, similarities.get(chunk.id, 0.0)
+                        retrieval_text, document, chunk, similarities.get(chunk.id, 0.0)
                     ),
                     source_providers.get(document.workspace_folder_id),
                 )
@@ -1384,7 +1392,7 @@ class QuestionService:
             )
         else:
             supported = _expand_evidence_neighbors(
-                supported, scoped_rows, source_providers, normalized_question, similarities
+                supported, scoped_rows, source_providers, retrieval_text, similarities
             )
         supported = _select_diverse_evidence(supported, max_chars=self.evidence_context_chars)
         top_score = ranked_candidates[0][2] if ranked_candidates else None

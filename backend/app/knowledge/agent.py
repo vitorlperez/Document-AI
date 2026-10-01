@@ -304,13 +304,13 @@ class LibraryToolExecutor:
 
     def retrieve_evidence(
         self, *, scope: OrganizationScope, user_id: UUID, question: str, providers: list[str], mentions: list[tuple[str, UUID]],
-        answer_mode: str | None = None,
+        answer_mode: str | None = None, retrieval_question: str | None = None,
     ) -> ToolResult:
         # ask_selection resolves the current catalog again, so stored references
         # cannot retain access after a membership, provider, or folder change.
         result = QuestionService(self.session, self.provider).ask_selection(
             scope=scope, user_id=user_id, question=question, providers=providers, mentions=mentions,
-            answer_mode=answer_mode,
+            answer_mode=answer_mode, retrieval_question=retrieval_question,
         )
         return ToolResult(
             "retrieve_evidence",
@@ -611,6 +611,7 @@ class AgentService:
             retrieved = self.tools.retrieve_evidence(
                 scope=request.scope, user_id=request.user_id, question=question,
                 providers=request.providers, mentions=run.targets, answer_mode="content",
+                retrieval_question=run.decision.retrieval_query or None,
             )
         run.add(retrieved)
         assert retrieved.question_result is not None
