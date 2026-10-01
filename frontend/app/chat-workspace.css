@@ -26,6 +26,8 @@
   .chat-workspace .conversation-panel { min-height: 440px; flex: 1 0 auto; }
   .chat-workspace .context-panel { order: 3; }
   .chat-workspace .sources-panel { max-height: 260px; overflow-y: auto; flex-shrink: 0; }
+  /* The composer already explains scope; avoid a clipped duplicate in the stacked sidebar. */
+  .chat-workspace .sources-scope { display: none; }
 }
 @media (max-width: 639px) {
   .library-space-actions { grid-template-columns: minmax(0, 1fr); }

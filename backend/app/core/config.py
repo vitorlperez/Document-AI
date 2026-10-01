@@ -93,6 +93,12 @@ class Settings(BaseSettings):
     # local tools -> one grounded synthesis call. A failed classifier falls back to a
     # relevance search over the attached scope.
     agent_planner_model: str = "gpt-5-nano"
+    # Who decides the intent: "llm" (agent_planner_model) or "jev" (TypeSafe's decision model, called
+    # directly; returns typed choices, so the retrieval question joins the conversation instead
+    # of being rewritten). "jev" requires TYPESAFE_API_KEY.
+    agent_intent_engine: Literal["llm", "jev"] = "llm"
+    agent_jev_model: str = "jev-1.13.0"
+    typesafe_api_key: SecretStr | None = None
     agent_synthesis_model: str = "gpt-5-mini"
     # Seconds the small intent classifier may take before the relevance-search fallback answers.
     agent_intent_timeout_seconds: float = 8.0
@@ -114,6 +120,12 @@ class Settings(BaseSettings):
         if provider == "notion" and self.notion_token_encryption_legacy_fallback:
             keys.append(self.google_token_encryption_key.get_secret_value() if self.google_token_encryption_key else None)
         return keys
+
+    @model_validator(mode="after")
+    def validate_intent_engine(self):
+        if self.agent_intent_engine == "jev" and not self.typesafe_api_key:
+            raise ValueError("AGENT_INTENT_ENGINE=jev requires TYPESAFE_API_KEY")
+        return self
 
     @model_validator(mode="after")
     def validate_provider_keys(self):

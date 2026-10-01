@@ -1,0 +1,76 @@
+[
+  {
+    "width": 1440,
+    "role": "admin",
+    "setupStillPending": true,
+    "onlyTour": true,
+    "tourSkipped": true,
+    "secondLoginDirectChat": true
+  },
+  {
+    "width": 1440,
+    "role": "member",
+    "setupStillPending": true,
+    "onlyTour": true,
+    "tourSkipped": false,
+    "secondLoginDirectChat": true
+  },
+  {
+    "width": 1440,
+    "role": "owner",
+    "signupAndOrg": true,
+    "welcome": true,
+    "skip": false,
+    "oauthResumeAndSyncQueued": true,
+    "tourSteps": 4,
+    "focusTrapped": true,
+    "viewportFit": true,
+    "secondLoginDirectChat": true,
+    "replayAndEscape": true,
+    "pageErrors": 0,
+    "httpErrors": 0
+  },
+  {
+    "width": 1440,
+    "role": "owner",
+    "skipSetupAndTour": true,
+    "secondLoginDirectChat": true
+  },
+  {
+    "width": 390,
+    "role": "admin",
+    "setupStillPending": true,
+    "onlyTour": true,
+    "tourSkipped": true,
+    "secondLoginDirectChat": true
+  },
+  {
+    "width": 390,
+    "role": "member",
+    "setupStillPending": true,
+    "onlyTour": true,
+    "tourSkipped": false,
+    "secondLoginDirectChat": true
+  },
+  {
+    "width": 390,
+    "role": "owner",
+    "signupAndOrg": true,
+    "welcome": true,
+    "skip": false,
+    "oauthResumeAndSyncQueued": true,
+    "tourSteps": 4,
+    "focusTrapped": true,
+    "viewportFit": true,
+    "secondLoginDirectChat": true,
+    "replayAndEscape": true,
+    "pageErrors": 0,
+    "httpErrors": 0
+  },
+  {
+    "width": 390,
+    "role": "owner",
+    "skipSetupAndTour": true,
+    "secondLoginDirectChat": true
+  }
+]

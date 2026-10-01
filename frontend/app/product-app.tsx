@@ -1,9 +1,11 @@
 "use client";
 
-import { ArrowLeft, ChevronRight, CircleAlert, ExternalLink, FileText, FolderOpen, HardDrive, LogOut, PanelRightClose, PanelRightOpen, Plus, RefreshCw, Search, Send, Settings2, ShieldCheck, Sparkles, Table2, Trash2, Unplug, Users, X } from "lucide-react";
+import { ArrowLeft, ChevronRight, CircleAlert, ExternalLink, FileText, FolderOpen, HardDrive, HelpCircle, LogOut, PanelRightClose, PanelRightOpen, Plus, RefreshCw, Search, Send, Settings2, ShieldCheck, Sparkles, Table2, Trash2, Unplug, Users, X } from "lucide-react";
 import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import { OrganizationOnboarding, type OnboardingState } from "./organization-onboarding";
+import { ConversationTour } from "./conversation-tour";
 import { AccessSettings } from "./access-settings";
 import { LandingPage } from "./landing-page";
 import { cleanAnswerForDisplay } from "./answer-display";
@@ -11,7 +13,7 @@ import { AnswerMarkdown } from "./answer-markdown";
 import "./chat-workspace.css";
 import "./product-layout.css";
 import { Brand } from "./brand";
-import { QuestionScopePicker, contextReady, toolLabel, providerKey, type QuestionContext } from "./question-scope";
+import { QuestionScopePicker, SYNC_PENDING_MESSAGE, contextReady, toolLabel, providerKey, type QuestionContext } from "./question-scope";
 import { MentionComposer, type MentionCandidate } from "./mention-composer";
 import { mentionSummary } from "./mention-label";
 import { newSpaceOptions } from "./new-space-options";
@@ -139,14 +141,44 @@ const compactCitations = (citations: Evidence[]): Evidence[] => {
 
 export function ProductApp({ screen }: { screen: Screen }) {
   const router = useRouter(); const pathname = usePathname(); const searchParams = useSearchParams(); const params = useParams<{ companyId?: string; token?: string }>();
+  const [onboarding, setOnboarding] = useState<(OnboardingState & { organizationId: string }) | null>(null);
   const [user, setUser] = useState<User | null>(null); const [companies, setCompanies] = useState<Company[]>([]); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState<string | null>(null); const [error, setError] = useState<string | null>(null);
-    const loadSession = useCallback(async () => {
-      setLoading(true); setError(null);
-    try { const current = await api<User | null>(SESSION_PATH); setUser(current); if (!current) { setCompanies([]); return; } const memberships = await api<Company[]>("/organizations"); setCompanies(memberships); if (screen === "home" && memberships[0]) router.replace(companyPath(memberships[0].id)); }
-    catch (caught) { if (!(caught instanceof ApiError && caught.status === 401)) setError(messageFor(caught)); }
-    finally { setLoading(false); }
-  }, [router, screen]);
-  useEffect(() => { void Promise.resolve().then(loadSession); }, [loadSession]);
+  const sessionRequest = useRef<AbortController | null>(null);
+  const loadSession = useCallback(async () => {
+    sessionRequest.current?.abort();
+    const controller = new AbortController();
+    sessionRequest.current = controller;
+    const options = { signal: controller.signal, cache: "no-store" as const };
+    setLoading(true); setError(null); setOnboarding(null);
+    try {
+      const current = await api<User | null>(SESSION_PATH, options);
+      if (controller.signal.aborted) return;
+      setUser(current);
+      if (!current) { setCompanies([]); return; }
+      const memberships = await api<Company[]>("/organizations", options);
+      if (controller.signal.aborted) return;
+      setCompanies(memberships);
+      if (params.companyId && memberships.some((item) => item.id === params.companyId)) {
+        const progress = await api<OnboardingState>(`/organizations/${params.companyId}/onboarding`, options);
+        if (controller.signal.aborted) return;
+        setOnboarding({ ...progress, organizationId: params.companyId });
+      }
+      if (screen === "home" && memberships[0]) router.replace(companyPath(memberships[0].id));
+    } catch (caught) {
+      if (!controller.signal.aborted && !(caught instanceof ApiError && caught.status === 401)) setError(messageFor(caught));
+    } finally { if (!controller.signal.aborted) setLoading(false); }
+  }, [router, screen, params.companyId]);
+  useEffect(() => {
+    let mounted = true;
+    void Promise.resolve().then(() => { if (mounted) void loadSession(); });
+    return () => { mounted = false; sessionRequest.current?.abort(); };
+  }, [loadSession]);
+  useEffect(() => {
+    if (!onboarding?.required) return;
+    const refresh = () => { void loadSession(); };
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [loadSession, onboarding?.required]);
   const oauthProvider = screen === "integrations" ? searchParams.get("connected") : null;
   const oauthError = screen === "integrations" ? searchParams.get("error") : null;
   const oauthFailure = oauthErrorMessage(oauthError);
@@ -170,8 +202,27 @@ export function ProductApp({ screen }: { screen: Screen }) {
   if (screen === "home") return <Onboarding user={user} onCreated={(created) => { setCompanies((items) => [...items, created]); router.push(companyPath(created.id)); }} />;
   if (screen === "staff") return <StaffCenter user={user} onBack={() => router.push(companies[0] ? companyPath(companies[0].id) : "/")} />;
   if (!isUuid(params.companyId) || !company) return <InvalidCompany companies={companies} onChoose={goCompany} />;
+  if (!onboarding || onboarding.organizationId !== company.id) return <main className="auth-page"><section className="auth-card"><Brand /><p role="alert" className="mt-6">{error ?? "Preparando sua organização…"}</p><button onClick={() => { void loadSession(); }} className="onboarding-primary mt-4">Tentar novamente</button><button onClick={() => { void logout(); }} className="onboarding-text-button mt-4">Sair</button></section></main>;
+  if (onboarding.required && company.role === "owner") return <OrganizationOnboarding key={company.id} name={company.name} state={onboarding} onLogout={() => { void logout(); }} alert={alertMessage ? <NotificationToast message={alertMessage} tone={error || oauthFailure ? "error" : "notice"} onDismiss={dismissAlert} /> : null} onAdvance={async (step) => {
+    try {
+      const activeRequest = sessionRequest.current;
+      const memberships = await api<Company[]>("/organizations", { cache: "no-store", signal: activeRequest?.signal });
+      if (activeRequest?.signal.aborted) return;
+      setCompanies(memberships);
+      const currentMembership = memberships.find((item) => item.id === company.id);
+      if (!currentMembership || currentMembership.role !== "owner") {
+        await loadSession();
+        throw new Error("Você não tem permissão para esta ação.");
+      }
+      const progress = await api<OnboardingState>(`/organizations/${company.id}/onboarding`, { method: "PATCH", body: JSON.stringify({ step }) });
+      if (activeRequest?.signal.aborted) return;
+      if (!progress.required) { setNotice(null); setError(null); }
+      setOnboarding({ ...progress, organizationId: company.id });
+      if (!progress.required) router.replace(companyPath(company.id));
+    } catch (caught) { throw new Error(messageFor(caught)); }
+  }}><IntegrationScreen key={company.id} company={company} setError={setError} setNotice={setNotice} /></OrganizationOnboarding>;
   return <Shell user={user} company={company} companies={companies} alertMessage={alertMessage} alertTone={error || oauthFailure ? "error" : "notice"} fillViewport={screen === "company" || screen === "library"} pageSurface={screen === "team" || screen === "integrations"} onDismiss={dismissAlert} onCompanyChange={goCompany} onNavigate={(path) => router.push(path)} onLogout={() => { void logout(); }}>
-    {screen === "company" && <CompanyDashboard company={company} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
+    {screen === "company" && <CompanyDashboard key={company.id} company={company} onboarding={onboarding} onOnboardingChange={(progress) => setOnboarding((current) => current?.organizationId === company.id ? { ...progress, organizationId: company.id } : current)} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "library" && <LibraryScreen key={company.id} company={company} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "team" && <TeamScreen key={company.id} company={company} setError={setError} setNotice={setNotice} />}
     {screen === "integrations" && (company.role === "member" ? <section role="alert" className="mx-auto max-w-lg rounded-lg border border-line bg-white p-8 text-center"><ShieldCheck className="mx-auto text-primary" size={28} /><h1 className="mt-4 text-xl font-semibold text-ink">Acesso restrito</h1><p className="mt-2 text-sm text-muted-foreground">Somente responsáveis e administradores podem gerenciar integrações.</p><button onClick={() => router.push(companyPath(company.id))} className="mt-5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white">Voltar à conversa</button></section> : <div><IntegrationScreen key={company.id} company={company} setError={setError} setNotice={setNotice} /><AccessSettings key={`access-${company.id}`} organizationId={company.id} api={api} /></div>)}
@@ -230,7 +281,7 @@ function Shell({ user, company, companies, children, alertMessage, alertTone, fi
           <span className="hidden text-sm text-muted-foreground md:block">{user.email}</span>
           {user.is_platform_staff && <button onClick={() => { setMenuOpen(false); onNavigate("/staff"); }} className="rounded-lg border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-700"><ShieldCheck className="mr-1 inline" size={14} />Suporte</button>}
           <div ref={menuRef} className="relative">
-            <button onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-label="Navegação principal" aria-controls="product-navigation" className="inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold text-ink shadow-sm hover:bg-paper"><span className="hidden sm:inline">Navegar</span><ChevronRight size={16} className={`transition-transform ${menuOpen ? "rotate-90" : ""}`} /></button>
+            <button data-tour="navigation" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-label="Navegar" aria-controls="product-navigation" className="inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold text-ink shadow-sm hover:bg-paper"><span>Navegar</span><ChevronRight size={16} className={`transition-transform ${menuOpen ? "rotate-90" : ""}`} /></button>
             {menuOpen && <nav id="product-navigation" aria-label="Navegação principal" className="absolute right-0 mt-2 w-60 overflow-hidden rounded-lg border border-line bg-white p-1.5 shadow-xl">
               <button onClick={() => go()} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-sage"><Sparkles size={16} className="text-primary" /><span><span className="block">Consultas</span><span className="block text-xs font-normal text-muted-foreground">Voltar à conversa</span></span></button>
               <button onClick={() => go("/library")} className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-sage"><FolderOpen size={16} className="text-primary" /><span><span className="block">Biblioteca</span><span className="block text-xs font-normal text-muted-foreground">Explore e gerencie o índice</span></span></button>
@@ -247,8 +298,17 @@ function Shell({ user, company, companies, children, alertMessage, alertTone, fi
   </main>;
 }
 
-function CompanyDashboard({ company, onConnect, setError, setNotice }: { company: Company; onConnect: () => void; setError: (value: string | null) => void; setNotice: (value: string | null) => void }) {
-  return <ConversationLibraryWorkspace key={company.id} company={company} onConnect={onConnect} setError={setError} setNotice={setNotice} />;
+function CompanyDashboard({ company, onboarding, onOnboardingChange, onConnect, setError, setNotice }: { company: Company; onboarding: OnboardingState; onOnboardingChange: (state: OnboardingState) => void; onConnect: () => void; setError: (value: string | null) => void; setNotice: (value: string | null) => void }) {
+  const [replayTour, setReplayTour] = useState(false);
+  return <><ConversationLibraryWorkspace key={company.id} company={company} onConnect={onConnect} onShowTour={() => setReplayTour(true)} setError={setError} setNotice={setNotice} />
+    {(onboarding.tour_required || replayTour) && <ConversationTour key={`tour-${company.id}`} onComplete={async () => {
+      try {
+        const progress = await api<OnboardingState>(`/organizations/${company.id}/onboarding/tour/complete`, { method: "POST" });
+        onOnboardingChange(progress); setReplayTour(false);
+        window.requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-tour="composer"] textarea')?.focus());
+      } catch (caught) { throw new Error(messageFor(caught)); }
+    }} />}
+  </>;
 }
 
 function LibraryScreen({ company, onConnect, setError, setNotice }: { company: Company; onConnect: () => void; setError: (value: string | null) => void; setNotice: (value: string | null) => void }) {
@@ -443,7 +503,7 @@ function LibraryBreadcrumbs({ path, onOpenPath }: { path: LibraryNode[]; onOpenP
   return <nav className="flex flex-wrap items-center gap-1 px-3 pb-3 text-xs" aria-label="Caminho das fontes"><button onClick={() => onOpenPath([])} className={`rounded-md px-2 py-1.5 ${path.length === 0 ? "bg-white font-semibold text-ink shadow-sm" : "text-primary hover:bg-sage"}`}>Biblioteca</button>{path.map((node, index) => <span key={node.id} className="flex items-center"><ChevronRight size={13} className="text-muted-foreground" /><button onClick={() => onOpenPath(path.slice(0, index + 1))} className={`max-w-24 truncate rounded-md px-1.5 py-1.5 ${index === path.length - 1 ? "bg-white font-semibold text-ink shadow-sm" : "text-primary hover:bg-sage"}`}>{node.name}</button></span>)}</nav>;
 }
 
-function ConversationLibraryWorkspace({ company, onConnect, setError, setNotice }: { company: Company; onConnect: () => void; setError: (value: string | null) => void; setNotice: (value: string | null) => void }) {
+function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError, setNotice }: { company: Company; onConnect: () => void; onShowTour: () => void; setError: (value: string | null) => void; setNotice: (value: string | null) => void }) {
   const [path, setPath] = useState<LibraryNode[]>([]);
   const [items, setItems] = useState<LibraryNode[]>([]);
   const [page, setPage] = useState(1);
@@ -484,6 +544,7 @@ function ConversationLibraryWorkspace({ company, onConnect, setError, setNotice 
   const current = path.at(-1);
   const canManage = company.role !== "member";
   const mentionsOutsideSelection = mentions.filter((item) => !allTools && !queryProviders.includes(providerKey(item.source_provider)));
+  const syncInProgress = syncs.some((item) => item.status === "queued" || item.status === "syncing");
   const canAsk = !restoringConversation && !contextLoading && !contextError && mentionsOutsideSelection.length === 0 && (allTools || queryProviders.length > 0) && contexts.some((item) => contextReady(item) && (allTools || queryProviders.includes(providerKey(item.source_provider))));
 
   const loadLibrary = useCallback(() => {
@@ -661,18 +722,18 @@ function ConversationLibraryWorkspace({ company, onConnect, setError, setNotice 
     <div className={`grid workspace-panels${filesPanelOpen ? "" : " files-panel-collapsed"}`}>
       <aside id="library-sources" className="sources-panel border-b border-line bg-sage xl:border-b-0 xl:border-r">
         <LibrarySidebarHeader canManage={canManage} onConnect={onConnect} onRefresh={loadLibrary} /><LibraryBreadcrumbs path={path} onOpenPath={openPath} />
-        <div className="max-h-72 overflow-y-auto px-2 pb-4 xl:max-h-[calc(100vh-20rem)]">{libraryLoading ? <LoadingIndicator label="Abrindo biblioteca…" className="px-2 py-5 text-sm text-muted-foreground" /> : libraryError ? <div role="alert" className="px-3 py-5 text-sm text-rose-700">{libraryError}<button onClick={loadLibrary} className="mt-2 block font-semibold underline">Tentar novamente</button></div> : items.length === 0 ? <div className="px-2 py-5 text-sm text-muted-foreground"><HardDrive size={18} className="mb-2 text-primary" />{current ? "Esta pasta ainda não possui itens." : "Nenhuma fonte sincronizada."}</div> : items.map((item) => <div key={item.id} className="group flex items-center rounded-md hover:bg-white"><button onClick={() => openItem(item)} className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left text-sm"><span className={`grid size-7 shrink-0 place-items-center rounded-lg ${item.kind === "file" ? "bg-sage-selected text-muted-foreground" : "bg-sage-selected text-primary"}`}><LibraryNodeIcon item={item} size={14} /></span><span className="min-w-0 flex-1 truncate font-medium text-ink">{item.name}</span>{item.kind !== "file" && <ChevronRight size={14} className="text-muted-foreground" />}</button>{canManage && item.kind === "file" && (item.workspace_documents?.length ?? 0) > 0 && <button onClick={() => manageFile(item)} className="mr-1 rounded-lg p-2 text-muted-foreground hover:bg-sage hover:text-ink" aria-label={`Gerenciar ${item.name}`} title="Gerenciar arquivo"><Settings2 size={15} /></button>}</div>)}</div>
+        <div className="max-h-72 overflow-y-auto px-2 pb-4 xl:max-h-[calc(100vh-20rem)]">{libraryLoading ? <LoadingIndicator label="Abrindo biblioteca…" className="px-2 py-5 text-sm text-muted-foreground" /> : libraryError ? <div role="alert" className="px-3 py-5 text-sm text-rose-700">{libraryError}<button onClick={loadLibrary} className="mt-2 block font-semibold underline">Tentar novamente</button></div> : items.length === 0 ? <div className="px-2 py-5 text-sm text-muted-foreground"><HardDrive size={18} className="mb-2 text-primary" />{current ? "Esta pasta ainda não possui itens." : syncInProgress ? SYNC_PENDING_MESSAGE : "Nenhuma fonte sincronizada."}</div> : items.map((item) => <div key={item.id} className="group flex items-center rounded-md hover:bg-white"><button onClick={() => openItem(item)} className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left text-sm"><span className={`grid size-7 shrink-0 place-items-center rounded-lg ${item.kind === "file" ? "bg-sage-selected text-muted-foreground" : "bg-sage-selected text-primary"}`}><LibraryNodeIcon item={item} size={14} /></span><span className="min-w-0 flex-1 truncate font-medium text-ink">{item.name}</span>{item.kind !== "file" && <ChevronRight size={14} className="text-muted-foreground" />}</button>{canManage && item.kind === "file" && (item.workspace_documents?.length ?? 0) > 0 && <button onClick={() => manageFile(item)} className="mr-1 rounded-lg p-2 text-muted-foreground hover:bg-sage hover:text-ink" aria-label={`Gerenciar ${item.name}`} title="Gerenciar arquivo"><Settings2 size={15} /></button>}</div>)}</div>
         {pagination && pagination.pages > 1 && <Pagination value={pagination} loading={libraryLoading} onChange={setPage} />}
         <p className="sources-scope flex gap-2 px-4 py-5 text-xs leading-5 text-muted-foreground"><ShieldCheck size={16} className="shrink-0 text-primary" />A conversa usa somente as ferramentas e menções selecionadas na mensagem.</p>
       </aside>
       <main id="consultas" className="conversation-panel relative flex min-h-[560px] min-w-0 flex-col bg-white">
-        <div className="flex shrink-0 items-center justify-end gap-1 border-b border-line-soft bg-white px-3 py-1.5 sm:px-5"><button type="button" onClick={startNewConversation} disabled={asking} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium text-ink hover:bg-sage disabled:opacity-40"><Plus size={15} aria-hidden="true" />Nova conversa</button><button type="button" onClick={() => setFilesPanelOpen((open) => !open)} aria-controls="chat-library" aria-expanded={filesPanelOpen} aria-label={filesPanelOpen ? "Ocultar consulta de arquivos" : "Mostrar consulta de arquivos"} title={filesPanelOpen ? "Ocultar consulta de arquivos" : "Mostrar consulta de arquivos"} className="rounded-lg p-2 text-muted-foreground hover:bg-sage hover:text-ink">{filesPanelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}</button></div>
+        <div className="flex shrink-0 items-center justify-end gap-1 border-b border-line-soft bg-white px-3 py-1.5 sm:px-5"><button type="button" onClick={onShowTour} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:bg-sage" aria-label="Rever tour do app"><HelpCircle size={16} aria-hidden="true" /><span className="hidden sm:inline">Conhecer o app</span></button><button data-tour="new-conversation" type="button" onClick={startNewConversation} disabled={asking} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium text-ink hover:bg-sage disabled:opacity-40"><Plus size={15} aria-hidden="true" />Nova conversa</button><button type="button" onClick={() => setFilesPanelOpen((open) => !open)} aria-controls="chat-library" aria-expanded={filesPanelOpen} aria-label={filesPanelOpen ? "Ocultar consulta de arquivos" : "Mostrar consulta de arquivos"} title={filesPanelOpen ? "Ocultar consulta de arquivos" : "Mostrar consulta de arquivos"} className="rounded-lg p-2 text-muted-foreground hover:bg-sage hover:text-ink">{filesPanelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}</button></div>
         <div ref={transcriptRef} role="log" aria-label="Conversa com seus documentos" aria-live="polite" className="flex-1 overflow-y-auto px-5 py-6 sm:px-7">{messages.length > 0 ? <div className="mx-auto max-w-3xl space-y-5">{messages.map((message) => message.role === "user" ? <div key={message.id} className="ml-auto max-w-[85%]"><p className="mb-1 text-right text-xs font-medium text-muted-foreground">{message.contextName}</p><div className="conversation-question px-4 py-3 text-sm leading-6">{message.content}{Boolean(message.mentions?.length) && <span className="mt-2 block text-xs">{mentionSummary(message.mentions ?? [])}</span>}</div>{message.contextId && <button disabled={saving} onClick={() => { void saveQuestion(message); }} className="mt-1.5 block ml-auto text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-40">Salvar pergunta</button>}</div> : <article key={message.id} className="conversation-answer"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-sage-selected text-primary"><Sparkles size={15} /></span><div><p className="text-sm font-semibold text-ink">Arquivio</p><p className="text-xs text-muted-foreground">{message.contextName}</p></div></div>{message.pending ? <div className="mt-4 rounded-md bg-paper px-3 py-2.5"><LoadingIndicator label="A IA está analisando as evidências e preparando a resposta…" className="text-sm text-muted-foreground" /></div> : message.error ? <div className="mt-4 text-sm leading-6 text-rose-700"><p>Não foi possível concluir esta pergunta: {message.error}</p><button type="button" className="mt-2 min-h-11 underline" onClick={() => { setQuestion(message.content); setMentions(message.mentions ?? []); setAllTools(message.allTools ?? true); setQueryProviders(message.providers ?? []); composerRef.current?.focus(); }}>Repetir com este contexto</button></div> : message.answer ? <><AssistantAnswer messageId={message.id} answer={message.answer} /></> : null}</article>)}</div> : <div className="mx-auto flex h-full max-w-md flex-col items-center justify-center py-16 text-center"><span className="grid size-12 place-items-center rounded-lg bg-sage text-primary"><Sparkles size={22} /></span><h2 className="mt-4 text-lg font-semibold text-ink">O que você quer descobrir?</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Pergunte sobre conteúdo indexado. Se quiser restringir a pergunta, escolha ferramentas abaixo ou mencione arquivos e pastas com @ ou /.</p>{canAsk && <div className="mt-6 flex flex-wrap justify-center gap-2">{["Quais são os principais prazos?", "O que foi definido sobre as entregas?", "Quais são as responsabilidades da equipe?"].map((prompt) => <button key={prompt} onClick={() => { setQuestion(prompt); setMentions([]); composerRef.current?.focus(); }} className="rounded-md border border-line px-3 py-2 text-xs text-muted-foreground hover:border-primary hover:bg-sage">{prompt}</button>)}</div>}</div>}</div>
-        <form onSubmit={(event) => { void ask(event); }} className="conversation-composer shrink-0 bg-white p-4 sm:px-7 sm:py-5">
+        <form data-tour="composer" onSubmit={(event) => { void ask(event); }} className="conversation-composer shrink-0 bg-white p-4 sm:px-7 sm:py-5">
           <div className="rounded-lg border border-line bg-white p-2 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-sage-selected">
             <MentionComposer organizationId={company.id} value={question} onChange={setQuestion} mentions={mentions} onMentionsChange={setMentions} all={allTools} providers={queryProviders} disabled={asking || restoringConversation} textareaRef={composerRef} onSubmit={() => composerRef.current?.form?.requestSubmit()} />
             <div className="composer-toolbar flex items-center justify-between gap-2 border-t border-line-soft px-2 pt-2">
-              <QuestionScopePicker all={allTools} providers={queryProviders} contexts={contexts} loading={contextLoading} disabled={asking} error={contextError} onRetry={loadOperations} onChange={(all, providers) => { setAllTools(all); setQueryProviders(providers); }} />
+              <div data-tour="tools"><QuestionScopePicker syncInProgress={syncInProgress} all={allTools} providers={queryProviders} contexts={contexts} loading={contextLoading} disabled={asking} error={contextError} onRetry={loadOperations} onChange={(all, providers) => { setAllTools(all); setQueryProviders(providers); }} /></div>
               <div className="flex shrink-0 items-center gap-2"><span className="text-xs text-muted-foreground">{question.length}/1000</span><button disabled={!canAsk || !question.trim() || asking} className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-forest-hover disabled:cursor-not-allowed disabled:opacity-40">{asking ? <RefreshCw size={15} className="motion-safe:animate-spin" aria-hidden="true" /> : <Send size={15} />}{asking ? "Consultando…" : "Enviar"}</button></div>
             </div>
           </div>

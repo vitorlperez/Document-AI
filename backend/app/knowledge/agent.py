@@ -393,8 +393,11 @@ class AgentService:
     def __init__(
         self, session: Session, provider: SemanticProvider, limits: AgentLimits,
         models: FlowModels | None = None, file_summaries: FileSummaries | None = None,
+        intent_classifier: IntentClassifierAdapter | None = None,
     ):
         self.session, self.provider, self.limits = session, provider, limits
+        # Decides the intent in place of the provider (AGENT_INTENT_ENGINE=jev); None uses the provider.
+        self.intent_classifier = intent_classifier
         self.models = models or FlowModels()
         self.file_summaries = file_summaries or FileSummaries()
         self.tools = LibraryToolExecutor(session, provider)
@@ -428,7 +431,7 @@ class AgentService:
         self, request: AgentRequest, conversation: ConversationState, *, deadline: float,
     ) -> IntentDecision:
         """The small model decides; without it the request falls back to a relevance search."""
-        adapter = self.provider
+        adapter = self.intent_classifier or self.provider
         mentions = request.mentions
         if not isinstance(adapter, IntentClassifierAdapter):
             return fallback_intent(has_mentions=bool(mentions))
@@ -1198,6 +1201,14 @@ def _request_deadline(deadline: float):
 
 def agent_service_from_settings(session: Session, provider: SemanticProvider, settings) -> AgentService:
     """Build the same bounded agent for browser and programmatic requests."""
+    intent_classifier = None
+    if settings.agent_intent_engine == "jev":
+        from app.knowledge.jev import JevIntentClassifier
+
+        intent_classifier = JevIntentClassifier(
+            settings.typesafe_api_key.get_secret_value() if settings.typesafe_api_key else None,
+            model=settings.agent_jev_model,
+        )
     return AgentService(
         session=session, provider=provider,
         limits=AgentLimits(max_result_bytes=settings.agent_max_tool_result_bytes,
@@ -1208,4 +1219,5 @@ def agent_service_from_settings(session: Session, provider: SemanticProvider, se
         file_summaries=FileSummaries(target_chars=settings.agent_file_summary_chars,
                                     model=settings.agent_file_summary_model,
                                     timeout_seconds=settings.agent_file_summary_timeout_seconds),
+        intent_classifier=intent_classifier,
     )

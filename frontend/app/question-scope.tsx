@@ -15,7 +15,10 @@ export const toolLabel = (provider?: string | null) => ({
 })[provider ?? ""] ?? (provider ? provider.replaceAll("_", " ") : "Fonte indexada");
 export const contextReady = (context: QuestionContext) => context.query_status === "ready" && (context.status === "ready" || context.status === "partial_failure");
 
-export function QuestionScopePicker({ all, providers, contexts, loading, disabled, error, onRetry, onChange }: {
+export const SYNC_PENDING_MESSAGE = "Sincronização em andamento — as respostas ficam disponíveis conforme a indexação termina.";
+
+export function QuestionScopePicker({ syncInProgress = false, all, providers, contexts, loading, disabled, error, onRetry, onChange }: {
+  syncInProgress?: boolean;
   all: boolean; providers: string[]; contexts: QuestionContext[];
   loading: boolean; disabled: boolean; error: string | null; onRetry: () => void;
   onChange: (all: boolean, providers: string[]) => void;
@@ -45,6 +48,6 @@ export function QuestionScopePicker({ all, providers, contexts, loading, disable
     </div>}
     <span className="question-scope-count" aria-live="polite">{readyTools} {readyTools === 1 ? "ferramenta disponível" : "ferramentas disponíveis"}</span>
     {error && <div role="alert" className="question-scope-warning">{error} <button type="button" onClick={onRetry}>Tentar novamente</button></div>}
-    {!loading && !error && (ready === 0 || pending > 0) && <p className="question-scope-warning">{ready === 0 ? "Ainda não há conteúdo pronto para perguntas nesta seleção." : `Cobertura parcial: ${pending} ${pending === 1 ? "pasta indisponível" : "pastas indisponíveis"}.`}</p>}
+    {!loading && !error && (ready === 0 || pending > 0) && <p className="question-scope-warning">{ready === 0 ? syncInProgress ? SYNC_PENDING_MESSAGE : "Ainda não há conteúdo pronto para perguntas nesta seleção." : `Cobertura parcial: ${pending} ${pending === 1 ? "pasta indisponível" : "pastas indisponíveis"}.`}</p>}
   </div>;
 }

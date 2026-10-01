@@ -1,0 +1,118 @@
+{
+  "currentExit": 1,
+  "baselineExit": 1,
+  "currentCount": 18,
+  "baselineCount": 18,
+  "newFindings": [],
+  "identical": true,
+  "findings": [
+    [
+      "alembic/versions/20260912_0011_oauth_reauth_source.py",
+      3,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "alembic/versions/20260913_0012_company_library.py",
+      3,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "alembic/versions/20260915_0014_workos_session_logout.py",
+      3,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "alembic/versions/20260923_0015_onedrive_delta_checkpoints.py",
+      3,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "alembic/versions/20260923_0016_onedrive_account_binding.py",
+      3,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "alembic/versions/20260928_0017_agent_conversations.py",
+      3,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "alembic/versions/20260929_0018_manual_sync_runs.py",
+      3,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "app/ingestion/extraction/limits.py",
+      1,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "app/ingestion/google_drive.py",
+      3,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "app/integrations/google_drive.py",
+      415,
+      "SIM115",
+      "Use a context manager for opening files"
+    ],
+    [
+      "app/integrations/http.py",
+      3,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "app/integrations/onedrive.py",
+      346,
+      "SIM115",
+      "Use a context manager for opening files"
+    ],
+    [
+      "tests/unit/test_answer_blocks.py",
+      3,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "tests/unit/test_answer_blocks.py",
+      50,
+      "RUF059",
+      "Unpacked variable `document` is never used"
+    ],
+    [
+      "tests/unit/test_extraction_stream.py",
+      3,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ],
+    [
+      "tests/unit/test_extraction_stream.py",
+      17,
+      "SIM115",
+      "Use a context manager for opening files"
+    ],
+    [
+      "tests/unit/test_ocr_pdf_layers.py",
+      103,
+      "RUF012",
+      "Mutable default value for class attribute"
+    ],
+    [
+      "tests/unit/test_remote_download.py",
+      171,
+      "I001",
+      "Import block is un-sorted or un-formatted"
+    ]
+  ]
+}

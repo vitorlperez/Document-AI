@@ -18,6 +18,10 @@ class Organization(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     __tablename__ = "organizations"
 
     name: Mapped[str] = mapped_column(String(160), nullable=False)
+    onboarding_step: Mapped[str] = mapped_column(
+        String(24), nullable=False, default="welcome", server_default="welcome"
+    )
+    onboarding_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Membership(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
@@ -35,6 +39,7 @@ class Membership(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    tour_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class MembershipInvitation(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):

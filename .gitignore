@@ -48,3 +48,12 @@ output/
 
 # Local agent and tool metadata
 .codex/.DS_Store
+
+# Graphify caches, dated snapshots and local duplicate exports
+/graphify-out/cache/
+/graphify-out/20??-??-??/
+/graphify-out/graph [0-9]*.json
+
+# Local onboarding captures; committed final QA evidence stays versioned
+/artifacts/onboarding/*.png
+/artifacts/*/qa/*.png
