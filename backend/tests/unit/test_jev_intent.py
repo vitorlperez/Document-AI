@@ -1,8 +1,9 @@
 """Jev as the intent engine (AGENT_INTENT_ENGINE=jev): typed decisions mapped onto the closed intent schema."""
 
+import logging
+
 import httpx
 import pytest
-from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
@@ -143,22 +144,41 @@ def test_provider_failure_is_reported_as_unavailable(monkeypatch: pytest.MonkeyP
         JevIntentClassifier("ts-test").classify_intent(question="oi", history=[], context=_context())
 
 
-def test_jev_engine_requires_the_typesafe_key() -> None:
-    with pytest.raises(ValidationError, match="TYPESAFE_API_KEY"):
-        Settings(_env_file=None, database_url=DATABASE_URL, agent_intent_engine="jev", typesafe_api_key=None)
+def test_jev_and_pgvector_are_the_defaults() -> None:
+    settings = Settings(_env_file=None, database_url=DATABASE_URL)
+
+    assert (settings.agent_intent_engine, settings.vector_backend) == ("jev", "pgvector")
+
+
+def test_missing_key_in_production_uses_the_llm_classifier_and_logs_an_error(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    # The worker and MCP services share these settings without classifying, so startup must not fail.
+    settings = Settings(_env_file=None, database_url=DATABASE_URL, environment="production",
+                        public_app_url="https://app.example.test", typesafe_api_key=None)
+    records: list[logging.LogRecord] = []
+    handler = logging.Handler()
+    handler.emit = records.append
+    agent_logger = logging.getLogger("document_intelligence.agent")  # does not propagate once the app is configured
+    agent_logger.addHandler(handler)
+    try:
+        service = agent_service_from_settings(semantic_session, IntentProvider(), settings)
+    finally:
+        agent_logger.removeHandler(handler)
+
+    assert service.intent_classifier is None
+    assert any(record.levelno == logging.ERROR and "TYPESAFE_API_KEY" in record.getMessage() for record in records)
 
 
 def test_settings_select_the_intent_engine(semantic_session: Session) -> None:  # noqa: F811
-    default = agent_service_from_settings(
-        semantic_session, IntentProvider(), Settings(_env_file=None, database_url=DATABASE_URL),
-    )
-    with_jev = agent_service_from_settings(
-        semantic_session, IntentProvider(),
-        Settings(_env_file=None, database_url=DATABASE_URL, agent_intent_engine="jev", typesafe_api_key="ts-x"),
-    )
+    def service(**overrides):
+        settings = Settings(_env_file=None, database_url=DATABASE_URL, **overrides)
+        return agent_service_from_settings(semantic_session, IntentProvider(), settings)
 
-    assert default.intent_classifier is None
-    assert isinstance(with_jev.intent_classifier, JevIntentClassifier)
+    assert isinstance(service(typesafe_api_key="ts-x").intent_classifier, JevIntentClassifier)
+    # Outside production a missing key keeps the app usable with the LLM classifier.
+    assert service(typesafe_api_key=None).intent_classifier is None
+    assert service(agent_intent_engine="llm", typesafe_api_key="ts-x").intent_classifier is None
 
 
 def test_injected_classifier_decides_instead_of_the_provider(semantic_session: Session) -> None:  # noqa: F811
@@ -204,3 +224,24 @@ def test_retrieval_searches_the_joined_text_and_the_answer_gets_the_question(
 
     assert provider.embed_calls == [[retrieval]]
     assert [question for question, _evidence in provider.answer_calls] == [answer_question]
+
+
+def test_a_failing_jev_call_falls_back_to_the_llm_classifier(semantic_session: Session) -> None:  # noqa: F811
+    scope, user, _node, _document = _profile_library(semantic_session)
+    provider = IntentProvider(
+        intent=_intent("conversation", target="library"), vectors={"O que sabemos sobre o Vitor?": [0.0, 1.0]},
+    )
+
+    class Down:
+        def classify_intent(self, *, question, history, context, model=""):
+            raise AIProviderUnavailable("decision provider is unavailable")
+
+    _result, tools, _references = AgentService(
+        semantic_session, provider, AgentLimits(), intent_classifier=Down(),
+    ).ask(
+        scope=scope, user_id=user.id, question="O que sabemos sobre o Vitor?", providers=["google_drive"],
+        mentions=[], history=[],
+    )
+
+    assert len(provider.intent_calls) == 1  # the LLM classifier decided after Jev failed
+    assert tools == []  # conversation: no relevance-search fallback ran

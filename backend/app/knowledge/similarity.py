@@ -3,11 +3,12 @@ from collections.abc import Sequence
 from typing import Protocol
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, select
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import ColumnElement, Text, cast, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.vector import cosine_similarity_expr
+from app.core.vector import EMBEDDING_DIMENSIONS, cosine_similarity_expr
 from app.knowledge.models import Document, DocumentChunk
 
 
@@ -23,10 +24,18 @@ class PythonSimilarity:
 
 
 class PgVectorSimilarity:
+    """Scores computed in PostgreSQL. A chunk the backfill has not reached yet (embedding_vec
+    NULL) is cast from its JSON embedding in the query, so it is scored instead of silently
+    dropped; once backfilled, the stored vector is used."""
+
     def scores(self, session, *, filters, question_embedding, rows):
-        statement = (select(DocumentChunk.id, cosine_similarity_expr(DocumentChunk.embedding_vec, question_embedding))
+        vector = func.coalesce(
+            DocumentChunk.embedding_vec, cast(cast(DocumentChunk.embedding, Text), Vector(EMBEDDING_DIMENSIONS)),
+        )
+        statement = (select(DocumentChunk.id, cosine_similarity_expr(vector, question_embedding))
                      .join(Document, Document.id == DocumentChunk.document_id)
-                     .where(*filters, DocumentChunk.embedding_vec.is_not(None)))
+                     .where(*filters, or_(DocumentChunk.embedding_vec.is_not(None),
+                                          func.json_typeof(DocumentChunk.embedding) == "array")))
         return {chunk_id: float(score or 0.0) for chunk_id, score in session.execute(statement)}
 
 

@@ -430,37 +430,41 @@ class AgentService:
     def classify(
         self, request: AgentRequest, conversation: ConversationState, *, deadline: float,
     ) -> IntentDecision:
-        """The small model decides; without it the request falls back to a relevance search."""
-        adapter = self.intent_classifier or self.provider
+        """The configured classifier decides; if it fails, the provider's LLM classifier tries
+        within the same deadline, and only then does the request fall back to a relevance search."""
         mentions = request.mentions
-        if not isinstance(adapter, IntentClassifierAdapter):
-            return fallback_intent(has_mentions=bool(mentions))
+        adapters = [
+            adapter for adapter in dict.fromkeys([self.intent_classifier, self.provider])
+            if isinstance(adapter, IntentClassifierAdapter)
+        ]
+        context = {
+            "mentioned_folders": sum(kind == "folder" for kind, _ in mentions),
+            "mentioned_files": sum(kind == "file" for kind, _ in mentions),
+            # Names only (the user already saw them); ids and URLs never reach the model.
+            "previous_answer_listed_files": [name for _id, _folder, name in conversation.listed_files],
+            "previous_turn_had_files": bool(conversation.previous_turn_mentions),
+            "has_previous_answer": conversation.previous_answer is not None,
+        }
         intent_deadline = min(deadline, time.monotonic() + self.models.intent_timeout_seconds)
-        started_at = time.monotonic()
-        try:
-            with _observed_phase("intent_classifier", intent_deadline), _request_deadline(intent_deadline):
-                raw = adapter.classify_intent(
-                    question=request.question,
-                    history=conversation.recent_messages,
-                    context={
-                        "mentioned_folders": sum(kind == "folder" for kind, _ in mentions),
-                        "mentioned_files": sum(kind == "file" for kind, _ in mentions),
-                        # Names only (the user already saw them); ids and URLs never reach the model.
-                        "previous_answer_listed_files": [name for _id, _folder, name in conversation.listed_files],
-                        "previous_turn_had_files": bool(conversation.previous_turn_mentions),
-                        "has_previous_answer": conversation.previous_answer is not None,
-                    },
-                    model=self.models.planner_model,
+        for adapter in adapters:
+            if time.monotonic() >= intent_deadline:
+                break
+            started_at = time.monotonic()
+            try:
+                with _observed_phase("intent_classifier", intent_deadline), _request_deadline(intent_deadline):
+                    raw = adapter.classify_intent(
+                        question=request.question, history=conversation.recent_messages, context=context,
+                        model=self.models.planner_model,
+                    )
+                return parse_intent(raw, listed_files=len(conversation.listed_files), mentioned=len(mentions))
+            except (AIProviderUnavailable, InvalidIntent, ValueError, TypeError, KeyError) as error:
+                log_agent_phase(
+                    logger, phase="intent_fallback", started_at=started_at, deadline=intent_deadline,
+                    failure_kind=(
+                        "provider_unavailable" if isinstance(error, AIProviderUnavailable) else "invalid_output"
+                    ),
                 )
-            return parse_intent(raw, listed_files=len(conversation.listed_files), mentioned=len(mentions))
-        except (AIProviderUnavailable, InvalidIntent, ValueError, TypeError, KeyError) as error:
-            log_agent_phase(
-                logger, phase="intent_fallback", started_at=started_at, deadline=intent_deadline,
-                failure_kind=(
-                    "provider_unavailable" if isinstance(error, AIProviderUnavailable) else "invalid_output"
-                ),
-            )
-            return fallback_intent(has_mentions=bool(mentions))
+        return fallback_intent(has_mentions=bool(mentions))
 
     # Stage 2 -----------------------------------------------------------------
 
@@ -1203,12 +1207,16 @@ def _request_deadline(deadline: float):
 def agent_service_from_settings(session: Session, provider: SemanticProvider, settings) -> AgentService:
     """Build the same bounded agent for browser and programmatic requests."""
     intent_classifier = None
-    if settings.agent_intent_engine == "jev":
+    if settings.agent_intent_engine == "jev" and settings.typesafe_api_key:
         from app.knowledge.jev import JevIntentClassifier
 
         intent_classifier = JevIntentClassifier(
-            settings.typesafe_api_key.get_secret_value() if settings.typesafe_api_key else None,
-            model=settings.agent_jev_model,
+            settings.typesafe_api_key.get_secret_value(), model=settings.agent_jev_model,
+        )
+    elif settings.agent_intent_engine == "jev":
+        logger.log(
+            logging.ERROR if settings.environment == "production" else logging.WARNING,
+            "AGENT_INTENT_ENGINE=jev without TYPESAFE_API_KEY; using the LLM intent classifier",
         )
     return AgentService(
         session=session, provider=provider,

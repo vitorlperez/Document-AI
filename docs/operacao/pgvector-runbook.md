@@ -1,6 +1,6 @@
 # pgvector — runbook (F5: expand, dual-write, backfill, flag)
 
-Escopo desta entrega: migração `20260930_0020_pgvector_expand`, dual-write em `EmbeddingService`, backfill `scripts/backfill_pgvector.py`, `SimilarityIndex` com backends Python e pgvector e a flag `VECTOR_BACKEND` (padrão `python`). Fora do escopo: o *contract* (próximo id livre, ≥ 7 dias após virar a leitura, D10) e o índice ANN (D7: sem HNSW no primeiro release; decidir só pelo benchmark da T5.8).
+Escopo desta entrega: migração `20260930_0020_pgvector_expand`, dual-write em `EmbeddingService`, backfill `scripts/backfill_pgvector.py`, `SimilarityIndex` com backends Python e pgvector e a flag `VECTOR_BACKEND` (padrão `pgvector` desde 2026-10-01; antes, `python`). Fora do escopo: o *contract* (próximo id livre, ≥ 7 dias após virar a leitura, D10) e o índice ANN (D7: sem HNSW no primeiro release; decidir só pelo benchmark da T5.8).
 
 ## Pré-requisitos por ambiente
 
@@ -22,6 +22,8 @@ Escopo desta entrega: migração `20260930_0020_pgvector_expand`, dual-write em 
 5. Conferir `SELECT count(*) FROM document_chunks WHERE embedding IS NOT NULL AND embedding_vec IS NULL;` = 0.
 6. Paridade em staging: `tests/integration/test_pgvector_search.py` e `scripts/profile_retrieval_eval.py` antes e depois (as citações não podem piorar).
 7. Canário: `VECTOR_BACKEND=pgvector` em um ambiente. A pergunta passa a buscar só `(id, similaridade)` do banco, sem trafegar os vetores.
+
+**Atualização 2026-10-01:** `pgvector` virou o padrão. `PgVectorSimilarity` usa `coalesce(embedding_vec, (embedding::text)::vector)`, então um trecho que o backfill ainda não alcançou é pontuado a partir do JSON na consulta, em vez de sumir da busca semântica (`tests/integration/test_pgvector_search.py::test_pgvector_scores_chunks_the_backfill_has_not_reached`, Δ ≤ 1e-5 contra Python). O backfill continua recomendado só por desempenho. As imagens (`backend/Dockerfile`, `backend/Dockerfile.render`) não copiam `scripts/`: rode o backfill a partir de um checkout do repositório com a `DATABASE_URL` de produção (por exemplo `railway run` ou o shell do host do worker).
 
 ## Rollback
 

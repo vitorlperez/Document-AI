@@ -171,3 +171,22 @@ def test_pgvector_matches_python_and_keeps_tenants_apart(engine) -> None:
         assert top(actual) == top(expected)
         other_ids = set(session.scalars(select(DocumentChunk.id).where(DocumentChunk.organization_id == other_organization.id)))
         assert len(other_ids) == 50 and not other_ids & actual.keys()
+
+
+def test_pgvector_scores_chunks_the_backfill_has_not_reached(engine) -> None:
+    rng = random.Random(23)
+    vectors = [random_vector(rng) for _ in range(40)]
+    question = random_vector(rng)
+    with Session(engine) as session:
+        organization, user = tenant(session)
+        folder = folder_for(session, organization, user)
+        seed(session, folder, vectors[:20], dual_write=True)
+        seed(session, folder, vectors[20:], dual_write=False)  # written before dual-write, not backfilled
+        session.commit()
+        rows = session.execute(select(Document, DocumentChunk).join(DocumentChunk)).all()
+        filters = [Document.organization_id == organization.id]
+        python_scores = PythonSimilarity().scores(session, filters=filters, question_embedding=question, rows=rows)
+        pg_scores = PgVectorSimilarity().scores(session, filters=filters, question_embedding=question, rows=rows)
+
+    assert pg_scores.keys() == python_scores.keys() and len(pg_scores) == 40
+    assert max(abs(pg_scores[key] - python_scores[key]) for key in pg_scores) <= 1e-5

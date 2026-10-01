@@ -32,6 +32,7 @@ DATABASE_URL=${{Postgres.DATABASE_URL}}
 REDIS_URL=${{Redis.REDIS_URL}}
 PUBLIC_APP_URL=https://app.seudominio.com
 OPENAI_API_KEY=<segredo>
+TYPESAFE_API_KEY=<segredo; só a API usa, o worker ignora>
 GOOGLE_TOKEN_ENCRYPTION_KEY=<chave Fernet estável>
 MICROSOFT_TOKEN_ENCRYPTION_KEY=<chave Fernet estável>
 NOTION_TOKEN_ENCRYPTION_KEY=<chave Fernet estável>
@@ -104,7 +105,7 @@ Referências Railway: [monorepo](https://docs.railway.com/deployments/monorepo),
 
 ## pgvector (F5)
 
-A migração `20260930_0020_pgvector_expand` executa `CREATE EXTENSION IF NOT EXISTS vector`. Crie o Postgres a partir do template com pgvector (https://railway.com/deploy/postgres-with-pgvector-engine) ou da imagem `pgvector/pgvector:pg16`; o Postgres padrão sem a extensão faz o pre-deploy falhar. Confira com `SELECT extversion FROM pg_extension WHERE extname = 'vector';`. Mantenha `VECTOR_BACKEND=python` até concluir o backfill e a paridade (ver `docs/operacao/pgvector-runbook.md`).
+A migração `20260930_0020_pgvector_expand` executa `CREATE EXTENSION IF NOT EXISTS vector`. Crie o Postgres a partir do template com pgvector (https://railway.com/deploy/postgres-with-pgvector-engine) ou da imagem `pgvector/pgvector:pg16`; o Postgres padrão sem a extensão faz o pre-deploy falhar. Confira com `SELECT extversion FROM pg_extension WHERE extname = 'vector';`. `VECTOR_BACKEND=pgvector` é o padrão: trechos ainda sem `embedding_vec` são convertidos do JSON na própria consulta, então a busca fica correta antes do backfill; o backfill só a deixa mais rápida. `VECTOR_BACKEND=python` volta ao cálculo em Python (ver `docs/operacao/pgvector-runbook.md`).
 
 ## OCR (docling-serve com `por`)
 

@@ -75,6 +75,7 @@ API_PUBLIC_URL=https://api.seudominio.com
    | `REDIS_URL` | URL `rediss://` do Upstash |
    | `PUBLIC_APP_URL` | `https://app.seudominio.com` |
    | `OPENAI_API_KEY` | chave do servidor OpenAI |
+   | `TYPESAFE_API_KEY` | chave da TypeSafe (Jev decide a intenção do agente; sem ela o agente usa o classificador LLM e registra erro no log) |
    | `WORKOS_API_KEY`, `WORKOS_CLIENT_ID` | valores atuais do WorkOS |
    | `WORKOS_REDIRECT_URI` | `https://api.seudominio.com/auth/callback` |
    | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | credencial atual do Google |
@@ -141,4 +142,4 @@ OAuth e os registros DNS quando o novo ambiente estiver saudável.
 
 ## pgvector (F5)
 
-O Postgres gerenciado da Render suporta a extensão `vector` (https://render.com/docs/postgresql-extensions). A migração `20260930_0020_pgvector_expand` executa `CREATE EXTENSION IF NOT EXISTS vector` com o usuário da `DATABASE_URL`; confira depois com `SELECT extversion FROM pg_extension WHERE extname = 'vector';`. Mantenha `VECTOR_BACKEND=python` até concluir o backfill e a paridade (ver `docs/operacao/pgvector-runbook.md`).
+O Postgres gerenciado da Render suporta a extensão `vector` (https://render.com/docs/postgresql-extensions). A migração `20260930_0020_pgvector_expand` executa `CREATE EXTENSION IF NOT EXISTS vector` com o usuário da `DATABASE_URL`; confira depois com `SELECT extversion FROM pg_extension WHERE extname = 'vector';`. `VECTOR_BACKEND=pgvector` é o padrão: trechos ainda sem `embedding_vec` são convertidos do JSON na própria consulta, então a busca fica correta antes do backfill; o backfill só a deixa mais rápida. `VECTOR_BACKEND=python` volta ao cálculo em Python (ver `docs/operacao/pgvector-runbook.md`).
