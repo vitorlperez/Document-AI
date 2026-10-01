@@ -1,0 +1,392 @@
+{
+  "base": "http://localhost:3000",
+  "cases": 5,
+  "failures": [],
+  "results": [
+    {
+      "width": 320,
+      "scrollWidth": 320,
+      "gridDisplay": "grid",
+      "gridColumns": "141px 141px",
+      "rows": [
+        {
+          "name": "Google Drive",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 133,
+          "clientWidth": 133
+        },
+        {
+          "name": "Notion",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 133,
+          "clientWidth": 133
+        },
+        {
+          "name": "OneDrive",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 133,
+          "clientWidth": 133
+        },
+        {
+          "name": "SharePoint",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 133,
+          "clientWidth": 133
+        }
+      ],
+      "errors": []
+    },
+    {
+      "width": 390,
+      "scrollWidth": 390,
+      "gridDisplay": "grid",
+      "gridColumns": "176px 176px",
+      "rows": [
+        {
+          "name": "Google Drive",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 168,
+          "clientWidth": 168
+        },
+        {
+          "name": "Notion",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 168,
+          "clientWidth": 168
+        },
+        {
+          "name": "OneDrive",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 168,
+          "clientWidth": 168
+        },
+        {
+          "name": "SharePoint",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 168,
+          "clientWidth": 168
+        }
+      ],
+      "errors": []
+    },
+    {
+      "width": 720,
+      "scrollWidth": 720,
+      "gridDisplay": "grid",
+      "gridColumns": "331px 331px",
+      "rows": [
+        {
+          "name": "Google Drive",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 323,
+          "clientWidth": 323
+        },
+        {
+          "name": "Notion",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 323,
+          "clientWidth": 323
+        },
+        {
+          "name": "OneDrive",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 323,
+          "clientWidth": 323
+        },
+        {
+          "name": "SharePoint",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 18,
+            "height": 18
+          },
+          "chevron": {
+            "display": "none",
+            "visibility": "visible",
+            "width": 0,
+            "height": 0
+          },
+          "scrollWidth": 323,
+          "clientWidth": 323
+        }
+      ],
+      "errors": []
+    },
+    {
+      "width": 768,
+      "scrollWidth": 768,
+      "gridDisplay": "grid",
+      "gridColumns": "177.5px 177.5px 177.5px 177.5px",
+      "rows": [
+        {
+          "name": "Google Drive",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 22,
+            "height": 22
+          },
+          "chevron": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 13,
+            "height": 13
+          },
+          "scrollWidth": 178,
+          "clientWidth": 178
+        },
+        {
+          "name": "Notion",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 22,
+            "height": 22
+          },
+          "chevron": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 13,
+            "height": 13
+          },
+          "scrollWidth": 178,
+          "clientWidth": 178
+        },
+        {
+          "name": "OneDrive",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 22,
+            "height": 22
+          },
+          "chevron": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 13,
+            "height": 13
+          },
+          "scrollWidth": 178,
+          "clientWidth": 178
+        },
+        {
+          "name": "SharePoint",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 22,
+            "height": 22
+          },
+          "chevron": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 13,
+            "height": 13
+          },
+          "scrollWidth": 178,
+          "clientWidth": 178
+        }
+      ],
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "gridDisplay": "flex",
+      "gridColumns": "none",
+      "rows": [
+        {
+          "name": "Google Drive",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 22,
+            "height": 22
+          },
+          "chevron": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 13,
+            "height": 13
+          },
+          "scrollWidth": 193,
+          "clientWidth": 193
+        },
+        {
+          "name": "Notion",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 22,
+            "height": 22
+          },
+          "chevron": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 13,
+            "height": 13
+          },
+          "scrollWidth": 193,
+          "clientWidth": 193
+        },
+        {
+          "name": "OneDrive",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 22,
+            "height": 22
+          },
+          "chevron": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 13,
+            "height": 13
+          },
+          "scrollWidth": 193,
+          "clientWidth": 193
+        },
+        {
+          "name": "SharePoint",
+          "logo": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 22,
+            "height": 22
+          },
+          "chevron": {
+            "display": "block",
+            "visibility": "visible",
+            "width": 13,
+            "height": 13
+          },
+          "scrollWidth": 193,
+          "clientWidth": 193
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

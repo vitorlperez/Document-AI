@@ -1,0 +1,1366 @@
+{
+  "cases": 16,
+  "interactions": 7,
+  "results": [
+    {
+      "status": "available",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar OneDrive",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar SharePoint",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar Notion",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "available",
+      "width": 768,
+      "scrollWidth": 768,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar OneDrive",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar SharePoint",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar Notion",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "available",
+      "width": 390,
+      "scrollWidth": 390,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar OneDrive",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar SharePoint",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar Notion",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "available",
+      "width": 320,
+      "scrollWidth": 320,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar OneDrive",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar SharePoint",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar Notion",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "connected",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "connected",
+      "width": 768,
+      "scrollWidth": 768,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "connected",
+      "width": 390,
+      "scrollWidth": 390,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "connected",
+      "width": 320,
+      "scrollWidth": 320,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Gerenciar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "reauth_required",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "reauth_required",
+      "width": 768,
+      "scrollWidth": 768,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "reauth_required",
+      "width": 390,
+      "scrollWidth": 390,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "reauth_required",
+      "width": 320,
+      "scrollWidth": 320,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Desconectar",
+              "height": 44
+            },
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "disconnected",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar Notion",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "disconnected",
+      "width": 768,
+      "scrollWidth": 768,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar Notion",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "disconnected",
+      "width": 390,
+      "scrollWidth": 390,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar Notion",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "status": "disconnected",
+      "width": 320,
+      "scrollWidth": 320,
+      "metrics": [
+        {
+          "name": "Google Drive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "OneDrive",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "SharePoint",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Reconectar",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Notion",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": [
+            {
+              "text": "Conectar Notion",
+              "height": 44
+            }
+          ]
+        },
+        {
+          "name": "Airtable",
+          "titleOffset": 29,
+          "headerHeight": 44,
+          "descriptionLeft": 17,
+          "titleFont": "14px",
+          "descriptionFont": "13px",
+          "descriptionLine": "22px",
+          "actions": []
+        }
+      ]
+    }
+  ]
+}

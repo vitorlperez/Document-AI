@@ -1,0 +1,14 @@
+{
+  "unchangedOtherContainers": {
+    "document-ai-beat-1": true,
+    "document-ai-worker-1": true,
+    "document-ai-api-1": true,
+    "document-ai-redis-1": true,
+    "document-ai-postgres-1": true,
+    "document-ai-docling-1": true
+  },
+  "frontendRecreated": true,
+  "postgresVolumeUnchanged": true,
+  "hostContainerCSSIdentical": true,
+  "cssSHA256": "a37e7cd9cae8229032e78f0f6715460480b57805992c402cee2e5079fd2641f8"
+}

@@ -193,7 +193,7 @@
   .landing-app-sources { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .landing-source-row { min-width: 0; margin: 0 4px; padding: 7px 5px; }
   .landing-source-row .provider-logo { width: 18px; height: 18px; flex-basis: 18px; }
-  .landing-source-row svg:last-child { display: none; }
+  .landing-source-row > svg:last-child { display: none; }
   .landing-app-chat { min-height: 480px; }
   .landing-app-search { padding: 16px 15px; }
   .landing-integrations { grid-template-columns: 1fr; gap: 34px; }
