@@ -168,7 +168,7 @@ def test_drive_native_export_is_a_single_download_without_range(monkeypatch):
 
 
 def test_graph_download_is_ranged_and_sha1_verified(monkeypatch):
-    from app.integrations.onedrive import OneDriveCredentials, MicrosoftGraphClient
+    from app.integrations.onedrive import MicrosoftGraphClient, OneDriveCredentials
 
     server = Server()
     monkeypatch.setattr(httpx, "get", server)

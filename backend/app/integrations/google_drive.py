@@ -412,7 +412,8 @@ class GoogleDriveOAuthClient:
     def read_file(self, *, credentials: GoogleCredentials, remote_file: RemoteFile) -> IO[bytes]:
         """Seekable temp file with the content; the caller closes it."""
         headers = {"Authorization": f"Bearer {credentials.access_token}"}
-        dest = tempfile.TemporaryFile()
+        # Ownership transfers to the caller on success; errors close the file below.
+        dest = tempfile.TemporaryFile()  # noqa: SIM115
         try:
             export_mime = GOOGLE_EXPORT_MIME.get(remote_file.mime_type)
             if export_mime:  # generated on the fly: no Range, one request (retried by RemoteHttp)

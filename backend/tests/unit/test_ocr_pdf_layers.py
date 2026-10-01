@@ -1,4 +1,5 @@
 from io import BytesIO
+from typing import ClassVar
 
 import pytest
 from pypdf import PdfWriter
@@ -100,7 +101,7 @@ def test_ocr_page_cap_defaults_to_120_and_comes_from_env(monkeypatch) -> None:
 
 def test_scanned_pages_are_recognized_in_batches_of_8_with_per_batch_cache_keys() -> None:
     class Spy(FakeOcr):
-        keys: list = []
+        keys: ClassVar[list] = []
 
         def recognize(self, pdf, *, page_count, cache_key=None):
             self.keys.append(cache_key)

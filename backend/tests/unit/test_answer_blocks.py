@@ -3,7 +3,11 @@
 from sqlalchemy.orm import Session
 
 from app.api.ingestion import _answer_without_source_links
-from app.knowledge.questions import ANSWER_FORMAT_GUIDANCE, GeneratedAnswer, file_summary_instructions
+from app.knowledge.questions import (
+    ANSWER_FORMAT_GUIDANCE,
+    GeneratedAnswer,
+    file_summary_instructions,
+)
 from tests.unit.test_agent_flow import IntentProvider, _ask, _folder_with_files
 from tests.unit.test_semantic_questions import session as semantic_session  # noqa: F401
 
@@ -47,7 +51,7 @@ def test_block_markers_survive_the_answer_sanitizer() -> None:
 def test_block_formatted_synthesis_keeps_blocks_numbered_sources_and_citations(
     semantic_session: Session,  # noqa: F811
 ) -> None:
-    scope, user, folder, document = _folder_with_files(semantic_session)
+    scope, user, folder, _document = _folder_with_files(semantic_session)
     provider = IntentProvider(synthesis=GeneratedAnswer(BLOCK_ANSWER, [1]))
 
     result, _tool_results, _references = _ask(semantic_session, provider, folder, scope, user)

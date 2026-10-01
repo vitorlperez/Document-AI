@@ -4,6 +4,7 @@ from zipfile import ZipFile
 
 from app.ingestion.extraction.errors import ExtractionError
 
+
 def env_int(name: str, default: int) -> int:
     try:
         return int(os.environ.get(name, default))

@@ -10,10 +10,10 @@ import random
 import re
 import threading
 import time
-from functools import reduce
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from functools import reduce
 
 import httpx
 

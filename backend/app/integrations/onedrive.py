@@ -343,7 +343,8 @@ class MicrosoftGraphClient:
                 raise SourceRemoteUnauthorized()
             response.raise_for_status()
 
-        dest = tempfile.TemporaryFile()
+        # Ownership transfers to the caller on success; errors close the file below.
+        dest = tempfile.TemporaryFile()  # noqa: SIM115
         try:
             self.http.download_to(
                 url, dest, headers={"Authorization": f"Bearer {credentials.access_token}"},

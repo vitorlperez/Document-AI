@@ -1,6 +1,7 @@
 """Durable manual recursive synchronization history."""
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "20260929_0018"

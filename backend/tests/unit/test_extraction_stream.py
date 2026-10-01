@@ -1,23 +1,25 @@
 """Extractors take a seekable file-like (a TemporaryFile from the ranged download), not only bytes."""
 
 import tempfile
+from contextlib import contextmanager
 from io import BytesIO
 
 import pytest
 from docx import Document as DocxDocument
 from openpyxl import Workbook
+from test_ocr_pdf_layers import FakeOcr, pdf
 
 from app.ingestion.extraction import extract_blocks, limits
 from app.ingestion.extraction.errors import ExtractionError
 from app.ingestion.extraction.mime import DOCX, PDF, XLSX
-from test_ocr_pdf_layers import FakeOcr, pdf
 
 
+@contextmanager
 def spooled(content: bytes):
-    handle = tempfile.TemporaryFile()
-    handle.write(content)
-    handle.seek(5)  # extractors must not depend on the caller's position
-    return handle
+    with tempfile.TemporaryFile() as handle:
+        handle.write(content)
+        handle.seek(5)  # extractors must not depend on the caller's position
+        yield handle
 
 
 def docx_bytes() -> bytes:
@@ -42,21 +44,23 @@ def xlsx_bytes() -> bytes:
     ("text/plain", b"texto simples\n\noutro", "texto simples"),
 ])
 def test_file_like_and_bytes_give_the_same_blocks(mime, content, needle):
-    from_stream = extract_blocks(mime, spooled(content))
+    with spooled(content) as handle:
+        from_stream = extract_blocks(mime, handle)
     assert from_stream == extract_blocks(mime, content)
     assert needle in " ".join(b.text for b in from_stream)
 
 
 def test_scanned_pdf_ocr_from_a_file_like_uses_batches():
     ocr = FakeOcr()
-    blocks = extract_blocks(PDF, spooled(pdf([None] * 10)), ocr=ocr)
+    with spooled(pdf([None] * 10)) as handle:
+        blocks = extract_blocks(PDF, handle, ocr=ocr)
     assert ocr.calls == [8, 2] and all(b.ocr for b in blocks)
 
 
 def test_size_guard_reads_the_file_like_size_not_its_bytes(monkeypatch):
     monkeypatch.setattr(limits, "MAX_FILE_BYTES", 10)
-    with pytest.raises(ExtractionError) as caught:
-        extract_blocks(DOCX, spooled(docx_bytes()))
+    with spooled(docx_bytes()) as handle, pytest.raises(ExtractionError) as caught:
+        extract_blocks(DOCX, handle)
     assert caught.value.code == "file_too_large"
 
 

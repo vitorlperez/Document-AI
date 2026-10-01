@@ -19,7 +19,6 @@ from app.ingestion.service import (
     ExtractedBlock,
 )
 from app.integrations.errors import SourceItemUnavailable
-from app.integrations.http import DownloadIntegrityError, RemoteFileTooLarge
 from app.integrations.google_drive import (
     CredentialCipher,
     GoogleCredentials,
@@ -30,6 +29,7 @@ from app.integrations.google_drive import (
     RemoteFile,
     RemoteFolder,
 )
+from app.integrations.http import DownloadIntegrityError, RemoteFileTooLarge
 from app.integrations.models import DataSource
 from app.workspaces.models import WorkspaceFolderSelection
 
