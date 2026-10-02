@@ -36,14 +36,16 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
   ];
   return <main data-mobile-shell={mobile ? "true" : undefined} className={`product-app ${fillViewport ? "flex h-dvh flex-col overflow-hidden" : "min-h-screen"} bg-paper text-ink`}>
     {mobile ? <MobileShellHeader user={user} company={company} companies={companies} screen={chatScreen ? "chat" : "other"} activePath={pathname ?? companyPath(company.id)} onCompanyChange={onCompanyChange} onNavigate={onNavigate} onLogout={onLogout} /> : <header className="product-header z-20 shrink-0 border-b border-line">
-      <div className="product-header-inner mx-auto flex max-w-7xl items-center gap-3 px-4 py-4">
+      <div className="product-header-inner mx-auto max-w-7xl px-4 py-4">
+        <div className="product-header-start">
         <button onClick={() => go()} className="product-brand-button" aria-label="Arquivio, ir para a conversa"><Brand compact /></button>
         <select aria-label="Organização ativa" value={company.id} onChange={(event) => onCompanyChange(event.target.value)} className="organization-select max-w-36 min-[1100px]:max-w-52 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold">{companies.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
-        <span className="hidden rounded-full bg-sage px-2.5 py-1 text-xs font-semibold capitalize text-muted-foreground min-[1100px]:inline">{roleLabel(company.role)}</span>
+        <span className="hidden rounded-full bg-sage px-2.5 py-1 text-xs font-semibold capitalize text-muted-foreground min-[1440px]:inline">{roleLabel(company.role)}</span>
+        </div>
         <nav data-tour="navigation" aria-label="Navegação principal" className="primary-tabs">
           {tabs.map((tab) => { const Icon = tab.icon; const active = tab.suffix === "" ? chatScreen : (pathname ?? "").replace(/\/$/, "").endsWith(tab.suffix); return <a key={tab.label} href={companyPath(company.id, tab.suffix)} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return; event.preventDefault(); go(tab.suffix); }} aria-current={active ? "page" : undefined} aria-label={tab.label} title={tab.label} className="primary-tab"><Icon size={17} aria-hidden="true" /><span className="primary-tab-label">{tab.label}</span></a>; })}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="product-header-end">
           <span className="hidden text-sm text-muted-foreground min-[1100px]:block">{user.email}</span>
           {user.is_platform_staff && <button onClick={() => onNavigate("/staff")} className="rounded-lg border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-700"><ShieldCheck className="mr-1 inline" size={14} />Suporte</button>}
           <button onClick={onLogout} aria-label="Sair da conta" title="Sair" className="rounded-lg p-2 text-muted-foreground hover:bg-sage"><LogOut size={18} /></button>

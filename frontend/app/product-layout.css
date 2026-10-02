@@ -50,11 +50,17 @@
   .staff-app > header > div { flex-wrap: wrap; }
 }
 
-/* Primary header tabs (desktop): icon + label; labels collapse to icons below 1100px. */
-.product-app .primary-tabs { display: flex; align-items: center; gap: 2px; margin-left: 12px; min-width: 0; }
+/* Primary header tabs (desktop): centred in a 1fr/auto/1fr grid; icon + label from 1280px, icons only below. */
+.product-app .product-header-inner { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; column-gap: 12px; }
+.product-app .product-header-start { display: flex; align-items: center; gap: 12px; min-width: 0; justify-self: start; max-width: 100%; }
+.product-app .product-header-end { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; justify-self: end; }
+.product-app .product-header-end > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.product-app .primary-tabs { display: flex; align-items: center; justify-content: center; gap: 2px; min-width: 0; }
 .product-app .primary-tab { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 600; color: var(--muted-foreground); text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; }
 .product-app .primary-tab:hover { background: var(--color-sage, #f1f4ef); color: var(--foreground, #17211d); }
 .product-app .primary-tab[aria-current="page"] { color: var(--primary); background: var(--color-sage, #f1f4ef); border-bottom-color: var(--primary); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .product-app .primary-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .product-app .primary-tab-label { display: none; }
-@media (min-width: 1100px) { .product-app .primary-tab-label { display: inline; } .product-app .primary-tab { padding: 0 12px; } }
+@media (min-width: 1280px) { .product-app .primary-tab-label { display: inline; } .product-app .primary-tab { padding: 0 12px; } }
+.product-app .product-header-start > :is(.organization-select) { flex: 0 1 auto; min-width: 96px; }
+.product-app .product-header-start > :not(.organization-select) { flex-shrink: 0; }
