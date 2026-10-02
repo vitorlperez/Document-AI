@@ -71,6 +71,16 @@
   white-space: nowrap;
 }
 
+.integration-tool-header:is(button),
+.integration-tool-actions > button {
+  cursor: pointer;
+}
+
+.integration-tool-header:is(button):disabled,
+.integration-tool-actions > button:disabled {
+  cursor: not-allowed;
+}
+
 .integration-tool-soon {
   min-height: 28px;
   align-items: center;
