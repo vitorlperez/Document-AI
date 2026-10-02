@@ -8,6 +8,7 @@ const steps = [
   { target: "tools", title: "Escolha onde procurar", description: "Use o seletor de ferramentas para limitar as fontes da pergunta. As menções a arquivos e pastas refinam ainda mais esse escopo." },
   { target: "new-conversation", title: "Um novo assunto, uma nova conversa", description: "Nova conversa limpa o contexto do assunto anterior. Use-a quando quiser começar uma consulta independente." },
   { target: "tool-sidebar", title: "Seu conhecimento, organizado", description: "Escolha uma ferramenta na barra lateral ou na aba Biblioteca para abrir a Biblioteca já com ela selecionada e acompanhar as sincronizações. Responsáveis e administradores também encontram Integrações para conectar fontes." },
+  { target: "navigation", title: "Navegue pelo seu espaço", description: "Use as abas no topo — ou o menu no celular — para alternar entre Conversa e Biblioteca. Conforme sua permissão, Integrações conecta fontes, Equipe gerencia os membros e Desenvolvedor configura o acesso por API e MCP." },
 ];
 
 export type TourExit = "finished" | "dismissed";

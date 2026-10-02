@@ -39,7 +39,7 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
       <div className="product-header-inner mx-auto max-w-7xl px-4 py-4">
         <div className="product-header-start">
         <button onClick={() => go()} className="product-brand-button" aria-label="Arquivio, ir para a conversa"><Brand compact /></button>
-        <select aria-label="Organização ativa" value={company.id} onChange={(event) => onCompanyChange(event.target.value)} className="organization-select max-w-36 min-[1100px]:max-w-52 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold">{companies.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+        <span aria-label={`Organização ativa: ${company.name}`} title={company.name} className="organization-name max-w-36 truncate rounded-full border border-line bg-white px-3 py-2 text-sm font-semibold min-[1100px]:max-w-52">{company.name}</span>
         <span className="hidden rounded-full bg-sage px-2.5 py-1 text-xs font-semibold capitalize text-muted-foreground min-[1440px]:inline">{roleLabel(company.role)}</span>
         </div>
         <nav data-tour="navigation" aria-label="Navegação principal" className="primary-tabs">
