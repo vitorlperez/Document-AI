@@ -48,3 +48,82 @@ export function parseLibraryView(raw: string | null | undefined): LibraryView {
 }
 
 export const serializeLibraryView = (view: LibraryView) => JSON.stringify({ mode: view.mode, size: view.size });
+
+export const LIBRARY_BATCH_SIZE = 50;
+export type ProgressiveLibraryPage<T> = { items: T[]; page?: number; pages?: number };
+export type LibraryLoadState<T> = { items: T[]; nextPage: number; hasMore: boolean; loading: boolean; error: unknown | null };
+
+/** One in-flight batch per listing; reset invalidates even transports that ignore abort. */
+export class LibraryPager<T extends { id: string }> {
+  state: LibraryLoadState<T> = { items: [], nextPage: 1, hasMore: true, loading: false, error: null };
+  private controller: AbortController | null = null;
+  private generation = 0;
+  private retryRefresh = false;
+  private fetchPage: (page: number, signal: AbortSignal) => Promise<ProgressiveLibraryPage<T>>;
+  private publish: (state: LibraryLoadState<T>) => void;
+
+  constructor(fetchPage: (page: number, signal: AbortSignal) => Promise<ProgressiveLibraryPage<T>>, publish: (state: LibraryLoadState<T>) => void) {
+    this.fetchPage = fetchPage;
+    this.publish = publish;
+  }
+
+  reset() {
+    this.generation += 1;
+    this.controller?.abort();
+    this.retryRefresh = false;
+    this.state = { items: [], nextPage: 1, hasMore: true, loading: false, error: null };
+    this.publish(this.state);
+  }
+
+  /** Refresh the loaded range atomically, keeping the visible list during synchronization. */
+  async refresh() {
+    if (this.state.loading) return;
+    const generation = this.generation;
+    const controller = new AbortController();
+    this.controller = controller;
+    const lastPage = Math.max(1, this.state.nextPage - 1);
+    this.state = { ...this.state, loading: true, error: null };
+    this.publish(this.state);
+    const unique = new Map<string, T>();
+    let page = 1;
+    let hasMore = true;
+    try {
+      for (; page <= lastPage && hasMore; page += 1) {
+        const result = await this.fetchPage(page, controller.signal);
+        if (generation !== this.generation || controller.signal.aborted) return;
+        for (const item of result.items) unique.set(item.id, item);
+        hasMore = result.items.length > 0 && (typeof result.pages === "number" ? page < result.pages : result.items.length >= LIBRARY_BATCH_SIZE);
+      }
+      this.state = { items: [...unique.values()], nextPage: page, hasMore, loading: false, error: null };
+      this.retryRefresh = false;
+    } catch (error) {
+      if (generation !== this.generation || controller.signal.aborted) return;
+      this.retryRefresh = true;
+      this.state = { ...this.state, loading: false, error };
+    }
+    this.publish(this.state);
+  }
+
+  async load() {
+    if (this.retryRefresh) return this.refresh();
+    if (this.state.loading || !this.state.hasMore) return;
+    const generation = this.generation;
+    const page = this.state.nextPage;
+    const controller = new AbortController();
+    this.controller = controller;
+    this.state = { ...this.state, loading: true, error: null };
+    this.publish(this.state);
+    try {
+      const result = await this.fetchPage(page, controller.signal);
+      if (generation !== this.generation || controller.signal.aborted) return;
+      const unique = new Map(this.state.items.map(item => [item.id, item]));
+      for (const item of result.items) unique.set(item.id, item);
+      this.state = { items: [...unique.values()], nextPage: page + 1, loading: false, error: null,
+        hasMore: result.items.length > 0 && (typeof result.pages === "number" ? page < result.pages : result.items.length >= LIBRARY_BATCH_SIZE) };
+    } catch (error) {
+      if (generation !== this.generation || controller.signal.aborted) return;
+      this.state = { ...this.state, loading: false, error };
+    }
+    this.publish(this.state);
+  }
+}

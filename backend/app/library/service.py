@@ -438,22 +438,26 @@ class LibraryService:
     def search_names(
         self, *, scope: OrganizationScope, user_id: UUID, query: str, limit: int = SEARCH_RESULT_LIMIT
     ) -> list[LibraryNode]:
+        return self.search_page(scope=scope, user_id=user_id, query=query, page=1, page_size=limit).items
+
+    def search_page(
+        self, *, scope: OrganizationScope, user_id: UUID, query: str, page: int, page_size: int
+    ) -> BrowsePage:
         self.require_member(scope=scope, user_id=user_id)
         normalized = query.strip()
         if not normalized or len(normalized) > 500:
             raise ValueError("query must contain between 1 and 500 characters")
-        return list(
-            self.session.scalars(
-                select(LibraryNode)
-                .where(
-                    LibraryNode.organization_id == scope.organization_id,
-                    LibraryNode.kind.in_(["folder", "file"]),
-                    func.lower(LibraryNode.name).contains(normalized.lower(), autoescape=True),
-                )
-                .order_by(LibraryNode.kind.desc(), LibraryNode.name, LibraryNode.id)
-                .limit(limit)
-            )
+        statement = select(LibraryNode).where(
+            LibraryNode.organization_id == scope.organization_id,
+            LibraryNode.kind.in_(["folder", "file"]),
+            func.lower(LibraryNode.name).contains(normalized.lower(), autoescape=True),
         )
+        total = int(self.session.scalar(select(func.count()).select_from(statement.subquery())) or 0)
+        items = list(self.session.scalars(
+            statement.order_by(LibraryNode.kind.desc(), LibraryNode.name, LibraryNode.id)
+            .offset((page - 1) * page_size).limit(page_size)
+        ))
+        return BrowsePage(items=items, page=page, page_size=page_size, total=total)
 
     def catalog_children(
         self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],

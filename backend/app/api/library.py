@@ -69,19 +69,24 @@ def library_roots(
 def library_search(
     organization_id: UUID,
     query: str = Query(min_length=1, max_length=500),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=PAGE_SIZE_MAX),
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
 ) -> dict[str, object]:
     try:
         scope = OrganizationScope(organization_id)
         service = LibraryService(session)
-        items = service.search_names(scope=scope, user_id=user.id, query=query)
+        result = service.search_page(scope=scope, user_id=user.id, query=query, page=page, page_size=page_size)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
-    documents = service.documents_for_nodes(scope=scope, nodes=items)
-    return {"items": [_node(node=node, documents=documents.get(node.id, [])) for node in items]}
+    documents = service.documents_for_nodes(scope=scope, nodes=result.items)
+    return {
+        "items": [_node(node=node, documents=documents.get(node.id, [])) for node in result.items],
+        "page": result.page, "page_size": result.page_size, "total": result.total, "pages": result.pages,
+    }
 
 
 @router.get("/library/question-contexts")

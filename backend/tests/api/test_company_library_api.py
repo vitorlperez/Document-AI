@@ -25,6 +25,30 @@ from app.organizations.models import Organization
 from app.workspaces.models import WorkspaceFolder
 
 
+def test_library_search_progressive_pages_include_results_beyond_old_limit(api):
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = seed_library(factory, organization)
+    root = client.get(f"/library?organization_id={organization}").json()["items"][0]
+    with factory() as session:
+        for index in range(105):
+            session.add(LibraryNode(
+                organization_id=UUID(organization), source_id=UUID(source_id),
+                parent_id=UUID(root["id"]), external_id=f"progressive-{index}",
+                kind="folder" if index < 3 else "file", name=f"Progressive {index:03d}",
+            ))
+        session.commit()
+    batches = [client.get(
+        f"/library/search?organization_id={organization}&query=progressive&page={page}&page_size=50"
+    ).json() for page in range(1, 5)]
+    assert [len(batch["items"]) for batch in batches] == [50, 50, 5, 0]
+    assert all(batch["total"] == 105 and batch["pages"] == 3 for batch in batches)
+    assert len({item["id"] for batch in batches for item in batch["items"]}) == 105
+    assert [item["kind"] for item in batches[0]["items"][:3]] == ["folder"] * 3
+    assert client.get(f"/library/search?organization_id={organization}&query=progressive&page=0").status_code == 422
+
+
 class FakeAuthGateway:
     def authorization_url(self, *, state: str, screen_hint: str | None = None, max_age: int | None = None) -> str:
         return f"https://auth.example.test/login?state={state}"
