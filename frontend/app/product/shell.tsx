@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, CircleAlert, CircleCheck, Code2, FolderOpen, HardDrive, LogOut, ShieldCheck, Sparkles, Users, X } from "lucide-react";
+import { CircleAlert, CircleCheck, Code2, FolderOpen, HardDrive, LogOut, ShieldCheck, Sparkles, Users, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode } from "react";
 import { Brand } from "../brand";
 import { MobileShellHeader, useIsMobileShell, useVisualViewportHeight } from "../mobile-nav";
 import { type Company, type User, roleLabel, companyPath } from "./types-and-api";
@@ -21,40 +21,31 @@ export function NotificationToast({ message, tone, onDismiss, action }: { messag
 }
 
 export function Shell({ user, company, companies, children, alertMessage, alertTone, alertAction, fillViewport, pageSurface, onDismiss, onCompanyChange, onNavigate, onLogout }: { user: User; company: Company; companies: Company[]; children: ReactNode; alertMessage: string | null; alertTone: "notice" | "error"; alertAction?: ToastAction | null; fillViewport: boolean; pageSurface: boolean; onDismiss: () => void; onCompanyChange: (id: string) => void; onNavigate: (path: string) => void; onLogout: () => void }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const chatScreen = !/\/(library|team|integrations|developer)\/?$/.test(pathname ?? "");
   const mobile = useIsMobileShell();
   useVisualViewportHeight(mobile);
-  useEffect(() => {
-    if (!menuOpen) return;
-    const close = (event: PointerEvent) => { if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false); };
-    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { setMenuOpen(false); menuRef.current?.querySelector("button")?.focus(); } };
-    document.addEventListener("pointerdown", close); document.addEventListener("keydown", escape);
-    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
-  }, [menuOpen]);
   const canManage = company.role !== "member";
-  const go = (suffix = "") => { setMenuOpen(false); onNavigate(companyPath(company.id, suffix)); };
+  const go = (suffix = "") => onNavigate(companyPath(company.id, suffix));
+  const tabs = [
+    { label: "Conversa", suffix: "", icon: Sparkles },
+    { label: "Biblioteca", suffix: "/library", icon: FolderOpen },
+    ...(canManage ? [{ label: "Integrações", suffix: "/integrations", icon: HardDrive }] : []),
+    ...(company.role === "owner" ? [{ label: "Equipe", suffix: "/team", icon: Users }] : []),
+    ...(canManage ? [{ label: "Desenvolvedor", suffix: "/developer", icon: Code2 }] : []),
+  ];
   return <main data-mobile-shell={mobile ? "true" : undefined} className={`product-app ${fillViewport ? "flex h-dvh flex-col overflow-hidden" : "min-h-screen"} bg-paper text-ink`}>
     {mobile ? <MobileShellHeader user={user} company={company} companies={companies} screen={chatScreen ? "chat" : "other"} activePath={pathname ?? companyPath(company.id)} onCompanyChange={onCompanyChange} onNavigate={onNavigate} onLogout={onLogout} /> : <header className="product-header z-20 shrink-0 border-b border-line">
       <div className="product-header-inner mx-auto flex max-w-7xl items-center gap-3 px-4 py-4">
-        <button onClick={() => go()} className="product-brand-button" aria-label="Arquivio, ir para consultas"><Brand compact /></button>
-        <select aria-label="Organização ativa" value={company.id} onChange={(event) => onCompanyChange(event.target.value)} className="organization-select max-w-52 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold">{companies.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
-        <span className="hidden rounded-full bg-sage px-2.5 py-1 text-xs font-semibold capitalize text-muted-foreground sm:inline">{roleLabel(company.role)}</span>
+        <button onClick={() => go()} className="product-brand-button" aria-label="Arquivio, ir para a conversa"><Brand compact /></button>
+        <select aria-label="Organização ativa" value={company.id} onChange={(event) => onCompanyChange(event.target.value)} className="organization-select max-w-36 min-[1100px]:max-w-52 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold">{companies.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+        <span className="hidden rounded-full bg-sage px-2.5 py-1 text-xs font-semibold capitalize text-muted-foreground min-[1100px]:inline">{roleLabel(company.role)}</span>
+        <nav data-tour="navigation" aria-label="Navegação principal" className="primary-tabs">
+          {tabs.map((tab) => { const Icon = tab.icon; const active = tab.suffix === "" ? chatScreen : (pathname ?? "").replace(/\/$/, "").endsWith(tab.suffix); return <a key={tab.label} href={companyPath(company.id, tab.suffix)} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return; event.preventDefault(); go(tab.suffix); }} aria-current={active ? "page" : undefined} aria-label={tab.label} title={tab.label} className="primary-tab"><Icon size={17} aria-hidden="true" /><span className="primary-tab-label">{tab.label}</span></a>; })}
+        </nav>
         <div className="ml-auto flex items-center gap-2">
-          <span className="hidden text-sm text-muted-foreground md:block">{user.email}</span>
-          {user.is_platform_staff && <button onClick={() => { setMenuOpen(false); onNavigate("/staff"); }} className="rounded-lg border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-700"><ShieldCheck className="mr-1 inline" size={14} />Suporte</button>}
-          <div ref={menuRef} className="relative">
-            <button data-tour="navigation" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-label="Navegar" aria-controls="product-navigation" className="inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold text-ink shadow-sm hover:bg-paper"><span>Navegar</span><ChevronRight size={16} className={`transition-transform ${menuOpen ? "rotate-90" : ""}`} /></button>
-            {menuOpen && <nav id="product-navigation" aria-label="Navegação principal" className="absolute right-0 mt-2 w-60 overflow-hidden rounded-lg border border-line bg-white p-1.5 shadow-xl">
-              <button onClick={() => go()} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-sage"><Sparkles size={16} className="text-primary" /><span><span className="block">Consultas</span><span className="block text-xs font-normal text-muted-foreground">Voltar à conversa</span></span></button>
-              <button onClick={() => go("/library")} className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-sage"><FolderOpen size={16} className="text-primary" /><span><span className="block">Biblioteca</span><span className="block text-xs font-normal text-muted-foreground">Explore e gerencie o índice</span></span></button>
-              {company.role === "owner" && <button onClick={() => go("/team")} className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-sage"><Users size={16} className="text-primary" /><span><span className="block">Equipe</span><span className="block text-xs font-normal text-muted-foreground">Membros e convites</span></span></button>}
-              {canManage && <button onClick={() => go("/integrations")} className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-sage"><HardDrive size={16} className="text-primary" /><span><span className="block">Integrações</span><span className="block text-xs font-normal text-muted-foreground">Fontes e sincronizações</span></span></button>}
-              {canManage && <button onClick={() => go("/developer")} className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-sage"><Code2 size={16} className="text-primary" /><span><span className="block">Desenvolvedor</span><span className="block text-xs font-normal text-muted-foreground">API e MCP</span></span></button>}
-            </nav>}
-          </div>
+          <span className="hidden text-sm text-muted-foreground min-[1100px]:block">{user.email}</span>
+          {user.is_platform_staff && <button onClick={() => onNavigate("/staff")} className="rounded-lg border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-700"><ShieldCheck className="mr-1 inline" size={14} />Suporte</button>}
           <button onClick={onLogout} aria-label="Sair da conta" title="Sair" className="rounded-lg p-2 text-muted-foreground hover:bg-sage"><LogOut size={18} /></button>
         </div>
       </div>

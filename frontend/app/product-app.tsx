@@ -12,7 +12,6 @@ import { API_BASE, SESSION_PATH, type Screen, type Company, type User, ApiError,
 import { Loading, SignIn, InvitationAcceptance, Onboarding, InvalidCompany } from "./product/auth-screens";
 import { NotificationToast, Shell, type ToastAction } from "./product/shell";
 import { CompanyDashboard } from "./product/chat-workspace";
-import { ContentTopbar } from "./product/shared-ui";
 import { LibraryScreen } from "./product/library-screen";
 import { IntegrationScreen } from "./product/integrations-screen";
 import { TeamScreen, StaffCenter } from "./product/team-staff";
@@ -116,7 +115,6 @@ export function ProductApp({ screen }: { screen: Screen }) {
   };
   if (onboarding.required && company.role === "owner") return <OrganizationOnboarding key={company.id} organizationId={company.id} name={company.name} state={onboarding} onLogout={() => { void logout(); }} alert={alertMessage ? <NotificationToast message={alertMessage} tone={error || oauthFailure ? "error" : "notice"} onDismiss={dismissAlert} /> : null} onAdvance={advanceOnboarding}><IntegrationScreen key={company.id} company={company} setError={setError} setNotice={setNotice} onboarding={{ onSyncStarted: () => advanceOnboarding("sync") }} /></OrganizationOnboarding>;
   return <Shell user={user} company={company} companies={companies} alertMessage={alertMessage} alertAction={notice && alertMessage === notice ? noticeAction : null} alertTone={error || oauthFailure ? "error" : "notice"} fillViewport={screen === "company" || screen === "library"} pageSurface={screen === "team" || screen === "integrations" || screen === "developer"} onDismiss={dismissAlert} onCompanyChange={goCompany} onNavigate={(path) => router.push(path)} onLogout={() => { void logout(); }}>
-    {(screen === "team" || screen === "integrations" || screen === "developer") && <ContentTopbar company={company} />}
     {screen === "company" && <CompanyDashboard key={company.id} company={company} onboarding={onboarding} onOnboardingChange={(progress) => setOnboarding((current) => current?.organizationId === company.id ? { ...progress, organizationId: company.id } : current)} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "library" && <LibraryScreen key={company.id} company={company} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "team" && <TeamScreen key={company.id} company={company} setError={setError} setNotice={setNotice} />}

@@ -50,7 +50,11 @@
   .staff-app > header > div { flex-wrap: wrap; }
 }
 
-/* Top bar of non-chat content cards: flush with the card edge, same height as the chat bar. */
-.product-app .page-surface > .content-topbar {
-  margin: calc(var(--page-panel-space) * -1) calc(var(--page-panel-space) * -1) var(--page-panel-space);
-}
+/* Primary header tabs (desktop): icon + label; labels collapse to icons below 1100px. */
+.product-app .primary-tabs { display: flex; align-items: center; gap: 2px; margin-left: 12px; min-width: 0; }
+.product-app .primary-tab { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 600; color: var(--muted-foreground); text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; }
+.product-app .primary-tab:hover { background: var(--color-sage, #f1f4ef); color: var(--foreground, #17211d); }
+.product-app .primary-tab[aria-current="page"] { color: var(--primary); background: var(--color-sage, #f1f4ef); border-bottom-color: var(--primary); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.product-app .primary-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.product-app .primary-tab-label { display: none; }
+@media (min-width: 1100px) { .product-app .primary-tab-label { display: inline; } .product-app .primary-tab { padding: 0 12px; } }

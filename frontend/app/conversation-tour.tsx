@@ -7,7 +7,7 @@ const steps = [
   { target: "composer", title: "Pergunte aos seus documentos", description: "Escreva uma pergunta em linguagem natural e envie. A resposta usa conteúdo já indexado e traz fontes para você conferir. Digite @ para mencionar um arquivo ou pasta." },
   { target: "tools", title: "Escolha onde procurar", description: "Use o seletor de ferramentas para limitar as fontes da pergunta. As menções a arquivos e pastas refinam ainda mais esse escopo." },
   { target: "new-conversation", title: "Um novo assunto, uma nova conversa", description: "Nova conversa limpa o contexto do assunto anterior. Use-a quando quiser começar uma consulta independente." },
-  { target: "tool-sidebar", title: "Seu conhecimento, organizado", description: "Escolha uma ferramenta na barra lateral ou no menu para abrir a Biblioteca já com ela selecionada e acompanhar as sincronizações. Responsáveis e administradores também encontram Integrações para conectar fontes." },
+  { target: "tool-sidebar", title: "Seu conhecimento, organizado", description: "Escolha uma ferramenta na barra lateral ou na aba Biblioteca para abrir a Biblioteca já com ela selecionada e acompanhar as sincronizações. Responsáveis e administradores também encontram Integrações para conectar fontes." },
 ];
 
 export type TourExit = "finished" | "dismissed";
@@ -30,11 +30,12 @@ export function ConversationTour({ onComplete }: { onComplete: (exit: TourExit) 
   useEffect(() => {
     const findVisibleTarget = () => {
       const targetName = step.target === "tool-sidebar" && window.innerWidth < 768 ? "navigation" : step.target;
-      return Array.from(document.querySelectorAll<HTMLElement>(`[data-tour="${targetName}"]`)).find((element) => {
+      const visible = (name: string) => Array.from(document.querySelectorAll<HTMLElement>(`[data-tour="${name}"]`)).find((element) => {
         const bounds = element.getBoundingClientRect();
         const style = window.getComputedStyle(element);
         return bounds.width > 0 && bounds.height > 0 && style.visibility !== "hidden" && style.display !== "none";
       });
+      return visible(targetName) ?? (step.target === "tool-sidebar" ? visible("navigation") : undefined);
     };
     findVisibleTarget()?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
     const update = () => {

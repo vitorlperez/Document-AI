@@ -1,26 +1,11 @@
 "use client";
 
 import { ChevronRight, Plus, RefreshCw } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { ReactNode } from "react";
-import { useIsMobileShell } from "../mobile-nav";
-import { type Company, type LibraryNode, companyPath } from "./types-and-api";
+import { type LibraryNode } from "./types-and-api";
 
-/** "Nova conversa" in the top bar of every desktop content card (the mobile shell has its own in the header). */
+/** "Nova conversa" lives only in the chat top bar (the mobile shell has its own in the header). */
 export function NewConversationButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return <button data-tour="new-conversation" type="button" onClick={onClick} disabled={disabled} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-xs font-medium text-ink hover:bg-sage focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"><Plus size={15} aria-hidden="true" />Nova conversa</button>;
-}
-
-/** Same bar as the chat's (56px, right-aligned) for Library/Integrations/Team; click drops the stored conversation and opens a fresh chat. */
-export function ContentTopbar({ company, children, className = "" }: { company: Company; children?: ReactNode; className?: string }) {
-  const router = useRouter();
-  const mobile = useIsMobileShell();
-  if (mobile) return null;
-  const startNew = () => {
-    try { window.sessionStorage.removeItem(`arquivio:conversation:${company.id}`); } catch { /* storage unavailable */ }
-    router.push(companyPath(company.id));
-  };
-  return <div className={`content-topbar flex shrink-0 items-center justify-end gap-2 border-b border-line-soft bg-white px-3 py-1.5 sm:px-5 ${className}`}>{children}<NewConversationButton onClick={startNew} /></div>;
 }
 
 export function LoadingIndicator({ label, className = "" }: { label: string; className?: string }) {
