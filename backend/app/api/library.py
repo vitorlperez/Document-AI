@@ -105,6 +105,7 @@ def library_question_contexts(
                 "source_id": str(item.source_id),
                 "source_provider": item.source_provider,
                 "query_status": item.query_status,
+                "sync_in_progress": item.sync_in_progress,
             }
             for item in contexts
         ]
@@ -132,6 +133,21 @@ def library_mention_candidates(
         "source_id": str(item.node.source_id), "source_provider": item.source_provider,
         "path": item.path, "query_status": item.query_status,
     } for item in items]}
+
+
+@router.get("/library/sync-status")
+def library_sync_status(
+    organization_id: UUID,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> dict[str, object]:
+    try:
+        items = LibraryService(session).sync_status(
+            scope=OrganizationScope(organization_id), user_id=user.id,
+        )
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    return {"items": items}
 
 
 @router.get("/library/syncs")

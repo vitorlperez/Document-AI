@@ -10,6 +10,10 @@ from app.integrations.google_drive import RemoteFolder
 def _run_worker(monkeypatch, *, provider_name: str, provider) -> dict:
     """Runs one reconciliation with fakes and returns the projection kwargs."""
     from app.ingestion import tasks
+    from app.library import manual_sync
+
+    monkeypatch.setattr(manual_sync, "update_progress", lambda *_, **__: None)
+    monkeypatch.setattr(manual_sync, "scoped_documents", lambda _s, _j, docs, *_: docs)
 
     organization_id, workspace_folder_id, source_id, job_id = (uuid4() for _ in range(4))
     job = SimpleNamespace(

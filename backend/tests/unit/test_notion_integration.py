@@ -160,7 +160,11 @@ def test_notion_selection_indexes_descendants_and_uses_distinct_container_ids(
     monkeypatch.setattr(client, "_request", request)
     provider = NotionDocumentProvider(client, Cipher())
     selections = [type("Selection", (), {"kind": selection_kind, "external_folder_id": "parent"})()]
-    result = provider.discover(encrypted_credentials="encrypted", selections=selections)
+    progress = []
+    result = provider.discover(encrypted_credentials="encrypted", selections=selections,
+                               progress_callback=lambda count, total: progress.append((count, total)))
+    assert progress and all(count <= total for count, total in progress)
+    assert [count for count, _ in progress] == list(range(1, len(progress) + 1))
     expected_ids = {"parent", "child", "grandchild"}
     if selection_kind == "all_accessible":
         expected_ids.add("unrelated")
@@ -412,7 +416,9 @@ def test_notion_discover_skips_empty_metadata_pages() -> None:
         selections=[type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()],
     )
 
-    assert [(document.external_file_id, document.name) for document in documents.documents] == [("content", "Runbook")]
+    # The empty page is reported (to be skipped, not failed), with no text to index.
+    assert [(document.external_file_id, document.name, document.text) for document in documents.documents] == [
+        ("content", "Runbook", "Runbook body"), ("empty", "Profile", "")]
 
 
 def test_notion_discover_reads_pages_concurrently_with_stable_order() -> None:
@@ -511,7 +517,7 @@ def test_notion_missing_selected_page_is_reported_removed() -> None:
     assert discovery.removed_file_ids == ("missing",)
 
 
-def test_notion_page_edited_to_empty_content_is_removed_from_index() -> None:
+def test_notion_page_edited_to_empty_content_is_reported_as_empty() -> None:
     edited = datetime.now(UTC)
 
     class Cipher:
@@ -532,8 +538,34 @@ def test_notion_page_edited_to_empty_content_is_removed_from_index() -> None:
     )
 
     assert discovery.full_snapshot is False
-    assert discovery.documents == []
-    assert discovery.removed_file_ids == ("page",)
+    # Reconciliation upserts it as skipped (empty_content) and drops its chunks.
+    assert [(document.external_file_id, document.text) for document in discovery.documents] == [("page", "")]
+    assert discovery.removed_file_ids == ()
+
+
+def test_notion_page_already_skipped_as_empty_is_not_reread() -> None:
+    edited = datetime.now(UTC)
+    reads = []
+
+    class Cipher:
+        def decrypt(self, value: str) -> GoogleCredentials:
+            return GoogleCredentials("token", None, None)
+
+    class Client:
+        def list_pages(self, *, credentials: GoogleCredentials) -> list[NotionPage]:
+            return [NotionPage("page", "Page", "", edited)]
+
+        def page_blocks(self, *, credentials: GoogleCredentials, page_id: str) -> list[dict[str, object]]:
+            reads.append(page_id)
+            return []
+
+    discovery = NotionDocumentProvider(Client(), Cipher()).discover(
+        encrypted_credentials="encrypted",
+        selections=[type("Selection", (), {"kind": "all_accessible", "external_folder_id": ""})()],
+        known_documents={"page": (edited, "skipped")},
+    )
+
+    assert reads == [] and discovery.documents == [] and discovery.removed_file_ids == ()
 
 
 def test_notion_manual_reprocess_forces_page_read_when_timestamp_is_unchanged() -> None:

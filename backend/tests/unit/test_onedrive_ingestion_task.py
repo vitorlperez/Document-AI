@@ -7,6 +7,10 @@ from app.ingestion.service import DiscoveryResult
 
 def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) -> None:
     from app.ingestion import tasks
+    from app.library import manual_sync
+
+    monkeypatch.setattr(manual_sync, "update_progress", lambda *_, **__: None)
+    monkeypatch.setattr(manual_sync, "scoped_documents", lambda _s, _j, docs, *_: docs)
 
     organization_id, workspace_folder_id, source_id, job_id, selection_id = (
         uuid4() for _ in range(5)
@@ -163,4 +167,5 @@ def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) ->
     )
     assert source.encrypted_credentials == "new-credentials"
     assert provider.force_file_ids == {"failed-file", "manual-file"}
-    assert session.committed_cursors == ["old-cursor", selection.encrypted_delta_link]
+    assert session.committed_cursors[-1] == selection.encrypted_delta_link
+    assert all(cursor == "old-cursor" for cursor in session.committed_cursors[:-1])

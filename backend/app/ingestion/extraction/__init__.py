@@ -58,6 +58,9 @@ def extract_blocks(
         raise ValueError("unsupported file type")
     try:
         guard_size(content)
+        if limits.size_of(content) == 0:
+            # A 0-byte file is empty, not corrupt: it has nothing to index.
+            return []
         if mime_type not in STREAMED and not isinstance(content, bytes):
             content = limits.as_stream(content).read()
         if mime_type == DOCX:

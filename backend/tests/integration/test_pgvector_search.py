@@ -190,3 +190,21 @@ def test_pgvector_scores_chunks_the_backfill_has_not_reached(engine) -> None:
 
     assert pg_scores.keys() == python_scores.keys() and len(pg_scores) == 40
     assert max(abs(pg_scores[key] - python_scores[key]) for key in pg_scores) <= 1e-5
+
+
+def test_syncing_queryability_uses_committed_compatible_chunks(engine):
+    from app.knowledge.queryability import folder_is_queryable
+
+    with Session(engine) as session:
+        organization, user = tenant(session)
+        folder = folder_for(session, organization, user)
+        folder.status = "syncing"
+        session.commit()
+        assert not folder_is_queryable(folder, session)
+        seed(session, folder, [[1.0] + [0.0] * (DIMENSIONS - 1)], dual_write=True)
+        session.commit()
+        assert folder_is_queryable(folder, session)
+        assert session.scalar(select(WorkspaceFolder.id).where(folder_is_queryable())) == folder.id
+        session.scalar(select(DocumentChunk)).embedding_model = "incompatible"
+        session.commit()
+        assert not folder_is_queryable(folder, session)

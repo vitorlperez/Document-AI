@@ -468,6 +468,7 @@ class OneDriveDocumentProvider:
         selections: list[WorkspaceFolderSelection],
         force_file_ids: set[str] | None = None,
         force_full: bool = False,
+        progress_callback=None,
     ) -> DiscoveryResult:
         credentials = self._credentials(encrypted_credentials)
         changes: dict[str, dict[str, Any]] = {}
@@ -572,7 +573,7 @@ class OneDriveDocumentProvider:
                 else:
                     changes[item_id] = item
                     removals.discard(item_id)
-        extracted = self._read_changed(credentials, changes)
+        extracted = self._read_changed(credentials, changes, progress_callback)
         return DiscoveryResult(
             documents=extracted,
             removed_file_ids=tuple(sorted(removals)),
@@ -581,13 +582,18 @@ class OneDriveDocumentProvider:
         )
 
     def _read_changed(
-        self, credentials: OneDriveCredentials, changes: dict[str, dict[str, Any]]
+        self, credentials: OneDriveCredentials, changes: dict[str, dict[str, Any]], progress_callback=None
     ) -> list[DiscoveredDocument]:
         files = sorted(changes.values(), key=lambda item: str(item.get("id") or ""))
         if not files:
             return []
         with ThreadPoolExecutor(max_workers=min(self.max_workers, len(files))) as executor:
-            return list(executor.map(lambda item: self._read_one(credentials, item), files))
+            documents = []
+            for document in executor.map(lambda item: self._read_one(credentials, item), files):
+                documents.append(document)
+                if progress_callback:
+                    progress_callback(len(documents), len(files))
+            return documents
 
     eligible_mime_types = BASE_MIME_TYPES
 
@@ -611,6 +617,8 @@ class OneDriveDocumentProvider:
             return DiscoveredDocument(**base)
         if self.max_file_bytes and int(item.get("size") or 0) > self.max_file_bytes:
             return DiscoveredDocument(**base, error_code="file_too_large")
+        if item.get("size") is not None and int(item["size"]) == 0:
+            return DiscoveredDocument(**base, text="")
         raw_hashes = (item.get("file") or {}).get("hashes") or {}
         hashes = {name: raw_hashes[key] for name, key in (("sha1", "sha1Hash"), ("sha256", "sha256Hash"),
                                                         ("quickxor", "quickXorHash")) if raw_hashes.get(key)}

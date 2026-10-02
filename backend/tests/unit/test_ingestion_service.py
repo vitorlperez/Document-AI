@@ -435,7 +435,7 @@ def test_document_failures_are_visible_without_failing_eligible_documents(sessio
     assert rows["unsupported"].error_code == "unsupported_file_type"
 
 
-def test_empty_native_document_is_not_reported_as_a_scanned_pdf(session: Session) -> None:
+def test_empty_documents_are_skipped_but_a_scanned_pdf_is_not(session: Session) -> None:
     organization, admin, folder = create_workspace(session)
     service = IngestionService(session)
     job = service.enqueue(
@@ -460,13 +460,15 @@ def test_empty_native_document_is_not_reported_as_a_scanned_pdf(session: Session
                 mime_type="application/pdf",
                 source_url="https://drive.example.test/scan",
                 text="",
+                blocks=(ExtractedBlock("", page_number=1),),
             ),
         ],
     )
 
     rows = {row.external_file_id: row for row in session.scalars(select(Document))}
-    assert rows["blank-doc"].index_status == "failed"
-    assert rows["blank-doc"].error_code == "empty_document"
+    assert rows["blank-doc"].index_status == "skipped"
+    assert rows["blank-doc"].error_code == "empty_content"
+    assert rows["scan"].index_status == "failed"
     assert rows["scan"].error_code == "empty_extracted_text"
 
 

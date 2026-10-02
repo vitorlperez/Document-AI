@@ -68,6 +68,7 @@ class GoogleDriveDocumentProvider:
         selections: list[WorkspaceFolderSelection],
         force_file_ids: set[str] | None = None,
         force_full: bool = False,
+        progress_callback=None,
     ) -> DiscoveryResult:
         self._folder_catalog = None
         links: dict[UUID, str | None] = {}
@@ -80,7 +81,7 @@ class GoogleDriveDocumentProvider:
                     lambda credentials: self.client.start_page_token(credentials=credentials),
                 )
             return DiscoveryResult(
-                documents=self._snapshot(encrypted_credentials, selections),
+                documents=self._snapshot(encrypted_credentials, selections, progress_callback),
                 delta_links=links,
                 full_snapshot=True,
             )
@@ -202,11 +203,11 @@ class GoogleDriveDocumentProvider:
                     for selection in selections
                 }
                 return DiscoveryResult(
-                    documents=self._snapshot(encrypted_credentials, selections),
+                    documents=self._snapshot(encrypted_credentials, selections, progress_callback),
                     delta_links=links,
                     full_snapshot=True,
                 )
-            result = self._extract_files(encrypted_credentials, changes_by_id.values())
+            result = self._extract_files(encrypted_credentials, changes_by_id.values(), progress_callback)
             return DiscoveryResult(
                 documents=result,
                 removed_file_ids=tuple(sorted(removed)),
@@ -223,13 +224,13 @@ class GoogleDriveDocumentProvider:
                 for selection in selections
             }
             return DiscoveryResult(
-                documents=self._snapshot(encrypted_credentials, selections),
+                documents=self._snapshot(encrypted_credentials, selections, progress_callback),
                 delta_links=links,
                 full_snapshot=True,
             )
 
     def _snapshot(
-        self, encrypted_credentials: str, selections: list[WorkspaceFolderSelection]
+        self, encrypted_credentials: str, selections: list[WorkspaceFolderSelection], progress_callback=None
     ) -> list[DiscoveredDocument]:
         remote_files: dict[str, RemoteFile] = {}
         for selection in selections:
@@ -254,23 +255,27 @@ class GoogleDriveDocumentProvider:
                 raise ValueError("unsupported workspace selection")
             for remote_file in found:
                 remote_files.setdefault(remote_file.id, remote_file)
-        return self._extract_files(encrypted_credentials, remote_files.values())
+        return self._extract_files(encrypted_credentials, remote_files.values(), progress_callback)
 
-    def _extract_files(self, encrypted_credentials: str, remote_files) -> list[DiscoveredDocument]:
+    def _extract_files(self, encrypted_credentials: str, remote_files, progress_callback=None) -> list[DiscoveredDocument]:
         files = sorted(remote_files, key=lambda remote_file: remote_file.id)
         if not files:
             return []
         # Only remote reads and parsing happen on threads. The caller keeps all
         # SQLAlchemy access in the Celery worker thread after this returns.
         with ThreadPoolExecutor(max_workers=min(self.extraction_workers, len(files))) as executor:
-            return list(
-                executor.map(
+            results = executor.map(
                     lambda remote_file: self._extract(
                         encrypted_credentials=encrypted_credentials, remote_file=remote_file
                     ),
                     files,
                 )
-            )
+            documents = []
+            for document in results:
+                documents.append(document)
+                if progress_callback:
+                    progress_callback(len(documents), len(files))
+            return documents
 
     def folders(self, *, encrypted_credentials: str) -> list[RemoteFolder]:
         """Return safe folder metadata for the Company Library projection.
@@ -308,6 +313,8 @@ class GoogleDriveDocumentProvider:
             return DiscoveredDocument(**base)
         if remote_file.size is not None and remote_file.size > limits.MAX_FILE_BYTES:
             return DiscoveredDocument(**base, error_code="file_too_large")
+        if remote_file.size == 0:
+            return DiscoveredDocument(**base, text="")
         content = None
         try:
             content = self._remote_call(

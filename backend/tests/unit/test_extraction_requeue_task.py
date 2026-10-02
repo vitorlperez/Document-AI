@@ -11,6 +11,9 @@ from app.knowledge.questions import AIProviderRateLimited
 
 @pytest.mark.parametrize("enabled", [False, True])
 def test_task_force_reads_newly_eligible_ignored_files(monkeypatch, enabled):
+    from app.library import manual_sync
+    monkeypatch.setattr(manual_sync, "update_progress", lambda *_, **__: None)
+    monkeypatch.setattr(manual_sync, "scoped_documents", lambda _s, _j, docs, *_: docs)
     org, folder_id, source_id, job_id = (uuid4() for _ in range(4))
     job = SimpleNamespace(
         id=job_id, organization_id=org, workspace_folder_id=folder_id, run_token="run"

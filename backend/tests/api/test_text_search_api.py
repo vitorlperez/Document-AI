@@ -254,12 +254,14 @@ def test_questions_api_exposes_safe_distinct_indexing_states(search_api) -> None
         "confidence": "insufficient_evidence",
         "citations": [],
         "retrieval_status": "no_indexed_content",
+        "coverage": {"total_folders": 1, "eligible_folders": 0, "pending_folders": 0, "partial": True},
     }
     assert no_embeddings.json() == {
         "answer": None,
         "confidence": "insufficient_evidence",
         "citations": [],
         "retrieval_status": "no_compatible_embeddings",
+        "coverage": {"total_folders": 1, "eligible_folders": 0, "pending_folders": 0, "partial": True},
     }
 
 

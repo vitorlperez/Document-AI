@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import case, delete, exists, func, select
+from sqlalchemy import String, case, cast, delete, exists, func, literal, or_, select, union_all
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
@@ -13,8 +13,9 @@ from app.ingestion.service import DiscoveredDocument, SyncAccessDenied
 from app.integrations.google_drive import RemoteFolder
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
+from app.knowledge.queryability import folder_is_queryable
 from app.knowledge.questions import EMBEDDING_MODEL
-from app.library.models import LibraryExclusion, LibraryNode
+from app.library.models import LibraryExclusion, LibraryNode, ManualSyncRun
 from app.organizations.models import Membership
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
@@ -44,6 +45,7 @@ class LibraryContext:
     source_id: UUID
     source_provider: str
     query_status: str
+    sync_in_progress: bool = False
 
 
 @dataclass(frozen=True)
@@ -97,8 +99,25 @@ class MentionCandidate:
 class QuestionSelection:
     folder_ids: list[UUID]
     document_ids: set[UUID] | None
-    coverage: dict[str, int]
+    coverage: dict[str, int | bool]
     accepted_node_ids: list[UUID]
+
+
+def question_coverage(contexts: list[LibraryContext]) -> dict[str, int | bool]:
+    """Availability and synchronization overlap during progressive indexing.
+
+    An eligible folder has queryable content, even while more files are pending.
+    Terminal problems make coverage partial without claiming a sync is still running.
+    """
+    eligible = sum(item.query_status == "ready" for item in contexts)
+    pending = sum(item.sync_in_progress or item.status in {"pending", "queued", "syncing"}
+                  for item in contexts)
+    return {
+        "total_folders": len(contexts), "eligible_folders": eligible,
+        "pending_folders": pending,
+        "partial": bool(pending or eligible < len(contexts)
+                        or any(item.status == "partial_failure" for item in contexts)),
+    }
 
 
 class LibraryService:
@@ -496,7 +515,7 @@ class LibraryService:
             self.session.scalars(
                 select(WorkspaceFolder.source_id).where(
                     WorkspaceFolder.organization_id == scope.organization_id,
-                    WorkspaceFolder.status.in_(["ready", "partial_failure"]),
+                    folder_is_queryable(),
                 )
             )
         )
@@ -570,6 +589,143 @@ class LibraryService:
             )
         return snapshots
 
+    def sync_status(self, *, scope: OrganizationScope, user_id: UUID) -> list[dict]:
+        """Folder sync progress, with isolated file failures reported as partial."""
+        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        folders = list(self.session.scalars(select(WorkspaceFolder).where(
+            WorkspaceFolder.organization_id == scope.organization_id)))
+        active_first = case((ProcessingJob.status.in_([
+            ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING,
+        ]), 0), else_=1)
+        ordering = (active_first, ProcessingJob.created_at.desc(), ProcessingJob.id.desc())
+        file_scope = exists(select(ManualSyncRun.id).where(
+            ManualSyncRun.id == ProcessingJob.manual_run_id,
+            ManualSyncRun.organization_id == scope.organization_id,
+            ManualSyncRun.scope_kind.in_(["file", "files"]),
+        ))
+
+        def newest_jobs(is_file_scope):
+            conditions = (ProcessingJob.organization_id == scope.organization_id,
+                          file_scope if is_file_scope else ~file_scope)
+            # File retries cannot replace a completed/active folder-wide sync.
+            job_order = ordering if not is_file_scope else (
+                ProcessingJob.created_at.desc(), ProcessingJob.id.desc())
+            statement = select(ProcessingJob).where(*conditions)
+            if self.session.get_bind().dialect.name == "postgresql":
+                statement = statement.distinct(ProcessingJob.workspace_folder_id).order_by(
+                    ProcessingJob.workspace_folder_id, *job_order,
+                )
+            else:
+                # SQLite test portability; production uses PostgreSQL DISTINCT ON.
+                ranked = select(ProcessingJob.id, func.row_number().over(
+                    partition_by=ProcessingJob.workspace_folder_id, order_by=job_order,
+                ).label("position")).where(*conditions).subquery()
+                statement = statement.where(ProcessingJob.id.in_(
+                    select(ranked.c.id).where(ranked.c.position == 1),
+                )).order_by(ProcessingJob.workspace_folder_id)
+            return list(self.session.scalars(statement))
+
+        jobs = newest_jobs(False)
+        latest = {job.workspace_folder_id: job for job in jobs}
+        file_jobs = [job for job in newest_jobs(True)
+                     if job.workspace_folder_id not in latest
+                     or (job.created_at, job.id) > (
+                         latest[job.workspace_folder_id].created_at,
+                         latest[job.workspace_folder_id].id)]
+        progress = {}
+        projections = []
+        for job in jobs:
+            task = ManualSyncRun.progress[str(job.id)]
+            condition = (ManualSyncRun.id == job.manual_run_id if job.manual_run_id else
+                         (ManualSyncRun.scope_kind == "sync")
+                         & (ManualSyncRun.scope_external_id == str(job.id)))
+            projections.append(select(
+                literal(str(job.id)).label("job_id"), task["stage"].as_string().label("stage"),
+                task["processed"].as_integer().label("processed"),
+                task["total"].as_integer().label("total"),
+                task["failed"].as_integer().label("failed"),
+                task["skipped"].as_integer().label("skipped"),
+            ).where(ManualSyncRun.organization_id == scope.organization_id, condition))
+        if projections:
+            # Only the scalar counters cross the database boundary. No full JSON
+            # snapshot/outcomes deserialization, including for legacy manual runs.
+            counters = union_all(*projections)
+            if self.session.get_bind().dialect.name == "postgresql":
+                job_key = cast(ProcessingJob.id, String)
+                task = ManualSyncRun.progress[job_key]
+                counters = select(
+                    job_key.label("job_id"), task["stage"].as_string().label("stage"),
+                    task["processed"].as_integer().label("processed"),
+                    task["total"].as_integer().label("total"),
+                    task["failed"].as_integer().label("failed"),
+                task["skipped"].as_integer().label("skipped"),
+                ).join(ProcessingJob, or_(
+                    ManualSyncRun.id == ProcessingJob.manual_run_id,
+                    (ProcessingJob.manual_run_id.is_(None))
+                    & (ManualSyncRun.scope_kind == "sync")
+                    & (ManualSyncRun.scope_external_id == job_key),
+                )).where(
+                    ManualSyncRun.organization_id == scope.organization_id,
+                    ProcessingJob.organization_id == scope.organization_id,
+                    ProcessingJob.id.in_([job.id for job in jobs]),
+                )
+            for row in self.session.execute(counters).mappings():
+                progress[row["job_id"]] = {
+                    "stage": row["stage"], "processed": row["processed"] or 0,
+                    "total": row["total"] or 0, "failed": row["failed"] or 0,
+                    "skipped": row["skipped"] or 0,
+                }
+        roots = {node.source_id: node.id for node in self.session.scalars(select(LibraryNode).where(
+            LibraryNode.organization_id == scope.organization_id, LibraryNode.kind == "source",
+        ))}
+        items = []
+        priorities = ["syncing", "queued", "failed", "partial_failure", "ready", "idle"]
+        stages = ["discovering", "indexing", "embedding", "done"]
+        for source in self.session.scalars(select(DataSource).where(
+            DataSource.organization_id == scope.organization_id,
+        ).order_by(DataSource.provider, DataSource.id)):
+            spaces = [folder for folder in folders if folder.source_id == source.id]
+            source_jobs = [latest[folder.id] for folder in spaces if folder.id in latest]
+            tasks = [progress.get(str(job.id), {}) for job in source_jobs]
+            states = [job.status.value for job in source_jobs]
+            states.extend(folder.status if folder.status in priorities else "idle"
+                          for folder in spaces if folder.id not in latest)
+            queryable = any(context.query_status == "ready" for context in contexts
+                            if context.source_id == source.id)
+            file_failures = [job for job in file_jobs
+                             if job.workspace_folder_id in {folder.id for folder in spaces}
+                             and job.status in {ProcessingJobStatus.FAILED, ProcessingJobStatus.PARTIAL_FAILURE}]
+            if file_failures and queryable:
+                states.append("partial_failure")
+            state = next((value for value in priorities if value in states), "idle")
+            if state == "failed" and queryable:
+                # The newest job failed but earlier content is still searchable: not a dead tool.
+                state = "partial_failure"
+            active = [progress.get(str(job.id), {}).get("stage") for job in source_jobs
+                      if job.status in {ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING}]
+            stage = next((value for value in stages if value in active), None) if active else (
+                "done" if source_jobs else None)
+            started_jobs = [job for job in source_jobs if job.status in {
+                ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING,
+            }] if active else source_jobs
+            starts = [job.started_at for job in started_jobs if job.started_at]
+            synced = [folder.last_synced_at for folder in spaces if folder.last_synced_at]
+            root_id = roots.get(source.id)
+            items.append({
+                "source_id": str(source.id), "provider": "google_drive" if source.provider == "google" else source.provider,
+                "library_node_id": str(root_id) if root_id else None,
+                "state": state, "stage": stage,
+                "processed": sum(task.get("processed", 0) for task in tasks),
+                "total": sum(task.get("total", 0) for task in tasks),
+                "failed": sum(task.get("failed", 0) for task in tasks),
+                "skipped": sum(task.get("skipped", 0) for task in tasks),
+                "queryable": queryable,
+                "started_at": min(starts).isoformat() if starts else None,
+                "last_synced_at": max(synced).isoformat() if synced else None,
+                "error_code": next((job.error_code for job in source_jobs + file_failures if job.error_code), None),
+            })
+        return items
+
     def question_contexts(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibraryContext]:
         self.require_member(scope=scope, user_id=user_id)
         indexed_chunks = exists(
@@ -603,12 +759,18 @@ class LibraryService:
                 status=folder.status,
                 source_id=folder.source_id,
                 source_provider=source.provider,
-                query_status=("not_ready" if folder.status not in {"ready", "partial_failure"}
+                sync_in_progress=has_active_job,
+                query_status=("not_ready" if not folder_is_queryable(folder, self.session, has_embeddings=has_embeddings)
                               else "ready" if has_embeddings else "no_indexed_content" if not has_content
                               else "no_compatible_embeddings"),
             )
-            for folder, source, has_content, has_embeddings in self.session.execute(
-                select(WorkspaceFolder, DataSource, indexed_chunks.label("has_content"), compatible_embeddings.label("has_embeddings"))
+            for folder, source, has_content, has_embeddings, has_active_job in self.session.execute(
+                select(WorkspaceFolder, DataSource, indexed_chunks.label("has_content"), compatible_embeddings.label("has_embeddings"),
+                       exists(select(ProcessingJob.id).where(
+                           ProcessingJob.workspace_folder_id == WorkspaceFolder.id,
+                           ProcessingJob.organization_id == scope.organization_id,
+                           ProcessingJob.status.in_([ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING]),
+                       )).label("has_active_job"))
                 .join(DataSource, DataSource.id == WorkspaceFolder.source_id)
                 .where(
                     WorkspaceFolder.organization_id == scope.organization_id,
@@ -632,7 +794,7 @@ class LibraryService:
                 Document.workspace_folder_id.in_(folder_ids),
                 Document.index_status == "indexed",
                 WorkspaceFolder.organization_id == scope.organization_id,
-                WorkspaceFolder.status.in_(["ready", "partial_failure"]),
+                folder_is_queryable(),
                 DataSource.organization_id == scope.organization_id,
             )
         ))
@@ -710,7 +872,7 @@ class LibraryService:
         if len(normalized) > 500 or not 1 <= limit <= 50:
             raise ValueError("invalid mention search")
         contexts = self.question_contexts(scope=scope, user_id=user_id)
-        eligible = [item.id for item in contexts if item.status in {"ready", "partial_failure"}]
+        eligible = [item.id for item in contexts if folder_is_queryable(item, self.session)]
         documents = self._indexed_selection_documents(scope=scope, folder_ids=eligible)
         indexed_files = {(source_id, external_id) for _, source_id, external_id in documents}
         nodes = self._selection_nodes(scope=scope)
@@ -761,11 +923,8 @@ class LibraryService:
         contexts = self.question_contexts(scope=scope, user_id=user_id)
         selected = [item for item in contexts if
                     ("google_drive" if item.source_provider == "google" else item.source_provider) in providers]
-        eligible = [item for item in selected if item.status in {"ready", "partial_failure"}]
-        coverage = {
-            "total_folders": len(selected), "eligible_folders": len(eligible),
-            "pending_folders": len(selected) - len(eligible),
-        }
+        eligible = [item for item in selected if folder_is_queryable(item, self.session)]
+        coverage = question_coverage(selected)
         folder_ids = [item.id for item in eligible]
         if not mentions:
             return QuestionSelection(folder_ids, None, coverage, [])
@@ -859,6 +1018,7 @@ class LibraryService:
         documents: list[DiscoveredDocument],
         folders: list[RemoteFolder],
         workspace_folder_id: UUID | None = None,
+        partial: bool = False,
     ) -> None:
         """Upsert the synchronized provider metadata into the local catalog.
 
@@ -916,7 +1076,7 @@ class LibraryService:
                     document.source_url,
                 )
         self.session.flush()
-        if workspace_folder_id is None:
+        if workspace_folder_id is None or partial:
             return
         if source.provider == "notion":
             self._remove_notion_legacy_folders(source=source, root=root)

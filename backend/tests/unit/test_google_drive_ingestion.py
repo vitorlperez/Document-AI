@@ -130,11 +130,14 @@ def test_provider_extracts_google_docs_and_docx_and_skips_unsupported_without_do
     cipher, _ = encrypted_credentials()
     credentials = fresh_credentials(cipher)
 
+    progress = []
     discovered = GoogleDriveDocumentProvider(client, cipher).discover(
         encrypted_credentials=credentials,
         selections=[selection("folder", "root-folder")],
+        progress_callback=lambda count, total: progress.append((count, total)),
     )
 
+    assert progress == [(1, 3), (2, 3), (3, 3)]
     assert discovered.full_snapshot is True
     assert discovered.delta_links
     assert client.list_calls == ["root-folder"]

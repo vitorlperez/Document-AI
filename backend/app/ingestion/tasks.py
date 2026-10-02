@@ -5,10 +5,11 @@ import os
 from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from time import monotonic
 from uuid import UUID
 
 from celery import Celery
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.audit_usage.service import UsageLimitExceeded
@@ -19,13 +20,18 @@ from app.ingestion.extraction import eligible_mime_types
 from app.ingestion.extraction.cache import purge_cache
 from app.ingestion.extraction.mime import normalize_mime_type
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
-from app.ingestion.service import DiscoveryResult, IngestionService
+from app.ingestion.service import EMPTY_CONTENT, DiscoveryResult, IngestionService
 from app.integrations.errors import SourceRemoteUnauthorized
 from app.integrations.http import RemoteThrottled
 from app.integrations.models import DataSource
 from app.integrations.registry import IntegrationRegistry
-from app.knowledge.models import Document
-from app.knowledge.questions import AIProviderUnavailable, EmbeddingService, OpenAIQuestionProvider
+from app.knowledge.models import Document, DocumentChunk
+from app.knowledge.questions import (
+    EMBEDDING_MODEL,
+    AIProviderUnavailable,
+    EmbeddingService,
+    OpenAIQuestionProvider,
+)
 from app.library.service import LibraryService
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
@@ -350,7 +356,32 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 # Incremental runs use the provider delta; only "full" rediscovers.
                 if run_mode(session, job) == "full":
                     discover_kwargs["force_full"] = True
+            from app.library.manual_sync import scoped_documents, update_progress
+
+            last_progress_at = None
+            pending_progress = None
+
+            def discovering_progress(processed, total):
+                nonlocal last_progress_at, pending_progress
+                pending_progress = (processed, total)
+                now = monotonic()
+                if (last_progress_at is not None and now - last_progress_at < 1.5
+                        and not (total > 0 and processed >= total)):
+                    return
+                update_progress(session, job, stage="discovering", processed=processed, total=total)
+                session.commit()
+                last_progress_at = now
+                pending_progress = None
+
+            update_progress(session, job, stage="discovering", processed=0, total=0, failed=0,
+                            skipped=0, outcomes=[])
+            session.commit()
+            discover_kwargs["progress_callback"] = discovering_progress
             discovered_documents = provider.discover(**discover_kwargs)
+            if pending_progress is not None:
+                processed, total = pending_progress
+                update_progress(session, job, stage="discovering", processed=processed, total=total)
+                session.commit()
             discovery = (
                 discovered_documents if isinstance(discovered_documents, DiscoveryResult) else None
             )
@@ -374,13 +405,12 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             discovered_documents = (
                 replace(discovery, documents=document_results) if discovery else document_results
             )
-            if getattr(job, "manual_run_id", None):
-                from app.library.manual_sync import scoped_documents, update_progress
-                manual_documents = scoped_documents(session, job, document_results, source_folders)
-                update_progress(session, job, total=len(manual_documents), outcomes=[
-                    {"external_id": item.external_file_id, "name": item.name, "processed": False,
-                     "error_code": None} for item in manual_documents])
-                session.commit()
+            manual_documents = scoped_documents(session, job, document_results, source_folders)
+            outcomes = [{"external_id": item.external_file_id, "name": item.name,
+                         "processed": False, "error_code": None} for item in manual_documents]
+            update_progress(session, job, total=len(manual_documents), processed=0,
+                            failed=0, skipped=0, stage="indexing", outcomes=outcomes)
+            session.commit()
             session.refresh(source)
             if source.status != "connected":
                 service.fail(
@@ -388,16 +418,89 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 )
                 session.commit()
                 return
-            projected_job = service.apply_reconciliation(
-                job_id=job.id,
-                run_token=run_token,
-                documents=discovered_documents,
-                manual_folders=source_folders,
-                finalize=False,
-            )
-            if projected_job is None:
-                session.rollback()
-                return
+            # Each batch is an independent durable unit. Full snapshot removals,
+            # catalog pruning and provider cursors are applied only after all batches.
+            batch_size = 25
+            for start in range(0, len(document_results), batch_size):
+                batch = document_results[start:start + batch_size]
+                update_progress(session, job, stage="indexing")
+                session.commit()
+                projected_job = service.apply_reconciliation(
+                    job_id=job.id, run_token=run_token,
+                    documents=DiscoveryResult(documents=batch, full_snapshot=False),
+                    manual_folders=source_folders, finalize=False,
+                    remove_missing=False, report_progress=False,
+                )
+                if projected_job is None:
+                    session.rollback()
+                    return
+                # Do not commit an updated document before its vectors are ready.
+                # Progress is independent of the atomic document/vector write.
+                # PostgreSQL can publish it while the indexing transaction stays
+                # open; SQLite permits only one writer (test portability).
+                if session.get_bind().dialect.name == "postgresql":
+                    with session_factory() as progress_session:
+                        update_progress(progress_session, job, stage="embedding")
+                        progress_session.commit()
+                else:
+                    update_progress(session, job, stage="embedding")
+                EmbeddingService(
+                    session,
+                    OpenAIQuestionProvider(
+                        settings.openai_api_key.get_secret_value() if settings.openai_api_key else None
+                    ),
+                ).embed_workspace(
+                    scope=OrganizationScope(job.organization_id),
+                    workspace_folder_id=job.workspace_folder_id,
+                    external_file_ids=[item.external_file_id for item in batch],
+                )
+                completed_ids = {item.external_file_id for item in document_results[:start + batch_size]}
+                for outcome in outcomes:
+                    if outcome["external_id"] in completed_ids:
+                        outcome["processed"] = True
+                batch_errors = dict(session.execute(select(Document.external_file_id, Document.error_code).where(
+                    Document.organization_id == job.organization_id,
+                    Document.workspace_folder_id == job.workspace_folder_id,
+                    Document.external_file_id.in_([item.external_file_id for item in batch]),
+                    Document.index_status == "failed",
+                )).all())
+                batch_skipped = set(session.scalars(select(Document.external_file_id).where(
+                    Document.organization_id == job.organization_id,
+                    Document.workspace_folder_id == job.workspace_folder_id,
+                    Document.external_file_id.in_([item.external_file_id for item in batch]),
+                    Document.index_status == "skipped",
+                )))
+                for outcome in outcomes:
+                    if outcome["external_id"] in batch_errors:
+                        outcome["error_code"] = batch_errors[outcome["external_id"]]
+                    elif outcome["external_id"] in batch_skipped:
+                        # Empty content is history-only: it advances progress,
+                        # never counts as a failure.
+                        outcome.update(status="skipped", reason=EMPTY_CONTENT)
+                LibraryService(session).project_successful_sync(
+                    organization_id=job.organization_id, source=source,
+                    documents=batch, folders=source_folders,
+                    workspace_folder_id=job.workspace_folder_id, partial=True,
+                )
+                update_progress(session, job, stage="embedding", outcomes=outcomes,
+                                processed=sum(item["processed"] for item in outcomes),
+                                failed=sum(bool(item["error_code"]) for item in outcomes),
+                                skipped=sum(item.get("status") == "skipped" for item in outcomes),
+                                docs_ready=session.scalar(select(func.count(func.distinct(DocumentChunk.document_id))).join(
+                                    Document, Document.id == DocumentChunk.document_id,
+                                ).where(
+                                    Document.organization_id == job.organization_id,
+                                    Document.workspace_folder_id == job.workspace_folder_id,
+                                    Document.index_status == "indexed",
+                                    DocumentChunk.embedding.is_not(None),
+                                    DocumentChunk.embedding_model == EMBEDDING_MODEL,
+                                )) or 0)
+                projected_job.started_at = datetime.now(UTC)
+                session.commit()
+            # Incremental discovery can be empty while old/null vectors need
+            # repair after a model change. Preserve the workspace-wide backfill.
+            update_progress(session, job, stage="embedding")
+            session.commit()
             EmbeddingService(
                 session,
                 OpenAIQuestionProvider(
@@ -407,6 +510,14 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 scope=OrganizationScope(job.organization_id),
                 workspace_folder_id=job.workspace_folder_id,
             )
+            projected_job = service.apply_reconciliation(
+                job_id=job.id, run_token=run_token, documents=discovered_documents,
+                manual_folders=source_folders, finalize=False,
+                index_documents=False, report_progress=False,
+            )
+            if projected_job is None:
+                session.rollback()
+                return
             session.refresh(source)
             if source.status != "connected":
                 session.rollback()
@@ -484,8 +595,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
         except AIProviderUnavailable:
             if run_token is None:
                 raise
-            # The new reconciliation has not committed. Roll it back before
-            # surfacing a safe status, so the prior indexed snapshot remains searchable.
+            # Roll back this batch only; prior committed batches remain searchable.
             session.rollback()
             if self.request.retries >= self.max_retries:
                 service.fail(

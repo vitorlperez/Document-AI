@@ -46,12 +46,13 @@ class GoogleDriveProviderAdapter:
         self._provider.eligible_mime_types = value
 
 
-    def discover(self, *, encrypted_credentials, selections, known_documents=None, force_file_ids=None, force_full=False):
+    def discover(self, *, encrypted_credentials, selections, known_documents=None, force_file_ids=None, force_full=False, progress_callback=None):
         return self._provider.discover(
             encrypted_credentials=encrypted_credentials or "",
             selections=selections,
             force_file_ids=force_file_ids,
             force_full=force_full,
+            progress_callback=progress_callback,
         )
 
     @property
@@ -86,13 +87,14 @@ class NotionProviderAdapter:
             CredentialCipher(keys[0], fallback_keys=keys[1:]),
         )
 
-    def discover(self, *, encrypted_credentials, selections, known_documents=None, force_file_ids=None, force_full=False):
+    def discover(self, *, encrypted_credentials, selections, known_documents=None, force_file_ids=None, force_full=False, progress_callback=None):
         return self._provider.discover(
             encrypted_credentials=encrypted_credentials,
             selections=selections,
             known_documents=known_documents,
             force_file_ids=force_file_ids,
             force_full=force_full,
+            progress_callback=progress_callback,
         )
 
     def folders(self, *, encrypted_credentials):
@@ -143,12 +145,13 @@ class OneDriveProviderAdapter:
     def encrypt_delta_link(self, value: str) -> str:
         return self._provider.cipher.encrypt_cursor(value)
 
-    def discover(self, *, encrypted_credentials, selections, known_documents=None, force_file_ids=None, force_full=False):
+    def discover(self, *, encrypted_credentials, selections, known_documents=None, force_file_ids=None, force_full=False, progress_callback=None):
         return self._provider.discover(
             encrypted_credentials=encrypted_credentials,
             selections=selections,
             force_file_ids=force_file_ids,
             force_full=force_full,
+            progress_callback=progress_callback,
         )
 
     def folders(self, *, encrypted_credentials):

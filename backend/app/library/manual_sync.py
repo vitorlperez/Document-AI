@@ -14,11 +14,24 @@ from app.ingestion.service import DiscoveredDocument, IngestionService, SyncAcce
 from app.integrations.models import DataSource
 from app.knowledge.models import Document
 from app.library.models import LibraryNode, ManualSyncRun
+from app.library.sync_outcomes import aggregate_status, normalize_task
 from app.organizations.models import Membership
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 # An incremental sync is open to every member, so each space is rate limited.
 SYNC_COOLDOWN_SECONDS = 60
+MAX_SYNC_FAILURES = 100
+MAX_SYNC_SKIPPED = 100
+
+
+def _is_skipped(item: dict) -> bool:
+    return item.get("status") == "skipped" and not item.get("error_code")
+
+
+def _compact_outcomes(outcomes: list[dict]) -> list[dict]:
+    """Sync history keeps bounded samples of failures and skipped (empty) files."""
+    return ([item for item in outcomes if item.get("error_code")][:MAX_SYNC_FAILURES]
+            + [item for item in outcomes if _is_skipped(item)][:MAX_SYNC_SKIPPED])
 
 
 class SyncCooldown(Exception):
@@ -38,20 +51,29 @@ def _require_member(session: Session, scope: OrganizationScope, user: User) -> N
 
 
 def record_sync(
-    session: Session, job: ProcessingJob, folder: WorkspaceFolder, user_id: UUID | None
+    session: Session, job: ProcessingJob, folder: WorkspaceFolder, user_id: UUID | None,
+    *, documents: list[Document] | None = None,
 ) -> None:
-    """Snapshot an ordinary job without assigning the manual reprocessing flag."""
+    """Record ordinary syncs and distinguish file reprocessing at its origin."""
     user = session.get(User, user_id) if user_id else None
-    session.add(ManualSyncRun(
+    run = ManualSyncRun(
         organization_id=job.organization_id, source_id=folder.source_id,
         created_at=job.created_at,
-        scope_kind="sync", scope_external_id=str(job.id), scope_name=folder.name,
+        scope_kind=("file" if len(documents) == 1 else "files") if documents else "sync",
+        scope_external_id=documents[0].external_file_id if documents and len(documents) == 1 else str(job.id),
+        scope_name=documents[0].name if documents and len(documents) == 1 else folder.name,
         triggered_by_user_id=user_id, triggered_by=user.email if user else "Agendamento automático",
         status="queued", progress={str(job.id): {
             "workspace_name": folder.name, "workspace_folder_id": str(folder.id),
-            "status": "queued", "total": 0, "processed": 0, "outcomes": [], "error_code": None,
+            "status": "queued", "stage": None, "total": 0, "processed": 0, "failed": 0,
+            "skipped": 0, "docs_ready": 0, "outcomes": [], "error_code": None,
+            **({"mode": "incremental"} if documents else {}),
         }},
-    ))
+    )
+    session.add(run)
+    session.flush()
+    if documents:
+        job.manual_run_id = run.id
     session.flush()
 
 
@@ -328,13 +350,29 @@ def update_progress(session: Session, job: ProcessingJob, **values):
         .with_for_update()
         .execution_options(populate_existing=True)
     )
+    if run is None and not job.manual_run_id:
+        # Upgrade legacy/explicitly history-less jobs when they start processing.
+        folder = session.get(WorkspaceFolder, job.workspace_folder_id)
+        if folder is not None:
+            record_sync(session, job, folder, None)
+            run = session.scalar(select(ManualSyncRun).where(condition).with_for_update())
     if run is None:
-        # Jobs created before history snapshots were introduced remain readable
-        # through the legacy ProcessingJob fallback in synchronization_history.
         return
     progress = dict(run.progress)
     current = dict(progress[str(job.id)])
     current.update(values, status=job.status.value, error_code=job.error_code)
+    if "outcomes" in values or "failed" not in current:
+        current["failed"] = values.get("failed", sum(
+            bool(item.get("error_code")) for item in current.get("outcomes", [])
+        ))
+    if "outcomes" in values or "skipped" not in current:
+        current["skipped"] = values.get("skipped", sum(
+            _is_skipped(item) for item in current.get("outcomes", [])
+        ))
+    if run.scope_kind == "sync":
+        current["outcomes"] = _compact_outcomes(current.get("outcomes", []))
+    if job.status in {ProcessingJobStatus.READY, ProcessingJobStatus.PARTIAL_FAILURE, ProcessingJobStatus.FAILED}:
+        current["stage"] = "done"
     if run.scope_kind != "sync" and current["status"] in {"ready", "partial_failure"}:
         current["status"] = (
             "partial_failure"
@@ -363,9 +401,22 @@ def update_progress(session: Session, job: ProcessingJob, **values):
 
 
 def serialize_run(run: ManualSyncRun):
+    sync = run.scope_kind == "sync"
+    tasks = [normalize_task(task) for task in run.progress.values()]
+    if sync:
+        # Compact legacy snapshots at the API boundary too. Counts are independent
+        # of the bounded error samples stored by new workers.
+        for task in tasks:
+            task["failed"] = task.get("failed", sum(
+                bool(item.get("error_code")) for item in task.get("outcomes", [])
+            ))
+            task["skipped"] = task.get("skipped", sum(
+                _is_skipped(item) for item in task.get("outcomes", [])
+            ))
+            task["outcomes"] = _compact_outcomes(task.get("outcomes", []))
     # Deduplicate overlapping workspace copies when reporting integration files.
     outcomes = {}
-    for task in run.progress.values():
+    for task in tasks:
         for item in task["outcomes"]:
             previous = outcomes.get(item["external_id"])
             outcomes[item["external_id"]] = {
@@ -374,6 +425,8 @@ def serialize_run(run: ManualSyncRun):
                 "error_code": item["error_code"] or (previous or {}).get("error_code"),
             }
     failures = [item for item in outcomes.values() if item["error_code"]]
+    skipped = [{"external_id": item["external_id"], "name": item["name"], "reason": item.get("reason")}
+               for item in outcomes.values() if _is_skipped(item)]
     return {
         "id": run.scope_external_id if run.scope_kind == "sync" else str(run.id),
         "operation": "sync" if run.scope_kind == "sync" else "resync",
@@ -384,14 +437,20 @@ def serialize_run(run: ManualSyncRun):
         "scope_name": run.scope_name,
         "triggered_by": run.triggered_by,
         "triggered_by_user_id": str(run.triggered_by_user_id) if run.triggered_by_user_id else None,
-        "status": run.status,
+        "status": aggregate_status(tasks, run.status),
         "created_at": run.created_at.isoformat(),
         "started_at": run.started_at.isoformat() if run.started_at else None,
         "completed_at": run.completed_at.isoformat() if run.completed_at else None,
-        "total": len(outcomes)
+        "total": sum(task["total"] for task in tasks) if sync else len(outcomes)
         + sum(task["total"] for task in run.progress.values() if not task["outcomes"]),
-        "processed": sum(bool(item.get("processed")) for item in outcomes.values()),
-        "failed": len(failures),
-        "failures": failures,
-        "tasks": list(run.progress.values()),
+        "processed": sum(task.get("processed", 0) for task in tasks) if sync else sum(bool(item.get("processed")) for item in outcomes.values())
+        + sum(task.get("processed", 0) for task in run.progress.values() if not task["outcomes"]),
+        "failed": sum(task["failed"] for task in tasks) if sync else len(failures),
+        "skipped": sum(task.get("skipped", 0) for task in tasks) if sync else len(skipped),
+        "stage": next((stage for stage in ("discovering", "indexing", "embedding", "done")
+                       if any(task.get("stage") == stage for task in run.progress.values())), None),
+        "docs_ready": sum(task.get("docs_ready", 0) for task in run.progress.values()),
+        "failures": failures[:MAX_SYNC_FAILURES] if sync else failures,
+        "skipped_items": skipped[:MAX_SYNC_SKIPPED],
+        "tasks": tasks,
     }

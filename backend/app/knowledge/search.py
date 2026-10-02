@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
 from app.knowledge.models import Document, DocumentChunk
+from app.knowledge.queryability import folder_is_queryable
 from app.workspaces.service import WorkspaceService
 
 MAX_PAGE_SIZE = 50
@@ -60,7 +61,7 @@ class TextSearchService:
         folder = WorkspaceService(self.session).require_member_access(
             scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id
         )
-        if folder.status not in {"ready", "partial_failure"}:
+        if not folder_is_queryable(folder, self.session):
             raise SearchUnavailable("workspace folder is not searchable")
 
         filters = [

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.organizations.models import Membership, MembershipRole, Organization
 
-OnboardingStep = Literal["welcome", "integrations", "complete"]
+OnboardingStep = Literal["welcome", "integrations", "sync", "complete"]
 
 
 class OnboardingNotAllowed(PermissionError):

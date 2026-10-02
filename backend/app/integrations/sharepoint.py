@@ -301,6 +301,7 @@ class SharePointDocumentProvider(OneDriveDocumentProvider):
         selections,
         force_file_ids: set[str] | None = None,
         force_full: bool = False,
+        progress_callback=None,
     ) -> DiscoveryResult:
         credentials = self._credentials(encrypted_credentials)
         changes: dict[str, dict[str, Any]] = {}
@@ -386,7 +387,7 @@ class SharePointDocumentProvider(OneDriveDocumentProvider):
             else:
                 removals.add(ext)
         return DiscoveryResult(
-            documents=self._read_changed(credentials, changes),
+            documents=self._read_changed(credentials, changes, progress_callback),
             removed_file_ids=tuple(sorted(removals)),
             delta_links=links,
             full_snapshot=snapshot,

@@ -11,6 +11,10 @@ from app.ingestion.service import DiscoveryResult
 def _run_task(monkeypatch, *, known_rows: list, manual_mode: str | None = None,
               source_provider="google_drive", legacy_catalog=False, catalog_documents=None) -> dict:
     from app.ingestion import tasks
+    from app.library import manual_sync
+
+    monkeypatch.setattr(manual_sync, "update_progress", lambda *_, **__: None)
+    monkeypatch.setattr(manual_sync, "scoped_documents", lambda _s, _j, docs, *_: docs)
 
     organization_id, workspace_folder_id, source_id, job_id = (uuid4() for _ in range(4))
     job = SimpleNamespace(id=job_id, organization_id=organization_id,

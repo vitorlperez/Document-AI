@@ -495,7 +495,7 @@ def test_folder_delta_reenumerates_scope_when_a_folder_changes() -> None:
 
     provider = OneDriveDocumentProvider(Client(), Cipher())
     enumerated_files: dict[str, dict[str, object]] = {}
-    provider._read_changed = lambda _credentials, files: enumerated_files.update(files) or []
+    provider._read_changed = lambda _credentials, files, progress_callback=None: enumerated_files.update(files) or []
 
     result = provider.discover(
         encrypted_credentials="encrypted-credentials", selections=[selection]
@@ -562,7 +562,7 @@ def test_expired_delta_cursor_reestablishes_checkpoint_during_full_snapshot() ->
     client = Client()
     provider = OneDriveDocumentProvider(client, Cipher())
     read_items: dict[str, dict[str, object]] = {}
-    provider._read_changed = lambda _credentials, files: read_items.update(files) or []
+    provider._read_changed = lambda _credentials, files, progress_callback=None: read_items.update(files) or []
 
     result = provider.discover(
         encrypted_credentials="encrypted-credentials", selections=[selection]

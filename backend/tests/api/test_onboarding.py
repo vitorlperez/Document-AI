@@ -23,6 +23,9 @@ def test_first_organization_resumes_and_completion_survives_another_login(auth_a
     assert client.patch(path, json={"step": "integrations"}).json()["step"] == "integrations"
     callback(client, gateway, code="resume", email="owner@example.test", subject="owner")
     assert client.get(path).json()["step"] == "integrations"
+    assert client.patch(path, json={"step": "sync"}).json()["step"] == "sync"
+    callback(client, gateway, code="sync-resume", email="owner@example.test", subject="owner")
+    assert client.get(path).json() == {"step": "sync", "required": True, "tour_required": False}
     assert client.patch(path, json={"step": "complete"}).json() == {
         "step": "complete", "required": False, "tour_required": True,
     }

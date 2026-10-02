@@ -1,5 +1,6 @@
 """Provider-neutral contracts for external knowledge sources."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
@@ -27,6 +28,7 @@ class SourceProvider(Protocol):
         known_documents: dict[str, tuple[datetime | None, str]] | None = None,
         force_file_ids: set[str] | None = None,
         force_full: bool = False,
+        progress_callback: Callable[[int, int], None] | None = None,
     ) -> list[DiscoveredDocument] | DiscoveryResult: ...
 
     def folders(self, *, encrypted_credentials: str | None): ...

@@ -437,6 +437,7 @@ class NotionDocumentProvider:
         known_documents: dict[str, tuple[datetime | None, str]] | None = None,
         force_file_ids: set[str] | None = None,
         force_full: bool = False,
+        progress_callback=None,
     ) -> DiscoveryResult:
         from app.ingestion.service import DiscoveredDocument
 
@@ -466,16 +467,21 @@ class NotionDocumentProvider:
         effective_known = {} if force_full else known_documents
         outcomes: dict[str, DiscoveredDocument | None] = {}
         processed: set[str] = set()
+        extracted_count = 0
+        unavailable_ids: set[str] = set()
 
         def read_page(page: NotionPage):
             known = effective_known.get(page.id)
-            unchanged = bool(known and known[1] == "indexed" and page.id not in (force_file_ids or set())
+            # A page already skipped as empty is unchanged too: no re-read cost.
+            unchanged = bool(known and known[1] in {"indexed", "skipped"}
+                             and page.id not in (force_file_ids or set())
                              and page.last_edited_time is not None and known[0] == page.last_edited_time)
             references = getattr(self.client, "page_references", None)
             try:
                 blocks = (references(credentials=credentials, page_id=page.id) if unchanged and references
                           else [] if unchanged else self.client.page_blocks(credentials=credentials, page_id=page.id))
             except SourceItemUnavailable:
+                unavailable_ids.add(page.id)
                 return page, [], None, False
             text = "" if unchanged else "\n\n".join(value for value in (
                 page.properties_text, _blocks_to_text(blocks),
@@ -506,7 +512,12 @@ class NotionDocumentProvider:
             selected_ids = self._selected(pages, selections)
             batch = [pages[id] for id in sorted(selected_ids - processed) if pages[id].object_type == "page"]
             with ThreadPoolExecutor(max_workers=min(MAX_PAGE_WORKERS, len(batch) or 1)) as executor:
-                results = list(executor.map(read_page, batch))
+                results = []
+                for result in executor.map(read_page, batch):
+                    results.append(result)
+                    if progress_callback:
+                        extracted_count += 1
+                        progress_callback(extracted_count, sum(pages[id].object_type == "page" for id in selected_ids))
             for page, blocks, document, unchanged in results:
                 processed.add(page.id)
                 if not unchanged:
@@ -584,12 +595,16 @@ class NotionDocumentProvider:
                        and id not in empty_ids and (outcomes.get(id) is not None or
                        (id in effective_known and effective_known[id][1] == "indexed"))}
         catalog_documents = [metadata(pages[id]) for id in sorted(catalog_ids)]
-        documents = [replace(metadata(pages[id]), text=document.text)
-                     for id, document in sorted(outcomes.items()) if document is not None]
+        # A readable leaf page without content is reported as skipped (empty),
+        # never as a failure; grouping pages and unreadable pages stay out.
+        skipped_ids = empty_ids - container_ids - unavailable_ids
+        documents = [replace(metadata(pages[id]), text=document.text if document is not None else "")
+                     for id, document in sorted(outcomes.items())
+                     if document is not None or id in skipped_ids]
         self._catalog = pages
         return DiscoveryResult(
             documents=documents,
-            removed_file_ids=tuple(sorted((known_ids - selected_ids) | empty_ids)),
+            removed_file_ids=tuple(sorted((known_ids - selected_ids) | (empty_ids - skipped_ids))),
             full_snapshot=not bool(known_ids) or force_full,
             catalog_documents=catalog_documents,
         )

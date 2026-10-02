@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from uuid import UUID, uuid4
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -22,6 +22,7 @@ from app.ingestion.extraction import (
 from app.ingestion.extraction.limits import MAX_CHUNKS_PER_DOCUMENT
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.knowledge.models import Document, DocumentChunk
+from app.library.sync_outcomes import EMPTY_CODES
 from app.organizations.models import Membership, MembershipRole, Organization
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
@@ -64,6 +65,35 @@ class DiscoveredDocument:
 def _empty_text_code(mime_type: str) -> str:
     """Only a PDF can be "scanned"; an empty native document/text file is simply empty."""
     return "empty_extracted_text" if mime_type == "application/pdf" else "empty_document"
+
+
+EMPTY_CONTENT = "empty_content"
+
+
+def is_empty_content(document: "DiscoveredDocument") -> bool:
+    """A readable document with nothing to index is skipped, not failed.
+
+    Only a PDF whose pages were read without OCR stays a failure: its text may
+    live in images that an OCR-enabled environment could still recover.
+    """
+    if document.error_code or (document.text or "").strip():
+        return False
+    return not (
+        document.mime_type == "application/pdf"
+        and document.blocks
+        and not any(block.ocr for block in document.blocks)
+    )
+
+
+def outcome_for(document: "DiscoveredDocument", eligible_mime_types) -> dict:
+    if document.mime_type in eligible_mime_types and is_empty_content(document):
+        return {"external_id": document.external_file_id, "name": document.name, "processed": True,
+                "error_code": None, "status": "skipped", "reason": EMPTY_CONTENT}
+    return {"external_id": document.external_file_id, "name": document.name, "processed": True,
+            "error_code": document.error_code or (
+                _empty_text_code(document.mime_type)
+                if document.mime_type in eligible_mime_types and not (document.text or "").strip()
+                else None)}
 
 
 @dataclass(frozen=True)
@@ -296,7 +326,11 @@ class IngestionService:
             )
         )
         self.session.flush()
-        return self.enqueue(scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id)
+        job = self.enqueue(scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id,
+                            record_history=False)
+        from app.library.manual_sync import record_sync
+        record_sync(self.session, job, _folder, user_id, documents=[document])
+        return job
 
     def request_documents_reprocess(
         self,
@@ -326,7 +360,12 @@ class IngestionService:
                 )
             )
         self.session.flush()
-        return self.enqueue(scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id)
+        job = self.enqueue(scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id,
+                            record_history=False)
+        from app.library.manual_sync import record_sync
+        record_sync(self.session, job, self._folder_for_job(job), user_id,
+                    documents=[document for document, _folder in managed])
+        return job
 
     def remove_workspace(
         self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID
@@ -466,6 +505,9 @@ class IngestionService:
         documents: list[DiscoveredDocument] | DiscoveryResult,
         finalize: bool = True,
         manual_folders=(),
+        remove_missing: bool = True,
+        index_documents: bool = True,
+        report_progress: bool = True,
     ) -> ProcessingJob | None:
         """Persist a discovered snapshot only while this worker owns the job."""
         if run_token is None:
@@ -488,7 +530,7 @@ class IngestionService:
         )
         from app.library.manual_sync import scoped_documents, update_progress
         manual_documents = scoped_documents(self.session, job, current_documents, manual_folders)
-        if discovery.full_snapshot:
+        if remove_missing and discovery.full_snapshot:
             seen_file_ids = {document.external_file_id for document in current_documents}
             # A full snapshot may safely remove any document missing from scope.
             missing_documents = self.session.scalars(
@@ -501,7 +543,7 @@ class IngestionService:
             for document in missing_documents:
                 document.index_status = "removed"
                 document.error_code = None
-        else:
+        elif remove_missing:
             changed_ids = {item.external_file_id for item in current_documents}
             tombstones = set(discovery.removed_file_ids) - changed_ids
             if tombstones:
@@ -528,11 +570,15 @@ class IngestionService:
         ))
 
         failures = 0
-        for discovered in current_documents:
+        for discovered in current_documents if index_documents else []:
             if discovered.mime_type not in self.eligible_mime_types:
                 self._upsert_nonindexed(
                     job, discovered, status="ignored", error_code="unsupported_file_type"
                 )
+                continue
+            if is_empty_content(discovered):
+                # Nothing to index: no OCR/embedding cost, no chunks, no failure.
+                self._upsert_nonindexed(job, discovered, status="skipped", error_code=EMPTY_CONTENT)
                 continue
             if discovered.error_code or not discovered.text or not discovered.text.strip():
                 self._upsert_nonindexed(
@@ -544,7 +590,14 @@ class IngestionService:
                 failures += 1
                 continue
             ocr_pages = sum(1 for block in discovered.blocks if block.ocr)
-            if ocr_pages:
+            existing = self._document_for(job, discovered.external_file_id) if ocr_pages else None
+            unchanged = (
+                existing is not None
+                and existing.index_status == "indexed"
+                and existing.content_hash == sha256(discovered.text.encode()).hexdigest()
+                and existing.processing_version == (discovered.processing_version or PROCESSING_VERSION)
+            )
+            if ocr_pages and not unchanged:
                 try:
                     UsageService(self.session).check_and_record(
                         scope=OrganizationScope(job.organization_id),
@@ -561,11 +614,9 @@ class IngestionService:
             # (hash + processing version); "reprocess all" clears the hashes.
             self._upsert_indexed(job, discovered, indexed_at=now)
 
-        update_progress(self.session, job, total=len(manual_documents), processed=len(manual_documents),
-                outcomes=[{"external_id": item.external_file_id, "name": item.name,
-                           "processed": True, "error_code": item.error_code or
-                           (_empty_text_code(item.mime_type) if item.mime_type in self.eligible_mime_types and not (item.text or "").strip() else None)}
-                          for item in manual_documents])
+        if report_progress:
+            update_progress(self.session, job, total=len(manual_documents), processed=len(manual_documents),
+                outcomes=[outcome_for(item, self.eligible_mime_types) for item in manual_documents])
         if finalize:
             return self.finalize_reconciliation(
                 job_id=job.id,
@@ -600,8 +651,19 @@ class IngestionService:
         folder.status = job.status.value
         folder.last_synced_at = final_time
         self.session.flush()
+        from app.knowledge.questions import EMBEDDING_MODEL
         from app.library.manual_sync import update_progress
-        update_progress(self.session, job)
+        docs_ready = self.session.scalar(select(func.count(func.distinct(Document.id))).join(
+            DocumentChunk, DocumentChunk.document_id == Document.id,
+        ).where(
+            Document.organization_id == job.organization_id,
+            Document.workspace_folder_id == job.workspace_folder_id,
+            Document.index_status == "indexed",
+            DocumentChunk.organization_id == job.organization_id,
+            DocumentChunk.workspace_folder_id == job.workspace_folder_id,
+            DocumentChunk.embedding.is_not(None), DocumentChunk.embedding_model == EMBEDDING_MODEL,
+        )) or 0
+        update_progress(self.session, job, stage="done", docs_ready=docs_ready)
         return job
 
     def has_failed_documents(self, *, organization_id: UUID, workspace_folder_id: UUID) -> bool:
@@ -611,6 +673,7 @@ class IngestionService:
                 Document.organization_id == organization_id,
                 Document.workspace_folder_id == workspace_folder_id,
                 Document.index_status == "failed",
+                or_(Document.error_code.is_(None), Document.error_code.not_in(EMPTY_CODES)),
             )
             .limit(1)
         ) is not None
@@ -660,7 +723,7 @@ class IngestionService:
         )
         self.session.flush()
         from app.library.manual_sync import update_progress
-        update_progress(self.session, job)
+        update_progress(self.session, job, stage="done")
         return job
 
     def release_for_retry(self, *, job_id: UUID, expected_run_token: str) -> ProcessingJob | None:
@@ -740,6 +803,7 @@ class IngestionService:
                     Document.organization_id == scope.organization_id,
                     Document.workspace_folder_id == workspace_folder_id,
                     Document.index_status == "failed",
+                    or_(Document.error_code.is_(None), Document.error_code.not_in(EMPTY_CODES)),
                 )
                 .order_by(Document.name, Document.id)
             )
@@ -754,6 +818,7 @@ class IngestionService:
             .where(
                 Document.organization_id == scope.organization_id,
                 Document.index_status == "failed",
+                or_(Document.error_code.is_(None), Document.error_code.not_in(EMPTY_CODES)),
                 Document.error_code.is_not(None),
             )
             .group_by(Document.workspace_folder_id, Document.error_code)
@@ -839,6 +904,12 @@ class IngestionService:
         document.modified_at = discovered.modified_at
         document.index_status = status
         document.error_code = error_code
+        if status == "skipped":
+            # A document that became empty keeps no stale searchable content.
+            self.session.execute(delete(DocumentChunk).where(
+                DocumentChunk.organization_id == job.organization_id,
+                DocumentChunk.document_id == document.id,
+            ))
 
     def _upsert_indexed(
         self, job: ProcessingJob, discovered: DiscoveredDocument, *, indexed_at: datetime, force: bool = False

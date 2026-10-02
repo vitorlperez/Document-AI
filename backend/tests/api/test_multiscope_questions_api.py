@@ -4,6 +4,7 @@ from datetime import UTC, date, datetime
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import select
 
 from app.audit_usage.models import UsageRecord
 from app.audit_usage.service import MONTHLY_LIMITS
@@ -337,5 +338,36 @@ def test_partial_coverage_counts_pending_folders_and_only_sends_ready_evidence(c
         "total_folders": 2,
         "eligible_folders": 1,
         "pending_folders": 1,
+        "partial": True,
     }
     assert {item.source_provider for item in provider.answers[0]} == {"google_drive"}
+
+
+def test_queryable_syncing_space_still_marks_partial_coverage(corpus):
+    client, factory, _, organization_id, folders, provider = corpus
+    from app.core.scoping import OrganizationScope
+    from app.identity.models import User
+    from app.ingestion.service import IngestionService
+
+    with factory.begin() as session:
+        folder = session.get(WorkspaceFolder, folders["notion"])
+        user = session.scalar(select(User))
+        job = IngestionService(session).enqueue(scope=OrganizationScope(organization_id), user_id=user.id,
+                                               workspace_folder_id=folder.id)
+        IngestionService(session).claim(job_id=job.id)
+        folder.status = "syncing"
+    response = ask(client, organization_id, scope="organization")
+    assert response.status_code == 200
+    assert response.json()["coverage"] == {"total_folders": 2, "eligible_folders": 2, "pending_folders": 1, "partial": True}
+    assert {item["source_provider"] for item in response.json()["citations"]} == {"google_drive", "notion"}
+    assert provider.answers
+
+
+def test_folder_question_during_sync_marks_coverage(corpus):
+    client, factory, _, organization_id, folders, _ = corpus
+    with factory.begin() as session:
+        session.get(WorkspaceFolder, folders["notion"]).status = "syncing"
+    response = client.post(f"/workspace-folders/{folders['notion']}/questions?organization_id={organization_id}",
+                           json={"scope": "folder", "question": "What is the approved campaign scope?"})
+    assert response.status_code == 200
+    assert response.json()["coverage"] == {"total_folders": 1, "eligible_folders": 1, "pending_folders": 1, "partial": True}

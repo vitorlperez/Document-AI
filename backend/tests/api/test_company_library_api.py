@@ -5,7 +5,7 @@ from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -299,7 +299,7 @@ def test_manual_source_queues_every_workspace_and_keeps_unchanged_chunks(api):
         session.add(other)
         session.commit()
     client.app.state.ingestion_dispatcher = type('Dispatcher', (), {'dispatch': lambda self, job_id: None})()
-    response = client.post(f"/library/nodes/{root['id']}/reprocess?organization_id={organization}")
+    response = client.post(f"/library/nodes/{root['id']}/reprocess?organization_id={organization}&reprocess_all=false")
     assert response.status_code == 202 and len(response.json()['job_ids']) == 2
     with factory() as session:
         service = IngestionService(session)
@@ -311,12 +311,14 @@ def test_manual_source_queues_every_workspace_and_keeps_unchanged_chunks(api):
         assert chunk_id in [item.id for item in session.query(DocumentChunk).all()]
         run = session.get(ManualSyncRun, UUID(response.json()['run_id']))
         assert run.status == 'ready'
+        assert all(task['mode'] == 'incremental' for task in run.progress.values())
         for folder in session.query(WorkspaceFolder).all():
             service.remove_workspace(scope=OrganizationScope(UUID(organization)), user_id=session.query(User).one().id, workspace_folder_id=folder.id)
         session.commit()
     history = client.get(f'/library/manual-syncs?organization_id={organization}').json()['items'][0]
     assert history['status'] == 'ready' and history['total'] == history['processed'] == 1
     assert len(history['tasks']) == 2
+    assert history['mode'] == 'incremental'
 
 
 def test_manual_queue_failure_is_persisted_and_active_run_cannot_be_reused(api):
@@ -692,3 +694,90 @@ def test_notion_catalog_exposes_page_hierarchy_and_saves_provider_specific_scope
     with factory() as session:
         workspace = session.get(WorkspaceFolder, UUID(selected.json()["id"]))
         assert workspace.name == "Todas as páginas acessíveis do Notion"
+
+
+def test_sync_status_is_member_safe_and_reports_committed_partial_content(api):
+
+    from app.ingestion.service import IngestionService
+    from app.knowledge.models import DocumentChunk
+    from app.knowledge.questions import EMBEDDING_MODEL
+    from app.library.manual_sync import update_progress
+    from app.organizations.models import Membership, MembershipRole
+
+    client, factory = api
+    login(client)
+    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = seed_library(factory, organization_id)
+    with factory.begin() as session:
+        member = session.scalar(select(Membership))
+        member.role = MembershipRole.MEMBER
+        folder = session.scalar(select(WorkspaceFolder))
+        # Ordinary scheduled job: no manual_run_id; it still publishes progress.
+        job = IngestionService(session).enqueue_system(scope=OrganizationScope(UUID(organization_id)),
+                                                       workspace_folder_id=folder.id)
+        IngestionService(session).claim(job_id=job.id)
+        folder.status = "syncing"
+        document = session.scalar(select(Document))
+        session.add(DocumentChunk(organization_id=UUID(organization_id), workspace_folder_id=folder.id,
+                                  document_id=document.id, position=0, text="Approved scope",
+                                  search_text="Approved scope", embedding=[1.0, 1.0],
+                                  embedding_model=EMBEDDING_MODEL))
+        update_progress(session, job, stage="embedding", processed=1, total=3)
+    response = client.get(f"/library/sync-status?organization_id={organization_id}")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert set(item) == {"source_id", "provider", "library_node_id", "state", "stage", "processed",
+                         "total", "failed", "skipped", "queryable", "started_at", "last_synced_at",
+                         "error_code"}
+    root = client.get(f"/library?organization_id={organization_id}").json()["items"][0]
+    assert item["source_id"] == source_id and item["library_node_id"] == root["id"]
+    assert (item["state"], item["stage"], item["processed"], item["total"], item["failed"], item["queryable"]) == (
+        "syncing", "embedding", 1, 3, 0, True)
+    assert item["started_at"] and item["error_code"] is None
+    assert "encrypted" not in response.text and "member@example.test" not in response.text
+    context = client.get(f"/library/question-contexts?organization_id={organization_id}").json()["items"][0]
+    assert context["sync_in_progress"] is True and context["query_status"] == "ready"
+    login(client, "outsider")
+    assert client.get(f"/library/sync-status?organization_id={organization_id}").status_code == 403
+
+
+@pytest.mark.parametrize("provider, expected", [("notion", "notion"), ("google", "google_drive")])
+def test_sync_status_connected_tool_without_library_root_is_idle(api, provider, expected):
+    client, factory = api
+    login(client)
+    organization_id = client.post("/organizations", json={"name": "Empty"}).json()["id"]
+    with factory.begin() as session:
+        user = session.scalar(select(User))
+        source = DataSource(organization_id=UUID(organization_id), provider=provider,
+                            encrypted_credentials="secret", status="connected", connected_by_user_id=user.id)
+        session.add(source)
+    response = client.get(f"/library/sync-status?organization_id={organization_id}")
+    assert response.status_code == 200
+    assert response.json()["items"] == [{
+        "source_id": str(source.id), "provider": expected, "library_node_id": None,
+        "state": "idle", "stage": None, "processed": 0, "total": 0, "failed": 0, "skipped": 0,
+        "queryable": False, "started_at": None, "last_synced_at": None, "error_code": None,
+    }]
+
+
+def test_sync_history_and_status_report_empty_files_as_skipped(api):
+    from app.ingestion.service import IngestionService
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    seed_library(factory, organization)
+    client.app.state.ingestion_dispatcher = type("Dispatcher", (), {"dispatch": lambda self, job_id: None})()
+    with factory() as session:
+        workspace_id = str(session.query(WorkspaceFolder).one().id)
+    result = client.post(f"/workspace-folders/{workspace_id}/sync?organization_id={organization}").json()
+    with factory.begin() as session:
+        IngestionService(session).reconcile(job_id=UUID(result["job_id"]), documents=[
+            DiscoveredDocument("brief", "Brief.pdf", "application/pdf", "", text="body"),
+            DiscoveredDocument("blank", "Untitled", "application/vnd.google-apps.document", "", text=""),
+        ])
+    run = client.get(f"/library/sync-history?organization_id={organization}").json()["items"][0]
+    assert (run["status"], run["total"], run["processed"], run["failed"], run["failures"]) == ("ready", 2, 2, 0, [])
+    assert run["skipped"] == 1
+    assert run["skipped_items"] == [{"external_id": "blank", "name": "Untitled", "reason": "empty_content"}]
+    item = client.get(f"/library/sync-status?organization_id={organization}").json()["items"][0]
+    assert (item["state"], item["processed"], item["total"], item["failed"], item["skipped"]) == ("ready", 2, 2, 0, 1)

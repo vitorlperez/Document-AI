@@ -12,6 +12,10 @@ def test_exhausted_embedding_rate_limit_rolls_back_and_marks_job_failed(
 ) -> None:
     """The Celery boundary must retain the prior committed snapshot on a 429."""
     from app.ingestion import tasks
+    from app.library import manual_sync
+
+    monkeypatch.setattr(manual_sync, "update_progress", lambda *_, **__: None)
+    monkeypatch.setattr(manual_sync, "scoped_documents", lambda _s, _j, docs, *_: docs)
 
     organization_id, workspace_folder_id, source_id, job_id = (uuid4() for _ in range(4))
     run_token = "active-run-token"
@@ -52,6 +56,9 @@ def test_exhausted_embedding_rate_limit_rolls_back_and_marks_job_failed(
 
         def refresh(self, _: object) -> None:
             return None
+
+        def get_bind(self):
+            return SimpleNamespace(dialect=SimpleNamespace(name="sqlite"))
 
         def scalar(self, _: object):
             return next(self.scalar_values)
@@ -131,12 +138,17 @@ def test_exhausted_embedding_rate_limit_rolls_back_and_marks_job_failed(
     assert session.rollback_calls == 1
     assert released == []
     assert failed == [(job_id, "embedding_failed", run_token)]
-    assert session.commit_calls == 2
+    # The embedding stage no longer commits the pending document transaction.
+    assert session.commit_calls == 5
 
 
 def _run_remote_fault(monkeypatch, error, max_retries):
     """The Celery boundary must retain the prior committed snapshot on a 429."""
     from app.ingestion import tasks
+    from app.library import manual_sync
+
+    monkeypatch.setattr(manual_sync, "update_progress", lambda *_, **__: None)
+    monkeypatch.setattr(manual_sync, "scoped_documents", lambda _s, _j, docs, *_: docs)
 
     organization_id, workspace_folder_id, source_id, job_id = (uuid4() for _ in range(4))
     run_token = "active-run-token"

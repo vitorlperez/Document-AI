@@ -25,6 +25,7 @@ from app.core.scoping import OrganizationScope
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.presentation import strip_answer_links
+from app.knowledge.queryability import folder_is_queryable
 from app.knowledge.similarity import PgVectorSimilarity, SimilarityIndex, default_similarity
 from app.knowledge.untrusted import UNTRUSTED_NOTICE, fence_sources, strip_invisible
 from app.workspaces.models import WorkspaceFolder
@@ -287,7 +288,7 @@ class QuestionResult:
     confidence: str
     citations: list[Evidence]
     retrieval_status: str
-    coverage: dict[str, int] | None = None
+    coverage: dict[str, int | bool] | None = None
     resolved_context: dict[str, object] | None = None
 
     def __post_init__(self) -> None:
@@ -809,7 +810,8 @@ class EmbeddingService:
         self.session = session
         self.provider = provider
 
-    def embed_workspace(self, *, scope: OrganizationScope, workspace_folder_id: UUID) -> int:
+    def embed_workspace(self, *, scope: OrganizationScope, workspace_folder_id: UUID,
+                        external_file_ids: list[str] | None = None) -> int:
         chunks = list(
             self.session.scalars(
                 select(DocumentChunk)
@@ -818,6 +820,7 @@ class EmbeddingService:
                     Document.organization_id == scope.organization_id,
                     Document.workspace_folder_id == workspace_folder_id,
                     Document.index_status == "indexed",
+                    *([Document.external_file_id.in_(external_file_ids)] if external_file_ids is not None else []),
                     DocumentChunk.organization_id == scope.organization_id,
                     DocumentChunk.workspace_folder_id == workspace_folder_id,
                     or_(
@@ -988,14 +991,10 @@ class QuestionService:
             or item.source_provider == requested_provider
             or (requested_provider == "google_drive" and item.source_provider == "google")
         ]
-        eligible = [item for item in selected if item.query_status == "ready"]
-        coverage = {
-            "total_folders": len(selected),
-            "eligible_folders": len(eligible),
-            "pending_folders": len(selected) - len(eligible),
-        }
+        from app.library.service import question_coverage
+        coverage = question_coverage(selected)
         # Keep explicit no-embedding status when a synchronized scope has content.
-        folders = [item for item in selected if item.status in {"ready", "partial_failure"}]
+        folders = [item for item in selected if folder_is_queryable(item, self.session)]
         if not folders:
             UsageService(self.session).check_and_record(
                 scope=scope, metric="questions", increment=1
@@ -1060,8 +1059,14 @@ class QuestionService:
             folder = WorkspaceService(self.session).require_member_access(
                 scope=scope, user_id=user_id, workspace_folder_id=folder_id
             )
-            if folder.status not in {"ready", "partial_failure"}:
+            if not folder_is_queryable(folder, self.session):
                 raise ValueError("workspace folder is not ready")
+        from app.library.service import LibraryService, question_coverage
+        coverage = question_coverage([
+            context for context in LibraryService(self.session).question_contexts(scope=scope, user_id=user_id)
+            if context.id in folder_ids
+        ])
+        sync_coverage = coverage if coverage["partial"] else None
         source_metadata = {
             folder_id: (source_id, provider)
             for folder_id, source_id, provider in self.session.execute(
@@ -1102,6 +1107,7 @@ class QuestionService:
             return self._complete(
                 _insufficient_evidence(RETRIEVAL_STATUS_NO_INDEXED_CONTENT),
                 started_at=started_at,
+                coverage=sync_coverage,
                 indexed_chunk_count=0,
             )
         scoped_filters = [
@@ -1133,6 +1139,7 @@ class QuestionService:
             return self._complete(
                 _insufficient_evidence(RETRIEVAL_STATUS_NO_COMPATIBLE_EMBEDDINGS),
                 started_at=started_at,
+                coverage=sync_coverage,
                 indexed_chunk_count=indexed_chunk_count,
             )
         scoped_rows = _deduplicate_indexed_copies(scoped_rows, source_metadata)
@@ -1158,6 +1165,7 @@ class QuestionService:
                         else RETRIEVAL_STATUS_BELOW_THRESHOLD,
                     ),
                     started_at=started_at,
+                    coverage=sync_coverage,
                     indexed_chunk_count=indexed_chunk_count,
                     compatible_embedding_count=len(scoped_rows),
                     selected_candidate_count=len(summary_evidence),
@@ -1272,6 +1280,7 @@ class QuestionService:
                     retrieval_status=RETRIEVAL_STATUS_SUFFICIENT,
                 ),
                 started_at=started_at,
+                coverage=sync_coverage,
                 indexed_chunk_count=indexed_chunk_count,
                 compatible_embedding_count=len(scoped_rows),
                 selected_candidate_count=len(summary_evidence),
@@ -1290,6 +1299,7 @@ class QuestionService:
                     retrieval_status=RETRIEVAL_STATUS_SUFFICIENT,
                 ),
                 started_at=started_at,
+                coverage=sync_coverage,
                 indexed_chunk_count=indexed_chunk_count,
                 compatible_embedding_count=len(scoped_rows),
                 selected_candidate_count=len(inventory_evidence),
@@ -1400,6 +1410,7 @@ class QuestionService:
             return self._complete(
                 _insufficient_evidence(RETRIEVAL_STATUS_BELOW_THRESHOLD),
                 started_at=started_at,
+                coverage=sync_coverage,
                 indexed_chunk_count=indexed_chunk_count,
                 compatible_embedding_count=len(scoped_rows),
                 semantic_candidate_count=len(semantic_candidates),
@@ -1430,6 +1441,7 @@ class QuestionService:
                     retrieval_status=RETRIEVAL_STATUS_SUFFICIENT,
                 ),
                 started_at=started_at,
+                coverage=sync_coverage,
                 indexed_chunk_count=indexed_chunk_count,
                 compatible_embedding_count=len(scoped_rows),
                 semantic_candidate_count=len(semantic_candidates),
@@ -1449,6 +1461,7 @@ class QuestionService:
                 # Preserve them so the agent can return an honest answer with links.
                 replace(_insufficient_evidence(RETRIEVAL_STATUS_INVALID_GENERATION), citations=supported),
                 started_at=started_at,
+                coverage=sync_coverage,
                 indexed_chunk_count=indexed_chunk_count,
                 compatible_embedding_count=len(scoped_rows),
                 semantic_candidate_count=len(semantic_candidates),
@@ -1467,6 +1480,7 @@ class QuestionService:
                 retrieval_status=RETRIEVAL_STATUS_SUFFICIENT,
             ),
             started_at=started_at,
+            coverage=sync_coverage,
             indexed_chunk_count=indexed_chunk_count,
             compatible_embedding_count=len(scoped_rows),
             semantic_candidate_count=len(semantic_candidates),
@@ -1482,6 +1496,7 @@ class QuestionService:
         *,
         started_at: float,
         indexed_chunk_count: int,
+        coverage: dict[str, int | bool] | None = None,
         compatible_embedding_count: int = 0,
         semantic_candidate_count: int = 0,
         lexical_candidate_count: int = 0,
@@ -1508,7 +1523,7 @@ class QuestionService:
                 "elapsed_ms": round((time.perf_counter() - started_at) * 1000, 2),
             },
         )
-        return result
+        return replace(result, coverage=coverage) if coverage is not None else result
 
 
 def _deduplicate_indexed_copies(
