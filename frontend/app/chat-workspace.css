@@ -16,7 +16,7 @@
   .chat-workspace .conversation-panel { min-height: 0; overflow: hidden; }
   .chat-workspace [role="log"] { min-height: 0; overscroll-behavior: contain; }
 }
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .library-panels { grid-template-columns: 240px minmax(0, 1fr); }
   .library-panels > aside:first-child { border-right: 1px solid #dedfd5; border-bottom: 0; }
 }
@@ -103,11 +103,13 @@
 
 .library-sync-dialog { width: min(800px, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); margin: auto; padding: 0; border: 1px solid #dedfd5; border-radius: 12px; color: #182d26; background: #fafaf7; box-shadow: 0 24px 80px #12282040; overflow-y: auto; overscroll-behavior: contain; }
 .library-sync-dialog::backdrop { background: rgb(18 40 32 / 45%); }
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .workspace-shell > .workspace-frame:has(.library-panels) { overflow: hidden; }
   .workspace-shell > .workspace-frame > .library-panels { min-height: 0; flex: 1 1 0%; }
   .library-panels > aside { min-height: 0; overflow-y: auto; }
   .library-panels > main { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .library-head { flex-wrap: wrap; }
+  .library-head > nav { min-width: min(10rem, 100%); }
   .library-panels > main > :not(ul) { flex-shrink: 0; }
   .library-panels > main > ul { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; }
 }

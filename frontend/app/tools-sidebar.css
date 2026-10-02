@@ -72,17 +72,23 @@
   .ts-meta[data-indeterminate] .ts-bar > span { animation: none; position: static; width: 100%; opacity: 0.35; }
 }
 
-/* Library sidebar: same collapse as the chat (shared preference); desktop only, mobile levels untouched. */
+/* Library sidebar: same collapse as the chat (shared preference); ≥768px, mobile levels untouched. */
 .library-sidebar-toggle { display: none; }
+.library-sidebar-foot { display: none; }
 @media (min-width: 768px) {
-  .library-panels { grid-template-columns: 240px minmax(0, 1fr); transition: grid-template-columns 200ms cubic-bezier(0.33, 1, 0.68, 1); }
+  .library-panels { transition: grid-template-columns 200ms cubic-bezier(0.33, 1, 0.68, 1); }
   .library-panels.library-collapsed { grid-template-columns: 60px minmax(0, 1fr); }
   .library-panels > aside:first-child { border-right: 1px solid #dedfd5; border-bottom: 0; overflow-x: hidden; }
+  .library-panels .library-tool-list { max-height: none; }
   .library-sidebar-toggle { display: grid; }
-  .library-sidebar[data-collapsed="true"] .library-sidebar-head { flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem 0; }
+  .library-sidebar-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.25rem; }
+  .library-sidebar-title { display: contents; }
+  .library-sidebar-title > p:last-child { grid-column: 1 / -1; grid-row: 2; }
+  .library-sidebar-actions { grid-column: 2; grid-row: 1; }
+  .library-sidebar[data-collapsed="true"] .library-sidebar-head { display: flex; justify-content: center; padding: 0.5rem 0; }
   .library-sidebar[data-collapsed="true"] .library-sidebar-title, .library-sidebar[data-collapsed="true"] > p, .library-sidebar[data-collapsed="true"] .library-tool-name, .library-sidebar[data-collapsed="true"] .library-tool-resync { display: none; }
-  .library-sidebar[data-collapsed="true"] .library-sidebar-actions { flex-direction: column-reverse; gap: 0.25rem; }
-  .library-sidebar[data-collapsed="true"] .library-sidebar-btn { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
+  .library-sidebar[data-collapsed="true"] .library-sidebar-head .library-sidebar-btn { display: none; }
+  .library-sidebar[data-collapsed="true"] .library-sidebar-foot { display: grid; place-items: center; padding: 0.25rem 0 1rem; }
   .library-sidebar[data-collapsed="true"] .library-tool-list { padding-inline: 0; }
   .library-sidebar[data-collapsed="true"] .library-tool-list > div { justify-content: center; }
   .library-sidebar[data-collapsed="true"] .library-tool-list > div > button:first-child { flex: 0 0 44px; width: 44px; min-width: 44px; justify-content: center; padding-inline: 0; }
