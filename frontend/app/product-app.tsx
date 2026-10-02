@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowLeft, ChevronRight, CircleAlert, ExternalLink, FileText, FolderOpen, HardDrive, HelpCircle, LogOut, PanelRightClose, PanelRightOpen, Plus, RefreshCw, Search, Send, Settings2, ShieldCheck, Sparkles, Table2, Trash2, Unplug, Users, X } from "lucide-react";
+import { ArrowLeft, ChevronRight, CircleAlert, Code2, ExternalLink, FileText, FolderOpen, HardDrive, HelpCircle, LogOut, PanelRightClose, PanelRightOpen, Plus, RefreshCw, Search, Send, Settings2, ShieldCheck, Sparkles, Table2, Trash2, Unplug, Users, X } from "lucide-react";
 import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { OrganizationOnboarding, type OnboardingState } from "./organization-onboarding";
 import { ConversationTour } from "./conversation-tour";
-import { AccessSettings } from "./access-settings";
+import { DeveloperScreen } from "./product/developer-screen";
 import { LandingPage } from "./landing-page";
 import { cleanAnswerForDisplay } from "./answer-display";
 import { AnswerMarkdown } from "./answer-markdown";
@@ -26,7 +26,7 @@ const SESSION_PATH = API_BASE.replace(/\/$/, "") === "/api" ? "/session" : "/me"
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type Role = "owner" | "admin" | "member";
-type Screen = "home" | "company" | "library" | "team" | "integrations" | "staff" | "invitation";
+type Screen = "home" | "company" | "library" | "team" | "integrations" | "developer" | "staff" | "invitation";
 type Company = { id: string; name: string; membership_id: string; role: Role };
 type User = { id: string; email: string; is_platform_staff?: boolean };
 type Folder = { id: string; name: string; status: string; last_synced_at: string | null; source_id?: string; external_folder_id?: string; selection_kind?: string; selection_folder_ids?: string[] };
@@ -223,11 +223,12 @@ export function ProductApp({ screen }: { screen: Screen }) {
       if (!progress.required) router.replace(companyPath(company.id));
     } catch (caught) { throw new Error(messageFor(caught)); }
   }}><IntegrationScreen key={company.id} company={company} setError={setError} setNotice={setNotice} /></OrganizationOnboarding>;
-  return <Shell user={user} company={company} companies={companies} alertMessage={alertMessage} alertTone={error || oauthFailure ? "error" : "notice"} fillViewport={screen === "company" || screen === "library"} pageSurface={screen === "team" || screen === "integrations"} onDismiss={dismissAlert} onCompanyChange={goCompany} onNavigate={(path) => router.push(path)} onLogout={() => { void logout(); }}>
+  return <Shell user={user} company={company} companies={companies} alertMessage={alertMessage} alertTone={error || oauthFailure ? "error" : "notice"} fillViewport={screen === "company" || screen === "library"} pageSurface={screen === "team" || screen === "integrations" || screen === "developer"} onDismiss={dismissAlert} onCompanyChange={goCompany} onNavigate={(path) => router.push(path)} onLogout={() => { void logout(); }}>
     {screen === "company" && <CompanyDashboard key={company.id} company={company} onboarding={onboarding} onOnboardingChange={(progress) => setOnboarding((current) => current?.organizationId === company.id ? { ...progress, organizationId: company.id } : current)} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "library" && <LibraryScreen key={company.id} company={company} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "team" && <TeamScreen key={company.id} company={company} setError={setError} setNotice={setNotice} />}
-    {screen === "integrations" && (company.role === "member" ? <section role="alert" className="mx-auto max-w-lg rounded-lg border border-line bg-white p-8 text-center"><ShieldCheck className="mx-auto text-primary" size={28} /><h1 className="mt-4 text-xl font-semibold text-ink">Acesso restrito</h1><p className="mt-2 text-sm text-muted-foreground">Somente responsáveis e administradores podem gerenciar integrações.</p><button onClick={() => router.push(companyPath(company.id))} className="mt-5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white">Voltar à conversa</button></section> : <div><IntegrationScreen key={company.id} company={company} setError={setError} setNotice={setNotice} /><AccessSettings key={`access-${company.id}`} organizationId={company.id} api={api} /></div>)}
+    {screen === "integrations" && (company.role === "member" ? <section role="alert" className="mx-auto max-w-lg rounded-lg border border-line bg-white p-8 text-center"><ShieldCheck className="mx-auto text-primary" size={28} /><h1 className="mt-4 text-xl font-semibold text-ink">Acesso restrito</h1><p className="mt-2 text-sm text-muted-foreground">Somente responsáveis e administradores podem gerenciar integrações.</p><button onClick={() => router.push(companyPath(company.id))} className="mt-5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white">Voltar à conversa</button></section> : <div><IntegrationScreen key={company.id} company={company} setError={setError} setNotice={setNotice} /></div>)}
+    {screen === "developer" && (company.role === "member" ? <section role="alert" className="mx-auto max-w-lg rounded-lg border border-line bg-white p-8 text-center"><ShieldCheck className="mx-auto text-primary" size={28} /><h1 className="mt-4 text-xl font-semibold text-ink">Acesso restrito</h1><p className="mt-2 text-sm text-muted-foreground">Somente responsáveis e administradores podem gerenciar API e MCP.</p><button onClick={() => router.push(companyPath(company.id))} className="mt-5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white">Voltar à conversa</button></section> : <DeveloperScreen key={company.id} company={company} />)}
   </Shell>;
 }
 
@@ -289,6 +290,7 @@ function Shell({ user, company, companies, children, alertMessage, alertTone, fi
               <button onClick={() => go("/library")} className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-sage"><FolderOpen size={16} className="text-primary" /><span><span className="block">Biblioteca</span><span className="block text-xs font-normal text-muted-foreground">Explore e gerencie o índice</span></span></button>
               {company.role === "owner" && <button onClick={() => go("/team")} className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-sage"><Users size={16} className="text-primary" /><span><span className="block">Equipe</span><span className="block text-xs font-normal text-muted-foreground">Membros e convites</span></span></button>}
               {canManage && <button onClick={() => go("/integrations")} className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-sage"><HardDrive size={16} className="text-primary" /><span><span className="block">Integrações</span><span className="block text-xs font-normal text-muted-foreground">Fontes e sincronizações</span></span></button>}
+              {canManage && <button onClick={() => go("/developer")} className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-sage"><Code2 size={16} className="text-primary" /><span><span className="block">Desenvolvedor</span><span className="block text-xs font-normal text-muted-foreground">API e MCP</span></span></button>}
             </nav>}
           </div>
           <button onClick={onLogout} aria-label="Sair da conta" title="Sair" className="rounded-lg p-2 text-muted-foreground hover:bg-sage"><LogOut size={18} /></button>

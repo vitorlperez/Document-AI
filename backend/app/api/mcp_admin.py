@@ -2,7 +2,7 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -12,6 +12,7 @@ from app.api.access_admin import _audit, _require_admin
 from app.api.auth import current_user, database_session
 from app.identity.models import User
 from app.library.models import LibraryNode
+from app.mcp_server.tools import MCP_TOOL_NAMES
 from app.organizations.models import Membership
 
 router = APIRouter(prefix="/organizations/{organization_id}", tags=["mcp-administration"])
@@ -44,6 +45,23 @@ def _serialize(connection: McpConnection | None, organization_id: UUID) -> dict[
     if connection is None or connection.organization_id != organization_id:
         return {"active": False}
     return {"active": True, "organization_id": str(connection.organization_id), "node_ids": connection.node_ids}
+
+
+@router.get("/mcp-info")
+def get_mcp_info(organization_id: UUID, request: Request, response: Response,
+                 user: User = Depends(current_user), session: Session = Depends(database_session)):
+    """Public connection metadata only; configuration is not a server health check."""
+    _require_admin(session, organization_id, user.id)
+    settings = request.app.state.settings
+    response.headers["Cache-Control"] = "no-store"
+    return {
+        "configured": bool(settings.mcp_resource_url and settings.mcp_issuer_url and settings.mcp_jwks_url),
+        "resource_url": settings.mcp_resource_url,
+        "issuer_url": settings.mcp_issuer_url,
+        "transport": "streamable-http",
+        "static_key_enabled": settings.mcp_static_key_enabled,
+        "tools": list(MCP_TOOL_NAMES),
+    }
 
 
 @router.put("/mcp-settings")

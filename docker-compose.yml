@@ -37,6 +37,11 @@ services:
       REDIS_URL: redis://redis:6379/0
       ENVIRONMENT: development
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:3000}
+      # The API exposes this same public configuration on the Developer page.
+      MCP_RESOURCE_URL: ${MCP_RESOURCE_URL:-}
+      MCP_ISSUER_URL: ${MCP_ISSUER_URL:-}
+      MCP_JWKS_URL: ${MCP_JWKS_URL:-}
+      MCP_STATIC_KEY_ENABLED: ${MCP_STATIC_KEY_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       AGENT_TOOLS_ENABLED: ${AGENT_TOOLS_ENABLED:-true}
       AGENT_INTENT_ENGINE: ${AGENT_INTENT_ENGINE:-jev}

@@ -22,6 +22,14 @@ Endpoint Streamable HTTP stateless (`/mcp`) que expõe `search`, `fetch` e `list
 
 Não copie `OPENAI_API_KEY` (o MCP v1 não chama LLM). Sem cookie e sem CORS.
 
+Para exibir a conexão na página **Desenvolvedor** (`/companies/{id}/developer`), configure
+também `MCP_RESOURCE_URL`, `MCP_ISSUER_URL`, `MCP_JWKS_URL` e `MCP_STATIC_KEY_ENABLED`
+no serviço `api`, com os mesmos valores do serviço `mcp`. O Docker Compose já compartilha
+essas variáveis. `GET /organizations/{id}/mcp-info` exige Owner/Admin e retorna apenas
+metadados de conexão públicos; não expõe JWKS, credenciais ou outras configurações.
+O estado “configurado” indica presença das variáveis, não disponibilidade do serviço.
+Sem configuração completa, a página informa isso e não gera exemplos com uma URL presumida.
+
 ## WorkOS Dashboard (pendente do dono)
 
 Connect → CIMD habilitado; Resource Indicator = `MCP_RESOURCE_URL`; DCR habilitado; redirect URIs do Claude (`https://claude.ai/api/mcp/auth_callback`) e do loopback do Claude Code.
