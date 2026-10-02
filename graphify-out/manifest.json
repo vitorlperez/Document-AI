@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1790954286.6074789,
-    "seen": 1790954583.254511,
+    "mtime": 1790956716.7499342,
+    "seen": 1790956740.871899,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -4554,9 +4554,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/library-screen.tsx": {
-    "mtime": 1790953999.0163913,
-    "seen": 1790954244.9294121,
-    "ast_hash": "83a252e9048aa6b038787bfa5161c803",
+    "mtime": 1790956689.7800026,
+    "seen": 1790956740.872173,
+    "ast_hash": "65969040e5c9c9cdc6b75f38d2d672f9",
     "semantic_hash": ""
   },
   "frontend/app/product/shared-ui.tsx": {
@@ -4707,6 +4707,24 @@
     "mtime": 1790917380.509753,
     "seen": 1790918978.063911,
     "ast_hash": "9ba1d65558832771be705b03b1979899",
+    "semantic_hash": ""
+  },
+  "frontend/app/library-view-logic.ts": {
+    "mtime": 1790956427.733817,
+    "seen": 1790956740.872164,
+    "ast_hash": "554b19cefff0f2e1a87b63ec15589099",
+    "semantic_hash": ""
+  },
+  "frontend/app/product/library-grid.tsx": {
+    "mtime": 1790956667.5569606,
+    "seen": 1790956740.872172,
+    "ast_hash": "db0f0be9fd9fbfa257e05967e04209de",
+    "semantic_hash": ""
+  },
+  "frontend/tests/library-view-logic.test.mjs": {
+    "mtime": 1790956427.7355797,
+    "seen": 1790956740.872216,
+    "ast_hash": "e89f4527bc6955a2c84290070d3a9092",
     "semantic_hash": ""
   }
 }
