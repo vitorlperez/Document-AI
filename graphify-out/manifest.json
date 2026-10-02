@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1790956716.7499342,
-    "seen": 1790956740.871899,
+    "mtime": 1790956811.0971444,
+    "seen": 1790956868.814373,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -3882,9 +3882,9 @@
     "semantic_hash": ""
   },
   "frontend/app/conversation-tour.tsx": {
-    "mtime": 1790949638.2486165,
-    "seen": 1790954244.929402,
-    "ast_hash": "cd960d64f6cca08c8446d5747281f02a",
+    "mtime": 1790956909.227997,
+    "seen": 1790956915.85818,
+    "ast_hash": "106f816ac62a488b2c758ac96b3fabda",
     "semantic_hash": ""
   },
   "frontend/app/organization-onboarding.tsx": {
@@ -4548,9 +4548,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/integrations-screen.tsx": {
-    "mtime": 1790949638.2554355,
-    "seen": 1790954244.9294112,
-    "ast_hash": "b9213147c579957f7ddd739ac225dd03",
+    "mtime": 1790956789.7289577,
+    "seen": 1790956868.814544,
+    "ast_hash": "f24585adb0a17d6259ddf4fbdf60f203",
     "semantic_hash": ""
   },
   "frontend/app/product/library-screen.tsx": {
@@ -4566,9 +4566,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/shell.tsx": {
-    "mtime": 1790954150.8885117,
-    "seen": 1790954244.9294121,
-    "ast_hash": "7717c7bc8a70e3c11b3beed5087e752c",
+    "mtime": 1790956872.7317274,
+    "seen": 1790956888.99004,
+    "ast_hash": "8cef93cc4a6002909210bb04fb3c7150",
     "semantic_hash": ""
   },
   "frontend/app/product/team-staff.tsx": {
