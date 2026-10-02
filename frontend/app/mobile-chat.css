@@ -1,0 +1,111 @@
+/* Lane C — mobile chat-first shell. Contract C5: everything here is < 768px; ≥ 768px keeps the desktop shell. */
+
+/* ---- Header: one row — menu | organization | Nova conversa ---- */
+.mobile-header {
+  position: sticky; top: 0; z-index: 20; flex-shrink: 0;
+  display: flex; align-items: center; gap: 4px;
+  min-height: calc(52px + env(safe-area-inset-top)); padding: calc(4px + env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 4px max(8px, env(safe-area-inset-left));
+  background: var(--color-paper); border-bottom: 1px solid var(--color-line);
+}
+.mobile-header-button {
+  display: inline-grid; place-items: center; flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 10px; border: 0; background: transparent; color: var(--color-ink);
+}
+.mobile-header-button:hover, .mobile-header-button:active { background: var(--color-sage); }
+.mobile-header-title { min-width: 0; flex: 1; padding-inline: 4px; }
+.mobile-header-title span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 600; color: var(--color-ink); }
+.mobile-header-new {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  min-height: 44px; padding: 0 12px; border-radius: 10px;
+  border: 1px solid var(--color-line); background: #fff; color: var(--color-ink);
+  font-size: 13px; font-weight: 600;
+}
+.mobile-header-new:active { transform: scale(0.97); }
+.mobile-header :is(button):focus-visible, .mobile-drawer :is(button, select):focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+
+/* ---- Drawer (Radix Sheet portal: not inside .product-app) ---- */
+.mobile-drawer.mobile-drawer {
+  width: min(88vw, 340px); max-width: none; gap: 0; padding: 0;
+  height: var(--app-vh, 100dvh); background: var(--color-paper); color: var(--color-ink);
+  padding-bottom: env(safe-area-inset-bottom);
+  transition-duration: 220ms;
+}
+.mobile-drawer-head { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; padding: calc(6px + env(safe-area-inset-top)) 8px 6px max(16px, env(safe-area-inset-left)); border-bottom: 1px solid var(--color-line); }
+.mobile-drawer-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 16px; }
+.mobile-drawer-field { display: grid; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted-foreground, #5d6b64); }
+.mobile-drawer-field select { min-height: 44px; width: 100%; padding: 0 12px; border: 1px solid var(--color-line); border-radius: 10px; background: #fff; color: var(--color-ink); font-size: 16px; font-weight: 600; text-transform: none; letter-spacing: 0; }
+.mobile-drawer-nav { display: grid; gap: 2px; }
+.mobile-drawer-nav button, .mobile-drawer-foot button {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 12px;
+  border: 0; border-radius: 10px; background: transparent; text-align: left; font-size: 15px; font-weight: 600; color: var(--color-ink);
+}
+.mobile-drawer-nav button svg, .mobile-drawer-foot button svg { color: var(--color-primary); flex-shrink: 0; }
+.mobile-drawer-nav button:hover, .mobile-drawer-foot button:hover { background: var(--color-sage); }
+.mobile-drawer-nav button[aria-current="page"] { background: var(--color-sage-selected); }
+.mobile-drawer-section .tools-list { border-radius: 10px; padding-inline: 6px; }
+.mobile-drawer-section .tools-list .ts-head { padding-left: 6px; }
+.mobile-drawer-section .tools-list :is(button, a) { min-height: 44px; }
+.mobile-drawer-foot { flex-shrink: 0; display: grid; gap: 2px; padding: 8px 12px 12px; border-top: 1px solid var(--color-line); }
+.mobile-drawer-user { display: grid; padding: 4px 12px 8px; }
+.mobile-drawer-user span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.mobile-drawer-user small { font-size: 12px; color: var(--color-muted-foreground, #5d6b64); }
+.mobile-drawer-sync { margin: 0; }
+
+@media (max-width: 767px) {
+  /* Whole app follows the visual viewport (keyboard-aware); falls back to dvh. */
+  .product-app[data-mobile-shell].h-dvh { height: var(--app-vh, 100dvh); }
+  .product-app[data-mobile-shell] > .product-content { padding: 0; }
+  .product-app > .product-content > .workspace-shell { border-radius: 0; }
+
+  /* Chat full-screen: no sources / files panels above or below the conversation. */
+  .product-app .workspace-frame { border: 0; border-radius: 0; box-shadow: none; }
+  .product-app .chat-workspace { height: 100%; min-height: 0; }
+  .product-app .chat-workspace .workspace-panels { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
+  .product-app .chat-workspace .sources-panel,
+  .product-app .chat-workspace .context-panel,
+  .product-app .chat-workspace .tools-sidebar { display: none; }
+  .product-app .chat-workspace .conversation-panel { flex: 1 1 0; min-height: 0; overflow: hidden; }
+  .product-app .chat-workspace [role="log"] { flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-inline: 14px; }
+  /* "Conhecer o app / Nova conversa" moved to the header/drawer (still clickable programmatically); the strip stays only as a thin row for the sync indicator. */
+  .product-app .conversation-panel > .chat-topbar { position: relative; min-height: 0; padding: 0 12px; }
+  .product-app .conversation-panel > .chat-topbar > button { display: none; }
+  .product-app .conversation-panel > .chat-topbar:not(:has(> .sync-chip)) { display: none; }
+  /* Composer pinned to the bottom, clear of the home indicator. */
+  .product-app .chat-workspace .conversation-composer { flex-shrink: 0; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--color-line-soft); }
+  .product-app .chat-workspace .conversation-composer > div { padding: 4px; border-radius: 16px; }
+  .product-app .conversation-composer textarea { display: block; field-sizing: content; height: auto; min-height: 44px; max-height: min(160px, 24dvh); padding: 10px 8px; font-size: 16px; line-height: 24px; overflow-y: auto; }
+  .product-app .conversation-composer textarea:placeholder-shown { field-sizing: fixed; height: 44px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  /* Send: icon-only on mobile (aria-label keeps the name); placeholder is quieter so the 16px field text does not read as oversized. */
+  .product-app .composer-send { width: 44px; min-width: 44px; padding: 0; justify-content: center; border-radius: 999px; }
+  .product-app .composer-send-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .product-app .conversation-composer textarea::placeholder { color: var(--color-muted-foreground); opacity: 0.8; font-weight: 400; }
+  .product-app .chat-workspace .composer-toolbar { flex-wrap: nowrap; align-items: center; gap: 4px; padding: 0; border-top: 0; }
+  .product-app .composer-toolbar > [data-tour="tools"] { flex: 1; min-width: 0; }
+  .product-app .conversation-composer .question-scope { gap: 0; }
+  .product-app .conversation-composer .question-scope-trigger { max-width: 100%; padding-inline: 8px; }
+  /* Counts stay available to assistive technology without taking another row. */
+  .product-app .conversation-composer .question-scope-count,
+  .product-app .composer-toolbar > div:last-child > span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .product-app .conversation-composer .question-scope-warning { padding: 4px 8px; }
+  .product-app .chat-workspace .conversation-composer > p:not([role="alert"]) { margin-top: 4px; font-size: 10px; line-height: 16px; }
+
+  /* Library & other screens: header already minimal; keep tool picker compact instead of a stacked list. */
+  .product-app .library-panels { display: flex; flex-direction: column; min-height: 0; }
+  .product-app .library-panels > aside:first-child { flex-shrink: 0; border-bottom: 1px solid var(--color-line); }
+  .product-app .library-panels > aside:first-child > p { display: none; }
+  .product-app .library-panels > aside:first-child > nav { display: grid; gap: 2px; align-content: start; max-height: none; overflow: visible; padding: 4px 12px 16px; }
+  .product-app .library-panels > aside:first-child > nav > div { min-width: 0; }
+  .product-app .library-panels[data-mobile-level="list"] > aside:first-child { flex: 1; overflow-y: auto; border-bottom: 0; }
+  .product-app .page-surface { padding-inline: 12px; }
+  /* Toasts sit below the 52px header. */
+  .product-app > .pointer-events-none.fixed { top: calc(60px + env(safe-area-inset-top)); }
+}
+
+@media (min-width: 768px) {
+  .mobile-header, .mobile-drawer { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-drawer.mobile-drawer { transition-duration: 0.01ms; animation-duration: 0.01ms; }
+}
+@media (max-width: 767px) { .product-app .library-panels[data-mobile-level="list"] > aside:first-child { min-height: calc(var(--app-vh, 100dvh) - 60px); } }

@@ -1,0 +1,73 @@
+/* Tools sidebar: open (list) and collapsed (icon rail). Targets stay ≥44px, so the global button min-height is left alone. */
+.tools-sidebar, .tools-list { display: flex; flex-direction: column; min-width: 0; background: var(--color-sage); }
+.tools-sidebar { overflow-x: hidden; overflow-y: auto; border-bottom: 1px solid var(--color-line); }
+.tools-sidebar ul, .tools-list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.ts-head { display: flex; align-items: center; gap: 0.25rem; min-height: 56px; padding: 0.5rem 0.5rem 0.5rem 1rem; }
+.tools-sidebar[data-collapsed="true"] .ts-head { justify-content: center; padding-inline: 0; }
+.ts-title { flex: 1; min-width: 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted-foreground); }
+.ts-toggle, .ts-add { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 0.5rem; color: var(--color-muted-foreground); cursor: pointer; transition: background-color 150ms ease-out, color 150ms ease-out; }
+.ts-add { color: var(--color-primary); }
+.ts-toggle:hover, .ts-add:hover { background: var(--color-sage-selected); color: var(--color-ink); }
+.ts-toggle:focus-visible, .ts-add:focus-visible, .ts-row:focus-visible, .ts-icon:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.ts-items { padding: 0 0.5rem 1rem; }
+.tools-sidebar[data-collapsed="true"] .ts-items { padding-inline: 0; justify-items: center; }
+.ts-row { display: flex; align-items: center; gap: 0.625rem; width: 100%; padding: 0.375rem 0.625rem; border-radius: 0.5rem; text-align: left; font-size: 0.875rem; color: var(--color-ink); cursor: pointer; transition: background-color 150ms ease-out; }
+.ts-row:hover:not(:disabled) { background: rgb(255 255 255 / 0.8); }
+.ts-row:disabled, .ts-icon:disabled { cursor: default; }
+.ts-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.ts-logo { display: grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 0.5rem; background: var(--color-sage-selected); color: var(--color-primary); }
+.ts-icon { position: relative; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 0.5rem; cursor: pointer; transition: background-color 150ms ease-out; }
+.ts-icon:hover:not(:disabled) { background: rgb(255 255 255 / 0.8); }
+.ts-dot { position: absolute; right: 2px; top: 2px; display: grid; place-items: center; border-radius: 999px; background: var(--color-sage); }
+.ts-foot { display: grid; place-items: center; padding: 0.25rem 0 1rem; }
+.ts-empty { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.5rem 1rem; font-size: 0.8125rem; line-height: 1.4; color: var(--color-muted-foreground); }
+.ts-skeleton { display: flex; align-items: center; gap: 0.625rem; min-height: 44px; padding: 0 0.75rem; list-style: none; }
+.ts-skeleton-rail { justify-content: center; padding: 0; }
+.ts-skeleton-logo { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; background: var(--color-line); }
+.ts-skeleton-line { height: 10px; width: 60%; border-radius: 999px; background: var(--color-line); }
+.ts-skeleton-logo, .ts-skeleton-line { animation: ts-skeleton-pulse 1.4s ease-in-out infinite; }
+@keyframes ts-skeleton-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ts-skeleton-logo, .ts-skeleton-line { animation: none; } }
+.tools-list .ts-head { padding-left: 0.25rem; }
+.tools-list .ts-row { min-height: 44px; }
+
+@media (min-width: 768px) {
+  .chat-workspace > .workspace-panels { --tools-sidebar-width: 210px; grid-template-columns: var(--tools-sidebar-width) minmax(0, 1fr); transition: grid-template-columns 200ms cubic-bezier(0.33, 1, 0.68, 1); }
+  .chat-workspace > .workspace-panels.tools-collapsed { --tools-sidebar-width: 60px; }
+  .tools-sidebar { border-bottom: 0; border-right: 1px solid var(--color-line); min-height: 0; }
+}
+@media (max-width: 767px) {
+  /* Mobile uses the drawer (variant="list") instead of this sidebar. */
+  .tools-sidebar { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-workspace > .workspace-panels { transition: none; }
+  .ts-toggle, .ts-add, .ts-row, .ts-icon { transition: none; }
+}
+
+.ts-repair { display: block; min-height: 44px; padding: 0.375rem 0.625rem; color: var(--color-primary); font-size: 0.75rem; text-decoration: underline; cursor: pointer; }
+.tools-sidebar[data-collapsed="true"] .ts-repair { width: 44px; padding-inline: 0; font-size: 0.625rem; text-align: center; }
+/* Row: logo + (name over thin progress bar + short %). Details live in the tooltip / aria description. */
+.ts-text { display: grid; flex: 1; min-width: 0; gap: 3px; }
+.ts-meta { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ts-bar { position: relative; flex: 1; min-width: 0; height: 3px; overflow: hidden; border-radius: 999px; background: var(--color-line); }
+.ts-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); transition: width 500ms cubic-bezier(0.33, 1, 0.68, 1); }
+.ts-meta[data-indeterminate] .ts-bar > span { position: absolute; width: 35%; animation: ts-slide 1.4s ease-in-out infinite; }
+.ts-pct { flex-shrink: 0; min-width: 2.25em; text-align: right; font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; color: var(--color-primary); }
+.ts-row .sync-badge-compact { flex-shrink: 0; }
+/* Spinner around the logo while syncing (all variants). */
+.ts-logo { position: relative; }
+.ts-spinner { position: absolute; inset: -6px; display: grid; place-items: center; pointer-events: none; }
+.ts-spinner svg { position: absolute; inset: 0; width: 100%; height: 100%; animation: ts-turn 1s linear infinite; }
+.ts-spinner circle { fill: none; stroke-width: 2.5; }
+.ts-spinner-track { stroke: var(--color-line); }
+.ts-spinner-arc { stroke: var(--color-primary); stroke-linecap: round; stroke-dasharray: 28 113; }
+.ts-spinner-static { display: none; position: absolute; right: -2px; bottom: -2px; padding: 2px; box-sizing: content-box; border-radius: 999px; background: var(--color-sage); color: var(--color-primary); }
+@keyframes ts-slide { from { left: -35%; } to { left: 100%; } }
+@keyframes ts-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .ts-bar > span { transition: none; }
+  .ts-spinner svg { animation: none; display: none; }
+  .ts-spinner-static { display: block; }
+  .ts-meta[data-indeterminate] .ts-bar > span { animation: none; position: static; width: 100%; opacity: 0.35; }
+}

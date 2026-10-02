@@ -23,6 +23,8 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
   const [copied, setCopied] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const selector = useRef<HTMLTextAreaElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const createButton = useRef<HTMLButtonElement>(null);
   const base = `/organizations/${organizationId}`;
   const showError = (caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível atualizar o acesso.");
   const load = useCallback(async () => {
@@ -57,9 +59,13 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
     try { await navigator.clipboard.writeText(secret ?? ""); setCopied(true); }
     catch { setError("Selecione a chave e copie manualmente."); }
   }
-  function closeSecret() { dialog.current?.close(); setSecret(null); setCopied(false); }
+  function closeSecret() {
+    dialog.current?.close(); setSecret(null); setCopied(false);
+    // The create button may still be disabled (busy) or gone: fall back to the section title so focus never lands on <body>.
+    requestAnimationFrame(() => { const button = createButton.current; if (button && !button.disabled) button.focus(); else heading.current?.focus(); });
+  }
   return <section className="mt-6 rounded-lg border border-line-soft bg-white p-6" aria-busy={busy || loading}>
-    <h2 className="text-xl font-semibold">Acesso por API e IA</h2>
+    <h2 ref={heading} tabIndex={-1} className="text-xl font-semibold outline-none">Acesso por API e IA</h2>
     <p className="mt-2 text-sm text-muted-foreground">Conecte automações aos documentos desta organização. As chaves dependem do acesso ativo de quem as criou.</p>
     {error && <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
     {loading ? <p role="status" className="mt-4">Carregando acesso…</p> : <>
@@ -71,7 +77,7 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
         <fieldset><legend>Escopos</legend><div className="flex flex-wrap gap-4">{scopes.map((scope) => <label key={scope} className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={selectedScopes.includes(scope)} onChange={(event) => setSelectedScopes((current) => event.target.checked ? [...current, scope] : current.filter((item) => item !== scope))} />{scope}</label>)}</div><p className="text-xs text-muted-foreground">ask:run permite perguntas quando habilitadas pelo serviço.</p></fieldset>
         <label className="block">Expiração opcional<input type="datetime-local" value={expiry} onChange={(event) => setExpiry(event.target.value)} className="mt-1 block min-h-11 rounded border border-line-soft p-2" /></label>
         <fieldset><legend>Pastas ou arquivos opcionais</legend><p className="mb-2 text-sm text-muted-foreground">Digite @ e o nome para selecionar. Sem seleção, a chave acessa toda a organização.</p><MentionComposer organizationId={organizationId} value={nodeQuery} onChange={setNodeQuery} mentions={nodes} onMentionsChange={setNodes} all={true} providers={[]} disabled={busy} textareaRef={selector} onSubmit={() => {}} /></fieldset>
-        <button disabled={busy || selectedScopes.length === 0 || nodes.length > 20} className="min-h-11 rounded bg-primary px-4 py-2 font-semibold text-white">{busy ? "Salvando…" : "Criar chave"}</button>
+        <button ref={createButton} disabled={busy || selectedScopes.length === 0 || nodes.length > 20} className="min-h-11 rounded bg-primary px-4 py-2 font-semibold text-white">{busy ? "Salvando…" : "Criar chave"}</button>
       </form>
     </>}
     {secret && <dialog ref={dialog} onCancel={closeSecret} onClose={() => setSecret(null)} aria-labelledby="api-secret-title" className="w-full max-w-lg rounded-lg border border-line-soft bg-white p-6 backdrop:bg-black/40"><h3 id="api-secret-title" className="text-xl font-semibold">Copie sua chave agora</h3><p className="mt-2 text-sm">Ela será exibida apenas uma vez. Guarde em um local seguro.</p><textarea readOnly aria-label="Chave de API" value={secret} className="mt-4 w-full break-all rounded border p-3 font-mono text-sm" /><div className="mt-4 flex gap-3"><button type="button" onClick={() => void copy()} className="min-h-11 rounded bg-primary px-4 text-white">{copied ? "Copiada" : "Copiar chave"}</button><button type="button" onClick={closeSecret} className="min-h-11 rounded border px-4">Fechar</button></div></dialog>}

@@ -1,0 +1,38 @@
+.sync-spin { animation: sync-spin 1s linear infinite; }
+@keyframes sync-spin { to { transform: rotate(360deg); } }
+.sync-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; border-radius: 999px; padding: 3px 10px 3px 8px; background: var(--color-sage); color: var(--primary); max-width: 100%; }
+.sync-badge svg { flex-shrink: 0; }
+.sync-badge-compact { padding: 4px; }
+.sync-badge-failed, .sync-badge-partial_failure { background: var(--color-sage-selected); color: var(--color-ink); }
+.sync-badge-failed { background: color-mix(in srgb, var(--color-destructive) 6%, var(--color-panel)); color: color-mix(in srgb, var(--color-destructive) 50%, var(--color-ink)); }
+.sync-badge-idle[hidden] { display: none; }
+.sync-banner { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border-radius: 10px; font-size: 13px; line-height: 1.5; background: var(--color-sage); color: var(--primary); border: 1px solid var(--color-line); }
+.sync-banner svg { flex-shrink: 0; margin-top: 2px; }
+.sync-banner > div { flex: 1; min-width: 0; }
+.sync-banner p { margin: 0; }
+.sync-banner[data-tone="warning"] { background: var(--color-sage-selected); color: var(--color-ink); border-color: var(--color-line); }
+.sync-banner-bar { height: 3px; margin-top: 8px; border-radius: 2px; background: var(--color-line); overflow: hidden; }
+.sync-banner-bar span { display: block; height: 100%; background: var(--primary); transition: width .4s ease-out; }
+.sync-banner-bar { position: relative; }
+.sync-banner-bar[data-indeterminate] span { position: absolute; width: 35%; animation: sync-banner-slide 1.4s ease-in-out infinite; }
+@keyframes sync-banner-slide { from { left: -35%; } to { left: 100%; } }
+.sync-banner-meta { margin-top: 6px !important; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .sync-spin { animation: none; } .sync-banner-bar span { transition: none; } .sync-banner-bar[data-indeterminate] span { animation: none; position: static; width: 100%; opacity: .35; } }
+/* Dense lists (Library tool list): tiny dot / small percent instead of a pill. */
+.sync-dot { display: inline-grid; place-items: center; flex-shrink: 0; width: 16px; height: 16px; margin-inline: 2px; border-radius: 999px; background: var(--primary); color: #fff; }
+.sync-dot-partial_failure { background: #b7791f; }
+.sync-dot-failed { background: var(--color-destructive); }
+.sync-dot-empty { background: var(--color-muted-foreground); }
+.sync-dot-pct { flex-shrink: 0; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; color: var(--primary); }
+/* Compact one-line sync indicator (conversation top bar). Mobile: bar becomes a hairline along the bottom edge. */
+.sync-chip { position: relative; display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; margin-right: auto; padding: 4px 4px 4px 2px; font-size: 12px; font-weight: 500; line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--primary); }
+.sync-chip > svg { flex-shrink: 0; }
+.sync-chip-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sync-chip-bar { position: relative; flex: 0 0 72px; height: 3px; border-radius: 2px; background: var(--color-line); overflow: hidden; }
+.sync-chip-bar span { display: block; height: 100%; background: var(--primary); transition: width .4s ease-out; }
+.sync-chip[data-indeterminate] .sync-chip-bar span { position: absolute; width: 35%; animation: sync-banner-slide 1.4s ease-in-out infinite; }
+@media (max-width: 767px) {
+  .sync-chip { flex: 1; margin: 0; padding: 7px 0 8px 2px; font-size: 11.5px; }
+  .sync-chip-bar { position: absolute; left: -12px; right: -12px; bottom: -1px; flex: none; height: 2px; border-radius: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .sync-chip-bar span { transition: none; } .sync-chip[data-indeterminate] .sync-chip-bar span { animation: none; position: static; width: 100%; opacity: .35; } }

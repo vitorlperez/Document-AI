@@ -1,33 +1,28 @@
-/* The file search panel can be hidden to give the conversation more space. */
-.chat-workspace .workspace-panels { grid-template-columns: minmax(0, 1fr); min-height: 0; flex: 1; }
+/* Chat-centric workspace: tools sidebar (see tools-sidebar.css) + the conversation. */
+.chat-workspace .workspace-panels { min-height: 0; flex: 1; }
 .library-panels { grid-template-columns: minmax(0, 1fr); }
 .library-panels [hidden], .workspace-panels [hidden] { display: none; }
 .library-space-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
 .library-space-error { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0.5rem; padding: 0.75rem; border: 1px solid rgb(253 164 175); border-radius: 0.5rem; background: rgb(255 241 242 / 0.8); color: rgb(159 18 57); font-size: 0.75rem; line-height: 1.35; }
+/* Reading width: log and composer share one centered column. */
+.chat-workspace { --chat-column: 46rem; }
 .chat-workspace .conversation-composer { padding: 10px 24px 12px; }
-.chat-workspace .conversation-composer > div { max-width: 960px; margin-inline: auto; box-shadow: none; }
-.chat-workspace .conversation-composer > p { max-width: 960px; margin-inline: auto; font-size: 11px; }
+.chat-workspace .conversation-composer > div { max-width: var(--chat-column); margin-inline: auto; box-shadow: none; }
+.chat-workspace .conversation-composer > p { max-width: var(--chat-column); margin-inline: auto; font-size: 11px; }
 .chat-workspace [role="log"] { padding-block: 18px; }
-.chat-workspace [role="log"] > .max-w-3xl { max-width: 960px; }
+.chat-workspace [role="log"] > .max-w-3xl { max-width: var(--chat-column); }
+@media (min-width: 768px) {
+  .workspace-shell > .chat-workspace { overflow: hidden; }
+  .chat-workspace .conversation-panel { min-height: 0; overflow: hidden; }
+  .chat-workspace [role="log"] { min-height: 0; overscroll-behavior: contain; }
+}
 @media (min-width: 1024px) {
   .library-panels { grid-template-columns: 240px minmax(0, 1fr); }
   .library-panels > aside:first-child { border-right: 1px solid #dedfd5; border-bottom: 0; }
-  .workspace-shell > .chat-workspace { overflow: hidden; }
-  .chat-workspace .workspace-panels { grid-template-columns: 210px minmax(0, 1fr) 270px; }
-  .chat-workspace .workspace-panels.files-panel-collapsed { grid-template-columns: 210px minmax(0, 1fr); }
-  .chat-workspace .conversation-panel { min-height: 0; overflow: hidden; }
-  .chat-workspace [role="log"] { min-height: 0; overscroll-behavior: contain; }
-  .chat-workspace .sources-panel, .chat-workspace .context-panel { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-  .chat-workspace .sources-panel { border-right: 1px solid #dedfd5; border-bottom: 0; }
-  .chat-workspace .context-panel { border-left: 1px solid #dedfd5; border-top: 0; }
 }
-@media (max-width: 1023px) {
+@media (max-width: 767px) {
   .chat-workspace .workspace-panels { display: flex; flex-direction: column; }
   .chat-workspace .conversation-panel { min-height: 440px; flex: 1 0 auto; }
-  .chat-workspace .context-panel { order: 3; }
-  .chat-workspace .sources-panel { max-height: 260px; overflow-y: auto; flex-shrink: 0; }
-  /* The composer already explains scope; avoid a clipped duplicate in the stacked sidebar. */
-  .chat-workspace .sources-scope { display: none; }
 }
 @media (max-width: 639px) {
   .library-space-actions { grid-template-columns: minmax(0, 1fr); }
@@ -115,4 +110,27 @@
   .library-panels > main { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   .library-panels > main > :not(ul) { flex-shrink: 0; }
   .library-panels > main > ul { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+}
+
+.library-tool-sync { display: grid; gap: 0.375rem; margin-top: 0.75rem; font-size: 0.8125rem; line-height: 1.4; color: var(--color-muted-foreground); font-variant-numeric: tabular-nums; }
+.library-tool-sync p { margin: 0; }
+.library-tool-sync b { color: var(--color-ink); font-weight: 600; }
+.library-tool-progress { overflow: hidden; height: 3px; border-radius: 999px; background: var(--color-line); }
+.library-tool-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); }
+.library-tool-progress[data-indeterminate="true"] > span { animation: library-sync-progress 1.5s ease-in-out infinite alternate; }
+@keyframes library-sync-progress { to { transform: translateX(180%); } }
+@media (prefers-reduced-motion: reduce) { .library-tool-progress > span { animation: none; } }
+.library-panels > aside button:has(> .sync-badge) { flex-wrap: wrap; }
+.library-panels > aside .sync-badge { max-width: 100%; white-space: normal; }
+
+/* Library: drill-down navigation on mobile (list of tools → a tool's folders). Desktop keeps the two-pane layout. */
+.library-back-list { display: none !important; }
+@media (max-width: 767px) {
+  .library-panels[data-mobile-level="list"] > main { display: none; }
+  .library-panels[data-mobile-level="tool"] > aside { display: none; }
+  .library-panels > aside { border-bottom: 0; }
+  .library-panels .library-tool-list { max-height: none !important; padding-inline: 0.75rem; }
+  .library-panels .library-tool-list button { min-height: 48px; }
+  .library-back-list { display: grid !important; place-items: center; }
+  .library-back-desktop { display: none !important; }
 }

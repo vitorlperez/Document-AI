@@ -1,18 +1,28 @@
 "use client";
 
 import { FileText, FolderOpen, X } from "lucide-react";
-import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type RefObject } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ChangeEvent, type KeyboardEvent, type RefObject } from "react";
 import { providerKey, toolLabel } from "./question-scope";
 import "./mention-composer.css";
 
 export type MentionCandidate = { node_id: string; kind: "file" | "folder"; name: string; source_id: string; source_provider: string; path: string; query_status: string };
 type Trigger = { start: number; end: number; query: string; kind: "file" | "folder" | null; command: boolean };
 
+const MOBILE_QUERY = "(max-width: 767px)";
+function useIsMobile() {
+  return useSyncExternalStore(
+    (notify) => { const media = window.matchMedia(MOBILE_QUERY); media.addEventListener("change", notify); return () => media.removeEventListener("change", notify); },
+    () => window.matchMedia(MOBILE_QUERY).matches,
+    () => false,
+  );
+}
+
 export function MentionComposer({ organizationId, value, onChange, mentions, onMentionsChange, all, providers, disabled, textareaRef, onSubmit }: {
   organizationId: string; value: string; onChange: (value: string) => void; mentions: MentionCandidate[];
   onMentionsChange: (items: MentionCandidate[]) => void; all: boolean; providers: string[];
   disabled: boolean; textareaRef: RefObject<HTMLTextAreaElement | null>; onSubmit: () => void;
 }) {
+  const isMobile = useIsMobile();
   const [trigger, setTrigger] = useState<Trigger | null>(null);
   const [items, setItems] = useState<MentionCandidate[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,7 +88,7 @@ export function MentionComposer({ organizationId, value, onChange, mentions, onM
   const options = trigger?.command ? [{ kind: "file" as const, name: "Arquivo" }, { kind: "folder" as const, name: "Pasta" }] : [];
   return <div className="mention-composer">
     {mentions.length > 0 && <div className="mention-chips" aria-label="Arquivos e pastas mencionados">{mentions.map((item) => <span className="mention-chip" key={item.node_id}>{item.kind === "file" ? <FileText size={14} /> : <FolderOpen size={14} />}<span title={item.path}>{item.name}</span><button type="button" disabled={disabled} aria-label={`Remover ${item.name}`} onClick={() => onMentionsChange(mentions.filter((value) => value.node_id !== item.node_id))}><X size={14} /></button></span>)}</div>}
-    <textarea ref={textareaRef} aria-label="Sua pergunta" aria-autocomplete="list" aria-controls={trigger ? "mention-options" : undefined} onCompositionStart={() => { composing.current = true; setTrigger(null); }} onCompositionEnd={(event) => { composing.current = false; update(event as unknown as ChangeEvent<HTMLTextAreaElement>); }} onKeyDown={keyDown} value={value} onChange={update} disabled={disabled} maxLength={1000} rows={2} placeholder="O que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta" className="w-full resize-none border-0 bg-transparent px-2 py-1 text-base outline-none placeholder:text-muted-foreground sm:text-sm" />
+    <textarea ref={textareaRef} aria-label="Sua pergunta" aria-autocomplete="list" aria-controls={trigger ? "mention-options" : undefined} onCompositionStart={() => { composing.current = true; setTrigger(null); }} onCompositionEnd={(event) => { composing.current = false; update(event as unknown as ChangeEvent<HTMLTextAreaElement>); }} onKeyDown={keyDown} value={value} onChange={update} disabled={disabled} maxLength={1000} rows={2} placeholder={isMobile ? "Pergunte sobre seus documentos…" : "O que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta"} className="w-full resize-none border-0 bg-transparent px-2 py-1 text-base outline-none placeholder:text-muted-foreground sm:text-sm" />
     {trigger && <div id="mention-options" className="mention-options" role="listbox" aria-label={trigger.command ? "Comandos de contexto" : "Arquivos e pastas"}>
       {trigger.command ? options.map((option, index) => <button type="button" role="option" aria-selected={active === index} disabled={disabled} key={option.kind} onClick={(event) => { const input = event.currentTarget.closest(".mention-composer")?.querySelector("textarea"); selectCommand(option.kind); requestAnimationFrame(() => { input?.focus(); input?.setSelectionRange(trigger.start + 1, trigger.start + 1); }); }}>{option.kind === "file" ? <FileText size={16} /> : <FolderOpen size={16} />}{option.name}</button>) : <>
         {!trigger.query.trim() && <p>Digite o nome de um arquivo ou pasta para pesquisar.</p>}

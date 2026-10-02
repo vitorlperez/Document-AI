@@ -7,14 +7,18 @@ import "./question-scope.css";
 export type QuestionContext = {
   id: string; name: string; status: string; source_id: string; source_provider: string;
   query_status: "ready" | "no_indexed_content" | "no_compatible_embeddings" | "not_ready";
+  sync_in_progress?: boolean;
 };
 export const providerKey = (provider: string) => provider === "google_drive" ? "google" : provider;
 export const toolLabel = (provider?: string | null) => ({
   google: "Google Drive", google_drive: "Google Drive", onedrive: "OneDrive",
   github: "GitHub", github_markdown: "GitHub Markdown", notion: "Notion", slack: "Slack", teams: "Microsoft Teams",
 })[provider ?? ""] ?? (provider ? provider.replaceAll("_", " ") : "Fonte indexada");
-export const contextReady = (context: QuestionContext) => context.query_status === "ready" && (context.status === "ready" || context.status === "partial_failure");
+export const contextSyncing = (context: QuestionContext) => Boolean(context.sync_in_progress) || context.status === "queued" || context.status === "syncing";
+// Consultável assim que há conteúdo embedado, mesmo com a sincronização ainda em andamento (base parcial).
+export const contextReady = (context: QuestionContext) => context.query_status === "ready" && (context.status === "ready" || context.status === "partial_failure" || contextSyncing(context));
 
+export const PARTIAL_BASE_MESSAGE = "Base parcial: a sincronização ainda está em andamento e as respostas usam o que já está pronto.";
 export const SYNC_PENDING_MESSAGE = "Sincronização em andamento — as respostas ficam disponíveis conforme a indexação termina.";
 
 export function QuestionScopePicker({ syncInProgress = false, all, providers, contexts, loading, disabled, error, onRetry, onChange }: {
@@ -35,7 +39,7 @@ export function QuestionScopePicker({ syncInProgress = false, all, providers, co
   const selected = contexts.filter((item) => all || providers.includes(providerKey(item.source_provider)));
   const ready = selected.filter(contextReady).length;
   const readyTools = new Set(selected.filter(contextReady).map((item) => providerKey(item.source_provider))).size;
-  const pending = selected.length - ready;
+  const pending = selected.filter((item) => !contextReady(item) && !contextSyncing(item)).length;
   const summary = all ? "Todas as ferramentas" : providers.length ? providers.map(toolLabel).join(", ") : "Escolha uma ferramenta";
   return <div ref={root} className="question-scope">
     <button type="button" className="question-scope-trigger" aria-label={`Ferramentas: ${summary}`} aria-expanded={open} aria-controls="question-scope-menu" disabled={disabled || loading || Boolean(error)} onClick={() => setOpen((value) => !value)}>
@@ -48,6 +52,6 @@ export function QuestionScopePicker({ syncInProgress = false, all, providers, co
     </div>}
     <span className="question-scope-count" aria-live="polite">{readyTools} {readyTools === 1 ? "ferramenta disponível" : "ferramentas disponíveis"}</span>
     {error && <div role="alert" className="question-scope-warning">{error} <button type="button" onClick={onRetry}>Tentar novamente</button></div>}
-    {!loading && !error && (ready === 0 || pending > 0) && <p className="question-scope-warning">{ready === 0 ? syncInProgress ? SYNC_PENDING_MESSAGE : "Ainda não há conteúdo pronto para perguntas nesta seleção." : `Cobertura parcial: ${pending} ${pending === 1 ? "pasta indisponível" : "pastas indisponíveis"}.`}</p>}
+    {!loading && !error && (ready === 0 || pending > 0) && !syncInProgress && <p className="question-scope-warning" role="status">{ready === 0 ? "Ainda não há conteúdo pronto nesta seleção." : `${pending} ${pending === 1 ? "pasta indisponível" : "pastas indisponíveis"} nesta seleção.`}</p>}
   </div>;
 }

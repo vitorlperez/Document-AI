@@ -49,3 +49,8 @@
   .product-app .page-surface > .grid > form { padding: 14px; }
   .staff-app > header > div { flex-wrap: wrap; }
 }
+
+/* Top bar of non-chat content cards: flush with the card edge, same height as the chat bar. */
+.product-app .page-surface > .content-topbar {
+  margin: calc(var(--page-panel-space) * -1) calc(var(--page-panel-space) * -1) var(--page-panel-space);
+}
