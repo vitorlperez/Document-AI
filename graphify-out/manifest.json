@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1790956811.0971444,
-    "seen": 1790956868.814373,
+    "mtime": 1790957067.9080482,
+    "seen": 1790957649.677471,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -4554,9 +4554,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/library-screen.tsx": {
-    "mtime": 1790956689.7800026,
-    "seen": 1790956740.872173,
-    "ast_hash": "65969040e5c9c9cdc6b75f38d2d672f9",
+    "mtime": 1790957402.8302317,
+    "seen": 1790957649.6776462,
+    "ast_hash": "85bb7f537acb6b8626ec44d05fd2d19e",
     "semantic_hash": ""
   },
   "frontend/app/product/shared-ui.tsx": {
@@ -4725,6 +4725,18 @@
     "mtime": 1790956427.7355797,
     "seen": 1790956740.872216,
     "ast_hash": "e89f4527bc6955a2c84290070d3a9092",
+    "semantic_hash": ""
+  },
+  "TASK/evidence/m32-onboarding-integrations.md": {
+    "mtime": 1790956928.2409022,
+    "seen": 1790957649.677706,
+    "ast_hash": "52a5cbd1e2f1cc3bf5486fdbf31b1472",
+    "semantic_hash": ""
+  },
+  "TASK/items/F-008.md": {
+    "mtime": 1790957152.0262582,
+    "seen": 1790957649.67771,
+    "ast_hash": "4c15bdb78994112161783319c7ed4f1d",
     "semantic_hash": ""
   }
 }
