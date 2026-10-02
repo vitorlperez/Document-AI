@@ -1,17 +1,17 @@
 # Graph Report - Document-AI  (2026-10-02)
 
 ## Corpus Check
-- 670 files · ~821,414 words
+- 670 files · ~821,790 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 32 file(s) not represented in the graph (top: .css 15, (none) 9, .example 3)
 
 ## Summary
-- 6351 nodes · 18966 edges · 372 communities (273 shown, 99 thin omitted)
+- 6351 nodes · 18968 edges · 372 communities (273 shown, 99 thin omitted)
 - Extraction: 86% EXTRACTED · 14% INFERRED · 0% AMBIGUOUS · INFERRED: 2681 edges (avg confidence: 0.93)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d86141bc`
+- Built from commit: `31418e03`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -1468,11 +1468,11 @@ Nodes (4): Retention decision pending, Security hardening follow-ups, SharePoint
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `DataSource` connect `DataSource` to `test_semantic_questions.py`, `integrations.py`, `notion.py`, `onedrive.py`, `GoogleDriveDocumentProvider`, `test_ingestion_embeddings.py`, `integrations/google_drive.py`, `GoogleDriveOAuthClient`, `test_empty_content_skipped.py`, `sqlalchemy`, `OrganizationScope`, `registry.py`, `Membership`, `ingestion.py`, `questions.py`, `test_notion_integration.py`, `config.py`, `WorkspaceFolder`, `seed_tenant`, `test_ingestion_scheduler.py`, `WorkspaceService`, `OAuthConnectionServiceBase`, `MicrosoftGraphClient`, `owner_org`, `test_text_search_api.py`, `F-053 - Ícones de integração nas raízes da biblioteca`, `User`, `test_google_integrations.py`, `F-029 - Biblioteca dedicada e gestão por escopo`, `F-063 - Integração OneDrive`, `DocumentChunk`?**
-  _High betweenness centrality (0.087) - this node is a cross-community bridge._
-- **Why does `OrganizationScope` connect `OrganizationScope` to `test_semantic_questions.py`, `integrations.py`, `notion.py`, `AIProviderUnavailable`, `onedrive.py`, `test_file_summaries.py`, `DataSource`, `AgentService`, `test_ingestion_embeddings.py`, `integrations/google_drive.py`, `test_empty_content_skipped.py`, `sqlalchemy`, `agent_eval.py`, `Principal`, `similarity.py`, `Membership`, `seed`, `PlatformStaffAccessService`, `agent.py`, `api/auth.py`, `list_sources`, `ingestion.py`, `test_organization_service.py`, `logging.py`, `questions.py`, `test_notion_integration.py`, `OrganizationService`, `config.py`, `WorkspaceFolder`, `CredentialCipher`, `McpAuthMiddleware`, `saved_queries.py`, `test_ingestion_scheduler.py`, `WorkspaceService`, `OAuthConnectionServiceBase`, `test_text_search_api.py`, `User`, `test_agent_flow.py`, `DocumentChunk`?**
-  _High betweenness centrality (0.083) - this node is a cross-community bridge._
+  _High betweenness centrality (0.085) - this node is a cross-community bridge._
 - **Why does `ProviderLogoName` connect `ProviderLogoName` to `types-and-api.tsx`, `onedrive.py`, `integrations-screen.tsx`, `DataSource`, `lucide-react`?**
-  _High betweenness centrality (0.082) - this node is a cross-community bridge._
+  _High betweenness centrality (0.084) - this node is a cross-community bridge._
+- **Why does `OrganizationScope` connect `OrganizationScope` to `test_semantic_questions.py`, `integrations.py`, `notion.py`, `AIProviderUnavailable`, `onedrive.py`, `test_file_summaries.py`, `DataSource`, `AgentService`, `test_ingestion_embeddings.py`, `integrations/google_drive.py`, `test_empty_content_skipped.py`, `sqlalchemy`, `agent_eval.py`, `Principal`, `similarity.py`, `Membership`, `seed`, `PlatformStaffAccessService`, `agent.py`, `api/auth.py`, `list_sources`, `ingestion.py`, `test_organization_service.py`, `logging.py`, `questions.py`, `test_notion_integration.py`, `OrganizationService`, `config.py`, `WorkspaceFolder`, `CredentialCipher`, `McpAuthMiddleware`, `saved_queries.py`, `test_ingestion_scheduler.py`, `WorkspaceService`, `OAuthConnectionServiceBase`, `test_text_search_api.py`, `User`, `test_agent_flow.py`, `DocumentChunk`?**
+  _High betweenness centrality (0.080) - this node is a cross-community bridge._
 - **Are the 77 inferred relationships involving `OrganizationScope` (e.g. with `Principal` and `create_invitation()`) actually correct?**
   _`OrganizationScope` has 77 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 254 inferred relationships involving `select()` (e.g. with `.authenticate()` and `create_key()`) actually correct?**
