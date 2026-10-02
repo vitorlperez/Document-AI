@@ -8506,7 +8506,7 @@
       "file_type": "code",
       "norm_label": "openitem()",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L205"
+      "source_location": "L219"
     },
     {
       "id": "backend_app_ingestion_extraction_cache_purge_cache",
@@ -36358,7 +36358,7 @@
       "file_type": "code",
       "norm_label": "backtotoollist()",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L224"
+      "source_location": "L238"
     },
     {
       "id": "frontend_app_product_library_screen_libraryscreen_confirmresynchistory",
@@ -36370,7 +36370,7 @@
       "file_type": "code",
       "norm_label": "confirmresynchistory()",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L206"
+      "source_location": "L220"
     },
     {
       "id": "frontend_app_product_library_screen_libraryscreen_goback",
@@ -36382,7 +36382,7 @@
       "file_type": "code",
       "norm_label": "goback()",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L225"
+      "source_location": "L239"
     },
     {
       "id": "frontend_app_product_library_screen_libraryscreen_refreshsyncjobs",
@@ -36394,7 +36394,7 @@
       "file_type": "code",
       "norm_label": "refreshsyncjobs()",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L115"
+      "source_location": "L129"
     },
     {
       "id": "frontend_app_product_library_screen_libraryscreen_removefilenode",
@@ -36406,7 +36406,7 @@
       "file_type": "code",
       "norm_label": "removefilenode()",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L235"
+      "source_location": "L249"
     },
     {
       "id": "frontend_app_product_library_screen_libraryscreen_removefolder",
@@ -36418,7 +36418,7 @@
       "file_type": "code",
       "norm_label": "removefolder()",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L227"
+      "source_location": "L241"
     },
     {
       "id": "frontend_app_product_library_screen_libraryscreen_removefoldernode",
@@ -36430,7 +36430,7 @@
       "file_type": "code",
       "norm_label": "removefoldernode()",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L218"
+      "source_location": "L232"
     },
     {
       "id": "frontend_app_product_library_screen_libraryscreen_reprocessfilenode",
@@ -36442,7 +36442,7 @@
       "file_type": "code",
       "norm_label": "reprocessfilenode()",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L228"
+      "source_location": "L242"
     },
     {
       "id": "frontend_app_product_library_screen_libraryscreen_reprocessfoldernode",
@@ -36454,7 +36454,7 @@
       "file_type": "code",
       "norm_label": "reprocessfoldernode()",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L213"
+      "source_location": "L227"
     },
     {
       "id": "frontend_app_product_library_screen_libraryscreen_syncfolder",
@@ -36466,7 +36466,7 @@
       "file_type": "code",
       "norm_label": "syncfolder()",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L226"
+      "source_location": "L240"
     },
     {
       "id": "frontend_app_product_team_staff_restricted",
@@ -123638,7 +123638,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L236",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -123650,7 +123650,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L236",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -123662,7 +123662,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L236",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -123674,7 +123674,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L236",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -123686,7 +123686,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L236",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -123698,7 +123698,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L236",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -123710,7 +123710,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L236",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -123722,7 +123722,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L236",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -123734,7 +123734,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L240",
+      "source_location": "L254",
       "weight": 1.0
     },
     {
@@ -123746,7 +123746,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L241",
+      "source_location": "L255",
       "weight": 1.0
     },
     {
@@ -123758,7 +123758,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L242",
+      "source_location": "L256",
       "weight": 1.0
     },
     {
@@ -123770,7 +123770,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L244",
+      "source_location": "L258",
       "weight": 1.0
     },
     {
@@ -123782,7 +123782,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L244",
+      "source_location": "L258",
       "weight": 1.0
     },
     {
@@ -123794,7 +123794,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L244",
+      "source_location": "L258",
       "weight": 1.0
     },
     {
@@ -123806,7 +123806,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L244",
+      "source_location": "L258",
       "weight": 1.0
     },
     {
@@ -123854,7 +123854,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L56",
+      "source_location": "L67",
       "weight": 1.0
     },
     {
@@ -123866,7 +123866,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L118",
+      "source_location": "L132",
       "weight": 1.0
     },
     {
@@ -123878,7 +123878,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L235",
+      "source_location": "L249",
       "weight": 1.0
     },
     {
@@ -123890,7 +123890,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L227",
+      "source_location": "L241",
       "weight": 1.0
     },
     {
@@ -123902,7 +123902,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L222",
+      "source_location": "L236",
       "weight": 1.0
     },
     {
@@ -123914,7 +123914,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L233",
+      "source_location": "L247",
       "weight": 1.0
     },
     {
@@ -123926,7 +123926,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L215",
+      "source_location": "L229",
       "weight": 1.0
     },
     {
@@ -123938,7 +123938,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L216",
+      "source_location": "L230",
       "weight": 1.0
     },
     {
@@ -123950,7 +123950,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L226",
+      "source_location": "L240",
       "weight": 1.0
     },
     {
@@ -123962,7 +123962,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L226",
+      "source_location": "L240",
       "weight": 1.0
     },
     {
@@ -124022,7 +124022,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/shell.tsx",
-      "source_location": "L40",
+      "source_location": "L41",
       "weight": 1.0
     },
     {
@@ -124034,7 +124034,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/shell.tsx",
-      "source_location": "L42",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -124046,7 +124046,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/shell.tsx",
-      "source_location": "L53",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -129998,7 +129998,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L115",
+      "source_location": "L129",
       "weight": 1.0
     },
     {
@@ -130010,7 +130010,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L205",
+      "source_location": "L219",
       "weight": 1.0
     },
     {
@@ -130022,7 +130022,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L213",
+      "source_location": "L227",
       "weight": 1.0
     },
     {
@@ -130034,7 +130034,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L218",
+      "source_location": "L232",
       "weight": 1.0
     },
     {
@@ -130046,7 +130046,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L226",
+      "source_location": "L240",
       "weight": 1.0
     },
     {
@@ -130058,7 +130058,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L227",
+      "source_location": "L241",
       "weight": 1.0
     },
     {
@@ -130070,7 +130070,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L228",
+      "source_location": "L242",
       "weight": 1.0
     },
     {
@@ -130082,7 +130082,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L235",
+      "source_location": "L249",
       "weight": 1.0
     },
     {
@@ -232843,7 +232843,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L206",
+      "source_location": "L220",
       "weight": 1.0
     },
     {
@@ -232854,7 +232854,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L224",
+      "source_location": "L238",
       "weight": 1.0
     },
     {
@@ -232865,7 +232865,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/app/product/library-screen.tsx",
-      "source_location": "L225",
+      "source_location": "L239",
       "weight": 1.0
     },
     {
@@ -295392,5 +295392,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "6cf1f988a818ececcda3e1c47093c86b0c12fc47"
+  "built_at_commit": "f0bdadd1308a9a0778cbefdb4315105bc1515303"
 }

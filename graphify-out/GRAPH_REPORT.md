@@ -1,7 +1,7 @@
 # Graph Report - Document-AI  (2026-10-02)
 
 ## Corpus Check
-- 665 files · ~819,271 words
+- 665 files · ~819,468 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 31 file(s) not represented in the graph (top: .css 14, (none) 9, .example 3)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `6cf1f988`
+- Built from commit: `f0bdadd1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -1525,10 +1525,10 @@ Nodes (4): 2. Público e hipótese de validação, Cliente inicial, Hipótese, M
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `ProviderLogoName` connect `landing-page.tsx` to `types-and-api.tsx`, `integrations-screen.tsx`, `Membership`?**
+  _High betweenness centrality (0.089) - this node is a cross-community bridge._
+- **Why does `DataSource` connect `DataSource` to `test_semantic_questions.py`, `integrations.py`, `OrganizationScope`, `EmbeddingService`, `RemoteFolder`, `GoogleDriveOAuthClient`, `seed`, `sqlalchemy`, `IngestionService`, `test_pgvector_search.py`, `User`, `sharepoint.py`, `test_onedrive_integration.py`, `test_workspace_folder_management_api.py`, `test_platform_staff_api.py`, `Membership`, `Task A5.2: config, registry, rotas OAuth e ramos da API`, `F-063 - Integração OneDrive`, `seed_tenant`, `questions.py`, `test_notion_integration.py`, `test_postgres_children_and_workspace_listing_use_one_batch_each`, `main.py`, `test_text_search.py`, `WorkspaceFolder`, `WorkspaceService`, `OneDriveConnectionService`, `owner_org`, `schedule_connected_source_reconciliations`, `test_text_search_api.py`, `select`, `F-053 - Ícones de integração nas raízes da biblioteca`, `GoogleDriveDocumentProvider`, `F-029 - Biblioteca dedicada e gestão por escopo`, `_containing_workspaces`, `RetrievalService`?**
   _High betweenness centrality (0.088) - this node is a cross-community bridge._
 - **Why does `OrganizationScope` connect `OrganizationScope` to `test_semantic_questions.py`, `integrations.py`, `AIProviderUnavailable`, `_worker`, `test_file_summaries.py`, `test_content_consolidation.py`, `LibraryNode`, `EmbeddingService`, `RemoteFolder`, `seed`, `sqlalchemy`, `agent_eval.py`, `IngestionService`, `Principal`, `test_pgvector_search.py`, `User`, `test_platform_staff_api.py`, `agent.py`, `Membership`, `Task A5.2: config, registry, rotas OAuth e ramos da API`, `list_sources`, `ingestion.py`, `logging.py`, `questions.py`, `test_notion_integration.py`, `test_profile_retrieval.py`, `api/auth.py`, `main.py`, `PlatformStaffAccessService`, `test_text_search.py`, `WorkspaceFolder`, `saved_queries.py`, `SyncAccessDenied`, `WorkspaceService`, `OneDriveConnectionService`, `test_organization_service.py`, `test_usage_accumulates_by_tenant_month_and_blocks_only_excess_metric`, `schedule_connected_source_reconciliations`, `test_text_search_api.py`, `select`, `DataSource`, `test_similarity_backends.py`, `test_agent_flow.py`, `FakeInvitationSession`, `OrganizationService`, `FASE B — MCP remoto somente leitura (item G) — 9–13 d (com spike)`, `RetrievalService`?**
-  _High betweenness centrality (0.087) - this node is a cross-community bridge._
-- **Why does `DataSource` connect `DataSource` to `test_semantic_questions.py`, `integrations.py`, `OrganizationScope`, `EmbeddingService`, `RemoteFolder`, `GoogleDriveOAuthClient`, `seed`, `sqlalchemy`, `IngestionService`, `test_pgvector_search.py`, `User`, `sharepoint.py`, `test_onedrive_integration.py`, `test_workspace_folder_management_api.py`, `test_platform_staff_api.py`, `Membership`, `Task A5.2: config, registry, rotas OAuth e ramos da API`, `F-063 - Integração OneDrive`, `seed_tenant`, `questions.py`, `test_notion_integration.py`, `test_postgres_children_and_workspace_listing_use_one_batch_each`, `main.py`, `test_text_search.py`, `WorkspaceFolder`, `WorkspaceService`, `OneDriveConnectionService`, `owner_org`, `schedule_connected_source_reconciliations`, `test_text_search_api.py`, `select`, `F-053 - Ícones de integração nas raízes da biblioteca`, `GoogleDriveDocumentProvider`, `F-029 - Biblioteca dedicada e gestão por escopo`, `_containing_workspaces`, `RetrievalService`?**
   _High betweenness centrality (0.087) - this node is a cross-community bridge._
 - **Are the 77 inferred relationships involving `OrganizationScope` (e.g. with `Principal` and `create_invitation()`) actually correct?**
   _`OrganizationScope` has 77 INFERRED edges - model-reasoned connections that need verification._
