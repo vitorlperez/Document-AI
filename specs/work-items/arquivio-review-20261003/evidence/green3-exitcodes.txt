@@ -1,0 +1,6 @@
+revocation exit=0 34 passed in 5.96s
+new exit=0 6 passed in 3.26s
+focused exit=0 135 passed in 9.79s
+unit exit=0 1108 passed, 2 warnings in 29.55s
+api-integration exit=0 258 passed, 20 skipped, 3 warnings in 36.14s
+ruff exit=0 [1;32mAll checks passed![0m

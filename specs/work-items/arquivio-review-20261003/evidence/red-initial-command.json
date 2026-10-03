@@ -1,0 +1,11 @@
+{
+  "cwd": "backend",
+  "command": [
+    ".venv/bin/pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/unit/test_agent_revocation_review.py"
+  ],
+  "exitCode": 1
+}

@@ -1,0 +1,16 @@
+Re-review lote 1b — 2026-10-03 — pane-398
+Diff: agent.py (+269/-36 total) + library/service.py (+36/-?) ; testes novos: test_agent_revocation_moved_file.py (2), test_library_authorized_catalog.py (4)
+GREEN revogação (review+sibling+moved+authorized_catalog) ........ exit 0  40 passed
+GREEN 2 testes novos (moved_file + authorized_catalog) ........... exit 0  6 passed
+stash só de agent.py+service.py:
+  moved_file sem fix ........ 1 failed ("moved listed file: its name reached the classifier"), controle unmoved passa
+  authorized_catalog sem método .. 4 failed
+  review+sibling sem patches .... 20 failed, 14 passed
+stash pop exit 0; cmp agent.py diff IDENTICAL; cmp service.py diff IDENTICAL; stash@{0} restante é alheio
+tests/unit ......... exit 0  1108 passed
+tests/api tests/integration ... exit 0  258 passed, 20 skipped
+ruff (2 prod + 4 testes) ....... exit 0
+Probes /tmp/rv: P1 limpo (OLD/BETA False), P1b negado sem citações, Q1 limpo, Q2 limpo, Q3 ordinais ok, P2 mantido (decisão do dono)
+Medição statements: sem menção 7 (era 10), com menção 13 (era 18), h×1 = h×10; cargas completas de LibraryNode: 1 (era 3)
+Uso entre módulos: agent.py:487 usa authorized_catalog (público); _authorized_catalog_nodes só em service.py:481,503,827 (catalog_children/search + wrapper).
+Ainda privados entre módulos: LibraryService._node_path e _descends_from em agent.py:547,549.

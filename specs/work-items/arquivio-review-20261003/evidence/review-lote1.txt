@@ -1,0 +1,28 @@
+Revisão independente — lote 1 RAG/revogação (Missão 40) — 2026-10-03
+Baseline HEAD a43dbdd; diff: backend/app/knowledge/agent.py (+165/-26). Revisor: pane-398 (oc-conveyor).
+
+COMANDOS (cwd=backend)
+1. .venv/bin/pytest -q -p no:cacheprovider tests/unit/test_agent_revocation_review.py        [COM patch]  exit 0  -> 30 passed
+2. git stash push -- backend/app/knowledge/agent.py                                         exit 0
+3. .venv/bin/pytest -q -p no:cacheprovider tests/unit/test_agent_revocation_review.py        [SEM patch]  exit 1  -> 17 failed, 13 passed
+   falhas: classifier x7 (todos os REVOKED), synthesis x3, current_citations x1 (node_removed_total),
+           answer_rebuilt x4, coverage_unindexed (B1), unavailable_listed_name (B2 payload)
+   passam sem patch (controles): history_preserved x3, adr0007 x3, cross_org, cross_folder, existing_fail_closed + 3 de citations/synthesis
+4. git stash pop                                                                            exit 0
+   cmp <(git diff agent.py antes) <(git diff agent.py depois) -> IDENTICAL; git diff --stat: 165 +, 26 -; stash@{0} restante é alheio (On main: wip-outra-missao...)
+5. .venv/bin/pytest -q -p no:cacheprovider tests/unit                                       exit 0  -> 1098 passed, 2 warnings
+6. .venv/bin/pytest -q -p no:cacheprovider tests/api tests/integration                      exit 0  -> 258 passed, 20 skipped
+7. .venv/bin/pytest -q -p no:cacheprovider (5 suítes focadas do dossiê)                     exit 0  -> 73 passed
+8. .venv/bin/ruff check app/knowledge/agent.py                                              exit 0  -> All checks passed
+9. shasum tests/unit/test_agent_revocation_review.py = 3d1636982f4f9d1e027353eca1170ebb0140129b (igual antes/depois; untracked, mtime 12:59 < agent.py 13:14)
+   git status --short backend -> apenas "M app/knowledge/agent.py" e "?? tests/unit/test_agent_revocation_review.py"
+
+PROBES DO REVISOR (scratch fora do repo: /tmp/rv/test_probe.py)
+P1 pasta irmã: fonte com 2 WorkspaceFolders; pasta com os docs citados vira "disconnected", irmã continua "ready".
+   resolve_question_selection.folder_ids exclui a pasta negada (recuperação de texto NÃO leria BETA),
+   mas _revalidate_memory mantém a resposta antiga: classifier recebeu OLD-WHOLE-ANSWER=True e BETA-SYNTHETIC-DENIED=True
+   (negação só ocorre depois, nas ferramentas -> viola A4 "classificador não pode ter recebido texto derivado negado").
+P2 menção disjunta (resposta cita só B, menção = A): classifier e synthesis.previous_answer recebem o texto de B;
+   resultado final reproduz o texto de B "(fonte 1)". B continua autorizado para o principal (não é ACL negada), mas fora do escopo atual.
+P3 custo: 7 statements por turno sem menção e 15 com menção, constante em history x1 vs x10 (sem N+1);
+   3 cargas completas de LibraryNode da org por turno com menção.

@@ -1,0 +1,163 @@
+FFFFFFFF.FF.F..FFFF.........FF                                           [100%]
+=================================== FAILURES ===================================
+_ test_policy_classifier_never_receives_entire_contaminated_answer[node_removed_partial] _
+tests/unit/test_agent_revocation_review.py:215: in test_policy_classifier_never_receives_entire_contaminated_answer
+    assert OLD_SAFE not in payload, "POLICY F-A: entire previous answer reached classifier"
+E   AssertionError: POLICY F-A: entire previous answer reached classifier
+E   assert 'OLD-WHOLE-A...or de alpha.' not in '[{"question...pt-5-nano"}]'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": ["alpha-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E     ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+_ test_policy_classifier_never_receives_entire_contaminated_answer[node_removed_total] _
+tests/unit/test_agent_revocation_review.py:215: in test_policy_classifier_never_receives_entire_contaminated_answer
+    assert OLD_SAFE not in payload, "POLICY F-A: entire previous answer reached classifier"
+E   AssertionError: POLICY F-A: entire previous answer reached classifier
+E   assert 'OLD-WHOLE-A...or de alpha.' not in '[{"question...pt-5-nano"}]'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": [], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E     ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+_ test_policy_classifier_never_receives_entire_contaminated_answer[document_deindexed] _
+tests/unit/test_agent_revocation_review.py:215: in test_policy_classifier_never_receives_entire_contaminated_answer
+    assert OLD_SAFE not in payload, "POLICY F-A: entire previous answer reached classifier"
+E   AssertionError: POLICY F-A: entire previous answer reached classifier
+E   assert 'OLD-WHOLE-A...or de alpha.' not in '[{"question...pt-5-nano"}]'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": ["alpha-review.pdf", "beta-denied-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E     ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+_ test_policy_classifier_never_receives_entire_contaminated_answer[scope_restricted] _
+tests/unit/test_agent_revocation_review.py:215: in test_policy_classifier_never_receives_entire_contaminated_answer
+    assert OLD_SAFE not in payload, "POLICY F-A: entire previous answer reached classifier"
+E   AssertionError: POLICY F-A: entire previous answer reached classifier
+E   assert 'OLD-WHOLE-A...or de alpha.' not in '[{"question...pt-5-nano"}]'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 1, "previous_answer_listed_files": ["alpha-review.pdf", "beta-denied-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E     ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+_ test_policy_classifier_never_receives_entire_contaminated_answer[folder_denied] _
+tests/unit/test_agent_revocation_review.py:215: in test_policy_classifier_never_receives_entire_contaminated_answer
+    assert OLD_SAFE not in payload, "POLICY F-A: entire previous answer reached classifier"
+E   AssertionError: POLICY F-A: entire previous answer reached classifier
+E   assert 'OLD-WHOLE-A...or de alpha.' not in '[{"question...pt-5-nano"}]'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": ["alpha-review.pdf", "beta-denied-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E     ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+_ test_policy_classifier_never_receives_entire_contaminated_answer[provider_excluded] _
+tests/unit/test_agent_revocation_review.py:215: in test_policy_classifier_never_receives_entire_contaminated_answer
+    assert OLD_SAFE not in payload, "POLICY F-A: entire previous answer reached classifier"
+E   AssertionError: POLICY F-A: entire previous answer reached classifier
+E   assert 'OLD-WHOLE-A...or de alpha.' not in '[{"question...pt-5-nano"}]'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": ["alpha-review.pdf", "beta-denied-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E     ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+_ test_policy_classifier_never_receives_entire_contaminated_answer[membership_inactive] _
+tests/unit/test_agent_revocation_review.py:215: in test_policy_classifier_never_receives_entire_contaminated_answer
+    assert OLD_SAFE not in payload, "POLICY F-A: entire previous answer reached classifier"
+E   AssertionError: POLICY F-A: entire previous answer reached classifier
+E   assert 'OLD-WHOLE-A...or de alpha.' not in '[{"question...pt-5-nano"}]'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": ["alpha-review.pdf", "beta-denied-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E     ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+_ test_policy_synthesis_never_receives_contaminated_previous_answer[node_removed_partial] _
+tests/unit/test_agent_revocation_review.py:226: in test_policy_synthesis_never_receives_contaminated_previous_answer
+    assert OLD_SAFE not in payload.get("previous_answer", ""), "POLICY F-A: entire previous_answer retained"
+E   AssertionError: POLICY F-A: entire previous_answer retained
+E   assert 'OLD-WHOLE-A...or de alpha.' not in 'OLD-WHOLE-A...cio 9M. [2].'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2].
+_ test_policy_synthesis_never_receives_contaminated_previous_answer[document_deindexed] _
+tests/unit/test_agent_revocation_review.py:226: in test_policy_synthesis_never_receives_contaminated_previous_answer
+    assert OLD_SAFE not in payload.get("previous_answer", ""), "POLICY F-A: entire previous_answer retained"
+E   AssertionError: POLICY F-A: entire previous_answer retained
+E   assert 'OLD-WHOLE-A...or de alpha.' not in 'OLD-WHOLE-A...cio 9M. [2].'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2].
+_ test_policy_synthesis_never_receives_contaminated_previous_answer[scope_restricted] _
+tests/unit/test_agent_revocation_review.py:226: in test_policy_synthesis_never_receives_contaminated_previous_answer
+    assert OLD_SAFE not in payload.get("previous_answer", ""), "POLICY F-A: entire previous_answer retained"
+E   AssertionError: POLICY F-A: entire previous_answer retained
+E   assert 'OLD-WHOLE-A...or de alpha.' not in 'OLD-WHOLE-A...cio 9M. [2].'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2].
+_ test_current_citations_and_all_model_evidence_stay_authorized[node_removed_total] _
+tests/unit/test_agent_revocation_review.py:240: in test_current_citations_and_all_model_evidence_stay_authorized
+    assert {source.document_id for source in evidence} <= case.allowed_ids, "F-A: residual index sent to answer model"
+E   AssertionError: F-A: residual index sent to answer model
+E   assert {UUID('565680...9741ab93084')} <= set()
+E     
+E     Extra items in the left set:
+E     UUID('5b9da8c2-d57b-465e-b0fe-e9741ab93084')
+E     UUID('565680d8-f05a-4334-b695-e06b9ca2f029')
+_ test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[node_removed_partial] _
+tests/unit/test_agent_revocation_review.py:254: in test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency
+    assert OLD_SAFE not in (result.answer or ""), "POLICY F-A: old interpretation recirculated"
+E   AssertionError: POLICY F-A: old interpretation recirculated
+E   assert 'OLD-WHOLE-A...or de alpha.' not in 'OLD-WHOLE-A...ictício 9M..'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       OLD-WHOLE-ANSWER: interpretação anterior de alpha. (fonte 1). BETA-SYNTHETIC-DENIED: orçamento fictício 9M..
+_ test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[node_removed_total] _
+tests/unit/test_agent_revocation_review.py:256: in test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency
+    assert {citation.document_id for citation in result.citations} <= case.allowed_ids
+E   AssertionError: assert {UUID('dafc8f...15db0202031')} <= set()
+E     
+E     Extra items in the left set:
+E     UUID('dafc8fca-d69e-469f-9642-b15db0202031')
+_ test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[document_deindexed] _
+tests/unit/test_agent_revocation_review.py:254: in test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency
+    assert OLD_SAFE not in (result.answer or ""), "POLICY F-A: old interpretation recirculated"
+E   AssertionError: POLICY F-A: old interpretation recirculated
+E   assert 'OLD-WHOLE-A...or de alpha.' not in 'OLD-WHOLE-A...ictício 9M..'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       OLD-WHOLE-ANSWER: interpretação anterior de alpha. (fonte 1). BETA-SYNTHETIC-DENIED: orçamento fictício 9M..
+_ test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[scope_restricted] _
+tests/unit/test_agent_revocation_review.py:254: in test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency
+    assert OLD_SAFE not in (result.answer or ""), "POLICY F-A: old interpretation recirculated"
+E   AssertionError: POLICY F-A: old interpretation recirculated
+E   assert 'OLD-WHOLE-A...or de alpha.' not in 'OLD-WHOLE-A...ictício 9M..'
+E     
+E     'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E       OLD-WHOLE-ANSWER: interpretação anterior de alpha. (fonte 1). BETA-SYNTHETIC-DENIED: orçamento fictício 9M..
+_________ test_coverage_listed_unindexed_file_requires_honest_warning __________
+tests/unit/test_agent_revocation_review.py:351: in test_coverage_listed_unindexed_file_requires_honest_warning
+    assert notice, "SPEC F-B: one listed file was omitted without an honest index/coverage warning"
+E   AssertionError: SPEC F-B: one listed file was omitted without an honest index/coverage warning
+E   assert None
+__________ test_unavailable_listed_name_not_disclosed_to_ai_or_error ___________
+tests/unit/test_agent_revocation_review.py:364: in test_unavailable_listed_name_not_disclosed_to_ai_or_error
+    assert "beta-denied-review.pdf" not in json.dumps(provider.classifier_inputs), "F-A/B: unauthorized name in AI payload"
+E   AssertionError: F-A/B: unauthorized name in AI payload
+E   assert 'beta-denied-review.pdf' not in '[{"question...pt-5-nano"}]'
+E     
+E     'beta-denied-review.pdf' is contained here:
+E       quivo)\n- beta-denied-review.pdf (Arquivo)"}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": ["alpha-review.pdf", "beta-denied-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E     ?           ++++++++++++++++++++++
+- generated xml file: /Users/vitorperez/Documents/Document-AI/specs/work-items/arquivio-review-20261003/evidence/red-final.xml -
+=========================== short test summary info ============================
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[node_removed_partial]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[node_removed_total]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[document_deindexed]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[scope_restricted]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[folder_denied]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[provider_excluded]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[membership_inactive]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_synthesis_never_receives_contaminated_previous_answer[node_removed_partial]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_synthesis_never_receives_contaminated_previous_answer[document_deindexed]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_synthesis_never_receives_contaminated_previous_answer[scope_restricted]
+FAILED tests/unit/test_agent_revocation_review.py::test_current_citations_and_all_model_evidence_stay_authorized[node_removed_total]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[node_removed_partial]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[node_removed_total]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[document_deindexed]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[scope_restricted]
+FAILED tests/unit/test_agent_revocation_review.py::test_coverage_listed_unindexed_file_requires_honest_warning
+FAILED tests/unit/test_agent_revocation_review.py::test_unavailable_listed_name_not_disclosed_to_ai_or_error
+17 failed, 13 passed in 2.00s

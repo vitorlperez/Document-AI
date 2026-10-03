@@ -1,0 +1,13 @@
+{
+  "cwd": "backend",
+  "command": [
+    ".venv/bin/pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--tb=short",
+    "--junitxml=../specs/work-items/arquivio-review-20261003/evidence/red.xml",
+    "tests/unit/test_agent_revocation_review.py"
+  ],
+  "exitCode": 1
+}

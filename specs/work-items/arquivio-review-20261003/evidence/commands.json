@@ -1,0 +1,43 @@
+[
+  {
+    "name": "red-final",
+    "cwd": "backend",
+    "command": [
+      ".venv/bin/pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "--tb=short",
+      "--junitxml=../specs/work-items/arquivio-review-20261003/evidence/red-final.xml",
+      "tests/unit/test_agent_revocation_review.py"
+    ],
+    "exitCode": 1
+  },
+  {
+    "name": "lint",
+    "cwd": "backend",
+    "command": [
+      ".venv/bin/ruff",
+      "check",
+      "--no-cache",
+      "tests/unit/test_agent_revocation_review.py"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "existing-focused",
+    "cwd": "backend",
+    "command": [
+      ".venv/bin/pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/unit/test_document_agent.py",
+      "tests/unit/test_agent_flow.py",
+      "tests/unit/test_contextual_followups.py",
+      "tests/unit/test_scoped_access.py",
+      "tests/unit/test_scope_invariant.py"
+    ],
+    "exitCode": 0
+  }
+]
