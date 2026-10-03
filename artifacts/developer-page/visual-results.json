@@ -1,0 +1,47 @@
+[
+  {
+    "name": "desktop-configured",
+    "width": 1440,
+    "role": "owner",
+    "configured": true,
+    "passed": true,
+    "calls": 32,
+    "runtimeErrors": []
+  },
+  {
+    "name": "mobile-configured",
+    "width": 390,
+    "role": "admin",
+    "configured": true,
+    "passed": true,
+    "calls": 38,
+    "runtimeErrors": []
+  },
+  {
+    "name": "desktop-unconfigured",
+    "width": 1440,
+    "role": "owner",
+    "configured": false,
+    "passed": true,
+    "calls": 23,
+    "runtimeErrors": []
+  },
+  {
+    "name": "desktop-member",
+    "width": 1440,
+    "role": "member",
+    "configured": true,
+    "passed": true,
+    "calls": 3,
+    "runtimeErrors": []
+  },
+  {
+    "name": "mobile-member",
+    "width": 390,
+    "role": "member",
+    "configured": true,
+    "passed": true,
+    "calls": 5,
+    "runtimeErrors": []
+  }
+]
