@@ -1,0 +1,4859 @@
+{
+  "$schema": "oc-design-dna/motion.json@v1",
+  "card": "OVKA-536",
+  "source": {
+    "url": "https://dust.tt/",
+    "capturedAt": "2026-10-03T02:02:16.413Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 2,
+    "stripsRequested": true,
+    "captureMode": "stealth-headless",
+    "launchLog": [
+      "stealth-headless: passed (1631 elements, 9 stylesheets)"
+    ]
+  },
+  "keyframes": [
+    {
+      "name": "dotty",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "content": "\"\""
+          }
+        },
+        {
+          "offset": "25%",
+          "props": {
+            "content": "\".\""
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "content": "\"..\""
+          }
+        },
+        {
+          "offset": "75%",
+          "props": {
+            "content": "\"...\""
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "content": "\"\""
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 5
+    },
+    {
+      "name": "initialFade",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "color": "currentcolor"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "color": "rgba(0, 0, 0, 0)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "rainbowLoop",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "background-position-x": "0px",
+            "background-position-y": "center"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "background-position-x": "-200%",
+            "background-position-y": "center"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "grow-down",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "scaleY(0)"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "scaleY(1)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "fade-in",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "0"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "1"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "fade-collapse",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "1",
+            "max-height": "100%"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "0",
+            "max-height": "0px"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "move-square",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "padding-top": "0px",
+            "padding-right": "50%",
+            "padding-bottom": "50%",
+            "padding-left": "0px"
+          }
+        },
+        {
+          "offset": "12.5%",
+          "props": {
+            "padding-top": "0px",
+            "padding-right": "0px",
+            "padding-bottom": "50%",
+            "padding-left": "0px"
+          }
+        },
+        {
+          "offset": "25%",
+          "props": {
+            "padding-top": "0px",
+            "padding-right": "0px",
+            "padding-bottom": "50%",
+            "padding-left": "50%"
+          }
+        },
+        {
+          "offset": "37.5%",
+          "props": {
+            "padding-top": "0px",
+            "padding-right": "0px",
+            "padding-bottom": "0px",
+            "padding-left": "50%"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "padding-top": "50%",
+            "padding-right": "0px",
+            "padding-bottom": "0px",
+            "padding-left": "50%"
+          }
+        },
+        {
+          "offset": "62.5%",
+          "props": {
+            "padding-top": "50%",
+            "padding-right": "0px",
+            "padding-bottom": "0px",
+            "padding-left": "0px"
+          }
+        },
+        {
+          "offset": "75%",
+          "props": {
+            "padding-top": "50%",
+            "padding-right": "50%",
+            "padding-bottom": "0px",
+            "padding-left": "0px"
+          }
+        },
+        {
+          "offset": "87.5%",
+          "props": {
+            "padding-top": "0px",
+            "padding-right": "50%",
+            "padding-bottom": "0px",
+            "padding-left": "0px"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "padding-top": "0px",
+            "padding-right": "50%",
+            "padding-bottom": "50%",
+            "padding-left": "0px"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 9
+    },
+    {
+      "name": "breathing",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "filter": "brightness(105%)"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "filter": "brightness(80%)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "breathing-scale",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "filter": "brightness(105%)",
+            "transform": "scale(1)"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "filter": "brightness(97%)",
+            "transform": "scale(0.95)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "pulse",
+      "offsets": [
+        {
+          "offset": "50%",
+          "props": {
+            "opacity": "0.5"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 1
+    },
+    {
+      "name": "ring-pulse",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "box-shadow": "oklch(0.6539 0.1893 252.74 / 0.3137) 0px 0px"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "box-shadow": "oklch(0.6539 0.1893 252.74 / 0.3137) 0px 0px 0px 3px"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "ring-pulse-soft",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "box-shadow": "oklch(0.6539 0.1893 252.74 / 0) 0px 0px"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "box-shadow": "oklch(0.6539 0.1893 252.74 / 0.2) 0px 0px 0px 2px"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "opacity-pulse",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "opacity": "0.5"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "shimmer",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate(-100%)"
+          }
+        },
+        {
+          "offset": "70%, 100%",
+          "props": {
+            "transform": "translate(100%)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "loading-dot",
+      "offsets": [
+        {
+          "offset": "0%, 20%",
+          "props": {
+            "opacity": "0"
+          }
+        },
+        {
+          "offset": "40%, 100%",
+          "props": {
+            "opacity": "1"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "background-position-spin",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "background-position-x": "center",
+            "background-position-y": "top"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "background-position-x": "center",
+            "background-position-y": "bottom"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "shiny-text",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "background-position-x": "-200%",
+            "background-position-y": "0px"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "background-position-x": "200%",
+            "background-position-y": "0px"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "rainbow",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "background-position-x": "0px",
+            "background-position-y": "center"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "background-position-x": "200%",
+            "background-position-y": "center"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "collapse-down",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "0",
+            "height": "0px"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "height": "var(--radix-collapsible-content-height)",
+            "opacity": "1"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "collapse-up",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "height": "var(--radix-collapsible-content-height)",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "0",
+            "height": "0px"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "puzzle-spinner-water-cycle",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "0",
+            "transform": "translateY(86px)"
+          }
+        },
+        {
+          "offset": "6%",
+          "props": {
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "82%",
+          "props": {
+            "opacity": "1",
+            "transform": "translateY(-14px)"
+          }
+        },
+        {
+          "offset": "94%, 100%",
+          "props": {
+            "opacity": "0",
+            "transform": "translateY(-14px)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 4
+    },
+    {
+      "name": "puzzle-spinner-wave-back",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate(0px)"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate(-64px)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "puzzle-spinner-wave-front",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate(-64px)"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate(0px)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "ssp-spin",
+      "offsets": [
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "rotate(1turn)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 1
+    },
+    {
+      "name": "ssp-dash",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "stroke-dasharray": "2, 98",
+            "stroke-dashoffset": "0"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "stroke-dasharray": "70, 30",
+            "stroke-dashoffset": "-48px"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "stroke-dasharray": "2, 98",
+            "stroke-dashoffset": "-100px"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 3
+    },
+    {
+      "name": "sss-morph",
+      "offsets": [
+        {
+          "offset": "0%, 15%",
+          "props": {
+            "d": "path(\"M 12 3 C 21 3 21 3 21 12 C 21 21 21 21 12 21 C 3 21 3 21 3 12 C 3 3 3 3 12 3 Z\")",
+            "animation-timing-function": "ease-in-out"
+          }
+        },
+        {
+          "offset": "33%, 48%",
+          "props": {
+            "d": "path(\"M 12 3 C 16.97 3 21 7.03 21 12 C 21 16.97 16.97 21 12 21 C 7.03 21 3 16.97 3 12 C 3 7.03 7.03 3 12 3 Z\")",
+            "animation-timing-function": "ease-in-out"
+          }
+        },
+        {
+          "offset": "67%, 82%",
+          "props": {
+            "d": "path(\"M 12 3 C 14.6 7.5 17.19 12 19.79 16.5 C 17.2 16.5 14.6 16.5 12 16.5 C 9.4 16.5 6.6 16.5 4.21 16.5 C 6.8 12 9.4 7.5 12 3 Z\")",
+            "animation-timing-function": "ease-in-out"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "d": "path(\"M 12 3 C 21 3 21 3 21 12 C 21 21 21 21 12 21 C 3 21 3 21 3 12 C 3 3 3 3 12 3 Z\")"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 4
+    },
+    {
+      "name": "bgblink",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "background-color": "var(--color-background)"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "background-color": "var(--color-purple-100)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "glint-pass",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate(-100%)"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate(160%)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "appear",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "0",
+            "width": "0px"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "1",
+            "width": "320px"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "cursor-blink",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "90%",
+          "props": {
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 3
+    },
+    {
+      "name": "fadeout",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "reload",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "opacity": "1",
+            "transform": "scale(1)"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "opacity": "0.4",
+            "transform": "scale(0.99)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "shake",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "transform": "translate(0px)"
+          }
+        },
+        {
+          "offset": "20%, 60%",
+          "props": {
+            "transform": "translate(-1.5px)"
+          }
+        },
+        {
+          "offset": "40%, 80%",
+          "props": {
+            "transform": "translate(1.5px)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 3
+    },
+    {
+      "name": "marquee",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate(0px)"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate(-50%)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "fade-in-up",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "0",
+            "transform": "translateY(10px)"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "1",
+            "transform": "translateY(0px)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "ping",
+      "offsets": [
+        {
+          "offset": "75%, 100%",
+          "props": {
+            "opacity": "0",
+            "transform": "scale(2)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 1
+    },
+    {
+      "name": "enter",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "var(--tw-enter-opacity,1)",
+            "transform": "translate3d(var(--tw-enter-translate-x,0),var(--tw-enter-translate-y,0),0)scale3d(var(--tw-enter-scale,1),var(--tw-enter-scale,1),var(--tw-enter-scale,1))rotate(var(--tw-enter-rotate,0))",
+            "filter": "blur(var(--tw-enter-blur,0))"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 1
+    },
+    {
+      "name": "exit",
+      "offsets": [
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "var(--tw-exit-opacity,1)",
+            "transform": "translate3d(var(--tw-exit-translate-x,0),var(--tw-exit-translate-y,0),0)scale3d(var(--tw-exit-scale,1),var(--tw-exit-scale,1),var(--tw-exit-scale,1))rotate(var(--tw-exit-rotate,0))",
+            "filter": "blur(var(--tw-exit-blur,0))"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 1
+    },
+    {
+      "name": "dust-floor-human-bob",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "transform": "translateY(0px) scale(1)"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "transform": "translateY(-0.8px) scale(1.03)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "dust-floor-status-pulse",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "0.5",
+            "transform": "scale(1)"
+          }
+        },
+        {
+          "offset": "70%",
+          "props": {
+            "opacity": "0",
+            "transform": "scale(2.6)"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "0",
+            "transform": "scale(2.6)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 3
+    },
+    {
+      "name": "dust-floor-emoji-pop",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "scale(0.4)",
+            "opacity": "0"
+          }
+        },
+        {
+          "offset": "60%",
+          "props": {
+            "transform": "scale(1.25)",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "scale(1)",
+            "opacity": "1"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 3
+    },
+    {
+      "name": "dust-floor-agent-pulse",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "transform": "scale(1)"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "transform": "scale(1.03)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "dust-floor-halo",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "opacity": "0.28",
+            "transform": "scale(1)"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "opacity": "0.12",
+            "transform": "scale(1.4)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "dust-floor-trail-dash",
+      "offsets": [
+        {
+          "offset": "100%",
+          "props": {
+            "stroke-dashoffset": "-12"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 1
+    },
+    {
+      "name": "dust-floor-halo-working",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "opacity": "0.34",
+            "transform": "scale(1.05)"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "opacity": "0.14",
+            "transform": "scale(1.6)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "dust-floor-spark-rotate",
+      "offsets": [
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "rotate(360deg)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 1
+    },
+    {
+      "name": "dust-floor-pill-pop",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "scale(0.85)",
+            "opacity": "0"
+          }
+        },
+        {
+          "offset": "60%",
+          "props": {
+            "transform": "scale(1.04)",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "scale(1)",
+            "opacity": "1"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 3
+    },
+    {
+      "name": "dust-floor-caret-blink",
+      "offsets": [
+        {
+          "offset": "50%",
+          "props": {
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 1
+    },
+    {
+      "name": "dust-floor-door-flash",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "0"
+          }
+        },
+        {
+          "offset": "30%",
+          "props": {
+            "opacity": "0.9"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 3
+    },
+    {
+      "name": "dust-floor-door-pulse",
+      "offsets": [
+        {
+          "offset": "0%, 100%",
+          "props": {
+            "opacity": "0.25"
+          }
+        },
+        {
+          "offset": "50%",
+          "props": {
+            "opacity": "0.55"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "swipe-out-left",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "var(--y) translate(var(--swipe-amount-x))",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "var(--y) translate(calc(var(--swipe-amount-x) - 100%))",
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "swipe-out-right",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "var(--y) translate(var(--swipe-amount-x))",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "var(--y) translate(calc(var(--swipe-amount-x) + 100%))",
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "swipe-out-up",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "var(--y) translateY(var(--swipe-amount-y))",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "var(--y) translateY(calc(var(--swipe-amount-y) - 100%))",
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "swipe-out-down",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "var(--y) translateY(var(--swipe-amount-y))",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "var(--y) translateY(calc(var(--swipe-amount-y) + 100%))",
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "sonner-fade-in",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "0",
+            "transform": "scale(0.8)"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "1",
+            "transform": "scale(1)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "sonner-fade-out",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "1",
+            "transform": "scale(1)"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "0",
+            "transform": "scale(0.8)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "sonner-spin",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "opacity": "0.15"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-trusted-marquee",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(-50%, 0px, 0px)"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-quote-slide-in-right",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(48px, 0px, 0px)",
+            "opacity": "0"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-quote-slide-in-left",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(-48px, 0px, 0px)",
+            "opacity": "0"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-quote-slide-out-left",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(-48px, 0px, 0px)",
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-quote-slide-out-right",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(48px, 0px, 0px)",
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-team-slide-in-right",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(48px, 0px, 0px)",
+            "opacity": "0"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-team-slide-in-left",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(-48px, 0px, 0px)",
+            "opacity": "0"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-team-slide-out-left",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(-48px, 0px, 0px)",
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-team-slide-out-right",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(48px, 0px, 0px)",
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-team-img-slide-in-right",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(16px, 0px, 0px)",
+            "opacity": "0"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-team-img-slide-in-left",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(-16px, 0px, 0px)",
+            "opacity": "0"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-team-img-slide-out-left",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(-16px, 0px, 0px)",
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    },
+    {
+      "name": "home-team-img-slide-out-right",
+      "offsets": [
+        {
+          "offset": "0%",
+          "props": {
+            "transform": "translate3d(0px, 0px, 0px)",
+            "opacity": "1"
+          }
+        },
+        {
+          "offset": "100%",
+          "props": {
+            "transform": "translate3d(16px, 0px, 0px)",
+            "opacity": "0"
+          }
+        }
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)",
+      "hits": 2
+    }
+  ],
+  "animations": [
+    {
+      "selector": "g#humans > g:nth-of-type(1) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(2) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(3) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(4) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(5) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(6) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(7) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(8) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(9) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(10) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(11) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(12) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(13) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(14) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(15) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(16) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(17) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(18) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(19) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(20) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(21) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(22) > g",
+      "name": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#a1 > g:nth-of-type(1)",
+      "name": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#a2 > g:nth-of-type(1)",
+      "name": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#a3 > g:nth-of-type(1)",
+      "name": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#a4 > g:nth-of-type(1)",
+      "name": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#a5 > g:nth-of-type(1)",
+      "name": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#a8 > circle",
+      "name": "dust-floor-halo-working",
+      "durationMs": 3400,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#a8 > g:nth-of-type(1)",
+      "name": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#a6 > g:nth-of-type(1)",
+      "name": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#a7 > g:nth-of-type(1)",
+      "name": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card.agent-card > div.chat-card-reactions:nth-of-type(3) > span.react-pill",
+      "name": "dust-floor-pill-pop",
+      "durationMs": 220,
+      "delayMs": 0,
+      "easing": "cubic-bezier(0.34, 1.4, 0.64, 1)",
+      "iterations": "1",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "section.flex.w-full:nth-of-type(1) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2) > div.relative.w-full > div.home-trusted-track.flex",
+      "name": "home-trusted-marquee",
+      "durationMs": 40000,
+      "delayMs": 0,
+      "easing": "linear",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "a.group.flex:nth-of-type(1) > div.flex.flex-1 > div.mb-1.5.flex:nth-of-type(1) > span.relative.flex > span.absolute.inline-flex:nth-of-type(1)",
+      "name": "ping",
+      "durationMs": 1000,
+      "delayMs": 0,
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "a.group.flex:nth-of-type(2) > div.flex.flex-1 > div.mb-1.5.flex:nth-of-type(1) > span.relative.flex > span.absolute.inline-flex:nth-of-type(1)",
+      "name": "ping",
+      "durationMs": 1000,
+      "delayMs": 0,
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "iterations": "infinite",
+      "direction": "normal",
+      "fill": "none",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    }
+  ],
+  "transitions": [
+    {
+      "property": "color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "outline-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "text-decoration-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-from",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-via",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-to",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "all",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 27,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 24,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.22s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 16,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.18s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 16,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 15,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 15,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 15,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "outline-color",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "text-decoration-color",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-from",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-via",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-to",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.18s",
+      "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.08s",
+      "hits": 11,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.08s",
+      "hits": 11,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.08s",
+      "hits": 11,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 9,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 9,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.16s",
+      "hits": 9,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.16s",
+      "hits": 9,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.16s",
+      "hits": 9,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.32s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "filter",
+      "duration": "0.32s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.18s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "x",
+      "duration": "0.26s",
+      "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "width",
+      "duration": "0.26s",
+      "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 6,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 6,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "outline-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "text-decoration-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-from",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-via",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-to",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.3s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.25s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.18s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.18s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.24s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.24s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.24s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "outline-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "text-decoration-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-from",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-via",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-to",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.3s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.3s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.3s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.36s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.36s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.36s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.39s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.39s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.39s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.42s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.42s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.42s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.45s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.45s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.45s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "width",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "height",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "outline-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "text-decoration-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-from",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-via",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-to",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.22s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.22s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.22s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.33s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.33s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.33s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.48s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.48s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.48s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.51s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.51s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.51s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "width",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.32s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.32s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.32s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+      "delay": "0.4s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+      "delay": "0.4s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+      "delay": "0.4s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.2s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.2s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.2s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.6s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.6s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.6s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.6s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    }
+  ],
+  "effects": {
+    "backdropFilter": [
+      {
+        "value": "blur(8px)",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 2
+      }
+    ],
+    "backdropFilterWhere": [
+      {
+        "value": "blur(8px)",
+        "selector": "div.relative.left-1/2 > section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(1) > span.inline-flex.h-7"
+      },
+      {
+        "value": "blur(8px)",
+        "selector": "div#__next > main.z-10.flex > div.max-h-[90vh].overflow-y-auto:nth-of-type(3)"
+      }
+    ],
+    "filter": [
+      {
+        "value": "grayscale(1)",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 31
+      },
+      {
+        "value": "url(\"#room-shadow\")",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 4
+      },
+      {
+        "value": "drop-shadow(rgba(17, 20, 24, 0.25) 0px 2px 6px)",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 1
+      }
+    ],
+    "filterWhere": [
+      {
+        "value": "url(\"#room-shadow\")",
+        "selector": "svg#plan > g:nth-of-type(2)"
+      },
+      {
+        "value": "url(\"#room-shadow\")",
+        "selector": "svg#plan > g:nth-of-type(3)"
+      },
+      {
+        "value": "url(\"#room-shadow\")",
+        "selector": "svg#plan > g:nth-of-type(4)"
+      },
+      {
+        "value": "url(\"#room-shadow\")",
+        "selector": "svg#plan > g:nth-of-type(5)"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a1 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a2 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a3 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a4 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a5 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a6 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a7 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(1) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(1) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(2) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(2) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(3) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(4) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(3) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(5) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(4) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(5) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(6) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(6) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(7) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(7) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      }
+    ],
+    "mixBlendMode": [],
+    "glowShadows": [
+      {
+        "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0 0 0 / 0.05) 0px 0px 0px 1px, oklch(0.1898 0.0094 255.63 / 0.1216) 0px 20px 25px 0px",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 5
+      },
+      {
+        "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(255, 255, 255, 0.08) 0px 0px 1px 0px inset, oklch(0.949 0.003 106.45) 0px 0px 0.5px 0px, oklch(0.206 0.005 67.543 / 0.1) 0px 1px 1.5px 0px",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 4
+      },
+      {
+        "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(255, 255, 255, 0.08) 0px 0px 1px 0px inset, oklch(0.949 0.003 106.45) 0px 0px 0.5px 0px, rgba(0, 0, 0, 0.06) 0px 0.5px 1px 0px",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 2
+      }
+    ],
+    "maskClip": [
+      {
+        "value": "clip-path: circle(20px at 20px 20px)",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 22
+      },
+      {
+        "value": "clip-path: url(\"#agent-clip-a1\")",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 1
+      },
+      {
+        "value": "clip-path: url(\"#agent-clip-a2\")",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 1
+      },
+      {
+        "value": "clip-path: url(\"#agent-clip-a3\")",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 1
+      },
+      {
+        "value": "clip-path: url(\"#agent-clip-a4\")",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 1
+      },
+      {
+        "value": "clip-path: url(\"#agent-clip-a5\")",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 1
+      },
+      {
+        "value": "clip-path: url(\"#agent-clip-a8\")",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 1
+      },
+      {
+        "value": "clip-path: url(\"#agent-clip-a6\")",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 1
+      },
+      {
+        "value": "clip-path: url(\"#agent-clip-a7\")",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 1
+      },
+      {
+        "value": "mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 8%, rgb(0, 0, 0) 92%, rgba(0, 0, 0, 0) 100%)",
+        "confidence": "observed",
+        "source": "https://dust.tt/ (harvest-motion.mjs)",
+        "hits": 1
+      }
+    ],
+    "animatedGradients": []
+  },
+  "reveals": [
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.flex.w-full:nth-of-type(1) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 900,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.97072,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(2) > div.mx-auto.flex > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 900,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.928745,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(2) > div.mx-auto.flex > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 1200,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.98069,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(2) > div.mx-auto.flex > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 1500,
+      "triggerRatio": 0.866,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.919647,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(2) > div.mx-auto.flex > div.home-reveal.home-reveal-photo:nth-of-type(2)",
+      "scrollY": 1500,
+      "triggerRatio": 0.359,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.966362,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(3) > div.mx-auto.w-full > div.home-reveal.home-reveal-up",
+      "scrollY": 1800,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.996618,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 2100,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.92871,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 2400,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.973821,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 2700,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.902866,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.grid.grid-cols-1:nth-of-type(2) > div.relative:nth-of-type(1) > article.home-reveal.home-reveal-up",
+      "scrollY": 2700,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.993844,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.grid.grid-cols-1:nth-of-type(2) > div.relative:nth-of-type(2) > article.home-reveal.home-reveal-up",
+      "scrollY": 2700,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.965633,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.grid.grid-cols-1:nth-of-type(2) > div.relative:nth-of-type(3) > article.home-reveal.home-reveal-up",
+      "scrollY": 3000,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.90291,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.grid.grid-cols-1:nth-of-type(2) > div.relative:nth-of-type(4) > article.home-reveal.home-reveal-up",
+      "scrollY": 3300,
+      "triggerRatio": 0.781,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.96907,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 3600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.993828,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 3600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.96559,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 3900,
+      "triggerRatio": 0.932,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.902823,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.flex.w-full:nth-of-type(1) > figure.home-reveal.home-reveal-up",
+      "scrollY": 4200,
+      "triggerRatio": 0.313,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.959993,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.home-reveal.home-reveal-photo:nth-of-type(2)",
+      "scrollY": 3900,
+      "triggerRatio": 0.629,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.959711,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(6) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 4200,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.990099,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(6) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 4500,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.955967,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(6) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 4800,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.991707,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(6) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 5100,
+      "triggerRatio": 0.072,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.978094,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(1) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(1)",
+      "scrollY": 5100,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.928698,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(1) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(2)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.994471,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(1) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(3)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.987369,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(1) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(4)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.976733,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(2) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(1)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.987369,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(2) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(2)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.976733,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(2) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(3)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.961937,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(2) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(4)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.942192,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(3) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(1)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.961937,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(3) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(2)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.942192,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(3) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(3)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.916498,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(3) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(4)",
+      "scrollY": 5700,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.991701,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 4800,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.928704,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 5400,
+      "triggerRatio": 0.754,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.973835,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 5400,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.919696,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 5700,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.97671,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 6000,
+      "triggerRatio": 0.56,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.909808,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(8) > div.mx-auto.w-full > div.flex.flex-col > div.flex.flex-col > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 6000,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.913188,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(8) > div.mx-auto.w-full > div.flex.flex-col > div.flex.flex-col > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 6600,
+      "triggerRatio": 0.791,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.973847,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(8) > div.mx-auto.w-full > div.flex.flex-col > div.flex.flex-col > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 6600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.91972,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.mx-auto.w-full > div.flex.flex-col > ul.flex.w-full > li:nth-of-type(1) > div.home-reveal.home-reveal-up",
+      "scrollY": 6000,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.913188,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.mx-auto.w-full > div.flex.flex-col > ul.flex.w-full > li:nth-of-type(2) > div.home-reveal.home-reveal-up",
+      "scrollY": 6600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.973847,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.mx-auto.w-full > div.flex.flex-col > ul.flex.w-full > li:nth-of-type(3) > div.home-reveal.home-reveal-up",
+      "scrollY": 6600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.91972,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 6600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.928766,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 6900,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.97385,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(2) > h1.m-0.max-w-[920px] > em.home-reveal.home-reveal-running",
+      "scrollY": 7500,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0.35,
+      "to": 0.957845,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 7500,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.990107,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(4)",
+      "scrollY": 7500,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.942206,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    }
+  ],
+  "stagger": [
+    {
+      "selector": "section.w-full > div.flex.flex-col > section.relative.left-1/2 > div.relative.mx-auto > div.z-10.flex:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans",
+      "stepMs": 370,
+      "count": 22,
+      "delaysMs": [
+        0,
+        370,
+        740,
+        1110,
+        1480,
+        1850,
+        2220,
+        2590,
+        2960,
+        3330,
+        3700,
+        4070.0000000000005,
+        4440,
+        4810,
+        180,
+        550,
+        920,
+        1290,
+        1660,
+        2029.9999999999998,
+        2400,
+        2770
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(2) > div.mx-auto.flex > div.flex.w-full:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.flex.w-full:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 4,
+      "delaysMs": [
+        0,
+        80,
+        160,
+        240
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(6) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(1) > ul.m-0.flex",
+      "stepMs": 30,
+      "count": 4,
+      "delaysMs": [
+        300,
+        330,
+        360,
+        390
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(2) > ul.m-0.flex",
+      "stepMs": 30,
+      "count": 4,
+      "delaysMs": [
+        360,
+        390,
+        420,
+        450
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(3) > ul.m-0.flex",
+      "stepMs": 30,
+      "count": 4,
+      "delaysMs": [
+        420,
+        450,
+        480,
+        510
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(8) > div.mx-auto.w-full > div.flex.flex-col > div.flex.flex-col",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    }
+  ],
+  "scale": {
+    "durations": [
+      {
+        "value": "0.1s",
+        "hits": 336
+      },
+      {
+        "value": "0.5s",
+        "hits": 165
+      },
+      {
+        "value": "0.15s",
+        "hits": 152
+      },
+      {
+        "value": "0.2s",
+        "hits": 98
+      },
+      {
+        "value": "0.3s",
+        "hits": 96
+      },
+      {
+        "value": "0.18s",
+        "hits": 42
+      },
+      {
+        "value": "0.22s",
+        "hits": 17
+      },
+      {
+        "value": "0.32s",
+        "hits": 16
+      },
+      {
+        "value": "0.26s",
+        "hits": 16
+      },
+      {
+        "value": "4.8s",
+        "hits": 11
+      },
+      {
+        "value": "3.6s",
+        "hits": 11
+      },
+      {
+        "value": "0.7s",
+        "hits": 9
+      },
+      {
+        "value": "4.6s",
+        "hits": 8
+      },
+      {
+        "value": "0.25s",
+        "hits": 4
+      },
+      {
+        "value": "0.6s",
+        "hits": 4
+      },
+      {
+        "value": "1s",
+        "hits": 2
+      },
+      {
+        "value": "3.4s",
+        "hits": 1
+      },
+      {
+        "value": "40s",
+        "hits": 1
+      }
+    ],
+    "easings": [
+      {
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "hits": 532
+      },
+      {
+        "value": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+        "hits": 174
+      },
+      {
+        "value": "cubic-bezier(0, 0, 0.2, 1)",
+        "hits": 141
+      },
+      {
+        "value": "ease",
+        "hits": 64
+      },
+      {
+        "value": "ease-in-out",
+        "hits": 31
+      },
+      {
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "hits": 16
+      },
+      {
+        "value": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+        "hits": 15
+      },
+      {
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "hits": 14
+      },
+      {
+        "value": "cubic-bezier(0.34, 1.4, 0.64, 1)",
+        "hits": 1
+      },
+      {
+        "value": "linear",
+        "hits": 1
+      }
+    ],
+    "delays": []
+  },
+  "reducedMotion": {
+    "ruleCount": 35,
+    "sample": [
+      ".motion-safe\\:animate-opacity-pulse { animation: var(--animate-opacity-pulse); }",
+      ".motion-safe\\:animate-pulse { animation: var(--animate-pulse); }",
+      ".motion-safe\\:transition-\\[box-shadow\\,border-color\\] { transition-property: box-shadow, border-color; transition-timing-function: var(--tw-ease,var(--default-t",
+      ".motion-safe\\:transition-\\[left\\,width\\] { transition-property: left, width; transition-timing-function: var(--tw-ease,var(--default-transition-timing-function)",
+      ".motion-safe\\:transition-colors { transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-",
+      ".motion-safe\\:duration-200 { --tw-duration: .2s; transition-duration: 0.2s; }",
+      ".motion-safe\\:duration-\\[220ms\\] { --tw-duration: .22s; transition-duration: 0.22s; }",
+      ".motion-safe\\:ease-out { --tw-ease: var(--ease-out); transition-timing-function: var(--ease-out); }",
+      ".motion-reduce\\:hidden { display: none; }",
+      ".motion-reduce\\:translate-x-0 { --tw-translate-x: calc(var(--spacing) * 0); translate: var(--tw-translate-x) var(--tw-translate-y); }",
+      ".motion-reduce\\:translate-y-0 { --tw-translate-y: calc(var(--spacing) * 0); translate: var(--tw-translate-x) var(--tw-translate-y); }",
+      ".motion-reduce\\:transform-none { transform: none; }",
+      ".motion-reduce\\:animate-none { animation: auto ease 0s 1 normal none running none; }",
+      ".motion-reduce\\:transition-opacity { transition-property: opacity; transition-timing-function: var(--tw-ease,var(--default-transition-timing-function)); transit",
+      ".motion-reduce\\:transition-none { transition-property: none; }",
+      ".motion-reduce\\:before\\:hidden::before { content: var(--tw-content); display: none; }",
+      ".motion-safe\\:\\[\\&_tr\\[data-row\\=feature\\]\\]\\:transition-opacity tr[data-row=\"feature\"] { transition-property: opacity; transition-timing-function: var(--tw-eas",
+      ".motion-safe\\:\\[\\&_tr\\[data-row\\=feature\\]\\]\\:duration-200 tr[data-row=\"feature\"] { --tw-duration: .2s; transition-duration: 0.2s; }",
+      ".motion-safe\\:\\[\\&_tr\\[data-row\\=model\\]\\]\\:transition-opacity tr[data-row=\"model\"] { transition-property: opacity; transition-timing-function: var(--tw-ease,va",
+      ".motion-safe\\:\\[\\&_tr\\[data-row\\=model\\]\\]\\:duration-200 tr[data-row=\"model\"] { --tw-duration: .2s; transition-duration: 0.2s; }",
+      ".motion-reduce\\:\\[\\&\\>span\\:has\\(\\>\\[role\\=slider\\]\\)\\]\\:transition-none > span:has(> [role=\"slider\"]) { transition-property: none; }",
+      ".glint-sweep, .glint-sweep-hover { will-change: auto; animation: auto ease 0s 1 normal none running none; display: none; }",
+      ".glint-ring { will-change: auto; }",
+      ".puzzle-spinner-back-wave, .puzzle-spinner-front-wave, .puzzle-spinner-water-cycle { animation: auto ease 0s 1 normal none running none; }",
+      ".puzzle-spinner-water-cycle { opacity: 1; transform: translateY(18px); }",
+      ".ssp-arc, .ssp-g, .sss-p { animation: auto ease 0s 1 normal none running none; }",
+      ".dust-floor-host .human-body, .dust-floor-host .human.sway .human-body, .dust-floor-host .status-online-pulse, .dust-floor-host .activity-emoji.pop, .dust-floor",
+      "[data-sonner-toast], [data-sonner-toast] > *, .sonner-loading-bar { transition: none !important; animation: auto ease 0s 1 normal none running none !important; ",
+      ".home-reveal, .home-reveal-up, .home-reveal-right, .home-reveal-photo, .home-reveal-running { opacity: 1; transform: none; letter-spacing: normal; transition: n",
+      ".home-trusted-track { animation: auto ease 0s 1 normal none running none; }",
+      ".home-trusted-chip { transition: none; }",
+      ".home-quote-slide { animation: auto ease 0s 1 normal none running none; opacity: 1; transform: none; }",
+      ".home-team-slide, .home-team-img-slide { animation: auto ease 0s 1 normal none running none; opacity: 1; transform: none; }"
+    ],
+    "confidence": "observed",
+    "source": "https://dust.tt/ (harvest-motion.mjs)",
+    "respected": true
+  },
+  "canvas": {
+    "present": false,
+    "count": 0,
+    "elements": [],
+    "contexts": [
+      "2d",
+      "webgl"
+    ],
+    "libs": [],
+    "confidence": "observed",
+    "source": "https://dust.tt/ (harvest-motion.mjs) — getContext hook installed before page scripts",
+    "note": "no <canvas> on this page"
+  },
+  "jsDriven": {
+    "waapiCallCount": 10,
+    "waapiSample": [
+      {
+        "tag": "div",
+        "cls": "chat-card",
+        "keyframes": [
+          {
+            "transform": "translateX(-50%) scale(0.96)",
+            "opacity": 0
+          },
+          {
+            "transform": "translateX(-50%) scale(1)",
+            "opacity": 1
+          }
+        ],
+        "options": {
+          "duration": 220,
+          "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+          "fill": "forwards"
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "dust-floor-fly-emoji",
+        "keyframes": [
+          {
+            "opacity": 0,
+            "transform": "translate(-50%,-50%) translate(0px,0px) scale(0.6)"
+          },
+          {
+            "opacity": 1,
+            "transform": "translate(-50%,-50%) translate(0px,0px) scale(1.1)",
+            "offset": 0.2
+          },
+          {
+            "transform": "translate(-50%,-50%) translate(-78.88070678710938px,-71.90472412109375px) scale(1.05)",
+            "offset": 0.55
+          },
+          {
+            "opacity": 1,
+            "transform": "translate(-50%,-50%) translate(-157.76141357421875px,-11.90472412109375px) scale(0.8)"
+          }
+        ],
+        "options": {
+          "duration": 700,
+          "easing": "cubic-bezier(.4,0,.2,1)",
+          "fill": "forwards"
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "dust-floor-fly-emoji",
+        "keyframes": [
+          {
+            "opacity": 0,
+            "transform": "translate(-50%,-50%) translate(0px,0px) scale(0.6)"
+          },
+          {
+            "opacity": 1,
+            "transform": "translate(-50%,-50%) translate(0px,0px) scale(1.1)",
+            "offset": 0.2
+          },
+          {
+            "transform": "translate(-50%,-50%) translate(-22.843780517578125px,-188.07098388671875px) scale(1.05)",
+            "offset": 0.55
+          },
+          {
+            "opacity": 1,
+            "transform": "translate(-50%,-50%) translate(-45.68756103515625px,-128.07098388671875px) scale(0.8)"
+          }
+        ],
+        "options": {
+          "duration": 700,
+          "easing": "cubic-bezier(.4,0,.2,1)",
+          "fill": "forwards"
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "dust-floor-fly-emoji",
+        "keyframes": [
+          {
+            "opacity": 0,
+            "transform": "translate(-50%,-50%) translate(0px,0px) scale(0.6)"
+          },
+          {
+            "opacity": 1,
+            "transform": "translate(-50%,-50%) translate(0px,0px) scale(1.1)",
+            "offset": 0.2
+          },
+          {
+            "transform": "translate(-50%,-50%) translate(-152.84945678710938px,-172.78677368164062px) scale(1.05)",
+            "offset": 0.55
+          },
+          {
+            "opacity": 1,
+            "transform": "translate(-50%,-50%) translate(-305.69891357421875px,-112.78677368164062px) scale(0.8)"
+          }
+        ],
+        "options": {
+          "duration": 700,
+          "easing": "cubic-bezier(.4,0,.2,1)",
+          "fill": "forwards"
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "chat-card",
+        "keyframes": [
+          {
+            "opacity": 1,
+            "transform": "translateX(-50%) scale(1)"
+          },
+          {
+            "opacity": 0,
+            "transform": "translateX(-50%) scale(0.96)"
+          }
+        ],
+        "options": {
+          "duration": 180,
+          "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+          "fill": "forwards"
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "chat-card",
+        "keyframes": [
+          {
+            "transform": "translateX(-50%) scale(0.96)",
+            "opacity": 0
+          },
+          {
+            "transform": "translateX(-50%) scale(1)",
+            "opacity": 1
+          }
+        ],
+        "options": {
+          "duration": 220,
+          "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+          "fill": "forwards"
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "chat-card",
+        "keyframes": [
+          {
+            "opacity": 1,
+            "transform": "translateX(-50%) scale(1)"
+          },
+          {
+            "opacity": 0,
+            "transform": "translateX(-50%) scale(0.96)"
+          }
+        ],
+        "options": {
+          "duration": 180,
+          "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+          "fill": "forwards"
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "chat-card agent-card",
+        "keyframes": [
+          {
+            "transform": "translateX(-50%) scale(0.96)",
+            "opacity": 0
+          },
+          {
+            "transform": "translateX(-50%) scale(1)",
+            "opacity": 1
+          }
+        ],
+        "options": {
+          "duration": 220,
+          "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+          "fill": "forwards"
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "dust-floor-fly-emoji",
+        "keyframes": [
+          {
+            "opacity": 0,
+            "transform": "translate(-50%,-50%) translate(0px,0px) scale(0.6)"
+          },
+          {
+            "opacity": 1,
+            "transform": "translate(-50%,-50%) translate(0px,0px) scale(1.1)",
+            "offset": 0.2
+          },
+          {
+            "transform": "translate(-50%,-50%) translate(-31.809646606445312px,-89.91357421875px) scale(1.05)",
+            "offset": 0.55
+          },
+          {
+            "opacity": 1,
+            "transform": "translate(-50%,-50%) translate(-63.619293212890625px,-29.91357421875px) scale(0.8)"
+          }
+        ],
+        "options": {
+          "duration": 700,
+          "easing": "cubic-bezier(.4,0,.2,1)",
+          "fill": "forwards"
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "dust-floor-fly-emoji",
+        "keyframes": [
+          {
+            "opacity": 0,
+            "transform": "translate(-50%,-50%) translate(0px,0px) scale(0.6)"
+          },
+          {
+            "opacity": 1,
+            "transform": "translate(-50%,-50%) translate(0px,0px) scale(1.1)",
+            "offset": 0.2
+          },
+          {
+            "transform": "translate(-50%,-50%) translate(24.227279663085938px,-206.185302734375px) scale(1.05)",
+            "offset": 0.55
+          },
+          {
+            "opacity": 1,
+            "transform": "translate(-50%,-50%) translate(48.454559326171875px,-146.185302734375px) scale(0.8)"
+          }
+        ],
+        "options": {
+          "duration": 700,
+          "easing": "cubic-bezier(.4,0,.2,1)",
+          "fill": "forwards"
+        }
+      }
+    ],
+    "intersectionObservers": [
+      {
+        "threshold": null,
+        "rootMargin": "200px"
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": null,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      },
+      {
+        "threshold": 0.15,
+        "rootMargin": null
+      }
+    ],
+    "confidence": "observed",
+    "source": "https://dust.tt/ (harvest-motion.mjs) — Element.animate + IntersectionObserver hooks"
+  },
+  "frameStrips": [
+    {
+      "name": "home-trusted-marquee",
+      "selector": "section.flex.w-full:nth-of-type(1) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2) > div.relative.w-full > div.home-trusted-track.flex",
+      "durationMs": 40000,
+      "frames": [
+        "screenshots/motion/home-trusted-marquee-t000.png",
+        "screenshots/motion/home-trusted-marquee-t025.png",
+        "screenshots/motion/home-trusted-marquee-t050.png",
+        "screenshots/motion/home-trusted-marquee-t075.png",
+        "screenshots/motion/home-trusted-marquee-t100.png"
+      ],
+      "distinctFrames": 2,
+      "proofOfMotion": true
+    }
+  ],
+  "risks": []
+}

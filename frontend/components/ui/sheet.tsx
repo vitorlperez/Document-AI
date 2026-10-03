@@ -49,17 +49,29 @@ function SheetContent({
   children,
   side = "right",
   showCloseButton = true,
+  motionProfile,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
+  /** Opt-in: "arquivio" swaps the default slide utilities for the app's short motion (interface-motion.css). */
+  motionProfile?: "arquivio"
 }) {
+  const arquivio = motionProfile === "arquivio"
   return (
     <SheetPortal>
-      <SheetOverlay />
+      {arquivio ? <SheetPrimitive.Overlay data-slot="sheet-overlay" data-arquivio-motion="sheet-backdrop" className="fixed inset-0 z-50 bg-black/50" /> : <SheetOverlay />}
       <SheetPrimitive.Content
         data-slot="sheet-content"
-        className={cn(
+        data-arquivio-motion={arquivio ? "sheet-panel" : undefined}
+        className={arquivio ? cn(
+          "fixed z-50 flex flex-col gap-4 bg-background shadow-lg",
+          side === "right" && "inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
+          side === "left" && "inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
+          side === "top" && "inset-x-0 top-0 h-auto border-b",
+          side === "bottom" && "inset-x-0 bottom-0 h-auto border-t",
+          className
+        ) : cn(
           "fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500",
           side === "right" &&
             "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",

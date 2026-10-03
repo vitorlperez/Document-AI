@@ -1,0 +1,850 @@
+{
+  "url": "http://127.0.0.1:5181/",
+  "mode": "real public runtime; no route/mock/interception; fresh browser context",
+  "checks": [
+    {
+      "name": "unmocked root response",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "anonymous real GET /api/session is 200 null",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "body": "null",
+        "origin": "http://127.0.0.1:5181",
+        "method": "GET"
+      }
+    },
+    {
+      "name": "fresh context has no cookies",
+      "ok": true,
+      "detail": {
+        "count": 0
+      }
+    },
+    {
+      "name": "public LP renders with no session alert",
+      "ok": true,
+      "detail": {
+        "title": "A resposta está nos arquivos.\nAgora você sabe onde.",
+        "alertCount": 0,
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "true"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "false"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": 7,
+        "integrations": [
+          "Google Drive",
+          "OneDrive",
+          "Notion",
+          "SharePoint"
+        ],
+        "fontDisplay": true,
+        "fontBody": true,
+        "fontFaces": [
+          {
+            "family": "Arquivio LP Display",
+            "status": "loaded",
+            "weight": "200 800"
+          },
+          {
+            "family": "Arquivio LP Text",
+            "status": "loaded",
+            "weight": "100 700"
+          }
+        ],
+        "responseY": 475,
+        "sourceY": 575,
+        "live": "polite",
+        "cookieCount": 0
+      }
+    },
+    {
+      "name": "three cases, 7 FAQs, four integrations, stable live region",
+      "ok": true,
+      "detail": {
+        "title": "A resposta está nos arquivos.\nAgora você sabe onde.",
+        "alertCount": 0,
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "true"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "false"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": 7,
+        "integrations": [
+          "Google Drive",
+          "OneDrive",
+          "Notion",
+          "SharePoint"
+        ],
+        "fontDisplay": true,
+        "fontBody": true,
+        "fontFaces": [
+          {
+            "family": "Arquivio LP Display",
+            "status": "loaded",
+            "weight": "200 800"
+          },
+          {
+            "family": "Arquivio LP Text",
+            "status": "loaded",
+            "weight": "100 700"
+          }
+        ],
+        "responseY": 475,
+        "sourceY": 575,
+        "live": "polite",
+        "cookieCount": 0
+      }
+    },
+    {
+      "name": "both local fonts loaded",
+      "ok": true,
+      "detail": {
+        "display": true,
+        "body": true,
+        "assets": [
+          {
+            "path": "/landing/fonts/ibm-plex-sans-latin-var.woff2",
+            "status": 200,
+            "contentType": "font/woff2"
+          },
+          {
+            "path": "/landing/fonts/manrope-latin-var.woff2",
+            "status": 200,
+            "contentType": "font/woff2"
+          },
+          {
+            "path": "/landing/document-context.webp",
+            "status": 200,
+            "contentType": "image/webp"
+          }
+        ]
+      }
+    },
+    {
+      "name": "responsive five viewports: no x overflow and no I-01/text overlap",
+      "ok": true,
+      "detail": [
+        {
+          "width": 375,
+          "height": 812,
+          "overflow": false,
+          "grid": {
+            "display": "grid",
+            "columns": "343px",
+            "gap": "20px"
+          },
+          "responseY": 811,
+          "sourceY": 905,
+          "fontDisplay": true,
+          "fontBody": true,
+          "artOverlap": [],
+          "targetMin": 44,
+          "smallTargets": [],
+          "textSizes": {
+            "chat": 16,
+            "warning": 13
+          },
+          "reduced": false,
+          "storyArt": {
+            "left": 16,
+            "top": 2751.953125,
+            "width": 212.65625,
+            "height": 159.484375
+          }
+        },
+        {
+          "width": 390,
+          "height": 844,
+          "overflow": false,
+          "grid": {
+            "display": "grid",
+            "columns": "358px",
+            "gap": "20px"
+          },
+          "responseY": 799,
+          "sourceY": 893,
+          "fontDisplay": true,
+          "fontBody": true,
+          "artOverlap": [],
+          "targetMin": 44,
+          "smallTargets": [],
+          "textSizes": {
+            "chat": 16,
+            "warning": 13
+          },
+          "reduced": false,
+          "storyArt": {
+            "left": 16,
+            "top": 2689.078125,
+            "width": 221.953125,
+            "height": 166.453125
+          }
+        },
+        {
+          "width": 768,
+          "height": 1024,
+          "overflow": false,
+          "grid": {
+            "display": "grid",
+            "columns": "704px",
+            "gap": "40px"
+          },
+          "responseY": 894,
+          "sourceY": 993,
+          "fontDisplay": true,
+          "fontBody": true,
+          "artOverlap": [],
+          "targetMin": 44,
+          "smallTargets": [],
+          "textSizes": {
+            "chat": 16,
+            "warning": 13
+          },
+          "reduced": false,
+          "storyArt": {
+            "left": 32,
+            "top": 2403.859375,
+            "width": 240,
+            "height": 180
+          }
+        },
+        {
+          "width": 1024,
+          "height": 900,
+          "overflow": false,
+          "grid": {
+            "display": "grid",
+            "columns": "386.391px 533.609px",
+            "gap": "40px"
+          },
+          "responseY": 494,
+          "sourceY": 594,
+          "fontDisplay": true,
+          "fontBody": true,
+          "artOverlap": [],
+          "targetMin": 44,
+          "smallTargets": [],
+          "textSizes": {
+            "chat": 16,
+            "warning": 13
+          },
+          "reduced": false,
+          "storyArt": {
+            "left": 32,
+            "top": 2383,
+            "width": 320,
+            "height": 240
+          }
+        },
+        {
+          "width": 1440,
+          "height": 900,
+          "overflow": false,
+          "grid": {
+            "display": "grid",
+            "columns": "517.438px 714.562px",
+            "gap": "48px"
+          },
+          "responseY": 475,
+          "sourceY": 575,
+          "fontDisplay": true,
+          "fontBody": true,
+          "artOverlap": [],
+          "targetMin": 44,
+          "smallTargets": [],
+          "textSizes": {
+            "chat": 16,
+            "warning": 13
+          },
+          "reduced": false,
+          "storyArt": {
+            "left": 80,
+            "top": 1995.671875,
+            "width": 320,
+            "height": 240
+          }
+        }
+      ]
+    },
+    {
+      "name": "1024+ style-lock grid 42/58 (40px gap at 1024, 48px at 1440)",
+      "ok": true,
+      "detail": [
+        {
+          "width": 1024,
+          "grid": {
+            "display": "grid",
+            "columns": "386.391px 533.609px",
+            "gap": "40px"
+          }
+        },
+        {
+          "width": 1440,
+          "grid": {
+            "display": "grid",
+            "columns": "517.438px 714.562px",
+            "gap": "48px"
+          }
+        }
+      ]
+    },
+    {
+      "name": "chat 16px, warning text >=13px",
+      "ok": true,
+      "detail": [
+        {
+          "width": 375,
+          "sizes": {
+            "chat": 16,
+            "warning": 13
+          }
+        },
+        {
+          "width": 390,
+          "sizes": {
+            "chat": 16,
+            "warning": 13
+          }
+        },
+        {
+          "width": 768,
+          "sizes": {
+            "chat": 16,
+            "warning": 13
+          }
+        },
+        {
+          "width": 1024,
+          "sizes": {
+            "chat": 16,
+            "warning": 13
+          }
+        },
+        {
+          "width": 1440,
+          "sizes": {
+            "chat": 16,
+            "warning": 13
+          }
+        }
+      ]
+    },
+    {
+      "name": "all visible interactive targets >=44px",
+      "ok": true,
+      "detail": [
+        {
+          "width": 375,
+          "small": [],
+          "count": 0
+        },
+        {
+          "width": 390,
+          "small": [],
+          "count": 0
+        },
+        {
+          "width": 768,
+          "small": [],
+          "count": 0
+        },
+        {
+          "width": 1024,
+          "small": [],
+          "count": 0
+        },
+        {
+          "width": 1440,
+          "small": [],
+          "count": 0
+        }
+      ]
+    },
+    {
+      "name": "reveal computed totals <=280ms",
+      "ok": true,
+      "detail": [
+        {
+          "tag": "SECTION",
+          "animation": true,
+          "maxMs": 0
+        },
+        {
+          "tag": "SECTION",
+          "animation": true,
+          "maxMs": 0
+        },
+        {
+          "tag": "DIV",
+          "animation": true,
+          "maxMs": 0
+        },
+        {
+          "tag": "SECTION",
+          "animation": true,
+          "maxMs": 0
+        },
+        {
+          "tag": "SECTION",
+          "animation": true,
+          "maxMs": 0
+        }
+      ]
+    },
+    {
+      "name": "keyboard focus reveals pending content immediately",
+      "ok": true,
+      "detail": {
+        "pending": true,
+        "opacity": "1",
+        "transform": "none",
+        "active": "SUMMARY"
+      }
+    },
+    {
+      "name": "FAQ remains native keyboard disclosure",
+      "ok": true,
+      "detail": {
+        "open": true,
+        "answerVisible": true
+      }
+    },
+    {
+      "name": "mobile menu native, 200ms entry and closed nav hidden",
+      "ok": true,
+      "detail": {
+        "open": true,
+        "visible": 6,
+        "navOpacity": "0.92",
+        "anim": [
+          {
+            "name": "lp-menu-in",
+            "duration": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "reduced initially and subsequent case changes animate nothing",
+      "ok": true,
+      "detail": {
+        "start": {
+          "all": 0,
+          "pending": 0
+        },
+        "after": {
+          "all": 0,
+          "pending": 0,
+          "opacity": "1",
+          "transform": "none"
+        }
+      }
+    },
+    {
+      "name": "reduced switched dynamically cancels motion and reveals",
+      "ok": true,
+      "detail": {
+        "anims": 0,
+        "pending": 5,
+        "opacity": "1",
+        "transform": "none"
+      }
+    },
+    {
+      "name": "return to no-preference only animates next action",
+      "ok": true
+    },
+    {
+      "name": "no JS: FAQ works natively and revealed content remains visible",
+      "ok": true,
+      "detail": {
+        "faqOpen": true,
+        "answer": true,
+        "hidden": 0
+      }
+    },
+    {
+      "name": "public runtime emitted no errors and only local GET traffic",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "methods": [
+          "GET"
+        ],
+        "requestCount": 26
+      }
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "url": "/",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/css/index.BXY6DNAl.css",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/css/product-app.BDgqNwyj.css",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/index-CFTM1NdI.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/rolldown-runtime-C60lm6uB.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/framework-D_rUT4EX.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/app-elements-H_Dr48wG.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/hash-Cp347hhd.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/record-uXSNv6cl.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/app-rsc-cache-busting-RF4k9hUy.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/app-rsc-render-mode-CvTCGruk.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/headers-C_MtfdF4.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/protocol-headers-B9-bVeat.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/deployment-id-DFhHa9wO.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/navigation-errors-D5LMQqDL.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/layout-segment-context-D8SVy9y4.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/page-C2630mV2.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/product-app-BHDQo1rC.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/Icon-Dsrrr-Ct.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/link-D86dSKGf.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/app-route-prefetch-policy-Djkf1kmy.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/_next/static/chunks/query-B_ym6Bnd.js",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/landing/fonts/manrope-latin-var.woff2",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/landing/fonts/ibm-plex-sans-latin-var.woff2",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/landing/document-context.webp",
+      "origin": "http://127.0.0.1:5181"
+    },
+    {
+      "method": "GET",
+      "url": "/api/session",
+      "origin": "http://127.0.0.1:5181"
+    }
+  ],
+  "console": [],
+  "pages": [],
+  "assets": [
+    {
+      "path": "/landing/fonts/ibm-plex-sans-latin-var.woff2",
+      "status": 200,
+      "contentType": "font/woff2"
+    },
+    {
+      "path": "/landing/fonts/manrope-latin-var.woff2",
+      "status": 200,
+      "contentType": "font/woff2"
+    },
+    {
+      "path": "/landing/document-context.webp",
+      "status": 200,
+      "contentType": "image/webp"
+    }
+  ],
+  "session": {
+    "status": 200,
+    "body": "null",
+    "origin": "http://127.0.0.1:5181",
+    "method": "GET"
+  },
+  "viewportMetrics": [
+    {
+      "width": 375,
+      "height": 812,
+      "overflow": false,
+      "grid": {
+        "display": "grid",
+        "columns": "343px",
+        "gap": "20px"
+      },
+      "responseY": 811,
+      "sourceY": 905,
+      "fontDisplay": true,
+      "fontBody": true,
+      "artOverlap": [],
+      "targetMin": 44,
+      "smallTargets": [],
+      "textSizes": {
+        "chat": 16,
+        "warning": 13
+      },
+      "reduced": false,
+      "storyArt": {
+        "left": 16,
+        "top": 2751.953125,
+        "width": 212.65625,
+        "height": 159.484375
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "grid": {
+        "display": "grid",
+        "columns": "358px",
+        "gap": "20px"
+      },
+      "responseY": 799,
+      "sourceY": 893,
+      "fontDisplay": true,
+      "fontBody": true,
+      "artOverlap": [],
+      "targetMin": 44,
+      "smallTargets": [],
+      "textSizes": {
+        "chat": 16,
+        "warning": 13
+      },
+      "reduced": false,
+      "storyArt": {
+        "left": 16,
+        "top": 2689.078125,
+        "width": 221.953125,
+        "height": 166.453125
+      }
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "overflow": false,
+      "grid": {
+        "display": "grid",
+        "columns": "704px",
+        "gap": "40px"
+      },
+      "responseY": 894,
+      "sourceY": 993,
+      "fontDisplay": true,
+      "fontBody": true,
+      "artOverlap": [],
+      "targetMin": 44,
+      "smallTargets": [],
+      "textSizes": {
+        "chat": 16,
+        "warning": 13
+      },
+      "reduced": false,
+      "storyArt": {
+        "left": 32,
+        "top": 2403.859375,
+        "width": 240,
+        "height": 180
+      }
+    },
+    {
+      "width": 1024,
+      "height": 900,
+      "overflow": false,
+      "grid": {
+        "display": "grid",
+        "columns": "386.391px 533.609px",
+        "gap": "40px"
+      },
+      "responseY": 494,
+      "sourceY": 594,
+      "fontDisplay": true,
+      "fontBody": true,
+      "artOverlap": [],
+      "targetMin": 44,
+      "smallTargets": [],
+      "textSizes": {
+        "chat": 16,
+        "warning": 13
+      },
+      "reduced": false,
+      "storyArt": {
+        "left": 32,
+        "top": 2383,
+        "width": 320,
+        "height": 240
+      }
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "overflow": false,
+      "grid": {
+        "display": "grid",
+        "columns": "517.438px 714.562px",
+        "gap": "48px"
+      },
+      "responseY": 475,
+      "sourceY": 575,
+      "fontDisplay": true,
+      "fontBody": true,
+      "artOverlap": [],
+      "targetMin": 44,
+      "smallTargets": [],
+      "textSizes": {
+        "chat": 16,
+        "warning": 13
+      },
+      "reduced": false,
+      "storyArt": {
+        "left": 80,
+        "top": 1995.671875,
+        "width": 320,
+        "height": 240
+      }
+    }
+  ],
+  "publicFirstVisit": {
+    "title": "A resposta está nos arquivos.\nAgora você sabe onde.",
+    "alertCount": 0,
+    "cases": [
+      {
+        "text": "Resposta com fontes",
+        "pressed": "true"
+      },
+      {
+        "text": "Com menção @",
+        "pressed": "false"
+      },
+      {
+        "text": "Sem evidência suficiente",
+        "pressed": "false"
+      }
+    ],
+    "faq": 7,
+    "integrations": [
+      "Google Drive",
+      "OneDrive",
+      "Notion",
+      "SharePoint"
+    ],
+    "fontDisplay": true,
+    "fontBody": true,
+    "fontFaces": [
+      {
+        "family": "Arquivio LP Display",
+        "status": "loaded",
+        "weight": "200 800"
+      },
+      {
+        "family": "Arquivio LP Text",
+        "status": "loaded",
+        "weight": "100 700"
+      }
+    ],
+    "responseY": 475,
+    "sourceY": 575,
+    "live": "polite",
+    "cookieCount": 0
+  },
+  "publicRequestMethods": [
+    "GET"
+  ],
+  "failures": [],
+  "finishedAt": "2026-10-03T05:57:24.857Z"
+}

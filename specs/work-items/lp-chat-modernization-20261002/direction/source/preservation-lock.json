@@ -1,0 +1,60 @@
+{
+  "confidence": "provided",
+  "source": "brief-baseline.md §§4–7 + source read-only",
+  "files": [
+    {
+      "path": "frontend/app/landing-page.tsx",
+      "sha256": "7a534433c2809417dc8a00a471963da029c6ab70d375ba478ce0ead10bbfcba0"
+    },
+    {
+      "path": "frontend/app/landing.css",
+      "sha256": "a37e7cd9cae8229032e78f0f6715460480b57805992c402cee2e5079fd2641f8"
+    },
+    {
+      "path": "frontend/app/brand.tsx",
+      "sha256": "888e7e83dbaebf0fd6b5df4307d789212740ed47535812332e3675b676189a57"
+    },
+    {
+      "path": "frontend/app/brand.css",
+      "sha256": "ef28ad4f8fa310c186746029b050a1ad895ccdf42b23117952fab426e862e5da"
+    },
+    {
+      "path": "frontend/app/provider-logo.tsx",
+      "sha256": "d3050609fb8d133644ebb761e8acec6c52f0c71b25b9a593927c974330507318"
+    },
+    {
+      "path": "frontend/app/globals.css",
+      "sha256": "f0e3a2cccb5d664e888652f7278004ec8204a6592e9ee89fb06914198d0eed05"
+    },
+    {
+      "path": "frontend/app/product-app.tsx",
+      "sha256": "d2a072b6c10b59f7099741f21a6fbaec059f3c4c7544cc044d82c8e1dcb68742"
+    },
+    {
+      "path": "specs/work-items/lp-chat-modernization-20261002/brief-baseline.md",
+      "sha256": "f8cf55e8a304fcf8121bed11c172a1d4b46a8400d95a523fdd52c46e1934474f"
+    },
+    {
+      "path": "specs/work-items/lp-chat-modernization-20261002/work-item.md",
+      "sha256": "e6133b54851f1bf4eb10eab9f58b10f569180ed605def37b12d216cfad7e1162"
+    }
+  ],
+  "copySource": "frontend/app/landing-page.tsx, complete source snapshot in source/landing-source.snapshot.txt",
+  "anchors": [
+    "landing-main",
+    "produto",
+    "integracoes",
+    "como-funciona",
+    "perguntas"
+  ],
+  "states": [
+    "Resposta com fontes",
+    "Com menção @",
+    "Sem evidência suficiente"
+  ],
+  "handlers": {
+    "onLogin": "/login",
+    "onSignUp": "${API_BASE}/auth/login?screen_hint=sign-up"
+  },
+  "noPrice": true
+}

@@ -1,0 +1,17 @@
+{
+  "url": "http://127.0.0.1:5181/",
+  "container": "arquivio-lp-preview-20261002",
+  "containerId": "7e5e014818e7ec664b483ceac91d6d5896360068486f33bba226cab5edb67222",
+  "image": "arquivio-lp-preview:motion-review-20261003",
+  "imageId": "sha256:a700f3f0b90b2c8b511f76bf532364329514d93c1609e1f91d904f931e527cfd",
+  "state": "running",
+  "restart": "unless-stopped",
+  "binding": "127.0.0.1:5181 -> 3000/tcp",
+  "apiBuildBase": "/api",
+  "apiUpstream": "http://host.docker.internal:8000",
+  "publicAnonymousProbe": { "method": "GET", "path": "/api/session", "status": 200, "body": "null", "mocked": false },
+  "rootProbe": { "method": "GET", "path": "/", "status": 200, "mocked": false },
+  "browserConsoleErrors": 0,
+  "browserCookies": 0,
+  "fixtureAPI": "synthetic fail-closed only; no live auth, account, message, or secret"
+}

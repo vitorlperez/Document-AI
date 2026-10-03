@@ -1,0 +1,211 @@
+{
+  "status": 200,
+  "consoleErrors": [
+    "Access to fetch at 'http://localhost:8000/me' from origin 'http://127.0.0.1:5181' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED"
+  ],
+  "pageErrors": [],
+  "requestFailures": [
+    {
+      "url": "http://localhost:8000/me",
+      "method": "GET",
+      "failure": "net::ERR_FAILED"
+    }
+  ],
+  "responses": [
+    {
+      "url": "http://127.0.0.1:5181/",
+      "status": 200,
+      "type": "document"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/css/index.BXY6DNAl.css",
+      "status": 200,
+      "type": "stylesheet"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/css/product-app.BQ8EMvtK.css",
+      "status": 200,
+      "type": "stylesheet"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/hash-Cp347hhd.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/rolldown-runtime-C60lm6uB.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/app-elements-H_Dr48wG.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/framework-D_rUT4EX.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/record-uXSNv6cl.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/headers-C_MtfdF4.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/protocol-headers-B9-bVeat.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/app-rsc-cache-busting-C5rNfSI2.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/app-rsc-render-mode-CvTCGruk.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/deployment-id-DFhHa9wO.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/navigation-errors-D5LMQqDL.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/layout-segment-context-DtCgcKUR.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/page-CuoRa0Am.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/Icon-Dsrrr-Ct.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/link-BGuHUWmY.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/product-app-CzatM71s.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/query-B_ym6Bnd.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/app-route-prefetch-policy-B2k9l0Bi.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/index-B93Xd4ik.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/landing/fonts/manrope-latin-var.woff2",
+      "status": 200,
+      "type": "font"
+    },
+    {
+      "url": "http://127.0.0.1:5181/landing/fonts/ibm-plex-sans-latin-var.woff2",
+      "status": 200,
+      "type": "font"
+    },
+    {
+      "url": "http://127.0.0.1:5181/landing/document-context.webp",
+      "status": 200,
+      "type": "image"
+    }
+  ],
+  "snapshot": {
+    "url": "http://127.0.0.1:5181/",
+    "title": "Arquivio — O conhecimento da sua equipe, com fontes",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "pageText": "Pular para o conteúdo\narquivio.\nProduto\nIntegrações\nComo funciona\nDúvidas\nEntrar\nCriar conta\n\nSEU CONHECIMENTO, COM CONTEXTO\n\nA resposta está nos arquivos.\nAgora você sabe onde.\n\nPergunte ao Arquivio. Receba uma resposta direta e os documentos que a sustentam.\n\nComeçar com o Arquivio\nJá tenho uma conta\n\nConexões de leitura · originais preservados\n\nVEJA A EXPERIÊNCIA\n\nConverse com seus documentos.Confira a origem.\nResposta com fontes\nCom menção @\nSem evidência suficiente\narquivio.\nEstúdio Aurora\nPRÉVIA ILUSTRATIVA\nNova conversa\nTodas as ferramentas\n\nO que ficou definido para a primeira entrega?\n\nArquivio\nTodas as ferramentas\n\nA primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.\n\nDocumentos utilizados\n1.\nEscopo do projeto.pdf\nGoogle Drive\n2.\nReunião de alinhamento\nNotion\n3.\nCronograma de entregas\nOneDrive\n\nVer mais 2 documentos\n\nO que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta\nTodas as ferramentas\n0/1000\nEnviar\n\nSomente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.\n\nBiblioteca\nArquivos sincronizados\nBiblioteca\nGoogle Drive\nProjeto Aurora\nNotion\nOneDrive\nSharePoint\n\nA conversa usa somente as ferramentas e menções selecionadas na mensagem.\n\nBuscar arquivos\n\nEncontre arquivos e pastas pelo nome em todas as fontes conectadas.\n\nNome de arquivo ou pasta\nA busca consulta somente nomes; o conteúdo permanece no escopo da conversa.\nPrévia da área de consultas do Arquivio.\nExemplos fictícios.\n\nINTEGRAÇÕES DISPONÍVEIS\n\n4 fontes.\n1 lugar para perguntar.\n\nConecte o que sua equipe já usa. Os arquivos originais permanecem nas suas ferramentas.\n\nGoogle Drive\nOneDrive\nNotion\nSharePoint\n\nO QUE MUDA NA ROTINA\n\nDa procura à resposta,\nsem perder o caminho.\n\nO conhecimento da equipe já está nos documentos. O Arquivio ajuda a encontrar o trecho certo e a voltar à fonte sempre que você precisar de mais detalhes.\n\n01 / ENCONTRE\nPergunte como você perguntaria a um colega.\n\nRecupere decisões, entregas e informações registradas sem abrir cada arquivo por conta própria.\n\n02 / DELIMITE\nEscolha onde buscar.\n\nConsulte todo o conteúdo indexado ou restrinja a pergunta a uma ferramenta ou pasta específica.\n\n03 / CONFIRA\nVolte aos documentos.\n\nVeja as fontes apresentadas com a resposta e abra os originais para verificar o contexto completo.\n\nCOMO FUNCIONA\n\nSeus arquivos continuam onde estão.\nAs respostas ficam mais perto.\n01\nConecte as fontes\n\nEscolha materiais compartilháveis no Google Drive, OneDrive, Notion ou SharePoint. As conexões são de leitura e preservam os originais.\n\n02\nAguarde a sincronização\n\nO Arquivio processa o conteúdo selecionado em segundo plano. A consulta considera o que já foi sincronizado e indexado.\n\n03\nPergunte com contexto\n\nDefina o escopo, faça sua pergunta e confira os documentos que sustentam a resposta.\n\nTodos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais compartilháveis com a equipe.\n\nANTES DE COMEÇAR\n\nO que você\nprecisa saber.\nQuais ferramentas posso conectar?\nO Arquivio altera meus arquivos?\nQuem pode consultar os documentos?\nE se faltar informação?\nQue conteúdo é compatível?\nQuando os documentos ficam disponíveis?\nComo a IA usa o conteúdo?\n\nCOMECE PELOS SEUS DOCUMENTOS\n\nMenos procura.\nMais contexto.\nCriar minha conta\narquivio.\n\nConhecimento que encontra o seu contexto.\n\nPrivacidade\nTermos de uso\n\nNão conseguimos nos conectar ao serviço. Confira sua conexão e tente novamente.\n\nTentar novamente",
+    "alerts": [
+      {
+        "text": "Não conseguimos nos conectar ao serviço. Confira sua conexão e tente novamente.\n\nTentar novamente",
+        "rect": {
+          "x": 976,
+          "y": 786.9375,
+          "width": 448,
+          "height": 97.0625,
+          "position": "fixed"
+        }
+      }
+    ],
+    "h1": {
+      "x": 80,
+      "y": 226.59375,
+      "width": 473.1875,
+      "height": 237.4375
+    },
+    "product": {
+      "x": 645.4375,
+      "y": 120,
+      "width": 714.5625,
+      "height": 941.75
+    },
+    "firstSource": {
+      "x": 882.4375,
+      "y": 574.9375,
+      "width": 446.5625,
+      "height": 40
+    },
+    "rootWidth": {
+      "innerWidth": 1440,
+      "document": 1440,
+      "body": 1440
+    },
+    "font": {
+      "body": "\"Arquivio LP Text\", system-ui, Arial, sans-serif",
+      "heading": "\"Arquivio LP Display\", system-ui, Arial, sans-serif",
+      "bodyLoaded": true,
+      "headingLoaded": true
+    },
+    "asset": [
+      {
+        "name": "http://127.0.0.1:5181/landing/fonts/manrope-latin-var.woff2",
+        "duration": 49.299999952316284,
+        "transferSize": 24436
+      },
+      {
+        "name": "http://127.0.0.1:5181/landing/fonts/ibm-plex-sans-latin-var.woff2",
+        "duration": 45.5,
+        "transferSize": 46700
+      },
+      {
+        "name": "http://127.0.0.1:5181/landing/document-context.webp",
+        "duration": 2.200000047683716,
+        "transferSize": 4246
+      }
+    ]
+  },
+  "mocks": false,
+  "interception": false
+}

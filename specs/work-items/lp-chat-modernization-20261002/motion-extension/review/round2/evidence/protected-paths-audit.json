@@ -1,0 +1,64 @@
+{
+  "base": "a43dbdd",
+  "protectedFilesChecked": 11,
+  "allPreservationHashesMatch": true,
+  "allUnchangedFromBase": true,
+  "missingExpectedPaths": [],
+  "files": [
+    {
+      "path": "frontend/app/chatgpt-auth.ts",
+      "matchesRecordedPreservationHash": true,
+      "unchangedFromA43dbdd": true
+    },
+    {
+      "path": "frontend/app/layout.tsx",
+      "matchesRecordedPreservationHash": true,
+      "unchangedFromA43dbdd": true
+    },
+    {
+      "path": "frontend/app/brand.css",
+      "matchesRecordedPreservationHash": true,
+      "unchangedFromA43dbdd": true
+    },
+    {
+      "path": "frontend/app/product-app.tsx",
+      "matchesRecordedPreservationHash": true,
+      "unchangedFromA43dbdd": true
+    },
+    {
+      "path": "frontend/app/brand.tsx",
+      "matchesRecordedPreservationHash": true,
+      "unchangedFromA43dbdd": true
+    },
+    {
+      "path": "frontend/app/globals.css",
+      "matchesRecordedPreservationHash": true,
+      "unchangedFromA43dbdd": true
+    },
+    {
+      "path": "frontend/app/privacidade/page.tsx",
+      "matchesRecordedPreservationHash": true,
+      "unchangedFromA43dbdd": true
+    },
+    {
+      "path": "frontend/app/termos/page.tsx",
+      "matchesRecordedPreservationHash": true,
+      "unchangedFromA43dbdd": true
+    },
+    {
+      "path": "frontend/app/api/proxy-headers.mjs",
+      "matchesRecordedPreservationHash": true,
+      "unchangedFromA43dbdd": true
+    },
+    {
+      "path": "frontend/app/login/page.tsx",
+      "matchesRecordedPreservationHash": true,
+      "unchangedFromA43dbdd": true
+    },
+    {
+      "path": "frontend/app/api/[...path]/route.ts",
+      "matchesRecordedPreservationHash": true,
+      "unchangedFromA43dbdd": true
+    }
+  ]
+}

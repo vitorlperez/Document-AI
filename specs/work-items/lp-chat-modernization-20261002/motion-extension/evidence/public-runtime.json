@@ -1,0 +1,5187 @@
+{
+  "date": "2026-10-03T04:48:36.664Z",
+  "url": "http://127.0.0.1:5181/",
+  "scope": "public anonymous fresh context; no auth navigation, POST or messages",
+  "viewports": [
+    {
+      "width": 1440,
+      "initial": {
+        "elements": [
+          {
+            "selector": ".landing-app-thread",
+            "tag": "DIV",
+            "ariaLive": "polite",
+            "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0.18s",
+            "opacity": "0.925656",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-mobile-menu nav",
+            "tag": "NAV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "DIV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "block"
+          }
+        ],
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "true"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "false"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": [
+          {
+            "question": "Quais ferramentas posso conectar?",
+            "open": false
+          },
+          {
+            "question": "O Arquivio altera meus arquivos?",
+            "open": false
+          },
+          {
+            "question": "Quem pode consultar os documentos?",
+            "open": false
+          },
+          {
+            "question": "E se faltar informação?",
+            "open": false
+          },
+          {
+            "question": "Que conteúdo é compatível?",
+            "open": false
+          },
+          {
+            "question": "Quando os documentos ficam disponíveis?",
+            "open": false
+          },
+          {
+            "question": "Como a IA usa o conteúdo?",
+            "open": false
+          }
+        ],
+        "animations": [
+          {
+            "name": "lp-case-in",
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "linear",
+              "endDelay": 0,
+              "fill": "both",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "Com menção @": {
+        "immediate": {
+          "elements": [
+            {
+              "selector": ".landing-app-thread",
+              "tag": "DIV",
+              "ariaLive": "polite",
+              "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0.18s",
+              "opacity": "0.35",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-mobile-menu nav",
+              "tag": "NAV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "DIV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            }
+          ],
+          "cases": [
+            {
+              "text": "Resposta com fontes",
+              "pressed": "false"
+            },
+            {
+              "text": "Com menção @",
+              "pressed": "true"
+            },
+            {
+              "text": "Sem evidência suficiente",
+              "pressed": "false"
+            }
+          ],
+          "faq": [
+            {
+              "question": "Quais ferramentas posso conectar?",
+              "open": false
+            },
+            {
+              "question": "O Arquivio altera meus arquivos?",
+              "open": false
+            },
+            {
+              "question": "Quem pode consultar os documentos?",
+              "open": false
+            },
+            {
+              "question": "E se faltar informação?",
+              "open": false
+            },
+            {
+              "question": "Que conteúdo é compatível?",
+              "open": false
+            },
+            {
+              "question": "Quando os documentos ficam disponíveis?",
+              "open": false
+            },
+            {
+              "question": "Como a IA usa o conteúdo?",
+              "open": false
+            }
+          ],
+          "animations": [
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": "lp-case-in",
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 180,
+                "easing": "linear",
+                "endDelay": 0,
+                "fill": "both",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            }
+          ],
+          "overflow": false
+        },
+        "thread": "Google Drive\n\nQuais são os prazos previstos neste documento?\nArquivo: Escopo do projeto.pdf\n\nArquivio\nGoogle Drive\n\nO documento prevê o diagnóstico de marca na primeira etapa e a proposta de posicionamento na etapa seguinte.\n\nDocumentos utilizados\n1.\nEscopo do projeto.pdf\nGoogle Drive"
+      },
+      "Sem evidência suficiente": {
+        "immediate": {
+          "elements": [
+            {
+              "selector": ".landing-app-thread",
+              "tag": "DIV",
+              "ariaLive": "polite",
+              "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0.18s",
+              "opacity": "0.35",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-mobile-menu nav",
+              "tag": "NAV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "DIV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            }
+          ],
+          "cases": [
+            {
+              "text": "Resposta com fontes",
+              "pressed": "false"
+            },
+            {
+              "text": "Com menção @",
+              "pressed": "false"
+            },
+            {
+              "text": "Sem evidência suficiente",
+              "pressed": "true"
+            }
+          ],
+          "faq": [
+            {
+              "question": "Quais ferramentas posso conectar?",
+              "open": false
+            },
+            {
+              "question": "O Arquivio altera meus arquivos?",
+              "open": false
+            },
+            {
+              "question": "Quem pode consultar os documentos?",
+              "open": false
+            },
+            {
+              "question": "E se faltar informação?",
+              "open": false
+            },
+            {
+              "question": "Que conteúdo é compatível?",
+              "open": false
+            },
+            {
+              "question": "Quando os documentos ficam disponíveis?",
+              "open": false
+            },
+            {
+              "question": "Como a IA usa o conteúdo?",
+              "open": false
+            }
+          ],
+          "animations": [
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": "lp-case-in",
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 180,
+                "easing": "linear",
+                "endDelay": 0,
+                "fill": "both",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            }
+          ],
+          "overflow": false
+        },
+        "thread": "Notion\n\nQual foi o orçamento aprovado para mídia?\n\nArquivio\nNotion\n\nNão encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia."
+      },
+      "Resposta com fontes": {
+        "immediate": {
+          "elements": [
+            {
+              "selector": ".landing-app-thread",
+              "tag": "DIV",
+              "ariaLive": "polite",
+              "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0.18s",
+              "opacity": "0.35",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-mobile-menu nav",
+              "tag": "NAV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "DIV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            }
+          ],
+          "cases": [
+            {
+              "text": "Resposta com fontes",
+              "pressed": "true"
+            },
+            {
+              "text": "Com menção @",
+              "pressed": "false"
+            },
+            {
+              "text": "Sem evidência suficiente",
+              "pressed": "false"
+            }
+          ],
+          "faq": [
+            {
+              "question": "Quais ferramentas posso conectar?",
+              "open": false
+            },
+            {
+              "question": "O Arquivio altera meus arquivos?",
+              "open": false
+            },
+            {
+              "question": "Quem pode consultar os documentos?",
+              "open": false
+            },
+            {
+              "question": "E se faltar informação?",
+              "open": false
+            },
+            {
+              "question": "Que conteúdo é compatível?",
+              "open": false
+            },
+            {
+              "question": "Quando os documentos ficam disponíveis?",
+              "open": false
+            },
+            {
+              "question": "Como a IA usa o conteúdo?",
+              "open": false
+            }
+          ],
+          "animations": [
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": "lp-case-in",
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 180,
+                "easing": "linear",
+                "endDelay": 0,
+                "fill": "both",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            }
+          ],
+          "overflow": false
+        },
+        "thread": "Todas as ferramentas\n\nO que ficou definido para a primeira entrega?\n\nArquivio\nTodas as ferramentas\n\nA primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.\n\nDocumentos utilizados\n1.\nEscopo do projeto.pdf\nGoogle Drive\n2.\nReunião de alinhamento\nNotion\n3.\nCronograma de entregas\nOneDrive\n\nVer mais 2 documentos"
+      },
+      "faqOpen": {
+        "elements": [
+          {
+            "selector": ".landing-app-thread",
+            "tag": "DIV",
+            "ariaLive": "polite",
+            "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0.18s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-mobile-menu nav",
+            "tag": "NAV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "DIV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "block"
+          }
+        ],
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "true"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "false"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": [
+          {
+            "question": "Quais ferramentas posso conectar?",
+            "open": true
+          },
+          {
+            "question": "O Arquivio altera meus arquivos?",
+            "open": false
+          },
+          {
+            "question": "Quem pode consultar os documentos?",
+            "open": false
+          },
+          {
+            "question": "E se faltar informação?",
+            "open": false
+          },
+          {
+            "question": "Que conteúdo é compatível?",
+            "open": false
+          },
+          {
+            "question": "Quando os documentos ficam disponíveis?",
+            "open": false
+          },
+          {
+            "question": "Como a IA usa o conteúdo?",
+            "open": false
+          }
+        ],
+        "animations": [
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 140,
+              "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": "lp-case-in",
+            "playState": "finished",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "linear",
+              "endDelay": 0,
+              "fill": "both",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "faqClose": {
+        "elements": [
+          {
+            "selector": ".landing-app-thread",
+            "tag": "DIV",
+            "ariaLive": "polite",
+            "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0.18s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "matrix(-1, 0, 0, -1, 0, 0)",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-mobile-menu nav",
+            "tag": "NAV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "DIV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0.24s, 0.24s",
+            "transitionDelay": "0s, 0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0.24s, 0.24s",
+            "transitionDelay": "0s, 0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "block"
+          }
+        ],
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "true"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "false"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": [
+          {
+            "question": "Quais ferramentas posso conectar?",
+            "open": false
+          },
+          {
+            "question": "O Arquivio altera meus arquivos?",
+            "open": false
+          },
+          {
+            "question": "Quem pode consultar os documentos?",
+            "open": false
+          },
+          {
+            "question": "E se faltar informação?",
+            "open": false
+          },
+          {
+            "question": "Que conteúdo é compatível?",
+            "open": false
+          },
+          {
+            "question": "Quando os documentos ficam disponíveis?",
+            "open": false
+          },
+          {
+            "question": "Como a IA usa o conteúdo?",
+            "open": false
+          }
+        ],
+        "animations": [
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 40,
+              "direction": "normal",
+              "duration": 240,
+              "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 40,
+              "direction": "normal",
+              "duration": 240,
+              "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 80,
+              "direction": "normal",
+              "duration": 240,
+              "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 80,
+              "direction": "normal",
+              "duration": 240,
+              "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": "lp-case-in",
+            "playState": "finished",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "linear",
+              "endDelay": 0,
+              "fill": "both",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "reduced": {
+        "elements": [
+          {
+            "selector": ".landing-app-thread",
+            "tag": "DIV",
+            "ariaLive": "polite",
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-mobile-menu nav",
+            "tag": "NAV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "DIV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity cubic-bezier(0.2, 0.8, 0.2, 1), transform cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity cubic-bezier(0.2, 0.8, 0.2, 1), transform cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          }
+        ],
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "false"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "true"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": [
+          {
+            "question": "Quais ferramentas posso conectar?",
+            "open": false
+          },
+          {
+            "question": "O Arquivio altera meus arquivos?",
+            "open": false
+          },
+          {
+            "question": "Quem pode consultar os documentos?",
+            "open": false
+          },
+          {
+            "question": "E se faltar informação?",
+            "open": false
+          },
+          {
+            "question": "Que conteúdo é compatível?",
+            "open": false
+          },
+          {
+            "question": "Quando os documentos ficam disponíveis?",
+            "open": false
+          },
+          {
+            "question": "Como a IA usa o conteúdo?",
+            "open": false
+          }
+        ],
+        "animations": [],
+        "overflow": false
+      },
+      "errors": []
+    },
+    {
+      "width": 390,
+      "initial": {
+        "elements": [
+          {
+            "selector": ".landing-app-thread",
+            "tag": "DIV",
+            "ariaLive": "polite",
+            "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0.18s",
+            "opacity": "0.35",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-mobile-menu nav",
+            "tag": "NAV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "DIV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          }
+        ],
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "true"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "false"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": [
+          {
+            "question": "Quais ferramentas posso conectar?",
+            "open": false
+          },
+          {
+            "question": "O Arquivio altera meus arquivos?",
+            "open": false
+          },
+          {
+            "question": "Quem pode consultar os documentos?",
+            "open": false
+          },
+          {
+            "question": "E se faltar informação?",
+            "open": false
+          },
+          {
+            "question": "Que conteúdo é compatível?",
+            "open": false
+          },
+          {
+            "question": "Quando os documentos ficam disponíveis?",
+            "open": false
+          },
+          {
+            "question": "Como a IA usa o conteúdo?",
+            "open": false
+          }
+        ],
+        "animations": [
+          {
+            "name": "lp-case-in",
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "linear",
+              "endDelay": 0,
+              "fill": "both",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "Com menção @": {
+        "immediate": {
+          "elements": [
+            {
+              "selector": ".landing-app-thread",
+              "tag": "DIV",
+              "ariaLive": "polite",
+              "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0.18s",
+              "opacity": "0.35",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-mobile-menu nav",
+              "tag": "NAV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "DIV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            }
+          ],
+          "cases": [
+            {
+              "text": "Resposta com fontes",
+              "pressed": "false"
+            },
+            {
+              "text": "Com menção @",
+              "pressed": "true"
+            },
+            {
+              "text": "Sem evidência suficiente",
+              "pressed": "false"
+            }
+          ],
+          "faq": [
+            {
+              "question": "Quais ferramentas posso conectar?",
+              "open": false
+            },
+            {
+              "question": "O Arquivio altera meus arquivos?",
+              "open": false
+            },
+            {
+              "question": "Quem pode consultar os documentos?",
+              "open": false
+            },
+            {
+              "question": "E se faltar informação?",
+              "open": false
+            },
+            {
+              "question": "Que conteúdo é compatível?",
+              "open": false
+            },
+            {
+              "question": "Quando os documentos ficam disponíveis?",
+              "open": false
+            },
+            {
+              "question": "Como a IA usa o conteúdo?",
+              "open": false
+            }
+          ],
+          "animations": [
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": "lp-case-in",
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 180,
+                "easing": "linear",
+                "endDelay": 0,
+                "fill": "both",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            }
+          ],
+          "overflow": false
+        },
+        "thread": "Google Drive\n\nQuais são os prazos previstos neste documento?\nArquivo: Escopo do projeto.pdf\n\nArquivio\nGoogle Drive\n\nO documento prevê o diagnóstico de marca na primeira etapa e a proposta de posicionamento na etapa seguinte.\n\nDocumentos utilizados\n1.\nEscopo do projeto.pdf\nGoogle Drive"
+      },
+      "Sem evidência suficiente": {
+        "immediate": {
+          "elements": [
+            {
+              "selector": ".landing-app-thread",
+              "tag": "DIV",
+              "ariaLive": "polite",
+              "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0.18s",
+              "opacity": "0.35",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-mobile-menu nav",
+              "tag": "NAV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "DIV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            }
+          ],
+          "cases": [
+            {
+              "text": "Resposta com fontes",
+              "pressed": "false"
+            },
+            {
+              "text": "Com menção @",
+              "pressed": "false"
+            },
+            {
+              "text": "Sem evidência suficiente",
+              "pressed": "true"
+            }
+          ],
+          "faq": [
+            {
+              "question": "Quais ferramentas posso conectar?",
+              "open": false
+            },
+            {
+              "question": "O Arquivio altera meus arquivos?",
+              "open": false
+            },
+            {
+              "question": "Quem pode consultar os documentos?",
+              "open": false
+            },
+            {
+              "question": "E se faltar informação?",
+              "open": false
+            },
+            {
+              "question": "Que conteúdo é compatível?",
+              "open": false
+            },
+            {
+              "question": "Quando os documentos ficam disponíveis?",
+              "open": false
+            },
+            {
+              "question": "Como a IA usa o conteúdo?",
+              "open": false
+            }
+          ],
+          "animations": [
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": "lp-case-in",
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 180,
+                "easing": "linear",
+                "endDelay": 0,
+                "fill": "both",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            }
+          ],
+          "overflow": false
+        },
+        "thread": "Notion\n\nQual foi o orçamento aprovado para mídia?\n\nArquivio\nNotion\n\nNão encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia."
+      },
+      "Resposta com fontes": {
+        "immediate": {
+          "elements": [
+            {
+              "selector": ".landing-app-thread",
+              "tag": "DIV",
+              "ariaLive": "polite",
+              "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0.18s",
+              "opacity": "0.35",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-faq-list summary svg",
+              "tag": "svg",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              "transitionDuration": "0.18s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-mobile-menu nav",
+              "tag": "NAV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "1",
+              "transform": "none",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "DIV",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "grid"
+            },
+            {
+              "selector": ".landing-page [data-reveal]",
+              "tag": "SECTION",
+              "ariaLive": null,
+              "animation": "none",
+              "transition": "all",
+              "transitionDuration": "0s",
+              "transitionDelay": "0s",
+              "animationDuration": "0s",
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 8)",
+              "display": "block"
+            }
+          ],
+          "cases": [
+            {
+              "text": "Resposta com fontes",
+              "pressed": "true"
+            },
+            {
+              "text": "Com menção @",
+              "pressed": "false"
+            },
+            {
+              "text": "Sem evidência suficiente",
+              "pressed": "false"
+            }
+          ],
+          "faq": [
+            {
+              "question": "Quais ferramentas posso conectar?",
+              "open": false
+            },
+            {
+              "question": "O Arquivio altera meus arquivos?",
+              "open": false
+            },
+            {
+              "question": "Quem pode consultar os documentos?",
+              "open": false
+            },
+            {
+              "question": "E se faltar informação?",
+              "open": false
+            },
+            {
+              "question": "Que conteúdo é compatível?",
+              "open": false
+            },
+            {
+              "question": "Quando os documentos ficam disponíveis?",
+              "open": false
+            },
+            {
+              "question": "Como a IA usa o conteúdo?",
+              "open": false
+            }
+          ],
+          "animations": [
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": null,
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 140,
+                "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "endDelay": 0,
+                "fill": "backwards",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            },
+            {
+              "name": "lp-case-in",
+              "playState": "running",
+              "timing": {
+                "delay": 0,
+                "direction": "normal",
+                "duration": 180,
+                "easing": "linear",
+                "endDelay": 0,
+                "fill": "both",
+                "iterationStart": 0,
+                "iterations": 1
+              }
+            }
+          ],
+          "overflow": false
+        },
+        "thread": "Todas as ferramentas\n\nO que ficou definido para a primeira entrega?\n\nArquivio\nTodas as ferramentas\n\nA primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.\n\nDocumentos utilizados\n1.\nEscopo do projeto.pdf\nGoogle Drive\n2.\nReunião de alinhamento\nNotion\n3.\nCronograma de entregas\nOneDrive\n\nVer mais 2 documentos"
+      },
+      "faqOpen": {
+        "elements": [
+          {
+            "selector": ".landing-app-thread",
+            "tag": "DIV",
+            "ariaLive": "polite",
+            "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0.18s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-mobile-menu nav",
+            "tag": "NAV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "DIV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "block"
+          }
+        ],
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "true"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "false"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": [
+          {
+            "question": "Quais ferramentas posso conectar?",
+            "open": true
+          },
+          {
+            "question": "O Arquivio altera meus arquivos?",
+            "open": false
+          },
+          {
+            "question": "Quem pode consultar os documentos?",
+            "open": false
+          },
+          {
+            "question": "E se faltar informação?",
+            "open": false
+          },
+          {
+            "question": "Que conteúdo é compatível?",
+            "open": false
+          },
+          {
+            "question": "Quando os documentos ficam disponíveis?",
+            "open": false
+          },
+          {
+            "question": "Como a IA usa o conteúdo?",
+            "open": false
+          }
+        ],
+        "animations": [
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 140,
+              "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": "lp-case-in",
+            "playState": "finished",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "linear",
+              "endDelay": 0,
+              "fill": "both",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "faqClose": {
+        "elements": [
+          {
+            "selector": ".landing-app-thread",
+            "tag": "DIV",
+            "ariaLive": "polite",
+            "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0.18s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "matrix(-1, 0, 0, -1, 0, 0)",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-mobile-menu nav",
+            "tag": "NAV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "DIV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0.24s, 0.24s",
+            "transitionDelay": "0s, 0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0.24s, 0.24s",
+            "transitionDelay": "0s, 0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "block"
+          }
+        ],
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "true"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "false"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": [
+          {
+            "question": "Quais ferramentas posso conectar?",
+            "open": false
+          },
+          {
+            "question": "O Arquivio altera meus arquivos?",
+            "open": false
+          },
+          {
+            "question": "Quem pode consultar os documentos?",
+            "open": false
+          },
+          {
+            "question": "E se faltar informação?",
+            "open": false
+          },
+          {
+            "question": "Que conteúdo é compatível?",
+            "open": false
+          },
+          {
+            "question": "Quando os documentos ficam disponíveis?",
+            "open": false
+          },
+          {
+            "question": "Como a IA usa o conteúdo?",
+            "open": false
+          }
+        ],
+        "animations": [
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 80,
+              "direction": "normal",
+              "duration": 240,
+              "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 80,
+              "direction": "normal",
+              "duration": 240,
+              "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": "lp-case-in",
+            "playState": "finished",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "linear",
+              "endDelay": 0,
+              "fill": "both",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "menuOpen": {
+        "elements": [
+          {
+            "selector": ".landing-app-thread",
+            "tag": "DIV",
+            "ariaLive": "polite",
+            "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0.18s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "matrix(-0.997658, 0.0683929, -0.0683929, -0.997658, 0, 0)",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-mobile-menu nav",
+            "tag": "NAV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "DIV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0.24s, 0.24s",
+            "transitionDelay": "0s, 0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0.24s, 0.24s",
+            "transitionDelay": "0s, 0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "block"
+          }
+        ],
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "true"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "false"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": [
+          {
+            "question": "Quais ferramentas posso conectar?",
+            "open": false
+          },
+          {
+            "question": "O Arquivio altera meus arquivos?",
+            "open": false
+          },
+          {
+            "question": "Quem pode consultar os documentos?",
+            "open": false
+          },
+          {
+            "question": "E se faltar informação?",
+            "open": false
+          },
+          {
+            "question": "Que conteúdo é compatível?",
+            "open": false
+          },
+          {
+            "question": "Quando os documentos ficam disponíveis?",
+            "open": false
+          },
+          {
+            "question": "Como a IA usa o conteúdo?",
+            "open": false
+          }
+        ],
+        "animations": [
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 140,
+              "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": "lp-case-in",
+            "playState": "finished",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "linear",
+              "endDelay": 0,
+              "fill": "both",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "menuClose": {
+        "elements": [
+          {
+            "selector": ".landing-app-thread",
+            "tag": "DIV",
+            "ariaLive": "polite",
+            "animation": "0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both lp-case-in",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0.18s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "matrix(0.64877, 0.760984, -0.760984, 0.64877, 0, 0)",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0.18s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-mobile-menu nav",
+            "tag": "NAV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "DIV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0.24s, 0.24s",
+            "transitionDelay": "0s, 0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0.24s, 0.24s",
+            "transitionDelay": "0s, 0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 8)",
+            "display": "block"
+          }
+        ],
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "true"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "false"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": [
+          {
+            "question": "Quais ferramentas posso conectar?",
+            "open": false
+          },
+          {
+            "question": "O Arquivio altera meus arquivos?",
+            "open": false
+          },
+          {
+            "question": "Quem pode consultar os documentos?",
+            "open": false
+          },
+          {
+            "question": "E se faltar informação?",
+            "open": false
+          },
+          {
+            "question": "Que conteúdo é compatível?",
+            "open": false
+          },
+          {
+            "question": "Quando os documentos ficam disponíveis?",
+            "open": false
+          },
+          {
+            "question": "Como a IA usa o conteúdo?",
+            "open": false
+          }
+        ],
+        "animations": [
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 140,
+              "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": null,
+            "playState": "running",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+              "endDelay": 0,
+              "fill": "backwards",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          },
+          {
+            "name": "lp-case-in",
+            "playState": "finished",
+            "timing": {
+              "delay": 0,
+              "direction": "normal",
+              "duration": 180,
+              "easing": "linear",
+              "endDelay": 0,
+              "fill": "both",
+              "iterationStart": 0,
+              "iterations": 1
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "reduced": {
+        "elements": [
+          {
+            "selector": ".landing-app-thread",
+            "tag": "DIV",
+            "ariaLive": "polite",
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-faq-list summary svg",
+            "tag": "svg",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "transform cubic-bezier(0.4, 0, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-mobile-menu nav",
+            "tag": "NAV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "DIV",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity cubic-bezier(0.2, 0.8, 0.2, 1), transform cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "opacity cubic-bezier(0.2, 0.8, 0.2, 1), transform cubic-bezier(0.2, 0.8, 0.2, 1)",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "grid"
+          },
+          {
+            "selector": ".landing-page [data-reveal]",
+            "tag": "SECTION",
+            "ariaLive": null,
+            "animation": "none",
+            "transition": "all",
+            "transitionDuration": "0s",
+            "transitionDelay": "0s",
+            "animationDuration": "0s",
+            "opacity": "1",
+            "transform": "none",
+            "display": "block"
+          }
+        ],
+        "cases": [
+          {
+            "text": "Resposta com fontes",
+            "pressed": "false"
+          },
+          {
+            "text": "Com menção @",
+            "pressed": "true"
+          },
+          {
+            "text": "Sem evidência suficiente",
+            "pressed": "false"
+          }
+        ],
+        "faq": [
+          {
+            "question": "Quais ferramentas posso conectar?",
+            "open": false
+          },
+          {
+            "question": "O Arquivio altera meus arquivos?",
+            "open": false
+          },
+          {
+            "question": "Quem pode consultar os documentos?",
+            "open": false
+          },
+          {
+            "question": "E se faltar informação?",
+            "open": false
+          },
+          {
+            "question": "Que conteúdo é compatível?",
+            "open": false
+          },
+          {
+            "question": "Quando os documentos ficam disponíveis?",
+            "open": false
+          },
+          {
+            "question": "Como a IA usa o conteúdo?",
+            "open": false
+          }
+        ],
+        "animations": [],
+        "overflow": false
+      },
+      "errors": []
+    }
+  ]
+}

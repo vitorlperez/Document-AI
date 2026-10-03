@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-03T04:48:36.664Z",
+  "checks": {
+    "requiredDocs": true,
+    "referencedSourceLocations": 29,
+    "badSourceLocations": [],
+    "nativeDialogCount": 3,
+    "windowConfirmCallSites": 9,
+    "publicRuntime": true,
+    "preservedFileCount": 1406,
+    "changedExistingFiles": [],
+    "pdfPages": 3,
+    "pdfRenderedAndVisuallyInspected": true
+  },
+  "scope": "documentation/evidence only; no product implementation; auth runtime unverified",
+  "skills": [
+    "inline oc-design-dna",
+    "inline oc-browser",
+    "pdf"
+  ],
+  "checkedAt": "2026-10-03T05:02:15.921782+00:00"
+}

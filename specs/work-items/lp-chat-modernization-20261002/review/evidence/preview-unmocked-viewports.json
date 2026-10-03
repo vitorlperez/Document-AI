@@ -1,0 +1,494 @@
+{
+  "url": "http://127.0.0.1:5181/",
+  "mocks": false,
+  "interception": false,
+  "consoleErrors": [
+    "Access to fetch at 'http://localhost:8000/me' from origin 'http://127.0.0.1:5181' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED"
+  ],
+  "requestFailures": [
+    {
+      "url": "http://localhost:8000/me",
+      "failure": "net::ERR_FAILED"
+    }
+  ],
+  "rows": [
+    {
+      "viewport": {
+        "width": 375,
+        "height": 667
+      },
+      "documentWidth": 375,
+      "bodyWidth": 375,
+      "stageLayout": "343px",
+      "boxes": {
+        ".landing-hero": {
+          "x": 16,
+          "y": 76,
+          "width": 343,
+          "height": 346,
+          "position": "static"
+        },
+        ".landing-preview-heading": {
+          "x": 16,
+          "y": 450,
+          "width": 343,
+          "height": 79,
+          "position": "static"
+        },
+        ".landing-demo-options": {
+          "x": 16,
+          "y": 541,
+          "width": 343,
+          "height": 94,
+          "position": "static"
+        },
+        ".landing-answer": {
+          "x": 31,
+          "y": 873,
+          "width": 313,
+          "height": 347,
+          "position": "static"
+        },
+        ".landing-answer-sources > div": {
+          "x": 41,
+          "y": 1014,
+          "width": 293,
+          "height": 54,
+          "position": "static"
+        },
+        ".landing-app-search": {
+          "x": 17,
+          "y": 1722,
+          "width": 341,
+          "height": 180,
+          "position": "static"
+        },
+        ".landing-composer-hint": {
+          "x": 31,
+          "y": 1392,
+          "width": 313,
+          "height": 40,
+          "position": "static"
+        },
+        ".landing-story-art": {
+          "x": 16,
+          "y": 2903,
+          "width": 213,
+          "height": 159,
+          "position": "static"
+        },
+        ".landing-story-intro h2": {
+          "x": 16,
+          "y": 2679,
+          "width": 343,
+          "height": 70,
+          "position": "static"
+        },
+        ".landing-story-intro > p:last-of-type": {
+          "x": 16,
+          "y": 2770,
+          "width": 343,
+          "height": 105,
+          "position": "static"
+        }
+      },
+      "alert": {
+        "x": 16,
+        "y": 554,
+        "width": 343,
+        "height": 97,
+        "position": "fixed"
+      },
+      "alertOverlaps": [
+        ".landing-demo-options"
+      ],
+      "storyArtOverlapsHeading": false,
+      "visibleFromTop": {
+        "response": false,
+        "firstSource": false
+      }
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "stageLayout": "358px",
+      "boxes": {
+        ".landing-hero": {
+          "x": 16,
+          "y": 76,
+          "width": 358,
+          "height": 346,
+          "position": "static"
+        },
+        ".landing-preview-heading": {
+          "x": 16,
+          "y": 450,
+          "width": 358,
+          "height": 79,
+          "position": "static"
+        },
+        ".landing-demo-options": {
+          "x": 16,
+          "y": 541,
+          "width": 358,
+          "height": 94,
+          "position": "static"
+        },
+        ".landing-answer": {
+          "x": 31,
+          "y": 873,
+          "width": 328,
+          "height": 347,
+          "position": "static"
+        },
+        ".landing-answer-sources > div": {
+          "x": 41,
+          "y": 1014,
+          "width": 308,
+          "height": 54,
+          "position": "static"
+        },
+        ".landing-app-search": {
+          "x": 17,
+          "y": 1722,
+          "width": 356,
+          "height": 180,
+          "position": "static"
+        },
+        ".landing-composer-hint": {
+          "x": 31,
+          "y": 1392,
+          "width": 328,
+          "height": 40,
+          "position": "static"
+        },
+        ".landing-story-art": {
+          "x": 16,
+          "y": 2852,
+          "width": 222,
+          "height": 166,
+          "position": "static"
+        },
+        ".landing-story-intro h2": {
+          "x": 16,
+          "y": 2629,
+          "width": 358,
+          "height": 70,
+          "position": "static"
+        },
+        ".landing-story-intro > p:last-of-type": {
+          "x": 16,
+          "y": 2719,
+          "width": 358,
+          "height": 105,
+          "position": "static"
+        }
+      },
+      "alert": {
+        "x": 16,
+        "y": 731,
+        "width": 358,
+        "height": 97,
+        "position": "fixed"
+      },
+      "alertOverlaps": [],
+      "storyArtOverlapsHeading": false,
+      "visibleFromTop": {
+        "response": false,
+        "firstSource": false
+      }
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "stageLayout": "704px",
+      "boxes": {
+        ".landing-hero": {
+          "x": 32,
+          "y": 104,
+          "width": 704,
+          "height": 399,
+          "position": "static"
+        },
+        ".landing-preview-heading": {
+          "x": 32,
+          "y": 543,
+          "width": 704,
+          "height": 54,
+          "position": "static"
+        },
+        ".landing-demo-options": {
+          "x": 32,
+          "y": 614,
+          "width": 704,
+          "height": 44,
+          "position": "static"
+        },
+        ".landing-answer": {
+          "x": 221,
+          "y": 852,
+          "width": 494,
+          "height": 305,
+          "position": "static"
+        },
+        ".landing-answer-sources > div": {
+          "x": 269,
+          "y": 993,
+          "width": 436,
+          "height": 40,
+          "position": "static"
+        },
+        ".landing-app-search": {
+          "x": 33,
+          "y": 1330,
+          "width": 702,
+          "height": 117,
+          "position": "static"
+        },
+        ".landing-composer-hint": {
+          "x": 221,
+          "y": 1294,
+          "width": 494,
+          "height": 20,
+          "position": "static"
+        },
+        ".landing-story-art": {
+          "x": 493,
+          "y": 2161,
+          "width": 179,
+          "height": 134,
+          "position": "absolute"
+        },
+        ".landing-story-intro h2": {
+          "x": 32,
+          "y": 2196,
+          "width": 640,
+          "height": 80,
+          "position": "static"
+        },
+        ".landing-story-intro > p:last-of-type": {
+          "x": 32,
+          "y": 2295,
+          "width": 428,
+          "height": 79,
+          "position": "static"
+        }
+      },
+      "alert": {
+        "x": 304,
+        "y": 911,
+        "width": 448,
+        "height": 97,
+        "position": "fixed"
+      },
+      "alertOverlaps": [
+        ".landing-answer",
+        ".landing-answer-sources > div"
+      ],
+      "storyArtOverlapsHeading": true,
+      "visibleFromTop": {
+        "response": true,
+        "firstSource": true
+      }
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "documentWidth": 1024,
+      "bodyWidth": 1024,
+      "stageLayout": "960px",
+      "boxes": {
+        ".landing-hero": {
+          "x": 32,
+          "y": 112,
+          "width": 960,
+          "height": 424,
+          "position": "static"
+        },
+        ".landing-preview-heading": {
+          "x": 32,
+          "y": 576,
+          "width": 960,
+          "height": 56,
+          "position": "static"
+        },
+        ".landing-demo-options": {
+          "x": 32,
+          "y": 648,
+          "width": 960,
+          "height": 44,
+          "position": "static"
+        },
+        ".landing-answer": {
+          "x": 221,
+          "y": 887,
+          "width": 750,
+          "height": 280,
+          "position": "static"
+        },
+        ".landing-answer-sources > div": {
+          "x": 269,
+          "y": 1003,
+          "width": 692,
+          "height": 40,
+          "position": "static"
+        },
+        ".landing-app-search": {
+          "x": 33,
+          "y": 1318,
+          "width": 958,
+          "height": 98,
+          "position": "static"
+        },
+        ".landing-composer-hint": {
+          "x": 221,
+          "y": 1282,
+          "width": 750,
+          "height": 20,
+          "position": "static"
+        },
+        ".landing-story-art": {
+          "x": 493,
+          "y": 2189,
+          "width": 179,
+          "height": 134,
+          "position": "absolute"
+        },
+        ".landing-story-intro h2": {
+          "x": 32,
+          "y": 2223,
+          "width": 640,
+          "height": 90,
+          "position": "static"
+        },
+        ".landing-story-intro > p:last-of-type": {
+          "x": 32,
+          "y": 2333,
+          "width": 428,
+          "height": 79,
+          "position": "static"
+        }
+      },
+      "alert": {
+        "x": 560,
+        "y": 787,
+        "width": 448,
+        "height": 97,
+        "position": "fixed"
+      },
+      "alertOverlaps": [],
+      "storyArtOverlapsHeading": true,
+      "visibleFromTop": {
+        "response": true,
+        "firstSource": false
+      }
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "stageLayout": "517.438px 714.562px",
+      "boxes": {
+        ".landing-hero": {
+          "x": 80,
+          "y": 120,
+          "width": 517,
+          "height": 548,
+          "position": "sticky"
+        },
+        ".landing-preview-heading": {
+          "x": 645,
+          "y": 120,
+          "width": 715,
+          "height": 59,
+          "position": "static"
+        },
+        ".landing-demo-options": {
+          "x": 645,
+          "y": 195,
+          "width": 715,
+          "height": 44,
+          "position": "static"
+        },
+        ".landing-answer": {
+          "x": 834,
+          "y": 434,
+          "width": 505,
+          "height": 305,
+          "position": "static"
+        },
+        ".landing-answer-sources > div": {
+          "x": 882,
+          "y": 575,
+          "width": 447,
+          "height": 40,
+          "position": "static"
+        },
+        ".landing-app-search": {
+          "x": 646,
+          "y": 912,
+          "width": 713,
+          "height": 117,
+          "position": "static"
+        },
+        ".landing-composer-hint": {
+          "x": 834,
+          "y": 876,
+          "width": 505,
+          "height": 20,
+          "position": "static"
+        },
+        ".landing-story-art": {
+          "x": 80,
+          "y": 1994,
+          "width": 320,
+          "height": 240,
+          "position": "static"
+        },
+        ".landing-story-intro h2": {
+          "x": 80,
+          "y": 1758,
+          "width": 517,
+          "height": 97,
+          "position": "static"
+        },
+        ".landing-story-intro > p:last-of-type": {
+          "x": 80,
+          "y": 1875,
+          "width": 428,
+          "height": 79,
+          "position": "static"
+        }
+      },
+      "alert": {
+        "x": 976,
+        "y": 787,
+        "width": 448,
+        "height": 97,
+        "position": "fixed"
+      },
+      "alertOverlaps": [
+        ".landing-composer-hint"
+      ],
+      "storyArtOverlapsHeading": false,
+      "visibleFromTop": {
+        "response": true,
+        "firstSource": true
+      }
+    }
+  ]
+}

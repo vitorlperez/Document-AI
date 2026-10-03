@@ -1,0 +1,2161 @@
+{
+  "url": "http://127.0.0.1:5181",
+  "apiBase": "/api",
+  "mainRun": "real anonymous API via same-origin BFF; no route interception",
+  "checks": [
+    {
+      "name": "real anonymous preview loads without session mocks",
+      "status": "PASS",
+      "apiSession": {
+        "url": "http://127.0.0.1:5181/api/session",
+        "status": 200,
+        "type": "fetch"
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "24 desktop / 25 mobile baseline actions and order preserved",
+      "status": "PASS",
+      "desktop": {
+        "name": "desktop",
+        "width": 1440,
+        "height": 900,
+        "expectedVisible": 24,
+        "actualVisible": 24,
+        "exactActionSequence": true,
+        "current": [
+          {
+            "tag": "A",
+            "text": "Pular para o conteúdo",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "A",
+            "text": "arquivio.",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "A",
+            "text": "Produto",
+            "href": "#produto"
+          },
+          {
+            "tag": "A",
+            "text": "Integrações",
+            "href": "#integracoes"
+          },
+          {
+            "tag": "A",
+            "text": "Como funciona",
+            "href": "#como-funciona"
+          },
+          {
+            "tag": "A",
+            "text": "Dúvidas",
+            "href": "#perguntas"
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Entrar",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Criar conta",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Começar com o Arquivio",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Já tenho uma conta",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Resposta com fontes",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Com menção @",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Sem evidência suficiente",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quais ferramentas posso conectar?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "O Arquivio altera meus arquivos?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quem pode consultar os documentos?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "E se faltar informação?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Que conteúdo é compatível?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quando os documentos ficam disponíveis?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Como a IA usa o conteúdo?",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Criar minha conta",
+            "href": null
+          },
+          {
+            "tag": "A",
+            "text": "arquivio.",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "A",
+            "text": "Privacidade",
+            "href": "/privacidade"
+          },
+          {
+            "tag": "A",
+            "text": "Termos de uso",
+            "href": "/termos"
+          }
+        ]
+      },
+      "mobile": {
+        "name": "mobile",
+        "width": 375,
+        "height": 667,
+        "expectedVisible": 25,
+        "actualVisible": 25,
+        "exactActionSequence": true,
+        "current": [
+          {
+            "tag": "A",
+            "text": "Pular para o conteúdo",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "A",
+            "text": "arquivio.",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Abrir navegação",
+            "href": null
+          },
+          {
+            "tag": "A",
+            "text": "Produto",
+            "href": "#produto"
+          },
+          {
+            "tag": "A",
+            "text": "Integrações",
+            "href": "#integracoes"
+          },
+          {
+            "tag": "A",
+            "text": "Como funciona",
+            "href": "#como-funciona"
+          },
+          {
+            "tag": "A",
+            "text": "Dúvidas",
+            "href": "#perguntas"
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Entrar",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Criar conta",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Começar com o Arquivio",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Já tenho uma conta",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Resposta com fontes",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Com menção @",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Sem evidência suficiente",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quais ferramentas posso conectar?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "O Arquivio altera meus arquivos?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quem pode consultar os documentos?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "E se faltar informação?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Que conteúdo é compatível?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quando os documentos ficam disponíveis?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Como a IA usa o conteúdo?",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Criar minha conta",
+            "href": null
+          },
+          {
+            "tag": "A",
+            "text": "arquivio.",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "A",
+            "text": "Privacidade",
+            "href": "/privacidade"
+          },
+          {
+            "tag": "A",
+            "text": "Termos de uso",
+            "href": "/termos"
+          }
+        ]
+      }
+    },
+    {
+      "name": "single preview, default case, three selectors, four providers, seven FAQ rows",
+      "status": "PASS",
+      "previewCount": 1,
+      "demoButtons": [
+        {
+          "text": "Resposta com fontes",
+          "pressed": "true"
+        },
+        {
+          "text": "Com menção @",
+          "pressed": "false"
+        },
+        {
+          "text": "Sem evidência suficiente",
+          "pressed": "false"
+        }
+      ],
+      "faqCount": 7,
+      "providers": [
+        "Google Drive",
+        "OneDrive",
+        "Notion",
+        "SharePoint"
+      ]
+    },
+    {
+      "name": "demo Resposta com fontes updates state and preserves its exact content",
+      "status": "PASS",
+      "pressed": [
+        "true",
+        "false",
+        "false"
+      ],
+      "question": "O que ficou definido para a primeira entrega?",
+      "answer": "A primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.",
+      "sourceCount": 3,
+      "sourceRows": [
+        "1.\nEscopo do projeto.pdf\nGoogle Drive",
+        "2.\nReunião de alinhamento\nNotion",
+        "3.\nCronograma de entregas\nOneDrive"
+      ],
+      "more": "Ver mais 2 documentos",
+      "mention": null,
+      "docsHeading": "Documentos utilizados",
+      "live": "polite"
+    },
+    {
+      "name": "demo Com menção @ updates state and preserves its exact content",
+      "status": "PASS",
+      "pressed": [
+        "false",
+        "true",
+        "false"
+      ],
+      "question": "Quais são os prazos previstos neste documento?\nArquivo: Escopo do projeto.pdf",
+      "answer": "O documento prevê o diagnóstico de marca na primeira etapa e a proposta de posicionamento na etapa seguinte.",
+      "sourceCount": 1,
+      "sourceRows": [
+        "1.\nEscopo do projeto.pdf\nGoogle Drive"
+      ],
+      "more": null,
+      "mention": "Arquivo: Escopo do projeto.pdf",
+      "docsHeading": "Documentos utilizados",
+      "live": "polite"
+    },
+    {
+      "name": "demo Sem evidência suficiente updates state and preserves its exact content",
+      "status": "PASS",
+      "pressed": [
+        "false",
+        "false",
+        "true"
+      ],
+      "question": "Qual foi o orçamento aprovado para mídia?",
+      "answer": "Não encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia.",
+      "sourceCount": 0,
+      "sourceRows": [],
+      "more": null,
+      "mention": null,
+      "docsHeading": null,
+      "live": "polite"
+    },
+    {
+      "name": "default sources show 3 provider-backed rows and the extra-documents label",
+      "status": "PASS",
+      "rows": [
+        "1.\nEscopo do projeto.pdf\nGoogle Drive",
+        "2.\nReunião de alinhamento\nNotion",
+        "3.\nCronograma de entregas\nOneDrive"
+      ],
+      "more": "Ver mais 2 documentos",
+      "shellWarnings": [
+        "Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.",
+        "A conversa usa somente as ferramentas e menções selecionadas na mensagem.",
+        "A busca consulta somente nomes; o conteúdo permanece no escopo da conversa.",
+        "Prévia da área de consultas do Arquivio.\nExemplos fictícios."
+      ]
+    },
+    {
+      "name": "all demo qualifiers remain rendered next to the preview",
+      "status": "PASS",
+      "warnings": [
+        "Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.",
+        "A conversa usa somente as ferramentas e menções selecionadas na mensagem.",
+        "A busca consulta somente nomes; o conteúdo permanece no escopo da conversa.",
+        "Prévia da área de consultas do Arquivio.\nExemplos fictícios."
+      ]
+    },
+    {
+      "name": "FAQ opens all seven literal answers, including Owner/Admin and SharePoint limits",
+      "status": "PASS",
+      "faq": [
+        {
+          "question": "Quais ferramentas posso conectar?",
+          "answer": "Google Drive, OneDrive, Notion e SharePoint. Somente Owner/Admin da organização no Arquivio pode conectar fontes. No SharePoint, selecione bibliotecas de documentos de sites SharePoint e Teams com uma conta corporativa ou escolar do Microsoft 365; um administrador do Microsoft 365 pode precisar aprovar o acesso.",
+          "open": true
+        },
+        {
+          "question": "O Arquivio altera meus arquivos?",
+          "answer": "Não. Os originais continuam no Google Drive, OneDrive, Notion ou SharePoint. As conexões são de leitura.",
+          "open": true
+        },
+        {
+          "question": "Quem pode consultar os documentos?",
+          "answer": "Todos os membros da organização podem consultar o conteúdo sincronizado. O Arquivio não reproduz as permissões originais por documento do SharePoint. Conecte apenas materiais compartilháveis com a equipe.",
+          "open": true
+        },
+        {
+          "question": "E se faltar informação?",
+          "answer": "O Arquivio informa quando não encontra evidência suficiente e mostra os documentos usados em cada resposta.",
+          "open": true
+        },
+        {
+          "question": "Que conteúdo é compatível?",
+          "answer": "Documentos Google, PDFs com texto, DOCX, páginas do Notion e Markdown. Imagens escaneadas, planilhas e apresentações ainda não são indexadas.",
+          "open": true
+        },
+        {
+          "question": "Quando os documentos ficam disponíveis?",
+          "answer": "Depois da sincronização e do processamento em segundo plano. Alterações nos originais exigem uma nova sincronização.",
+          "open": true
+        },
+        {
+          "question": "Como a IA usa o conteúdo?",
+          "answer": "O texto necessário para busca e resposta é processado pelo provedor de IA configurado. Confira se esse uso atende às políticas da sua organização.",
+          "open": true
+        }
+      ]
+    },
+    {
+      "name": "FAQ details open with Enter and close with Space",
+      "status": "PASS",
+      "enter": true,
+      "space": false
+    },
+    {
+      "name": "rendered text across all 3 cases + FAQ contains every contract literal",
+      "status": "PASS",
+      "literalCount": 87,
+      "missing": []
+    },
+    {
+      "name": "all in-page anchors resolve to an existing target",
+      "status": "PASS",
+      "anchors": [
+        {
+          "label": "Pular para o conteúdo",
+          "href": "#landing-main",
+          "targetExists": true
+        },
+        {
+          "label": "Arquivio, início",
+          "href": "#landing-main",
+          "targetExists": true
+        },
+        {
+          "label": "Produto",
+          "href": "#produto",
+          "targetExists": true
+        },
+        {
+          "label": "Integrações",
+          "href": "#integracoes",
+          "targetExists": true
+        },
+        {
+          "label": "Como funciona",
+          "href": "#como-funciona",
+          "targetExists": true
+        },
+        {
+          "label": "Dúvidas",
+          "href": "#perguntas",
+          "targetExists": true
+        },
+        {
+          "label": "Produto",
+          "href": "#produto",
+          "targetExists": true
+        },
+        {
+          "label": "Integrações",
+          "href": "#integracoes",
+          "targetExists": true
+        },
+        {
+          "label": "Como funciona",
+          "href": "#como-funciona",
+          "targetExists": true
+        },
+        {
+          "label": "Dúvidas",
+          "href": "#perguntas",
+          "targetExists": true
+        },
+        {
+          "label": "Arquivio, voltar ao início",
+          "href": "#landing-main",
+          "targetExists": true
+        }
+      ]
+    },
+    {
+      "name": "skip link, desktop nav and mobile nav reach their public anchors",
+      "status": "PASS",
+      "anchors": [
+        {
+          "href": "#landing-main",
+          "result": "#landing-main"
+        },
+        {
+          "href": "#produto",
+          "result": "#produto"
+        },
+        {
+          "href": "#integracoes",
+          "result": "#integracoes"
+        },
+        {
+          "href": "#como-funciona",
+          "result": "#como-funciona"
+        },
+        {
+          "href": "#perguntas",
+          "result": "#perguntas"
+        },
+        {
+          "href": "#perguntas",
+          "result": "#perguntas",
+          "menu": "mobile"
+        }
+      ]
+    },
+    {
+      "name": "both footer legal links navigate to their target pages",
+      "status": "PASS",
+      "routes": [
+        {
+          "path": "/privacidade",
+          "h1": "Política de Privacidade",
+          "expected": "Política de Privacidade"
+        },
+        {
+          "path": "/termos",
+          "h1": "Termos de Uso",
+          "expected": "Termos de Uso"
+        }
+      ]
+    },
+    {
+      "name": "required accessible names remain on landmarks and preview panels",
+      "status": "PASS",
+      "missing": [],
+      "found": [
+        "Arquivio, início",
+        "Navegação principal",
+        "Abrir navegação",
+        "Navegação móvel",
+        "Escolha um exemplo da demonstração",
+        "Exemplo de conversa com documentos",
+        "Documentos utilizados",
+        "Biblioteca ilustrativa",
+        "Busca de arquivos ilustrativa",
+        "Ferramentas que você pode conectar",
+        "Arquivio, voltar ao início",
+        "Informações legais"
+      ]
+    },
+    {
+      "name": "all four signup CTAs target the configured signup route before auth is invoked",
+      "status": "PASS",
+      "targets": [
+        {
+          "label": "Criar conta",
+          "path": "/api/auth/login",
+          "screenHint": "sign-up",
+          "requestIntercepted": true,
+          "noRealAuthRequest": true
+        },
+        {
+          "label": "Começar com o Arquivio",
+          "path": "/api/auth/login",
+          "screenHint": "sign-up",
+          "requestIntercepted": true,
+          "noRealAuthRequest": true
+        },
+        {
+          "label": "Criar minha conta",
+          "path": "/api/auth/login",
+          "screenHint": "sign-up",
+          "requestIntercepted": true,
+          "noRealAuthRequest": true
+        },
+        {
+          "label": "Criar conta",
+          "path": "/api/auth/login",
+          "screenHint": "sign-up",
+          "requestIntercepted": true,
+          "noRealAuthRequest": true
+        }
+      ]
+    },
+    {
+      "name": "all login CTAs route to the sign-in page without authenticating",
+      "status": "PASS",
+      "targets": [
+        {
+          "label": "Entrar",
+          "path": "/login",
+          "h1": "Sua equipe sabe. Encontre a resposta."
+        },
+        {
+          "label": "Já tenho uma conta",
+          "path": "/login",
+          "h1": "Sua equipe sabe. Encontre a resposta."
+        },
+        {
+          "label": "Entrar",
+          "path": "/login",
+          "h1": "Sua equipe sabe. Encontre a resposta."
+        }
+      ]
+    },
+    {
+      "name": "privacy and terms destinations resolve to their legal pages",
+      "status": "PASS",
+      "routes": [
+        {
+          "path": "/privacidade",
+          "status": 200,
+          "h1": "Política de Privacidade",
+          "expected": "Política de Privacidade"
+        },
+        {
+          "path": "/termos",
+          "status": 200,
+          "h1": "Termos de Uso",
+          "expected": "Termos de Uso"
+        }
+      ]
+    },
+    {
+      "name": "reduced motion removes transitions and keeps reveal content available",
+      "status": "PASS",
+      "matches": true,
+      "buttonTransition": "0s",
+      "faqTransition": "0s",
+      "pending": 0,
+      "hiddenReveal": 0,
+      "caseResponseVisible": true
+    },
+    {
+      "name": "demo state changes by keyboard under reduced motion",
+      "status": "PASS",
+      "pressed": "true"
+    },
+    {
+      "name": "Tab reaches every visible desktop action with the 3px focus ring",
+      "status": "PASS",
+      "visited": 24,
+      "expectedFocusable": 24,
+      "withoutRing": []
+    },
+    {
+      "name": "mobile menu opens with Enter and closes with Space, with visible focus",
+      "status": "PASS",
+      "menuFocus": {
+        "label": "Abrir navegação",
+        "outline": "3px",
+        "outlineStyle": "solid"
+      },
+      "menuOpen": true,
+      "menuClosed": true
+    },
+    {
+      "name": "375/390/768/1024/1440 have no horizontal overflow and preserve 44px actions",
+      "status": "PASS",
+      "viewports": [
+        {
+          "width": 375,
+          "height": 667,
+          "documentWidth": 375,
+          "stageColumns": "343px",
+          "firstSourceY": 1014,
+          "actionCount": 25,
+          "smallTargets": [],
+          "storyArtAreaRatio": 0.0888
+        },
+        {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "stageColumns": "358px",
+          "firstSourceY": 1014,
+          "actionCount": 25,
+          "smallTargets": [],
+          "storyArtAreaRatio": 0.0921
+        },
+        {
+          "width": 768,
+          "height": 1024,
+          "documentWidth": 768,
+          "stageColumns": "704px",
+          "firstSourceY": 993,
+          "actionCount": 25,
+          "smallTargets": [],
+          "storyArtAreaRatio": 0.0411
+        },
+        {
+          "width": 1024,
+          "height": 900,
+          "documentWidth": 1024,
+          "stageColumns": "960px",
+          "firstSourceY": 1003,
+          "actionCount": 24,
+          "smallTargets": [],
+          "storyArtAreaRatio": 0.0287
+        },
+        {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "stageColumns": "517.438px 714.562px",
+          "firstSourceY": 575,
+          "actionCount": 24,
+          "smallTargets": [],
+          "storyArtAreaRatio": 0.0816
+        }
+      ]
+    },
+    {
+      "name": "390px design fold target (first source by y810) is met",
+      "status": "FAIL",
+      "firstSourceY": 1014,
+      "answerY": 873,
+      "expectedMaxY": 810
+    },
+    {
+      "name": "1024px uses approved two-column A desktop grid",
+      "status": "FAIL",
+      "stageColumns": "960px",
+      "expected": "42/58 columns at >=1024"
+    },
+    {
+      "name": "sampled live text contrast >=4.5:1 and focus token >=3:1",
+      "status": "PASS",
+      "minTextRatio": 5.7,
+      "focusRatio": 5.13,
+      "belowAA": []
+    },
+    {
+      "name": "no-JS render retains copy, demo choices and native FAQ disclosure",
+      "status": "PASS",
+      "readyState": "complete",
+      "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+      "buttons": 3,
+      "faq": 7,
+      "revealHidden": 0,
+      "overflow": false,
+      "nativeDetailsOpens": true
+    },
+    {
+      "name": "failed local image/font requests leave readable content and no broken art or overflow",
+      "status": "PASS",
+      "interceptions": [
+        "http://127.0.0.1:5181/landing/fonts/manrope-latin-var.woff2",
+        "http://127.0.0.1:5181/landing/fonts/ibm-plex-sans-latin-var.woff2",
+        "http://127.0.0.1:5181/landing/document-context.webp"
+      ],
+      "data": {
+        "artPresent": false,
+        "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+        "answer": "A primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.",
+        "overflow": false,
+        "bodyFont": "\"Arquivio LP Text\", system-ui, Arial, sans-serif",
+        "bodyFontLoaded": false,
+        "headingFontLoaded": false
+      },
+      "expectedAssetRequestErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ]
+    }
+  ],
+  "observations": {
+    "mainStatus": 200,
+    "apiSession": {
+      "url": "http://127.0.0.1:5181/api/session",
+      "status": 200,
+      "type": "fetch"
+    },
+    "mainConsoleErrors": [],
+    "mainPageErrors": [],
+    "mainFailedRequests": [],
+    "baselineActionComparison": [
+      {
+        "name": "desktop",
+        "width": 1440,
+        "height": 900,
+        "expectedVisible": 24,
+        "actualVisible": 24,
+        "exactActionSequence": true,
+        "current": [
+          {
+            "tag": "A",
+            "text": "Pular para o conteúdo",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "A",
+            "text": "arquivio.",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "A",
+            "text": "Produto",
+            "href": "#produto"
+          },
+          {
+            "tag": "A",
+            "text": "Integrações",
+            "href": "#integracoes"
+          },
+          {
+            "tag": "A",
+            "text": "Como funciona",
+            "href": "#como-funciona"
+          },
+          {
+            "tag": "A",
+            "text": "Dúvidas",
+            "href": "#perguntas"
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Entrar",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Criar conta",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Começar com o Arquivio",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Já tenho uma conta",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Resposta com fontes",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Com menção @",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Sem evidência suficiente",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quais ferramentas posso conectar?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "O Arquivio altera meus arquivos?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quem pode consultar os documentos?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "E se faltar informação?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Que conteúdo é compatível?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quando os documentos ficam disponíveis?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Como a IA usa o conteúdo?",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Criar minha conta",
+            "href": null
+          },
+          {
+            "tag": "A",
+            "text": "arquivio.",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "A",
+            "text": "Privacidade",
+            "href": "/privacidade"
+          },
+          {
+            "tag": "A",
+            "text": "Termos de uso",
+            "href": "/termos"
+          }
+        ]
+      },
+      {
+        "name": "mobile",
+        "width": 375,
+        "height": 667,
+        "expectedVisible": 25,
+        "actualVisible": 25,
+        "exactActionSequence": true,
+        "current": [
+          {
+            "tag": "A",
+            "text": "Pular para o conteúdo",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "A",
+            "text": "arquivio.",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Abrir navegação",
+            "href": null
+          },
+          {
+            "tag": "A",
+            "text": "Produto",
+            "href": "#produto"
+          },
+          {
+            "tag": "A",
+            "text": "Integrações",
+            "href": "#integracoes"
+          },
+          {
+            "tag": "A",
+            "text": "Como funciona",
+            "href": "#como-funciona"
+          },
+          {
+            "tag": "A",
+            "text": "Dúvidas",
+            "href": "#perguntas"
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Entrar",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Criar conta",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Começar com o Arquivio",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Já tenho uma conta",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Resposta com fontes",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Com menção @",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Sem evidência suficiente",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quais ferramentas posso conectar?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "O Arquivio altera meus arquivos?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quem pode consultar os documentos?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "E se faltar informação?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Que conteúdo é compatível?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Quando os documentos ficam disponíveis?",
+            "href": null
+          },
+          {
+            "tag": "SUMMARY",
+            "text": "Como a IA usa o conteúdo?",
+            "href": null
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Criar minha conta",
+            "href": null
+          },
+          {
+            "tag": "A",
+            "text": "arquivio.",
+            "href": "#landing-main"
+          },
+          {
+            "tag": "A",
+            "text": "Privacidade",
+            "href": "/privacidade"
+          },
+          {
+            "tag": "A",
+            "text": "Termos de uso",
+            "href": "/termos"
+          }
+        ]
+      }
+    ],
+    "initialContent": {
+      "heading": "A resposta está nos arquivos.\nAgora você sabe onde.",
+      "previewCount": 1,
+      "demoButtons": [
+        {
+          "text": "Resposta com fontes",
+          "pressed": "true"
+        },
+        {
+          "text": "Com menção @",
+          "pressed": "false"
+        },
+        {
+          "text": "Sem evidência suficiente",
+          "pressed": "false"
+        }
+      ],
+      "faqCount": 7,
+      "providers": [
+        "Google Drive",
+        "OneDrive",
+        "Notion",
+        "SharePoint"
+      ],
+      "ariaLabels": [
+        "Arquivio, início",
+        "Navegação principal",
+        "Abrir navegação",
+        "Navegação móvel",
+        "Escolha um exemplo da demonstração",
+        "Exemplo de conversa com documentos",
+        "Documentos utilizados",
+        "Biblioteca ilustrativa",
+        "Busca de arquivos ilustrativa",
+        "Ferramentas que você pode conectar",
+        "Arquivio, voltar ao início",
+        "Informações legais"
+      ],
+      "warning": "A conversa usa somente as ferramentas e menções selecionadas na mensagem.",
+      "caption": "Prévia da área de consultas do Arquivio.\nExemplos fictícios."
+    },
+    "contractLiteralCount": 87,
+    "missingLiterals": [],
+    "clickedAnchors": [
+      {
+        "href": "#landing-main",
+        "result": "#landing-main"
+      },
+      {
+        "href": "#produto",
+        "result": "#produto"
+      },
+      {
+        "href": "#integracoes",
+        "result": "#integracoes"
+      },
+      {
+        "href": "#como-funciona",
+        "result": "#como-funciona"
+      },
+      {
+        "href": "#perguntas",
+        "result": "#perguntas"
+      },
+      {
+        "href": "#perguntas",
+        "result": "#perguntas",
+        "menu": "mobile"
+      }
+    ],
+    "clickedLegal": [
+      {
+        "path": "/privacidade",
+        "h1": "Política de Privacidade",
+        "expected": "Política de Privacidade"
+      },
+      {
+        "path": "/termos",
+        "h1": "Termos de Uso",
+        "expected": "Termos de Uso"
+      }
+    ],
+    "signupTargets": [
+      {
+        "label": "Criar conta",
+        "path": "/api/auth/login",
+        "screenHint": "sign-up",
+        "requestIntercepted": true,
+        "noRealAuthRequest": true
+      },
+      {
+        "label": "Começar com o Arquivio",
+        "path": "/api/auth/login",
+        "screenHint": "sign-up",
+        "requestIntercepted": true,
+        "noRealAuthRequest": true
+      },
+      {
+        "label": "Criar minha conta",
+        "path": "/api/auth/login",
+        "screenHint": "sign-up",
+        "requestIntercepted": true,
+        "noRealAuthRequest": true
+      },
+      {
+        "label": "Criar conta",
+        "path": "/api/auth/login",
+        "screenHint": "sign-up",
+        "requestIntercepted": true,
+        "noRealAuthRequest": true
+      }
+    ],
+    "loginTargets": [
+      {
+        "label": "Entrar",
+        "path": "/login",
+        "h1": "Sua equipe sabe. Encontre a resposta."
+      },
+      {
+        "label": "Já tenho uma conta",
+        "path": "/login",
+        "h1": "Sua equipe sabe. Encontre a resposta."
+      },
+      {
+        "label": "Entrar",
+        "path": "/login",
+        "h1": "Sua equipe sabe. Encontre a resposta."
+      }
+    ],
+    "legalRoutes": [
+      {
+        "path": "/privacidade",
+        "status": 200,
+        "h1": "Política de Privacidade",
+        "expected": "Política de Privacidade"
+      },
+      {
+        "path": "/termos",
+        "status": 200,
+        "h1": "Termos de Uso",
+        "expected": "Termos de Uso"
+      }
+    ],
+    "reducedMotion": {
+      "matches": true,
+      "buttonTransition": "0s",
+      "faqTransition": "0s",
+      "pending": 0,
+      "hiddenReveal": 0,
+      "caseResponseVisible": true
+    },
+    "keyboardFocus": {
+      "visited": 24,
+      "expectedFocusable": 24,
+      "rows": [
+        {
+          "id": "0",
+          "label": "Pular para o conteúdo",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "1",
+          "label": "Arquivio, início",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "2",
+          "label": "Produto",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "3",
+          "label": "Integrações",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "4",
+          "label": "Como funciona",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "5",
+          "label": "Dúvidas",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "6",
+          "label": "Entrar",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "7",
+          "label": "Criar conta",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "15",
+          "label": "Começar com o Arquivio",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "16",
+          "label": "Já tenho uma conta",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "17",
+          "label": "Resposta com fontes",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "18",
+          "label": "Com menção @",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "19",
+          "label": "Sem evidência suficiente",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "20",
+          "label": "Quais ferramentas posso conectar?",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "21",
+          "label": "O Arquivio altera meus arquivos?",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "22",
+          "label": "Quem pode consultar os documentos?",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "23",
+          "label": "E se faltar informação?",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "24",
+          "label": "Que conteúdo é compatível?",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "25",
+          "label": "Quando os documentos ficam disponíveis?",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "26",
+          "label": "Como a IA usa o conteúdo?",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "27",
+          "label": "Criar minha conta",
+          "outline": "rgb(255, 255, 255) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "28",
+          "label": "Arquivio, voltar ao início",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "29",
+          "label": "Privacidade",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        },
+        {
+          "id": "30",
+          "label": "Termos de uso",
+          "outline": "rgb(150, 91, 13) solid 3px",
+          "outlineWidth": "3px",
+          "outlineStyle": "solid"
+        }
+      ]
+    },
+    "mobileMenuKeyboard": {
+      "menuFocus": {
+        "label": "Abrir navegação",
+        "outline": "3px",
+        "outlineStyle": "solid"
+      },
+      "menuOpen": true,
+      "menuClosed": true
+    },
+    "viewports": [
+      {
+        "viewport": {
+          "width": 375,
+          "height": 667
+        },
+        "documentWidth": 375,
+        "bodyWidth": 375,
+        "stageColumns": "343px",
+        "headerHeight": 56,
+        "hero": {
+          "x": 16,
+          "y": 76,
+          "width": 343,
+          "height": 346
+        },
+        "productHeading": {
+          "x": 16,
+          "y": 450,
+          "width": 343,
+          "height": 79
+        },
+        "caseButtons": {
+          "x": 16,
+          "y": 541,
+          "width": 343,
+          "height": 94
+        },
+        "question": {
+          "x": 69,
+          "y": 768,
+          "width": 275,
+          "height": 89
+        },
+        "answer": {
+          "x": 31,
+          "y": 873,
+          "width": 313,
+          "height": 347
+        },
+        "firstSource": {
+          "x": 41,
+          "y": 1014,
+          "width": 293,
+          "height": 54
+        },
+        "search": {
+          "x": 17,
+          "y": 1722,
+          "width": 341,
+          "height": 180
+        },
+        "storyArt": {
+          "x": 16,
+          "y": 2903,
+          "width": 213,
+          "height": 159
+        },
+        "storySection": {
+          "x": 16,
+          "y": 2592,
+          "width": 343,
+          "height": 1114
+        },
+        "storyArtAreaRatio": 0.0888,
+        "providers": 4,
+        "actionCount": 25,
+        "smallTargets": []
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "stageColumns": "358px",
+        "headerHeight": 56,
+        "hero": {
+          "x": 16,
+          "y": 76,
+          "width": 358,
+          "height": 346
+        },
+        "productHeading": {
+          "x": 16,
+          "y": 450,
+          "width": 358,
+          "height": 79
+        },
+        "caseButtons": {
+          "x": 16,
+          "y": 541,
+          "width": 358,
+          "height": 94
+        },
+        "question": {
+          "x": 70,
+          "y": 768,
+          "width": 289,
+          "height": 89
+        },
+        "answer": {
+          "x": 31,
+          "y": 873,
+          "width": 328,
+          "height": 347
+        },
+        "firstSource": {
+          "x": 41,
+          "y": 1014,
+          "width": 308,
+          "height": 54
+        },
+        "search": {
+          "x": 17,
+          "y": 1722,
+          "width": 356,
+          "height": 180
+        },
+        "storyArt": {
+          "x": 16,
+          "y": 2852,
+          "width": 222,
+          "height": 166
+        },
+        "storySection": {
+          "x": 16,
+          "y": 2541,
+          "width": 358,
+          "height": 1121
+        },
+        "storyArtAreaRatio": 0.0921,
+        "providers": 4,
+        "actionCount": 25,
+        "smallTargets": []
+      },
+      {
+        "viewport": {
+          "width": 768,
+          "height": 1024
+        },
+        "documentWidth": 768,
+        "bodyWidth": 768,
+        "stageColumns": "704px",
+        "headerHeight": 64,
+        "hero": {
+          "x": 32,
+          "y": 104,
+          "width": 704,
+          "height": 399
+        },
+        "productHeading": {
+          "x": 32,
+          "y": 543,
+          "width": 704,
+          "height": 54
+        },
+        "caseButtons": {
+          "x": 32,
+          "y": 614,
+          "width": 704,
+          "height": 44
+        },
+        "question": {
+          "x": 280,
+          "y": 771,
+          "width": 435,
+          "height": 66
+        },
+        "answer": {
+          "x": 221,
+          "y": 852,
+          "width": 494,
+          "height": 305
+        },
+        "firstSource": {
+          "x": 269,
+          "y": 993,
+          "width": 436,
+          "height": 40
+        },
+        "search": {
+          "x": 33,
+          "y": 1330,
+          "width": 702,
+          "height": 117
+        },
+        "storyArt": {
+          "x": 493,
+          "y": 2161,
+          "width": 179,
+          "height": 134
+        },
+        "storySection": {
+          "x": 32,
+          "y": 2080,
+          "width": 704,
+          "height": 832
+        },
+        "storyArtAreaRatio": 0.0411,
+        "providers": 4,
+        "actionCount": 25,
+        "smallTargets": []
+      },
+      {
+        "viewport": {
+          "width": 1024,
+          "height": 900
+        },
+        "documentWidth": 1024,
+        "bodyWidth": 1024,
+        "stageColumns": "960px",
+        "headerHeight": 72,
+        "hero": {
+          "x": 32,
+          "y": 112,
+          "width": 960,
+          "height": 424
+        },
+        "productHeading": {
+          "x": 32,
+          "y": 576,
+          "width": 960,
+          "height": 56
+        },
+        "caseButtons": {
+          "x": 32,
+          "y": 648,
+          "width": 960,
+          "height": 44
+        },
+        "question": {
+          "x": 311,
+          "y": 805,
+          "width": 660,
+          "height": 66
+        },
+        "answer": {
+          "x": 221,
+          "y": 887,
+          "width": 750,
+          "height": 280
+        },
+        "firstSource": {
+          "x": 269,
+          "y": 1003,
+          "width": 692,
+          "height": 40
+        },
+        "search": {
+          "x": 33,
+          "y": 1318,
+          "width": 958,
+          "height": 98
+        },
+        "storyArt": {
+          "x": 493,
+          "y": 2189,
+          "width": 179,
+          "height": 134
+        },
+        "storySection": {
+          "x": 32,
+          "y": 2096,
+          "width": 960,
+          "height": 874
+        },
+        "storyArtAreaRatio": 0.0287,
+        "providers": 4,
+        "actionCount": 24,
+        "smallTargets": []
+      },
+      {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "stageColumns": "517.438px 714.562px",
+        "headerHeight": 72,
+        "hero": {
+          "x": 80,
+          "y": 120,
+          "width": 517,
+          "height": 548
+        },
+        "productHeading": {
+          "x": 645,
+          "y": 120,
+          "width": 715,
+          "height": 59
+        },
+        "caseButtons": {
+          "x": 645,
+          "y": 195,
+          "width": 715,
+          "height": 44
+        },
+        "question": {
+          "x": 895,
+          "y": 352,
+          "width": 444,
+          "height": 66
+        },
+        "answer": {
+          "x": 834,
+          "y": 434,
+          "width": 505,
+          "height": 305
+        },
+        "firstSource": {
+          "x": 882,
+          "y": 575,
+          "width": 447,
+          "height": 40
+        },
+        "search": {
+          "x": 646,
+          "y": 912,
+          "width": 713,
+          "height": 117
+        },
+        "storyArt": {
+          "x": 80,
+          "y": 1994,
+          "width": 320,
+          "height": 240
+        },
+        "storySection": {
+          "x": 80,
+          "y": 1611,
+          "width": 1280,
+          "height": 735
+        },
+        "storyArtAreaRatio": 0.0816,
+        "providers": 4,
+        "actionCount": 24,
+        "smallTargets": []
+      }
+    ],
+    "contrast": {
+      "rows": [
+        {
+          "selector": ".landing-page h1",
+          "text": "A resposta está nos arquivos.\nAgora você sabe onde.",
+          "fontSize": "56px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(245,247,244)",
+          "ratio": 13.9
+        },
+        {
+          "selector": ".landing-page h1 em",
+          "text": "Agora você sabe onde.",
+          "fontSize": "56px",
+          "foreground": "rgb(28,96,82)",
+          "background": "rgb(245,247,244)",
+          "ratio": 6.85
+        },
+        {
+          "selector": ".landing-hero-description",
+          "text": "Pergunte ao Arquivio. Receba uma resposta direta e os docume",
+          "fontSize": "18px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-hero-note",
+          "text": "Conexões de leitura · originais preservados",
+          "fontSize": "13px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-button",
+          "text": "Criar conta",
+          "fontSize": "16px",
+          "foreground": "rgb(255,255,255)",
+          "background": "rgb(28,96,82)",
+          "ratio": 7.38
+        },
+        {
+          "selector": ".landing-button",
+          "text": "Começar com o Arquivio",
+          "fontSize": "16px",
+          "foreground": "rgb(255,255,255)",
+          "background": "rgb(28,96,82)",
+          "ratio": 7.38
+        },
+        {
+          "selector": ".landing-button",
+          "text": "Criar minha conta",
+          "fontSize": "16px",
+          "foreground": "rgb(28,96,82)",
+          "background": "rgb(255,255,255)",
+          "ratio": 7.38
+        },
+        {
+          "selector": ".landing-login",
+          "text": "Entrar",
+          "fontSize": "16px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(245,247,244)",
+          "ratio": 13.9
+        },
+        {
+          "selector": ".landing-login",
+          "text": "Já tenho uma conta",
+          "fontSize": "16px",
+          "foreground": "rgb(28,96,82)",
+          "background": "rgb(245,247,244)",
+          "ratio": 6.85
+        },
+        {
+          "selector": ".landing-demo-options button[aria-pressed=\"true\"]",
+          "text": "Resposta com fontes",
+          "fontSize": "14px",
+          "foreground": "rgb(255,255,255)",
+          "background": "rgb(28,96,82)",
+          "ratio": 7.38
+        },
+        {
+          "selector": ".landing-demo-options button[aria-pressed=\"false\"]",
+          "text": "Com menção @",
+          "fontSize": "14px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(255,255,255)",
+          "ratio": 14.98
+        },
+        {
+          "selector": ".landing-demo-options button[aria-pressed=\"false\"]",
+          "text": "Sem evidência suficiente",
+          "fontSize": "14px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(255,255,255)",
+          "ratio": 14.98
+        },
+        {
+          "selector": ".landing-preview-label",
+          "text": "PRÉVIA ILUSTRATIVA",
+          "fontSize": "12px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(238,244,228)",
+          "ratio": 5.7
+        },
+        {
+          "selector": ".landing-answer > p",
+          "text": "A primeira entrega inclui o diagnóstico de marca e a propost",
+          "fontSize": "16px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(255,255,255)",
+          "ratio": 14.98
+        },
+        {
+          "selector": ".landing-answer-sources > strong",
+          "text": "Documentos utilizados",
+          "fontSize": "13px",
+          "foreground": "rgb(28,96,82)",
+          "background": "rgb(234,242,236)",
+          "ratio": 6.47
+        },
+        {
+          "selector": ".landing-answer-sources small",
+          "text": "Google Drive",
+          "fontSize": "13px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(255,255,255)",
+          "ratio": 6.4
+        },
+        {
+          "selector": ".landing-answer-sources small",
+          "text": "Notion",
+          "fontSize": "13px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(255,255,255)",
+          "ratio": 6.4
+        },
+        {
+          "selector": ".landing-answer-sources small",
+          "text": "OneDrive",
+          "fontSize": "13px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(255,255,255)",
+          "ratio": 6.4
+        },
+        {
+          "selector": ".landing-composer",
+          "text": "O que você gostaria de saber? Digite @ para mencionar um arq",
+          "fontSize": "14px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(255,255,255)",
+          "ratio": 6.4
+        },
+        {
+          "selector": ".landing-composer-hint",
+          "text": "Somente conteúdo já indexado. @ menciona arquivos e pastas; ",
+          "fontSize": "13px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(255,255,255)",
+          "ratio": 6.4
+        },
+        {
+          "selector": ".landing-scope-note",
+          "text": "A conversa usa somente as ferramentas e menções selecionadas",
+          "fontSize": "12px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(248,250,247)",
+          "ratio": 6.1
+        },
+        {
+          "selector": ".landing-integrations-intro > p:last-child",
+          "text": "Conecte o que sua equipe já usa. Os arquivos originais perma",
+          "fontSize": "17px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-story-list p",
+          "text": "Recupere decisões, entregas e informações registradas sem ab",
+          "fontSize": "16px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-story-list p",
+          "text": "Consulte todo o conteúdo indexado ou restrinja a pergunta a ",
+          "fontSize": "16px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-story-list p",
+          "text": "Veja as fontes apresentadas com a resposta e abra os origina",
+          "fontSize": "16px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-process-grid p",
+          "text": "Escolha materiais compartilháveis no Google Drive, OneDrive,",
+          "fontSize": "15px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(255,255,255)",
+          "ratio": 6.4
+        },
+        {
+          "selector": ".landing-process-grid p",
+          "text": "O Arquivio processa o conteúdo selecionado em segundo plano.",
+          "fontSize": "15px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(255,255,255)",
+          "ratio": 6.4
+        },
+        {
+          "selector": ".landing-process-grid p",
+          "text": "Defina o escopo, faça sua pergunta e confira os documentos q",
+          "fontSize": "15px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(255,255,255)",
+          "ratio": 6.4
+        },
+        {
+          "selector": ".landing-process-note",
+          "text": "Todos na organização podem consultar o conteúdo sincronizado",
+          "fontSize": "15px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(255,255,255)",
+          "ratio": 14.98
+        },
+        {
+          "selector": ".landing-faq-list summary",
+          "text": "Quais ferramentas posso conectar?",
+          "fontSize": "17px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(245,247,244)",
+          "ratio": 13.9
+        },
+        {
+          "selector": ".landing-faq-list summary",
+          "text": "O Arquivio altera meus arquivos?",
+          "fontSize": "17px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(245,247,244)",
+          "ratio": 13.9
+        },
+        {
+          "selector": ".landing-faq-list summary",
+          "text": "Quem pode consultar os documentos?",
+          "fontSize": "17px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(245,247,244)",
+          "ratio": 13.9
+        },
+        {
+          "selector": ".landing-faq-list summary",
+          "text": "E se faltar informação?",
+          "fontSize": "17px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(245,247,244)",
+          "ratio": 13.9
+        },
+        {
+          "selector": ".landing-faq-list summary",
+          "text": "Que conteúdo é compatível?",
+          "fontSize": "17px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(245,247,244)",
+          "ratio": 13.9
+        },
+        {
+          "selector": ".landing-faq-list summary",
+          "text": "Quando os documentos ficam disponíveis?",
+          "fontSize": "17px",
+          "foreground": "rgb(20,43,37)",
+          "background": "rgb(245,247,244)",
+          "ratio": 13.9
+        },
+        {
+          "selector": ".landing-faq-list summary",
+          "text": "Como a IA usa o conteúdo?",
+          "fontSize": "17px",
+          "foreground": "rgb(28,96,82)",
+          "background": "rgb(245,247,244)",
+          "ratio": 6.85
+        },
+        {
+          "selector": ".landing-faq-list details p",
+          "text": "Google Drive, OneDrive, Notion e SharePoint. Somente Owner/A",
+          "fontSize": "16px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-faq-list details p",
+          "text": "Não. Os originais continuam no Google Drive, OneDrive, Notio",
+          "fontSize": "16px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-faq-list details p",
+          "text": "Todos os membros da organização podem consultar o conteúdo s",
+          "fontSize": "16px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-faq-list details p",
+          "text": "O Arquivio informa quando não encontra evidência suficiente ",
+          "fontSize": "16px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-faq-list details p",
+          "text": "Documentos Google, PDFs com texto, DOCX, páginas do Notion e",
+          "fontSize": "16px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-faq-list details p",
+          "text": "Depois da sincronização e do processamento em segundo plano.",
+          "fontSize": "16px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-faq-list details p",
+          "text": "O texto necessário para busca e resposta é processado pelo p",
+          "fontSize": "16px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-closing .landing-eyebrow",
+          "text": "COMECE PELOS SEUS DOCUMENTOS",
+          "fontSize": "12px",
+          "foreground": "rgb(217,242,121)",
+          "background": "rgb(28,96,82)",
+          "ratio": 5.95
+        },
+        {
+          "selector": ".landing-closing h2 em",
+          "text": "Mais contexto.",
+          "fontSize": "56px",
+          "foreground": "rgb(217,242,121)",
+          "background": "rgb(28,96,82)",
+          "ratio": 5.95
+        },
+        {
+          "selector": ".landing-legal-links a",
+          "text": "Privacidade",
+          "fontSize": "14px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        },
+        {
+          "selector": ".landing-legal-links a",
+          "text": "Termos de uso",
+          "fontSize": "14px",
+          "foreground": "rgb(81,99,90)",
+          "background": "rgb(245,247,244)",
+          "ratio": 5.94
+        }
+      ],
+      "minTextRatio": 5.7,
+      "focusRatio": 5.13
+    },
+    "noJs": {
+      "httpStatus": 200,
+      "readyState": "complete",
+      "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+      "buttons": 3,
+      "faq": 7,
+      "revealHidden": 0,
+      "overflow": false,
+      "nativeDetailsOpens": true
+    },
+    "failedAssets": {
+      "interceptions": [
+        "http://127.0.0.1:5181/landing/fonts/manrope-latin-var.woff2",
+        "http://127.0.0.1:5181/landing/fonts/ibm-plex-sans-latin-var.woff2",
+        "http://127.0.0.1:5181/landing/document-context.webp"
+      ],
+      "data": {
+        "artPresent": false,
+        "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+        "answer": "A primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.",
+        "overflow": false,
+        "bodyFont": "\"Arquivio LP Text\", system-ui, Arial, sans-serif",
+        "bodyFontLoaded": false,
+        "headingFontLoaded": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "pageErrors": []
+    }
+  }
+}

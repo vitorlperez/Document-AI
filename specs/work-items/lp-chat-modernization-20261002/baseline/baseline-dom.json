@@ -1,0 +1,458 @@
+[
+  {
+    "name": "desktop",
+    "scrollHeight": 4939,
+    "overflowX": false,
+    "items": [
+      {
+        "tag": "A",
+        "text": "Pular para o conteúdo",
+        "href": "#landing-main",
+        "cls": "landing-skip-link",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "arquivio.",
+        "href": "#landing-main",
+        "cls": "landing-brand-link",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Produto",
+        "href": "#produto",
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Integrações",
+        "href": "#integracoes",
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Como funciona",
+        "href": "#como-funciona",
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Dúvidas",
+        "href": "#perguntas",
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Entrar",
+        "href": null,
+        "cls": "landing-login",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar conta",
+        "href": null,
+        "cls": "landing-button landing-button-small",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Abrir navegação",
+        "href": null,
+        "cls": "",
+        "visible": false
+      },
+      {
+        "tag": "A",
+        "text": "Produto",
+        "href": "#produto",
+        "cls": "",
+        "visible": false
+      },
+      {
+        "tag": "A",
+        "text": "Integrações",
+        "href": "#integracoes",
+        "cls": "",
+        "visible": false
+      },
+      {
+        "tag": "A",
+        "text": "Como funciona",
+        "href": "#como-funciona",
+        "cls": "",
+        "visible": false
+      },
+      {
+        "tag": "A",
+        "text": "Dúvidas",
+        "href": "#perguntas",
+        "cls": "",
+        "visible": false
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Entrar",
+        "href": null,
+        "cls": "",
+        "visible": false
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar conta",
+        "href": null,
+        "cls": "landing-mobile-signup",
+        "visible": false
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Começar com o Arquivio",
+        "href": null,
+        "cls": "landing-button",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Já tenho uma conta",
+        "href": null,
+        "cls": "landing-login",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Resposta com fontes",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Com menção @",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Sem evidência suficiente",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Quais ferramentas posso conectar?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "O Arquivio altera meus arquivos?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Quem pode consultar os documentos?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "E se faltar informação?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Que conteúdo é compatível?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Quando os documentos ficam disponíveis?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Como a IA usa o conteúdo?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar minha conta",
+        "href": null,
+        "cls": "landing-button",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "arquivio.",
+        "href": "#landing-main",
+        "cls": "landing-brand-link",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Privacidade",
+        "href": "/privacidade",
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Termos de uso",
+        "href": "/termos",
+        "cls": "",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "name": "mobile",
+    "scrollHeight": 5994,
+    "overflowX": false,
+    "items": [
+      {
+        "tag": "A",
+        "text": "Pular para o conteúdo",
+        "href": "#landing-main",
+        "cls": "landing-skip-link",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "arquivio.",
+        "href": "#landing-main",
+        "cls": "landing-brand-link",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Produto",
+        "href": "#produto",
+        "cls": "",
+        "visible": false
+      },
+      {
+        "tag": "A",
+        "text": "Integrações",
+        "href": "#integracoes",
+        "cls": "",
+        "visible": false
+      },
+      {
+        "tag": "A",
+        "text": "Como funciona",
+        "href": "#como-funciona",
+        "cls": "",
+        "visible": false
+      },
+      {
+        "tag": "A",
+        "text": "Dúvidas",
+        "href": "#perguntas",
+        "cls": "",
+        "visible": false
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Entrar",
+        "href": null,
+        "cls": "landing-login",
+        "visible": false
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar conta",
+        "href": null,
+        "cls": "landing-button landing-button-small",
+        "visible": false
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Abrir navegação",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Produto",
+        "href": "#produto",
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Integrações",
+        "href": "#integracoes",
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Como funciona",
+        "href": "#como-funciona",
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Dúvidas",
+        "href": "#perguntas",
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Entrar",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar conta",
+        "href": null,
+        "cls": "landing-mobile-signup",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Começar com o Arquivio",
+        "href": null,
+        "cls": "landing-button",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Já tenho uma conta",
+        "href": null,
+        "cls": "landing-login",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Resposta com fontes",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Com menção @",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Sem evidência suficiente",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Quais ferramentas posso conectar?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "O Arquivio altera meus arquivos?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Quem pode consultar os documentos?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "E se faltar informação?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Que conteúdo é compatível?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Quando os documentos ficam disponíveis?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "SUMMARY",
+        "text": "Como a IA usa o conteúdo?",
+        "href": null,
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Criar minha conta",
+        "href": null,
+        "cls": "landing-button",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "arquivio.",
+        "href": "#landing-main",
+        "cls": "landing-brand-link",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Privacidade",
+        "href": "/privacidade",
+        "cls": "",
+        "visible": true
+      },
+      {
+        "tag": "A",
+        "text": "Termos de uso",
+        "href": "/termos",
+        "cls": "",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "signupNav": [
+      "http://localhost:8000/auth/login?screen_hint=sign-up"
+    ]
+  },
+  {
+    "loginUrl": "http://localhost:3000/login"
+  }
+]

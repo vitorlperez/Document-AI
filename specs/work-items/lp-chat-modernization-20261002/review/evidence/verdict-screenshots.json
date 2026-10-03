@@ -1,0 +1,30 @@
+[
+  {
+    "viewport": {
+      "name": "desktop-1440x900",
+      "width": 1440,
+      "height": 900
+    },
+    "url": "http://127.0.0.1:5181/",
+    "httpStatus": 200,
+    "apiSessionStatus": 200,
+    "screenshot": "review/evidence/verdict-desktop-1440x900.png",
+    "consoleErrors": [],
+    "pageErrors": [],
+    "requestFailures": []
+  },
+  {
+    "viewport": {
+      "name": "mobile-390x844",
+      "width": 390,
+      "height": 844
+    },
+    "url": "http://127.0.0.1:5181/",
+    "httpStatus": 200,
+    "apiSessionStatus": 200,
+    "screenshot": "review/evidence/verdict-mobile-390x844.png",
+    "consoleErrors": [],
+    "pageErrors": [],
+    "requestFailures": []
+  }
+]

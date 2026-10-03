@@ -1,0 +1,2247 @@
+{
+  "$schema": "oc-design-dna/components.discovered.json@v1",
+  "card": "OVKA-537",
+  "source": {
+    "url": "https://dust.tt/",
+    "capturedAt": "2026-10-03T02:03:04.179Z",
+    "captureMode": "stealth-headless",
+    "launchLog": [
+      "stealth-headless: passed (1619 els)"
+    ]
+  },
+  "method": "structural clustering — tag + semantic classes (CSS-module hashes and Tailwind utilities stripped) + child-tag skeleton; states probed by real interaction and kept only when a computed property changed",
+  "totals": {
+    "elementsScanned": 917,
+    "clusters": 43,
+    "repeated": 18,
+    "named": 43,
+    "shotted": 31,
+    "interactiveFound": 3,
+    "stateProbed": 25,
+    "withRealStates": 3
+  },
+  "versusFixedTaxonomy": {
+    "oldCeiling": "6 buttons + 4 cards + 1 nav + 1 input + 1 footer = 13 max, deduped by backgroundColor|borderRadius|boxShadow",
+    "discovered": 43,
+    "repeatedStructures": 18
+  },
+  "components": [
+    {
+      "name": "label-sm",
+      "tag": "span",
+      "signature": "span|label-sm||",
+      "semanticClasses": [
+        "label-sm"
+      ],
+      "dataNames": [],
+      "childSkeleton": "",
+      "instances": 22,
+      "variants": [
+        {
+          "classes": "label-sm",
+          "count": 22
+        }
+      ],
+      "rect": {
+        "w": 52,
+        "h": 20
+      },
+      "area": 1046,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.206 0.005 67.543)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "14px",
+        "fontWeight": "550",
+        "lineHeight": "20px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "0.3s cubic-bezier(0, 0, 0.2, 1)",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div > div > div:nth-of-type(2) > a:nth-of-type(1) > span > span.label-sm",
+      "text": "Product",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": true,
+      "pointer": true,
+      "slug": "00-label-sm",
+      "states": [
+        {
+          "state": "hover",
+          "diff": {
+            "self › color": {
+              "from": "oklch(0.206 0.005 67.543)",
+              "to": "oklch(0.256 0.006 34.298)"
+            },
+            "self › textDecorationLine": {
+              "from": "none",
+              "to": "underline"
+            },
+            "self › outlineColor": {
+              "from": "oklch(0.206 0.005 67.543)",
+              "to": "oklch(0.256 0.006 34.298)"
+            }
+          },
+          "screenshot": "screenshots/components/00-label-sm-hover.png",
+          "visuallyDistinct": true,
+          "confidence": "observed"
+        }
+      ],
+      "screenshot": "screenshots/components/00-label-sm.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-right",
+      "tag": "li",
+      "signature": "li|home-reveal.home-reveal-in.home-reveal-right||span,span",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-right",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "span,span",
+      "instances": 12,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-right",
+          "count": 12
+        }
+      ],
+      "rect": {
+        "w": 377,
+        "h": 45
+      },
+      "area": 16980,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "padding": "12px 28px",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "row",
+        "gap": "12px",
+        "opacity": "1",
+        "transition": "opacity 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.3s, transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.3s, letter-spacing 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.3s",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div > div.home-reveal.home-reveal-up:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > ul > li.home-reveal.home-reveal-right:nth-of-type(1)",
+      "text": "SOC 2 Type II certified",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "01-home-reveal-right",
+      "states": [
+        {
+          "state": "hover",
+          "diff": {
+            "self › backgroundColor": {
+              "from": "rgba(0, 0, 0, 0)",
+              "to": "oklab(0.9708 0.0166159 -0.00308558 / 0.5)"
+            }
+          },
+          "screenshot": "screenshots/components/01-home-reveal-right-hover.png",
+          "visuallyDistinct": false,
+          "confidence": "observed"
+        }
+      ],
+      "screenshot": "screenshots/components/01-home-reveal-right.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-trusted-item",
+      "tag": "div",
+      "signature": "div|home-trusted-item||div,div",
+      "semanticClasses": [
+        "home-trusted-item"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div,div",
+      "instances": 12,
+      "variants": [
+        {
+          "classes": "home-trusted-item",
+          "count": 12
+        }
+      ],
+      "rect": {
+        "w": 112,
+        "h": 76
+      },
+      "area": 8512,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "4px",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "section:nth-of-type(1) > div > div.home-reveal.home-reveal-up:nth-of-type(2) > div > div.home-trusted-track > div.home-trusted-item:nth-of-type(1)",
+      "text": null,
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "02-home-trusted-item",
+      "states": [],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-trusted-item",
+      "tag": "a",
+      "signature": "a|home-trusted-item||div,div",
+      "semanticClasses": [
+        "home-trusted-item"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div,div",
+      "instances": 12,
+      "variants": [
+        {
+          "classes": "home-trusted-item",
+          "count": 12
+        }
+      ],
+      "rect": {
+        "w": 112,
+        "h": 76
+      },
+      "area": 8512,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "4px",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "section:nth-of-type(1) > div > div.home-reveal.home-reveal-up:nth-of-type(2) > div > div.home-trusted-track > a.home-trusted-item:nth-of-type(1)",
+      "text": "Case study",
+      "hasAnimation": false,
+      "focusable": true,
+      "insideInteractive": false,
+      "pointer": true,
+      "slug": "03-home-trusted-item",
+      "states": [],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-trusted-chip",
+      "tag": "span",
+      "signature": "span|home-trusted-chip||svg",
+      "semanticClasses": [
+        "home-trusted-chip"
+      ],
+      "dataNames": [],
+      "childSkeleton": "svg",
+      "instances": 12,
+      "variants": [
+        {
+          "classes": "home-trusted-chip",
+          "count": 12
+        }
+      ],
+      "rect": {
+        "w": 71,
+        "h": 11
+      },
+      "area": 782,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "oklab(0.206 0.00190995 0.00462083 / 0.4)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "11px",
+        "fontWeight": "450",
+        "lineHeight": "11px",
+        "display": "flex",
+        "flexDirection": "row",
+        "gap": "4px",
+        "opacity": "1",
+        "transition": "color 0.18s cubic-bezier(0.165, 0.84, 0.44, 1)",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div > div.home-trusted-track > a.home-trusted-item:nth-of-type(1) > div:nth-of-type(2) > span.home-trusted-chip",
+      "text": "Case study",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": true,
+      "pointer": true,
+      "slug": "04-home-trusted-chip",
+      "states": [],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-up",
+      "tag": "div",
+      "signature": "div|home-reveal.home-reveal-in.home-reveal-up||h2",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-up",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "h2",
+      "instances": 7,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-up",
+          "count": 7
+        }
+      ],
+      "rect": {
+        "w": 437,
+        "h": 72
+      },
+      "area": 31449,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "opacity 0.5s cubic-bezier(0.215, 0.61, 0.355, 1), transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1), letter-spacing 0.5s cubic-bezier(0.215, 0.61, 0.355, 1)",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "section > div > div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(1) > div > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "text": "Trusted by teams\nat 3,000+ global organizations",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "05-home-reveal-up",
+      "states": [],
+      "screenshot": "screenshots/components/05-home-reveal-up.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-up",
+      "tag": "div",
+      "signature": "div|home-reveal.home-reveal-in.home-reveal-up||span",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-up",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "span",
+      "instances": 7,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-up",
+          "count": 7
+        }
+      ],
+      "rect": {
+        "w": 526,
+        "h": 28
+      },
+      "area": 14728,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "opacity 0.5s cubic-bezier(0.215, 0.61, 0.355, 1), transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1), letter-spacing 0.5s cubic-bezier(0.215, 0.61, 0.355, 1)",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div > div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(2) > div > div:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "text": "SEE DUST IN ACTION",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "06-home-reveal-up",
+      "states": [],
+      "screenshot": "screenshots/components/06-home-reveal-up.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "heading-3xl",
+      "tag": "h2",
+      "signature": "h2|heading-3xl||",
+      "semanticClasses": [
+        "heading-3xl"
+      ],
+      "dataNames": [],
+      "childSkeleton": "",
+      "instances": 6,
+      "variants": [
+        {
+          "classes": "heading-3xl",
+          "count": 6
+        }
+      ],
+      "rect": {
+        "w": 526,
+        "h": 128
+      },
+      "area": 67328,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.206 0.005 67.543)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "padding": "8px 0px",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "48px",
+        "fontWeight": "450",
+        "lineHeight": "56.0002px",
+        "letterSpacing": "-1.392px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(2) > div > div:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2) > h2.heading-3xl",
+      "text": "AI that uses your context to do real work",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "07-heading-3xl",
+      "states": [],
+      "screenshot": "screenshots/components/07-heading-3xl.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-up",
+      "tag": "div",
+      "signature": "div|home-reveal.home-reveal-in.home-reveal-up||p",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-up",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "p",
+      "instances": 6,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-up",
+          "count": 6
+        }
+      ],
+      "rect": {
+        "w": 520,
+        "h": 84
+      },
+      "area": 43509,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "opacity 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.08s, transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.08s, letter-spacing 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.08s",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "section > div > section.-ml-\\[50vw\\].-mr-\\[50vw\\] > div > div:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "text": "Dust connects your company knowledge, tools, and teams so you can create, share, and run a",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "08-home-reveal-up",
+      "states": [],
+      "screenshot": "screenshots/components/08-home-reveal-up.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-up",
+      "tag": "article",
+      "signature": "article|home-reveal.home-reveal-in.home-reveal-up||div,div",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-up",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div,div",
+      "instances": 4,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-up",
+          "count": 4
+        }
+      ],
+      "rect": {
+        "w": 566,
+        "h": 249
+      },
+      "area": 140827,
+      "style": {
+        "backgroundColor": "oklch(1 0 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "padding": "40px",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "24px",
+        "opacity": "1",
+        "transition": "opacity 0.5s cubic-bezier(0.215, 0.61, 0.355, 1), transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1), letter-spacing 0.5s cubic-bezier(0.215, 0.61, 0.355, 1)",
+        "overflow": "hidden",
+        "position": "relative"
+      },
+      "selector": "div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(4) > div > div:nth-of-type(2) > div:nth-of-type(1) > article.home-reveal.home-reveal-up",
+      "text": "01\nAgents with company context\n\nConnect Dust to 70+ connectors, including Slack, Notion, G",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "09-home-reveal-up",
+      "states": [
+        {
+          "state": "hover",
+          "diff": {
+            "self › backgroundColor": {
+              "from": "oklch(1 0 0)",
+              "to": "oklab(0.9681 -0.0111403 -0.0145184 / 0.4)"
+            }
+          },
+          "screenshot": "screenshots/components/09-home-reveal-up-hover.png",
+          "visuallyDistinct": true,
+          "confidence": "observed"
+        }
+      ],
+      "screenshot": "screenshots/components/09-home-reveal-up.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-up",
+      "tag": "div",
+      "signature": "div|home-reveal.home-reveal-in.home-reveal-up||div",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-up",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div",
+      "instances": 5,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-up",
+          "count": 5
+        }
+      ],
+      "rect": {
+        "w": 294,
+        "h": 40
+      },
+      "area": 11760,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "opacity 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.16s, transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.16s, letter-spacing 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.16s",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "section > div > section.-ml-\\[50vw\\].-mr-\\[50vw\\] > div > div:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "text": "Request a demo\nTry for free →",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "10-home-reveal-up",
+      "states": [],
+      "screenshot": "screenshots/components/10-home-reveal-up.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-up",
+      "tag": "div",
+      "signature": "div|home-reveal.home-reveal-in.home-reveal-up||a",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-up",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "a",
+      "instances": 5,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-up",
+          "count": 5
+        }
+      ],
+      "rect": {
+        "w": 380,
+        "h": 24
+      },
+      "area": 9120,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "opacity 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.16s, transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.16s, letter-spacing 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.16s",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(8) > div > div > div > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "text": "More about us",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "11-home-reveal-up",
+      "states": [],
+      "screenshot": "screenshots/components/11-home-reveal-up.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "copy-xs",
+      "tag": "div",
+      "signature": "div|copy-xs||",
+      "semanticClasses": [
+        "copy-xs"
+      ],
+      "dataNames": [],
+      "childSkeleton": "",
+      "instances": 5,
+      "variants": [
+        {
+          "classes": "copy-xs",
+          "count": 5
+        }
+      ],
+      "rect": {
+        "w": 204,
+        "h": 28
+      },
+      "area": 5712,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.709 0.01 62.526)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "padding": "8px 0px",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "550",
+        "lineHeight": "12px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "main > div:nth-of-type(4) > div > div > div:nth-of-type(2) > div.copy-xs",
+      "text": "PRODUCT",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "12-copy-xs",
+      "states": [],
+      "screenshot": "screenshots/components/12-copy-xs.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "copy-base",
+      "tag": "p",
+      "signature": "p|copy-base||",
+      "semanticClasses": [
+        "copy-base"
+      ],
+      "dataNames": [],
+      "childSkeleton": "",
+      "instances": 4,
+      "variants": [
+        {
+          "classes": "copy-base",
+          "count": 4
+        }
+      ],
+      "rect": {
+        "w": 480,
+        "h": 102
+      },
+      "area": 49140,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.444 0.011 78.213)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "25.6px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(2) > div > div:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3) > p.copy-base",
+      "text": "Most AI tools can retrieve a message from Slack or a record from your CRM. Dust brings the",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "13-copy-base",
+      "states": [],
+      "screenshot": "screenshots/components/13-copy-base.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-up",
+      "tag": "div",
+      "signature": "div|home-reveal.home-reveal-in.home-reveal-up||div,div",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-up",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div,div",
+      "instances": 2,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-up",
+          "count": 2
+        }
+      ],
+      "rect": {
+        "w": 1132,
+        "h": 541
+      },
+      "area": 612129,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "row",
+        "gap": "16px",
+        "opacity": "1",
+        "transition": "opacity 0.5s cubic-bezier(0.215, 0.61, 0.355, 1), transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1), letter-spacing 0.5s cubic-bezier(0.215, 0.61, 0.355, 1)",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "section > div > div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(3) > div > div.home-reveal.home-reveal-up",
+      "text": "Dust is the most impactful software we've adopted since building Clay.\nEverett Berry\nHead ",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "14-home-reveal-up",
+      "states": [],
+      "screenshot": "screenshots/components/14-home-reveal-up.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-photo",
+      "tag": "div",
+      "signature": "div|home-reveal.home-reveal-in.home-reveal-photo||div",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-photo",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div",
+      "instances": 2,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-photo",
+          "count": 2
+        }
+      ],
+      "rect": {
+        "w": 526,
+        "h": 464
+      },
+      "area": 244179,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "opacity 0.7s cubic-bezier(0.215, 0.61, 0.355, 1) 0.12s, transform 0.7s cubic-bezier(0.215, 0.61, 0.355, 1) 0.12s, letter-spacing 0.7s cubic-bezier(0.215, 0.61, 0.355, 1) 0.12s",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "section > div > div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(2) > div > div.home-reveal.home-reveal-photo:nth-of-type(2)",
+      "text": null,
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "15-home-reveal-photo",
+      "states": [],
+      "screenshot": "screenshots/components/15-home-reveal-photo.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-up",
+      "tag": "div",
+      "signature": "div|home-reveal.home-reveal-in.home-reveal-up||h1",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-up",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "h1",
+      "instances": 2,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-up",
+          "count": 2
+        }
+      ],
+      "rect": {
+        "w": 539,
+        "h": 187
+      },
+      "area": 100617,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "opacity 0.5s cubic-bezier(0.215, 0.61, 0.355, 1), transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1), letter-spacing 0.5s cubic-bezier(0.215, 0.61, 0.355, 1)",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "section > div > section.-ml-\\[50vw\\].-mr-\\[50vw\\] > div > div:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "text": "Multiplayer AI for\nhuman-agent collaboration",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "16-home-reveal-up",
+      "states": [],
+      "screenshot": "screenshots/components/16-home-reveal-up.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "-ml-[50vw]",
+      "tag": "div",
+      "signature": "div|-ml-[50vw].-mr-[50vw]||section,section,section,section,section,section",
+      "semanticClasses": [
+        "-ml-[50vw]",
+        "-mr-[50vw]"
+      ],
+      "dataNames": [],
+      "childSkeleton": "section,section,section,section,section,section",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "-ml-[50vw].-mr-[50vw]",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 1440,
+        "h": 6828
+      },
+      "area": 9831938,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "column",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "relative"
+      },
+      "selector": "div#__next > main > div:nth-of-type(1) > section > div > div.-ml-\\[50vw\\].-mr-\\[50vw\\]",
+      "text": "Trusted by teams\nat 3,000+ global organizations\nCase study\nCase study\nCase study\nCase stud",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "17--ml-_50vw_",
+      "states": [],
+      "screenshot": "screenshots/components/17--ml-_50vw_.png",
+      "selfAnimatingProps": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "tool-chip-logo",
+      "tag": "span",
+      "signature": "span|tool-chip.tool-chip-logo||img",
+      "semanticClasses": [
+        "tool-chip",
+        "tool-chip-logo"
+      ],
+      "dataNames": [],
+      "childSkeleton": "img",
+      "instances": 2,
+      "variants": [
+        {
+          "classes": "tool-chip.tool-chip-logo",
+          "count": 2
+        }
+      ],
+      "rect": {
+        "w": 87,
+        "h": 20
+      },
+      "area": 1689,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(26, 29, 33)",
+        "borderRadius": "5px",
+        "borderTopColor": "rgb(26, 29, 33)",
+        "padding": "0px 2px",
+        "fontFamily": "Geist, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13px",
+        "fontWeight": "500",
+        "lineHeight": "19.5px",
+        "letterSpacing": "-0.1px",
+        "display": "inline-flex",
+        "flexDirection": "row",
+        "gap": "5px",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card > div.chat-card-body:nth-of-type(2) > div.line > span.tool-chip.tool-chip-logo:nth-of-type(3)",
+      "text": "Salesforce",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "18-tool-chip-logo",
+      "states": [],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "go2933276541",
+      "tag": "div",
+      "signature": "div|go2369186930.go2933276541||div",
+      "semanticClasses": [
+        "go2933276541",
+        "go2369186930"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "go2369186930.go2933276541",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 1440,
+        "h": 900
+      },
+      "area": 1296000,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "fixed"
+      },
+      "selector": "div#hs-web-interactives-top-anchor",
+      "text": null,
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "19-go2933276541",
+      "states": [],
+      "screenshot": "screenshots/components/19-go2933276541.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "-ml-[50vw]",
+      "tag": "section",
+      "signature": "section|-ml-[50vw].-mr-[50vw]||div",
+      "semanticClasses": [
+        "-ml-[50vw]",
+        "-mr-[50vw]"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "-ml-[50vw].-mr-[50vw]",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 1440,
+        "h": 686
+      },
+      "area": 988268,
+      "style": {
+        "backgroundColor": "oklch(1 0 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "padding": "0px 0px 48px",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "relative"
+      },
+      "selector": "div#__next > main > div:nth-of-type(1) > section > div > section.-ml-\\[50vw\\].-mr-\\[50vw\\]",
+      "text": "Multiplayer AI for\nhuman-agent collaboration\n\nDust connects your company knowledge, tools,",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "20--ml-_50vw_",
+      "states": [],
+      "screenshot": "screenshots/components/20--ml-_50vw_.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "dust-floor-host",
+      "tag": "div",
+      "signature": "div|dust-floor-host||svg,div",
+      "semanticClasses": [
+        "dust-floor-host"
+      ],
+      "dataNames": [],
+      "childSkeleton": "svg,div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "dust-floor-host",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 789,
+        "h": 542
+      },
+      "area": 427762,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "relative"
+      },
+      "selector": "section > div > section.-ml-\\[50vw\\].-mr-\\[50vw\\] > div > div.home-reveal.home-reveal-up:nth-of-type(2) > div.dust-floor-host",
+      "text": "Engineering\nMarketing\nSupport\nProduct · Sales\n@LeadQual\n@TicketRouter\n@ProductExpert\n@Inci",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "21-dust-floor-host",
+      "states": [],
+      "screenshot": "screenshots/components/21-dust-floor-host.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "dust-floor-cards",
+      "tag": "div",
+      "signature": "div|dust-floor-cards||div",
+      "semanticClasses": [
+        "dust-floor-cards"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "dust-floor-cards",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 789,
+        "h": 542
+      },
+      "area": 427762,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "absolute"
+      },
+      "selector": "div > section.-ml-\\[50vw\\].-mr-\\[50vw\\] > div > div.home-reveal.home-reveal-up:nth-of-type(2) > div.dust-floor-host > div.dust-floor-cards",
+      "text": "Aisha\nCustomer Success·just now\n@TicketRouter customer is asking why their data sync keeps",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "22-dust-floor-cards",
+      "states": [],
+      "screenshot": "screenshots/components/22-dust-floor-cards.png",
+      "selfAnimatingProps": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-trusted-track",
+      "tag": "div",
+      "signature": "div|home-trusted-track||div,a,div,a,div,div",
+      "semanticClasses": [
+        "home-trusted-track"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div,a,div,a,div,div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "home-trusted-track",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 4952,
+        "h": 76
+      },
+      "area": 376352,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "row",
+        "gap": "normal 96px",
+        "opacity": "1",
+        "transform": "matrix(1, 0, 0, 1, -1266.83, 0)",
+        "transition": "all",
+        "animationName": "home-trusted-marquee",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(1) > div > div.home-reveal.home-reveal-up:nth-of-type(2) > div > div.home-trusted-track",
+      "text": "Case study\nCase study\nCase study\nCase study\nCase study\nCase study\nCase study\nCase study\nCa",
+      "hasAnimation": true,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "23-home-trusted-track",
+      "states": [],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-team-img-slide",
+      "tag": "div",
+      "signature": "div|home-team-img-slide||div",
+      "semanticClasses": [
+        "home-team-img-slide"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "home-team-img-slide",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 534,
+        "h": 604
+      },
+      "area": 322603,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "absolute"
+      },
+      "selector": "div#team-panel-engineering > div:nth-of-type(1) > div.home-team-img-slide:nth-of-type(2)",
+      "text": null,
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "24-home-team-img-slide",
+      "states": [],
+      "screenshot": "screenshots/components/24-home-team-img-slide.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-team-slide",
+      "tag": "div",
+      "signature": "div|home-team-slide||div",
+      "semanticClasses": [
+        "home-team-slide"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "home-team-slide",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 534,
+        "h": 604
+      },
+      "area": 322603,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div#team-panel-engineering > div:nth-of-type(2) > div.home-team-slide:nth-of-type(6)",
+      "text": "Engineering\nOperations\nAI-Powered Code Debugging\nSurface relevant context, docs, and histo",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "25-home-team-slide",
+      "states": [],
+      "screenshot": "screenshots/components/25-home-team-slide.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-quote-slide",
+      "tag": "div",
+      "signature": "div|home-quote-slide||img",
+      "semanticClasses": [
+        "home-quote-slide"
+      ],
+      "dataNames": [],
+      "childSkeleton": "img",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "home-quote-slide",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 429,
+        "h": 541
+      },
+      "area": 231982,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "absolute"
+      },
+      "selector": "div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(3) > div > div.home-reveal.home-reveal-up > div:nth-of-type(2) > div.home-quote-slide",
+      "text": null,
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "26-home-quote-slide",
+      "states": [],
+      "screenshot": "screenshots/components/26-home-quote-slide.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-quote-slide",
+      "tag": "div",
+      "signature": "div|home-quote-slide||div,blockquote,div",
+      "semanticClasses": [
+        "home-quote-slide"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div,blockquote,div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "home-quote-slide",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 575,
+        "h": 333
+      },
+      "area": 191331,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "8px",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "section:nth-of-type(3) > div > div.home-reveal.home-reveal-up > div:nth-of-type(1) > div:nth-of-type(1) > div.home-quote-slide:nth-of-type(3)",
+      "text": "Dust is the most impactful software we've adopted since building Clay.",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "27-home-quote-slide",
+      "states": [],
+      "screenshot": "screenshots/components/27-home-quote-slide.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-up",
+      "tag": "figure",
+      "signature": "figure|home-reveal.home-reveal-in.home-reveal-up||div",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-up",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-up",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 526,
+        "h": 206
+      },
+      "area": 108323,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "opacity 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.24s, transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.24s, letter-spacing 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.24s",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(5) > div > div > div:nth-of-type(1) > figure.home-reveal.home-reveal-up",
+      "text": "“We made a bet on Dust because we knew the team was exceptional. What we didn't expect was",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "28-home-reveal-up",
+      "states": [],
+      "screenshot": "screenshots/components/28-home-reveal-up.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-up",
+      "tag": "div",
+      "signature": "div|home-reveal.home-reveal-in.home-reveal-up||p,p",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-up",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "p,p",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-up",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 680,
+        "h": 152
+      },
+      "area": 103339,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "oklab(0.999994 0.0000455677 0.0000200868 / 0.7)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "24px",
+        "opacity": "0.996612",
+        "transform": "matrix(1, 0, 0, 1, 0, 0.0474291)",
+        "transition": "opacity 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.2s, transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.2s, letter-spacing 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.2s",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "section > div > div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(9) > div:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "text": "There's a new kind of person emerging in fast-moving companies; someone who doesn't wait f",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "29-home-reveal-up",
+      "states": [],
+      "screenshot": "screenshots/components/29-home-reveal-up.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "__className_25ee46",
+      "tag": "blockquote",
+      "signature": "blockquote|__className_25ee46||",
+      "semanticClasses": [
+        "__className_25ee46"
+      ],
+      "dataNames": [],
+      "childSkeleton": "",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "__className_25ee46",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 498,
+        "h": 126
+      },
+      "area": 62717,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.206 0.005 67.543)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "__Source_Serif_4_25ee46, __Source_Serif_4_Fallback_25ee46",
+        "fontSize": "18px",
+        "fontWeight": "400",
+        "lineHeight": "25.2px",
+        "letterSpacing": "-0.09px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div > div > div:nth-of-type(1) > figure.home-reveal.home-reveal-up > div > blockquote.__className_25ee46",
+      "text": "“We made a bet on Dust because we knew the team was exceptional. What we didn't expect was",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "30-__className_25ee46",
+      "states": [],
+      "screenshot": "screenshots/components/30-__className_25ee46.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "chat-card",
+      "tag": "div",
+      "signature": "div|chat-card||div,div,div",
+      "semanticClasses": [
+        "chat-card"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div,div,div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "chat-card",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 380,
+        "h": 130
+      },
+      "area": 49258,
+      "style": {
+        "backgroundColor": "rgb(253, 252, 247)",
+        "color": "rgb(26, 29, 33)",
+        "borderRadius": "18px",
+        "borderTopWidth": "1px",
+        "borderTopColor": "rgba(17, 20, 24, 0.08)",
+        "borderStyle": "solid",
+        "boxShadow": "rgba(17, 20, 24, 0.22) 0px 12px 32px -10px, rgba(17, 20, 24, 0.08) 0px 2px 6px 0px",
+        "padding": "14px 18px 12px",
+        "fontFamily": "Geist, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transform": "matrix(1, 0, 0, 1, -190, 0)",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "absolute"
+      },
+      "selector": "div > div.home-reveal.home-reveal-up:nth-of-type(2) > div.dust-floor-host > div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card",
+      "text": "Aisha\nCustomer Success·just now\n@TicketRouter customer is asking why their data sync keeps",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "31-chat-card",
+      "states": [],
+      "screenshot": "screenshots/components/31-chat-card.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "copy-lg",
+      "tag": "p",
+      "signature": "p|copy-lg||",
+      "semanticClasses": [
+        "copy-lg"
+      ],
+      "dataNames": [],
+      "childSkeleton": "",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "copy-lg",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 520,
+        "h": 84
+      },
+      "area": 43509,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.444 0.011 78.213)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "18px",
+        "fontWeight": "400",
+        "lineHeight": "27.9px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div > section.-ml-\\[50vw\\].-mr-\\[50vw\\] > div > div:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2) > p.copy-lg",
+      "text": "Dust connects your company knowledge, tools, and teams so you can create, share, and run a",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "32-copy-lg",
+      "states": [],
+      "screenshot": "screenshots/components/32-copy-lg.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-quote-slide",
+      "tag": "div",
+      "signature": "div|home-quote-slide||span,span",
+      "semanticClasses": [
+        "home-quote-slide"
+      ],
+      "dataNames": [],
+      "childSkeleton": "span,span",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "home-quote-slide",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 465,
+        "h": 47
+      },
+      "area": 21855,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "column",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div > div.home-reveal.home-reveal-up > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > div.home-quote-slide:nth-of-type(3)",
+      "text": "Everett Berry\nHead of GTM Engineering at Clay",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "33-home-quote-slide",
+      "states": [],
+      "screenshot": "screenshots/components/33-home-quote-slide.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "chat-card-body",
+      "tag": "div",
+      "signature": "div|chat-card-body||div",
+      "semanticClasses": [
+        "chat-card-body"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "chat-card-body",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 342,
+        "h": 60
+      },
+      "area": 20392,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(26, 29, 33)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13px",
+        "fontWeight": "400",
+        "lineHeight": "19.5px",
+        "letterSpacing": "-0.1px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.dust-floor-host > div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card > div.chat-card-body:nth-of-type(2)",
+      "text": "@TicketRouter customer is asking why their data sync keeps failing on the \nSalesforce conn",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "34-chat-card-body",
+      "states": [],
+      "screenshot": "screenshots/components/34-chat-card-body.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "line",
+      "tag": "div",
+      "signature": "div|line||span,span,span,span,span,span",
+      "semanticClasses": [
+        "line"
+      ],
+      "dataNames": [],
+      "childSkeleton": "span,span,span,span,span,span",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "line",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 342,
+        "h": 60
+      },
+      "area": 20392,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(26, 29, 33)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13px",
+        "fontWeight": "400",
+        "lineHeight": "19.5px",
+        "letterSpacing": "-0.1px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.dust-floor-host > div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card > div.chat-card-body:nth-of-type(2) > div.line",
+      "text": "@TicketRouter customer is asking why their data sync keeps failing on the \nSalesforce conn",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "35-line",
+      "states": [],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "home-reveal-running",
+      "tag": "em",
+      "signature": "em|home-reveal.home-reveal-in.home-reveal-running||span",
+      "semanticClasses": [
+        "home-reveal",
+        "home-reveal-running",
+        "home-reveal-in"
+      ],
+      "dataNames": [],
+      "childSkeleton": "span",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "home-reveal.home-reveal-in.home-reveal-running",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 207,
+        "h": 63
+      },
+      "area": 13067,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(255, 255, 255)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Lora, Georgia, serif",
+        "fontSize": "56px",
+        "fontWeight": "400",
+        "lineHeight": "57.12px",
+        "letterSpacing": "0.218139px",
+        "display": "inline",
+        "flexDirection": "row",
+        "opacity": "0.9578",
+        "transition": "opacity 0.7s cubic-bezier(0.165, 0.84, 0.44, 1) 0.4s, transform 0.7s cubic-bezier(0.165, 0.84, 0.44, 1) 0.4s, letter-spacing 0.7s cubic-bezier(0.165, 0.84, 0.44, 1) 0.4s",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.-ml-\\[50vw\\].-mr-\\[50vw\\] > section:nth-of-type(9) > div:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(2) > h1 > em.home-reveal.home-reveal-running",
+      "text": "running",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "36-home-reveal-running",
+      "states": [],
+      "screenshot": "screenshots/components/36-home-reveal-running.png",
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "chat-card-header",
+      "tag": "div",
+      "signature": "div|chat-card-header||div,div",
+      "semanticClasses": [
+        "chat-card-header"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div,div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "chat-card-header",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 342,
+        "h": 32
+      },
+      "area": 10944,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(26, 29, 33)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "flex",
+        "flexDirection": "row",
+        "gap": "10px",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.dust-floor-host > div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card > div.chat-card-header:nth-of-type(1)",
+      "text": "Aisha\nCustomer Success·just now",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "37-chat-card-header",
+      "states": [],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "chat-card-meta",
+      "tag": "div",
+      "signature": "div|chat-card-meta||div,div",
+      "semanticClasses": [
+        "chat-card-meta"
+      ],
+      "dataNames": [],
+      "childSkeleton": "div,div",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "chat-card-meta",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 147,
+        "h": 32
+      },
+      "area": 4696,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(26, 29, 33)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "18.4px",
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "2px",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.dust-floor-host > div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card > div.chat-card-header:nth-of-type(1) > div.chat-card-meta:nth-of-type(2)",
+      "text": "Aisha\nCustomer Success·just now",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "38-chat-card-meta",
+      "states": [],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "chat-card-name",
+      "tag": "div",
+      "signature": "div|chat-card-name||",
+      "semanticClasses": [
+        "chat-card-name"
+      ],
+      "dataNames": [],
+      "childSkeleton": "",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "chat-card-name",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 147,
+        "h": 17
+      },
+      "area": 2466,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(26, 29, 33)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "14px",
+        "fontWeight": "600",
+        "lineHeight": "16.8px",
+        "letterSpacing": "-0.2px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card > div.chat-card-header:nth-of-type(1) > div.chat-card-meta:nth-of-type(2) > div.chat-card-name:nth-of-type(1)",
+      "text": "Aisha",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "slug": "39-chat-card-name",
+      "states": [],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "chat-card-role",
+      "tag": "div",
+      "signature": "div|chat-card-role||span",
+      "semanticClasses": [
+        "chat-card-role"
+      ],
+      "dataNames": [],
+      "childSkeleton": "span",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "chat-card-role",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 147,
+        "h": 13
+      },
+      "area": 1936,
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 112, 120)",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "11px",
+        "fontWeight": "400",
+        "lineHeight": "13.2px",
+        "letterSpacing": "-0.1px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card > div.chat-card-header:nth-of-type(1) > div.chat-card-meta:nth-of-type(2) > div.chat-card-role:nth-of-type(2)",
+      "text": "Customer Success·just now",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "mention",
+      "tag": "span",
+      "signature": "span|mention||",
+      "semanticClasses": [
+        "mention"
+      ],
+      "dataNames": [],
+      "childSkeleton": "",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "mention",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 99,
+        "h": 20
+      },
+      "area": 1924,
+      "style": {
+        "backgroundColor": "rgba(28, 145, 255, 0.14)",
+        "color": "rgb(15, 92, 179)",
+        "borderRadius": "5px",
+        "borderTopColor": "oklch(0.97 0.001 106.424)",
+        "borderStyle": "solid",
+        "padding": "0px 5px",
+        "fontFamily": "Geist, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13px",
+        "fontWeight": "500",
+        "lineHeight": "19.5px",
+        "letterSpacing": "-0.1px",
+        "display": "inline-block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "visible",
+        "position": "static"
+      },
+      "selector": "div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card > div.chat-card-body:nth-of-type(2) > div.line > span.mention:nth-of-type(1)",
+      "text": "@TicketRouter",
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    },
+    {
+      "name": "chat-card-avatar",
+      "tag": "div",
+      "signature": "div|chat-card-avatar||img",
+      "semanticClasses": [
+        "chat-card-avatar"
+      ],
+      "dataNames": [],
+      "childSkeleton": "img",
+      "instances": 1,
+      "variants": [
+        {
+          "classes": "chat-card-avatar",
+          "count": 1
+        }
+      ],
+      "rect": {
+        "w": 32,
+        "h": 32
+      },
+      "area": 1024,
+      "style": {
+        "backgroundColor": "rgb(233, 236, 239)",
+        "color": "rgb(26, 29, 33)",
+        "borderRadius": "50%",
+        "borderTopWidth": "1px",
+        "borderTopColor": "rgba(17, 20, 24, 0.06)",
+        "borderStyle": "solid",
+        "fontFamily": "Geist, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "display": "block",
+        "flexDirection": "row",
+        "opacity": "1",
+        "transition": "all",
+        "overflow": "hidden",
+        "position": "static"
+      },
+      "selector": "div.dust-floor-host > div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card > div.chat-card-header:nth-of-type(1) > div.chat-card-avatar:nth-of-type(1)",
+      "text": null,
+      "hasAnimation": false,
+      "focusable": false,
+      "insideInteractive": false,
+      "pointer": false,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-components.mjs)"
+    }
+  ],
+  "risks": [
+    "could not shoot home-trusted-item",
+    "could not shoot home-trusted-chip",
+    "selector did not resolve back: tool-chip-logo",
+    "could not shoot home-trusted-track",
+    "could not shoot line",
+    "selector did not resolve back: chat-card-header",
+    "selector did not resolve back: chat-card-meta",
+    "selector did not resolve back: chat-card-name"
+  ]
+}

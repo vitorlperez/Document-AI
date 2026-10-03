@@ -1,0 +1,14 @@
+   2 --lp-case
+   2 Arquivio LP Display
+   2 lp-case-in
+   2 lp-disclosure-in
+   2 lp-menu-in
+   2 aq-backdrop-color-in
+   5 aq-panel-in
+   2 aq-sheet-in
+   1 prefers-reduced-motion
+/landing/fonts/manrope-latin-var.woff2 200 font/woff2
+/landing/fonts/ibm-plex-sans-latin-var.woff2 200 font/woff2
+/landing/document-context.webp 200 image/webp
+HTTP/1.1 401 Unauthorized
+access-control-allow-origin: http://localhost:3000

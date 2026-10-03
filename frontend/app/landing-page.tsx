@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight,
   FileText, Folder, Menu, PanelRightClose, Plus, Search, Send, ShieldCheck, Sparkles,
@@ -10,6 +10,9 @@ import { Brand } from "./brand";
 import { ProviderLogo } from "./provider-logo";
 
 type LandingPageProps = { onLogin: () => void; onSignUp: () => void };
+
+/** Optional decorative art for the Rotina section, delivered separately; the layout never depends on it. */
+const STORY_ART_SRC = "/landing/document-context.webp";
 
 const demoCases = [
   {
@@ -62,17 +65,6 @@ function ProductPreview() {
         </div>
 
         <div className="landing-app-workspace">
-          <aside className="landing-app-sources" aria-label="Biblioteca ilustrativa">
-            <div className="landing-panel-title"><strong>Biblioteca</strong><span>Arquivos sincronizados</span></div>
-            <div className="landing-app-breadcrumb">Biblioteca</div>
-            <div className="landing-source-row"><ProviderLogo provider="google" size={22} /> <span>Google Drive</span><ChevronRight size={13} /></div>
-            <div className="landing-folder-row"><Folder size={14} aria-hidden="true" /><span>Projeto Aurora</span></div>
-            <div className="landing-source-row"><ProviderLogo provider="notion" size={22} /> <span>Notion</span><ChevronRight size={13} /></div>
-            <div className="landing-source-row"><ProviderLogo provider="onedrive" size={22} /> <span>OneDrive</span><ChevronRight size={13} /></div>
-            <div className="landing-source-row"><ProviderLogo provider="sharepoint" size={22} /> <span>SharePoint</span><ChevronRight size={13} /></div>
-            <p className="landing-scope-note"><ShieldCheck size={14} />A conversa usa somente as ferramentas e menções selecionadas na mensagem.</p>
-          </aside>
-
           <section className="landing-app-chat" aria-label="Exemplo de conversa com documentos">
             <div className="landing-app-toolbar" aria-hidden="true"><span><Plus size={13} />Nova conversa</span><PanelRightClose size={16} /></div>
             <div className="landing-app-thread" aria-live="polite" key={activeCase}>
@@ -100,9 +92,24 @@ function ProductPreview() {
             <p className="landing-composer-hint">Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.</p>
           </section>
 
+          <aside className="landing-app-sources" aria-label="Biblioteca ilustrativa">
+            <div className="landing-panel-title"><strong>Biblioteca</strong><span>Arquivos sincronizados</span></div>
+            <div className="landing-app-breadcrumb">Biblioteca</div>
+            <div className="landing-source-list">
+              <div className="landing-source-row"><ProviderLogo provider="google" size={20} /> <span>Google Drive</span><ChevronRight size={13} /></div>
+              <div className="landing-folder-row"><Folder size={14} aria-hidden="true" /><span>Projeto Aurora</span></div>
+              <div className="landing-source-row"><ProviderLogo provider="notion" size={20} /> <span>Notion</span><ChevronRight size={13} /></div>
+              <div className="landing-source-row"><ProviderLogo provider="onedrive" size={20} /> <span>OneDrive</span><ChevronRight size={13} /></div>
+              <div className="landing-source-row"><ProviderLogo provider="sharepoint" size={20} /> <span>SharePoint</span><ChevronRight size={13} /></div>
+            </div>
+            <p className="landing-scope-note"><ShieldCheck size={14} />A conversa usa somente as ferramentas e menções selecionadas na mensagem.</p>
+          </aside>
+
           <aside className="landing-app-search" aria-label="Busca de arquivos ilustrativa">
-            <strong>Buscar arquivos</strong>
-            <p>Encontre arquivos e pastas pelo nome em todas as fontes conectadas.</p>
+            <div className="landing-search-copy">
+              <strong>Buscar arquivos</strong>
+              <p>Encontre arquivos e pastas pelo nome em todas as fontes conectadas.</p>
+            </div>
             <div className="landing-search-controls"><span className="landing-search-field">Nome de arquivo ou pasta</span><span className="landing-search-button"><Search size={14} /></span></div>
             <small>A busca consulta somente nomes; o conteúdo permanece no escopo da conversa.</small>
           </aside>
@@ -123,9 +130,44 @@ const questions = [
   ["Como a IA usa o conteúdo?", "O texto necessário para busca e resposta é processado pelo provedor de IA configurado. Confira se esse uso atende às políticas da sua organização."],
 ];
 
+/** Below-the-fold reveal is progressive enhancement: content stays visible without JS or with reduced motion. */
+function useSectionReveal(root: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const page = root.current;
+    if (!page || !("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const targets = Array.from(page.querySelectorAll<HTMLElement>("[data-reveal]")).filter((el) => el.getBoundingClientRect().top > window.innerHeight);
+    if (targets.length === 0) return;
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) if (entry.isIntersecting) { entry.target.classList.add("is-revealed"); observer.unobserve(entry.target); }
+    }, { threshold: 0.15 });
+    for (const el of targets) { el.classList.add("is-pending"); observer.observe(el); }
+    // Reduced motion switched on mid-page: reveal everything still pending, once, without animating.
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onReducedChange = (event: MediaQueryListEvent) => { if (!event.matches) return; observer.disconnect(); for (const el of targets) el.classList.add("is-revealed"); };
+    reduced.addEventListener("change", onReducedChange);
+    return () => { reduced.removeEventListener("change", onReducedChange); observer.disconnect(); for (const el of targets) el.classList.remove("is-pending", "is-revealed"); };
+  }, [root]);
+}
+
+/** Renders the decorative slot only after the asset has loaded, so a missing file never shows a broken image. */
+function useOptionalImage(src: string) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let active = true;
+    const image = new Image();
+    image.onload = () => { if (active) setReady(true); };
+    image.src = src;
+    return () => { active = false; image.onload = null; };
+  }, [src]);
+  return ready;
+}
+
 export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
+  const pageRef = useRef<HTMLDivElement>(null);
+  const storyArt = useOptionalImage(STORY_ART_SRC);
+  useSectionReveal(pageRef);
   return (
-    <div className="landing-page">
+    <div className="landing-page" ref={pageRef}>
       <a className="landing-skip-link" href="#landing-main">Pular para o conteúdo</a>
       <header className="landing-header landing-container">
         <a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, início"><Brand /></a>
@@ -135,17 +177,19 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
       </header>
 
       <main id="landing-main">
-        <section className="landing-hero landing-container" aria-labelledby="landing-hero-title">
-          <p className="landing-eyebrow"><span className="landing-status-dot" /> SEU CONHECIMENTO, COM CONTEXTO</p>
-          <h1 id="landing-hero-title">A resposta está nos arquivos.<br /><em>Agora você sabe onde.</em></h1>
-          <p className="landing-hero-description">Pergunte ao Arquivio. Receba uma resposta direta e os documentos que a sustentam.</p>
-          <div className="landing-hero-actions"><button className="landing-button" onClick={onSignUp}>Começar com o Arquivio <ArrowRight size={18} /></button><button className="landing-login" onClick={onLogin}>Já tenho uma conta</button></div>
-          <p className="landing-hero-note"><Check size={14} /> Conexões de leitura · originais preservados</p>
-        </section>
+        <div className="landing-stage landing-container">
+          <section className="landing-hero" aria-labelledby="landing-hero-title">
+            <p className="landing-eyebrow"><span className="landing-status-dot" /> SEU CONHECIMENTO, COM CONTEXTO</p>
+            <h1 id="landing-hero-title">A resposta está nos arquivos.<br /><em>Agora você sabe onde.</em></h1>
+            <p className="landing-hero-description">Pergunte ao Arquivio. Receba uma resposta direta e os documentos que a sustentam.</p>
+            <div className="landing-hero-actions"><button className="landing-button" onClick={onSignUp}>Começar com o Arquivio <ArrowRight size={18} /></button><button className="landing-login" onClick={onLogin}>Já tenho uma conta</button></div>
+            <p className="landing-hero-note"><Check size={14} /> Conexões de leitura · originais preservados</p>
+          </section>
 
-        <section id="produto" className="landing-product-section landing-container"><ProductPreview /></section>
+          <section id="produto" className="landing-product-section"><ProductPreview /></section>
+        </div>
 
-        <section id="integracoes" className="landing-integrations landing-container" aria-labelledby="landing-integrations-title">
+        <section id="integracoes" className="landing-integrations landing-container" aria-labelledby="landing-integrations-title" data-reveal>
           <div className="landing-integrations-intro">
             <p className="landing-eyebrow">INTEGRAÇÕES DISPONÍVEIS</p>
             <h2 id="landing-integrations-title"><span>4</span> fontes.<br /><em>1 lugar para perguntar.</em></h2>
@@ -159,8 +203,11 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
           </ul>
         </section>
 
-        <section className="landing-story landing-container" aria-labelledby="landing-story-title">
-          <div className="landing-story-intro"><p className="landing-eyebrow">O QUE MUDA NA ROTINA</p><h2 id="landing-story-title">Da procura à resposta,<br /><em>sem perder o caminho.</em></h2><p>O conhecimento da equipe já está nos documentos. O Arquivio ajuda a encontrar o trecho certo e a voltar à fonte sempre que você precisar de mais detalhes.</p></div>
+        <section className="landing-story landing-container" aria-labelledby="landing-story-title" data-reveal>
+          <div className="landing-story-intro">
+            <p className="landing-eyebrow">O QUE MUDA NA ROTINA</p><h2 id="landing-story-title">Da procura à resposta,<br /><em>sem perder o caminho.</em></h2><p>O conhecimento da equipe já está nos documentos. O Arquivio ajuda a encontrar o trecho certo e a voltar à fonte sempre que você precisar de mais detalhes.</p>
+            {storyArt && <div className="landing-story-art" aria-hidden="true" />}
+          </div>
           <div className="landing-story-list">
             <article><span>01 / ENCONTRE</span><div><h3>Pergunte como você perguntaria a um colega.</h3><p>Recupere decisões, entregas e informações registradas sem abrir cada arquivo por conta própria.</p></div></article>
             <article><span>02 / DELIMITE</span><div><h3>Escolha onde buscar.</h3><p>Consulte todo o conteúdo indexado ou restrinja a pergunta a uma ferramenta ou pasta específica.</p></div></article>
@@ -168,7 +215,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
           </div>
         </section>
 
-        <section className="landing-process" id="como-funciona" aria-labelledby="landing-process-title"><div className="landing-container">
+        <section className="landing-process" id="como-funciona" aria-labelledby="landing-process-title"><div className="landing-container" data-reveal>
           <div className="landing-process-heading"><p className="landing-eyebrow">COMO FUNCIONA</p><h2 id="landing-process-title">Seus arquivos continuam onde estão.<br /><em>As respostas ficam mais perto.</em></h2></div>
           <div className="landing-process-grid">
             <article><span>01</span><h3>Conecte as fontes</h3><p>Escolha materiais compartilháveis no Google Drive, OneDrive, Notion ou SharePoint. As conexões são de leitura e preservam os originais.</p></article>
@@ -178,12 +225,12 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
           <p className="landing-process-note"><ShieldCheck size={18} aria-hidden="true" /> Todos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais compartilháveis com a equipe.</p>
         </div></section>
 
-        <section className="landing-faq landing-container" id="perguntas" aria-labelledby="landing-faq-title">
+        <section className="landing-faq landing-container" id="perguntas" aria-labelledby="landing-faq-title" data-reveal>
           <div><p className="landing-eyebrow">ANTES DE COMEÇAR</p><h2 id="landing-faq-title">O que você<br /><em>precisa saber.</em></h2></div>
           <div className="landing-faq-list">{questions.map(([question, answer]) => <details key={question}><summary>{question}<ChevronDown size={19} /></summary><p>{answer}</p></details>)}</div>
         </section>
 
-        <section className="landing-closing landing-container" aria-labelledby="landing-closing-title">
+        <section className="landing-closing landing-container" aria-labelledby="landing-closing-title" data-reveal>
           <p className="landing-eyebrow">COMECE PELOS SEUS DOCUMENTOS</p>
           <h2 id="landing-closing-title">Menos procura.<br /><em>Mais contexto.</em></h2>
           <button className="landing-button" onClick={onSignUp}>Criar minha conta <ArrowRight size={18} /></button>
