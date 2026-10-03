@@ -46,6 +46,10 @@ _GUIDE = (
     "subject is omitted. list_files means listing DOCUMENTS, not listing entities or facts inside them."
 )
 INTENT_CRITERIA = {
+    "inventory_stats": "count FILES/documents, optionally explain the main themes of the inventory "
+    "('quantos são e quais os principais temas?'); never count facts/entities inside documents.",
+    "select_files_by_topic": "select which FILES discuss a requested theme "
+    "('quais falam sobre currículo e carreira profissional?'); not summarize all files.",
     "list_files": "which files/documents exist, or whether a file with some name exists.",
     "list_files_with_summaries": "list files AND say what each one is about ('do que se trata cada "
     "documento', 'quais arquivos e um resumo de cada').",
@@ -69,7 +73,8 @@ TARGET_CRITERIA = {
     "latest job inside a source.",
     "previous_answer_files": "context.previous_answer_listed_files is not empty and the message asks about "
     "those files (or the answer's cited sources) as a group or one by one, or is a fact follow-up "
-    "continuing the subject of the previous answer.",
+    "continuing the subject of the previous answer. Also applies when context.previous_selection_empty "
+    "is true and the question continues that empty file selection; do not widen it to the library.",
     "previous_turn_files": "nothing is attached now, previous_answer_listed_files is empty, "
     "context.previous_turn_had_files is true, and the message continues the previous turn "
     "(restructuring the previous answer, 'esse documento', 'e quem assina?').",
@@ -108,7 +113,7 @@ class JevIntentClassifier:
             query = file_name_query(question)
             tool = "search_library" if query else "list_folder_inventory"
         standalone = retrieval = ""
-        if intent == "ask_content" and history and _noul(answers, "needs_history") >= NOUL_THRESHOLD:
+        if intent in {"ask_content", "select_files_by_topic"} and history and _noul(answers, "needs_history") >= NOUL_THRESHOLD:
             standalone, retrieval = referenced_question(question, history), contextual_query(question, history)
         return {
             "intent": intent, "target": target, "ordinals": ordinals if target == "previous_ordinals" else [],

@@ -50,6 +50,7 @@ def run_cases(provider: object, cases: list[dict[str, object]], *, model: str) -
             decision = parse_intent(
                 raw, listed_files=len(listed) if isinstance(listed, list) else 0,
                 mentioned=int(context["mentioned_files"]) + int(context["mentioned_folders"]),
+                empty_selection=bool(context.get("previous_selection_empty", False)),
             )
         except (InvalidIntent, ValueError, TypeError, RuntimeError) as error:
             runs.append(IntentEvalRun(

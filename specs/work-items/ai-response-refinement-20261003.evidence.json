@@ -1,0 +1,122 @@
+{
+  "base_commit": "d5cfad7f173acdea4749ac38c05dad4190ead421",
+  "skills": "inline [oc-builder, oc-blackbox, oc-stamp]",
+  "commands": [
+    {
+      "cmd": "cd backend && .venv/bin/pytest tests/unit tests/api -q --tb=short",
+      "exitCode": 0,
+      "result": "1386 passed, 4 warnings in 30.93s"
+    },
+    {
+      "cmd": "cd backend && .venv/bin/pytest tests/unit/test_inventory_followups.py -q --tb=short",
+      "exitCode": 0,
+      "result": "20 passed in 1.29s"
+    },
+    {
+      "cmd": "backend/.venv/bin/ruff check backend/app/core/logging.py backend/app/knowledge/intent.py backend/app/knowledge/intent_eval.py backend/app/knowledge/jev.py backend/app/knowledge/agent.py backend/app/knowledge/questions.py backend/app/library/service.py backend/tests/unit/test_inventory_followups.py backend/tests/unit/test_agent_read_only_invariant.py",
+      "exitCode": 0,
+      "result": "All checks passed"
+    },
+    {
+      "cmd": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "cmd": "graphify update .",
+      "exitCode": 0,
+      "result": "7556 nodes, 20893 edges, AST-only"
+    }
+  ],
+  "baseline": {
+    "isolated": true,
+    "modules_restored_from_head": [
+      "app/core/logging.py",
+      "app/knowledge/agent.py",
+      "app/knowledge/intent.py",
+      "app/knowledge/jev.py",
+      "app/knowledge/questions.py",
+      "app/library/service.py"
+    ],
+    "pytest": "tests/unit/test_inventory_followups.py -k \"pasted_multiturn or stats_after_folder or topic_selection_after_folder\" -q --tb=short",
+    "exitCode": 1,
+    "result": "3 failed, 15 deselected; inventory references 0 instead of 3; stats fell back to ask_content; topic selection had no references"
+  },
+  "limitations": [
+    "No live-model benchmark or production run",
+    "Per-file snapshots up to six chunks / 6000 characters, now SQL-bounded",
+    "Local catalog; 500-file / byte limits and shared analysis timeout",
+    "Quote provenance does not prove semantic entailment",
+    "Independent h-gw review consulted; fixes await a second independent review; no deploy/remote delivery"
+  ],
+  "review_followup": {
+    "source_review": "h-gw/pane-421",
+    "source_implementation": "h-gu/pane-419",
+    "worker": "pane-422",
+    "status": "four findings corrected",
+    "files": [
+      "backend/app/knowledge/agent.py",
+      "backend/app/knowledge/questions.py",
+      "backend/app/library/service.py",
+      "backend/tests/unit/test_inventory_review_regressions.py",
+      "docs/agent-flow.md"
+    ],
+    "red": {
+      "baseline": "isolated copy with the three production modules restored from the h-gu working tree snapshot",
+      "cmd": "backend/.venv/bin/pytest tests/unit/test_inventory_review_regressions.py -q --tb=short (cwd isolated baseline)",
+      "exitCode": 1,
+      "result": "18 failed, 3 passed in 1.57s",
+      "log": "specs/work-items/ai-response-refinement-20261003.review-red.txt"
+    },
+    "commands": [
+      {
+        "cmd": "cd backend && .venv/bin/pytest tests/unit/test_inventory_review_regressions.py tests/unit/test_inventory_followups.py -q --tb=short",
+        "exitCode": 0,
+        "result": "41 passed in 1.94s"
+      },
+      {
+        "cmd": "cd backend && .venv/bin/pytest tests/unit tests/api -q --tb=short",
+        "exitCode": 0,
+        "result": "1407 passed, 4 warnings in 27.89s"
+      },
+      {
+        "cmd": "backend/.venv/bin/ruff check backend/app/core/logging.py backend/app/knowledge/intent.py backend/app/knowledge/intent_eval.py backend/app/knowledge/jev.py backend/app/knowledge/agent.py backend/app/knowledge/questions.py backend/app/library/service.py backend/tests/unit/test_inventory_followups.py backend/tests/unit/test_inventory_review_regressions.py backend/tests/unit/test_agent_read_only_invariant.py",
+        "exitCode": 0,
+        "result": "All checks passed"
+      },
+      {
+        "cmd": "graphify update .",
+        "exitCode": 0,
+        "result": "7545 nodes, 20896 edges, 521 communities, AST-only"
+      }
+    ],
+    "checks": [
+      {
+        "requirement": "SQL bounds chunks per admitted document before Python",
+        "status": "done",
+        "verify": "test_snapshot_sql_limits_rows_per_document_before_python: SQL result has at most 7 rows for 6+1 chunks rather than 41; compiled PostgreSQL statement; test_snapshot_caps_an_oversized_first_chunk"
+      },
+      {
+        "requirement": "Reject weak quotes and normalize file-local evidence without an entailment claim",
+        "status": "done",
+        "verify": "10 positive/negative weak-quote cases, Unicode/case/whitespace acceptance and unsupported foreign quote rejection"
+      },
+      {
+        "requirement": "Disclose direct-child folder scope without changing counts",
+        "status": "done",
+        "verify": "nested-file exclusion; direct and follow-up folder counts; multiple/empty folders; explicit library reset"
+      },
+      {
+        "requirement": "No irrelevant content citations when no topics assessed",
+        "status": "done",
+        "verify": "31-file count returns zero citations, keeps 31 references, subsequent selection works; final cite stage respects empty statistics citations"
+      }
+    ],
+    "limitations": [
+      "No live model or production evaluation",
+      "PostgreSQL compilation checked, not execution against a PostgreSQL server",
+      "SQL window may scan/order candidate chunks, but rows and text returned to the application are bounded",
+      "Quote validation establishes normalized provenance and minimum substance, not semantic entailment",
+      "No second independent review of the fixes; no deploy or remote delivery"
+    ]
+  }
+}

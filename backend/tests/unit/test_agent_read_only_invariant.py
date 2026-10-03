@@ -13,6 +13,8 @@ def test_tools_are_read_only():
         "search_library",
         "previous_answer",
         "none",
+        "catalog_inventory",
+        "analyze_file_topics",
     }
     assert set(INTENT_TOOLS) <= allowed
     assert {tool for tools in ALLOWED_TOOLS.values() for tool in tools} <= allowed
@@ -31,4 +33,11 @@ def test_tools_are_read_only():
     assert not re.search(
         r"session\.(add|delete)\s*\(|session\.execute\s*\(\s*(update|delete|insert)\s*\(",
         inspect.getsource(LibraryToolExecutor),
+    )
+    # Catalog handlers read through the domain service rather than the semantic executor.
+    from app.library.service import LibraryService
+
+    assert not re.search(
+        r"session\.(add|delete)\s*\(|session\.execute\s*\(\s*(update|delete|insert)\s*\(",
+        inspect.getsource(LibraryService.catalog_inventory),
     )

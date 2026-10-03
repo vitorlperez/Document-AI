@@ -33,6 +33,38 @@ that folder. Model output never carries scope: tenant, providers and file ids al
 A `conversation` intent runs no tool; when the conversation is about files (attached in the previous turn
 or listed in the last answer), those files, re-read from the current catalog, stay as its Fontes.
 
+## Inventory follow-ups
+
+An unmentioned library listing reads the authorized local file catalog instead of semantic top-k.
+`inventory_stats` counts catalog file identities, including files without indexed content; it does not
+count citations, chunks or unique names. `select_files_by_topic` assesses each readable candidate in
+batches of ten and returns only matches with a supporting quote verified against that file's text.
+The LLM and Jev classifiers both recognize these intents. Current mentions still override history.
+
+Counts and thematic selections revalidate historical references, their original inventory folders,
+providers, memberships and current document admission. Statistics carry all candidate references into
+the next turn; selection carries only the matching files. Names shared by different files remain
+separate identities, and previous file ordering is preserved.
+
+The inventory is bounded by 500 files and the configured tool-result byte budget. Its exact catalog
+total, returned count and partial-list flag are separate. Follow-ups on a partial list count that
+selection and retain the partial-list warning; they do not silently widen to the library or reuse a
+stale total as today's full Drive count. Theme analysis shares the existing file-summary timeout
+budget, visits candidates beyond the global 24-source synthesis cap, and reports unreadable,
+title-only, failed, invalid or timed-out assessments as unknown. It uses the existing bounded snapshots
+(up to six leading chunks / 6,000 characters), so thematic completeness over entire files is not
+guaranteed. Quote validation proves provenance, not semantic entailment; live-model evaluation and
+independent review remain separate checks.
+
+Folder counts cover only files directly in the selected folders and say so explicitly; subfolders
+are not traversed. This scope persists across statistics follow-ups, including empty and multiple
+folder selections, and is reset by an explicit library query. Snapshots bound chunk rows per
+document in SQL with a window function (PostgreSQL and SQLite), and bound the text of each row
+before returning it. Topic quotes require 20–600 normalized characters and at least three words
+of two or more letters. Unicode, case and whitespace normalization checks file-local provenance;
+it does not establish semantic entailment. Counts without assessed themes omit content citations
+through the final citation stage while retaining catalog references for subsequent turns.
+
 ## Moving to LangChain / LangGraph
 
 The stages already have the shape of a graph, so a later migration does not need a redesign. Each stage
