@@ -1,0 +1,22 @@
+
+lint-artifact — /Users/vitorperez/Documents/Document-AI/specs/work-items/lp-chat-modernization-20261002/direction
+────────────────────────────────────────────────────────────────
+P0 (blocking):
+  [PASS] required-files — all 14 present
+  [PASS] no-indigo-accent — accent is not default Tailwind indigo
+  [PASS] no-trust-gradient — no two-stop trust gradient
+  [PASS] token-provenance — all 103 tokens in design-tokens.json carry source/confidence
+  [PASS] motion-capture-reached-site — captured via stealth-headless
+  [PASS] motion-derived-files — all 4 derived motion files present
+  [PASS] motion-keyframe-bodies — 70 keyframe(s), every one with its body
+  [PASS] motion-no-placeholder-effects — 7 effect value(s), all measured
+P1 (warn):
+  [PASS] component-states — state selectors 3/3 (:hover,:active,:focus-visible); all 8 states referenced
+  [PASS] derived-coherence — tokens.css has 103 vars; derived files coherent
+  [PASS] token-layers — all 4 layers referenced
+  [PASS] motion-frame-strip-proof — 1/1 strip(s) proved motion with distinct frames
+  [PASS] motion-reproducibility-declared — non-CSS motion present and declared: partial
+────────────────────────────────────────────────────────────────
+P0: 8/8 pass · P1: 5/5 pass
+
+RESULT: PASS — no P0 failures.

@@ -1,0 +1,54 @@
+{
+  "baseline": "a43dbdd",
+  "trackedSeams": [
+    "M\tfrontend/app/access-settings.tsx",
+    "M\tfrontend/app/conversation-tour.tsx",
+    "M\tfrontend/app/landing-page.tsx",
+    "M\tfrontend/app/landing.css",
+    "M\tfrontend/app/mobile-nav.tsx",
+    "M\tfrontend/app/product/integrations-screen.tsx",
+    "M\tfrontend/app/product/library-screen.tsx",
+    "M\tfrontend/components/ui/sheet.tsx"
+  ],
+  "untrackedMotionAndContractFiles": [
+    "frontend/app/interface-motion.ts",
+    "frontend/app/interface-motion.css",
+    "frontend/tests/interface-motion.test.mjs",
+    "frontend/tests/landing-contract.test.mjs",
+    "frontend/public/landing/document-context.webp",
+    "frontend/public/landing/fonts/IBMPlexSans-OFL.txt",
+    "frontend/public/landing/fonts/Manrope-OFL.txt",
+    "frontend/public/landing/fonts/ibm-plex-sans-latin-var.woff2",
+    "frontend/public/landing/fonts/manrope-latin-var.woff2"
+  ],
+  "nativeConfirmCallSites": {
+    "baseline": 9,
+    "current": 9,
+    "allTextIdentical": true
+  },
+  "nativeDialogTags": {
+    "baseline": 3,
+    "current": 3,
+    "countMethod": "JSX <dialog> elements only; excluded source comments"
+  },
+  "protectedChangedPaths": [],
+  "motionSupportUnchangedPaths": [
+    "frontend/app/modal-dismiss.tsx",
+    "frontend/components/ui/sidebar.tsx",
+    "frontend/components/ui/dialog.tsx",
+    "frontend/components/ui/alert-dialog.tsx",
+    "frontend/components/ui/drawer.tsx",
+    "frontend/components/ui/command.tsx"
+  ],
+  "motionSupportUnchangedFromBase": true,
+  "sourceBehaviorReview": {
+    "landingApprovedLiteralsAndAccessibleNames": "asserted verbatim by landing-contract.test.mjs and checked at runtime (3 cases, 7 FAQ, 4 integrations)",
+    "landingCallbacks": "3 onLogin and 4 onSignUp source assertions; page/auth entry point unchanged from baseline",
+    "M1": "showModal, polling, X/ESC/backdrop and busy handler unchanged; new attributes/wrapper only",
+    "M2": "ModalOverlay callbacks, API request lifecycle, busy/disconnect behavior unchanged; opt-in classes/markers only",
+    "M3": "tour step/cancel/API completion handlers unchanged; helper animates only step text",
+    "M4": "create/copy/close handler, one-time secret removal unchanged; dialog content wrapped for visual entry",
+    "M5": "Radix Portal/Presence lifecycle unchanged; only Arquivio opt-in motion profile, default Sheet branch preserved"
+  },
+  "note": "New helper/tests/assets are listed separately because they are untracked relative to a43dbdd; tracked patch is preserved in tracked-seams.patch."
+}

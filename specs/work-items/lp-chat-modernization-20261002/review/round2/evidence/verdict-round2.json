@@ -1,0 +1,74 @@
+[
+  {
+    "viewport": {
+      "name": "desktop-1024x900",
+      "width": 1024,
+      "height": 900
+    },
+    "url": "http://127.0.0.1:5181/",
+    "httpStatus": 200,
+    "apiSession": {
+      "url": "http://127.0.0.1:5181/api/session",
+      "status": 200
+    },
+    "consoleErrors": [],
+    "pageErrors": [],
+    "requestFailures": [],
+    "metrics": {
+      "stageColumns": "386.391px 533.609px",
+      "answer": {
+        "y": 494,
+        "x": 517,
+        "w": 454,
+        "h": 50
+      },
+      "firstSource": {
+        "y": 594,
+        "x": 527,
+        "w": 434,
+        "h": 40
+      },
+      "fonts": {
+        "display": true,
+        "text": true
+      }
+    },
+    "screenshot": "review/round2/evidence/verdict-desktop-1024x900.png"
+  },
+  {
+    "viewport": {
+      "name": "mobile-390x844",
+      "width": 390,
+      "height": 844
+    },
+    "url": "http://127.0.0.1:5181/",
+    "httpStatus": 200,
+    "apiSession": {
+      "url": "http://127.0.0.1:5181/api/session",
+      "status": 200
+    },
+    "consoleErrors": [],
+    "pageErrors": [],
+    "requestFailures": [],
+    "metrics": {
+      "stageColumns": "358px",
+      "answer": {
+        "y": 799,
+        "x": 31,
+        "w": 328,
+        "h": 50
+      },
+      "firstSource": {
+        "y": 893,
+        "x": 39,
+        "w": 312,
+        "h": 40
+      },
+      "fonts": {
+        "display": true,
+        "text": true
+      }
+    },
+    "screenshot": "review/round2/evidence/verdict-mobile-390x844.png"
+  }
+]

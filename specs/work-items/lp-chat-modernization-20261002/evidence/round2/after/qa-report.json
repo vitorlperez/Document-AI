@@ -1,0 +1,911 @@
+{
+  "base": "http://127.0.0.1:5181",
+  "viewports": {
+    "375": {
+      "fonts": {
+        "display": true,
+        "text": true,
+        "h1Family": "\"Arquivio LP Display\", system-ui, Arial, sans-serif",
+        "bodyFamily": "\"Arquivio LP Text\", system-ui, Arial, sans-serif"
+      },
+      "overflowX": false,
+      "scrollHeight": 5858,
+      "fold": {
+        "h1": {
+          "top": 101,
+          "bottom": 209
+        },
+        "cta": {
+          "top": 285,
+          "bottom": 335
+        },
+        "question": {
+          "top": 700,
+          "bottom": 762
+        },
+        "answer": {
+          "top": 811,
+          "bottom": 861
+        },
+        "firstSource": {
+          "top": 905,
+          "bottom": 945
+        },
+        "caption": {
+          "top": 1769,
+          "bottom": 1813
+        },
+        "previewLabel": {
+          "top": 612,
+          "bottom": 636
+        }
+      },
+      "pendingAfterScroll": 0,
+      "storyArt": {
+        "present": true,
+        "ariaHidden": "true",
+        "w": 213,
+        "h": 159,
+        "ratio": 0.0889
+      },
+      "cases": [
+        {
+          "pressed": [
+            "true",
+            "false",
+            "false"
+          ],
+          "question": "O que ficou definido para a primeira entrega?",
+          "answer": "A primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.",
+          "sources": [
+            "1. Escopo do projeto.pdf Google Drive",
+            "2. Reunião de alinhamento Notion",
+            "3. Cronograma de entregas OneDrive"
+          ],
+          "more": "Ver mais 2 documentos",
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        },
+        {
+          "pressed": [
+            "false",
+            "true",
+            "false"
+          ],
+          "question": "Quais são os prazos previstos neste documento?\nArquivo: Escopo do projeto.pdf",
+          "answer": "O documento prevê o diagnóstico de marca na primeira etapa e a proposta de posicionamento na etapa seguinte.",
+          "sources": [
+            "1. Escopo do projeto.pdf Google Drive"
+          ],
+          "more": null,
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        },
+        {
+          "pressed": [
+            "false",
+            "false",
+            "true"
+          ],
+          "question": "Qual foi o orçamento aprovado para mídia?",
+          "answer": "Não encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia.",
+          "sources": [],
+          "more": null,
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        }
+      ],
+      "hiddenPreviewText": [],
+      "faqOpen": 7,
+      "contrast": [],
+      "minFontPx": 12,
+      "smallTargets": [],
+      "menuOpen": 1,
+      "menuItems": [
+        "Produto",
+        "Integrações",
+        "Como funciona",
+        "Dúvidas",
+        "Entrar",
+        "Criar conta"
+      ]
+    },
+    "390": {
+      "fonts": {
+        "display": true,
+        "text": true,
+        "h1Family": "\"Arquivio LP Display\", system-ui, Arial, sans-serif",
+        "bodyFamily": "\"Arquivio LP Text\", system-ui, Arial, sans-serif"
+      },
+      "overflowX": false,
+      "scrollHeight": 5802,
+      "fold": {
+        "h1": {
+          "top": 101,
+          "bottom": 209
+        },
+        "cta": {
+          "top": 285,
+          "bottom": 335
+        },
+        "question": {
+          "top": 687,
+          "bottom": 750
+        },
+        "answer": {
+          "top": 799,
+          "bottom": 848
+        },
+        "firstSource": {
+          "top": 893,
+          "bottom": 933
+        },
+        "caption": {
+          "top": 1756,
+          "bottom": 1777
+        },
+        "previewLabel": {
+          "top": 599,
+          "bottom": 624
+        }
+      },
+      "pendingAfterScroll": 0,
+      "storyArt": {
+        "present": true,
+        "ariaHidden": "true",
+        "w": 222,
+        "h": 166,
+        "ratio": 0.0922
+      },
+      "cases": [
+        {
+          "pressed": [
+            "true",
+            "false",
+            "false"
+          ],
+          "question": "O que ficou definido para a primeira entrega?",
+          "answer": "A primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.",
+          "sources": [
+            "1. Escopo do projeto.pdf Google Drive",
+            "2. Reunião de alinhamento Notion",
+            "3. Cronograma de entregas OneDrive"
+          ],
+          "more": "Ver mais 2 documentos",
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        },
+        {
+          "pressed": [
+            "false",
+            "true",
+            "false"
+          ],
+          "question": "Quais são os prazos previstos neste documento?\nArquivo: Escopo do projeto.pdf",
+          "answer": "O documento prevê o diagnóstico de marca na primeira etapa e a proposta de posicionamento na etapa seguinte.",
+          "sources": [
+            "1. Escopo do projeto.pdf Google Drive"
+          ],
+          "more": null,
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        },
+        {
+          "pressed": [
+            "false",
+            "false",
+            "true"
+          ],
+          "question": "Qual foi o orçamento aprovado para mídia?",
+          "answer": "Não encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia.",
+          "sources": [],
+          "more": null,
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        }
+      ],
+      "hiddenPreviewText": [],
+      "faqOpen": 7,
+      "contrast": [],
+      "minFontPx": 12,
+      "smallTargets": [],
+      "menuOpen": 1,
+      "menuItems": [
+        "Produto",
+        "Integrações",
+        "Como funciona",
+        "Dúvidas",
+        "Entrar",
+        "Criar conta"
+      ]
+    },
+    "768": {
+      "fonts": {
+        "display": true,
+        "text": true,
+        "h1Family": "\"Arquivio LP Display\", system-ui, Arial, sans-serif",
+        "bodyFamily": "\"Arquivio LP Text\", system-ui, Arial, sans-serif"
+      },
+      "overflowX": false,
+      "scrollHeight": 5028,
+      "fold": {
+        "h1": {
+          "top": 163,
+          "bottom": 299
+        },
+        "cta": {
+          "top": 411,
+          "bottom": 462
+        },
+        "question": {
+          "top": 793,
+          "bottom": 836
+        },
+        "answer": {
+          "top": 894,
+          "bottom": 943
+        },
+        "firstSource": {
+          "top": 993,
+          "bottom": 1033
+        },
+        "caption": {
+          "top": 1462,
+          "bottom": 1482
+        },
+        "previewLabel": {
+          "top": 686,
+          "bottom": 714
+        }
+      },
+      "pendingAfterScroll": 0,
+      "storyArt": {
+        "present": true,
+        "ariaHidden": "true",
+        "w": 240,
+        "h": 180,
+        "ratio": 0.059
+      },
+      "cases": [
+        {
+          "pressed": [
+            "true",
+            "false",
+            "false"
+          ],
+          "question": "O que ficou definido para a primeira entrega?",
+          "answer": "A primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.",
+          "sources": [
+            "1. Escopo do projeto.pdf Google Drive",
+            "2. Reunião de alinhamento Notion",
+            "3. Cronograma de entregas OneDrive"
+          ],
+          "more": "Ver mais 2 documentos",
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        },
+        {
+          "pressed": [
+            "false",
+            "true",
+            "false"
+          ],
+          "question": "Quais são os prazos previstos neste documento?\nArquivo: Escopo do projeto.pdf",
+          "answer": "O documento prevê o diagnóstico de marca na primeira etapa e a proposta de posicionamento na etapa seguinte.",
+          "sources": [
+            "1. Escopo do projeto.pdf Google Drive"
+          ],
+          "more": null,
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        },
+        {
+          "pressed": [
+            "false",
+            "false",
+            "true"
+          ],
+          "question": "Qual foi o orçamento aprovado para mídia?",
+          "answer": "Não encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia.",
+          "sources": [],
+          "more": null,
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        }
+      ],
+      "hiddenPreviewText": [],
+      "faqOpen": 7,
+      "contrast": [],
+      "minFontPx": 12,
+      "smallTargets": []
+    },
+    "1024": {
+      "fonts": {
+        "display": true,
+        "text": true,
+        "h1Family": "\"Arquivio LP Display\", system-ui, Arial, sans-serif",
+        "bodyFamily": "\"Arquivio LP Text\", system-ui, Arial, sans-serif"
+      },
+      "overflowX": false,
+      "scrollHeight": 4481,
+      "fold": {
+        "h1": {
+          "top": 187,
+          "bottom": 361
+        },
+        "cta": {
+          "top": 469,
+          "bottom": 520
+        },
+        "question": {
+          "top": 394,
+          "bottom": 437
+        },
+        "answer": {
+          "top": 494,
+          "bottom": 544
+        },
+        "firstSource": {
+          "top": 594,
+          "bottom": 634
+        },
+        "caption": {
+          "top": 1347,
+          "bottom": 1367
+        },
+        "previewLabel": {
+          "top": 286,
+          "bottom": 315
+        }
+      },
+      "pendingAfterScroll": 0,
+      "storyArt": {
+        "present": true,
+        "ariaHidden": "true",
+        "w": 320,
+        "h": 240,
+        "ratio": 0.0994
+      },
+      "cases": [
+        {
+          "pressed": [
+            "true",
+            "false",
+            "false"
+          ],
+          "question": "O que ficou definido para a primeira entrega?",
+          "answer": "A primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.",
+          "sources": [
+            "1. Escopo do projeto.pdf Google Drive",
+            "2. Reunião de alinhamento Notion",
+            "3. Cronograma de entregas OneDrive"
+          ],
+          "more": "Ver mais 2 documentos",
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        },
+        {
+          "pressed": [
+            "false",
+            "true",
+            "false"
+          ],
+          "question": "Quais são os prazos previstos neste documento?\nArquivo: Escopo do projeto.pdf",
+          "answer": "O documento prevê o diagnóstico de marca na primeira etapa e a proposta de posicionamento na etapa seguinte.",
+          "sources": [
+            "1. Escopo do projeto.pdf Google Drive"
+          ],
+          "more": null,
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        },
+        {
+          "pressed": [
+            "false",
+            "false",
+            "true"
+          ],
+          "question": "Qual foi o orçamento aprovado para mídia?",
+          "answer": "Não encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia.",
+          "sources": [],
+          "more": null,
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        }
+      ],
+      "hiddenPreviewText": [],
+      "faqOpen": 7,
+      "contrast": [],
+      "minFontPx": 12,
+      "smallTargets": []
+    },
+    "1440": {
+      "fonts": {
+        "display": true,
+        "text": true,
+        "h1Family": "\"Arquivio LP Display\", system-ui, Arial, sans-serif",
+        "bodyFamily": "\"Arquivio LP Text\", system-ui, Arial, sans-serif"
+      },
+      "overflowX": false,
+      "scrollHeight": 4225,
+      "fold": {
+        "h1": {
+          "top": 227,
+          "bottom": 464
+        },
+        "cta": {
+          "top": 576,
+          "bottom": 627
+        },
+        "question": {
+          "top": 375,
+          "bottom": 418
+        },
+        "answer": {
+          "top": 475,
+          "bottom": 525
+        },
+        "firstSource": {
+          "top": 575,
+          "bottom": 615
+        },
+        "caption": {
+          "top": 1043,
+          "bottom": 1063
+        },
+        "previewLabel": {
+          "top": 268,
+          "bottom": 296
+        }
+      },
+      "pendingAfterScroll": 0,
+      "storyArt": {
+        "present": true,
+        "ariaHidden": "true",
+        "w": 320,
+        "h": 240,
+        "ratio": 0.0816
+      },
+      "cases": [
+        {
+          "pressed": [
+            "true",
+            "false",
+            "false"
+          ],
+          "question": "O que ficou definido para a primeira entrega?",
+          "answer": "A primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.",
+          "sources": [
+            "1. Escopo do projeto.pdf Google Drive",
+            "2. Reunião de alinhamento Notion",
+            "3. Cronograma de entregas OneDrive"
+          ],
+          "more": "Ver mais 2 documentos",
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        },
+        {
+          "pressed": [
+            "false",
+            "true",
+            "false"
+          ],
+          "question": "Quais são os prazos previstos neste documento?\nArquivo: Escopo do projeto.pdf",
+          "answer": "O documento prevê o diagnóstico de marca na primeira etapa e a proposta de posicionamento na etapa seguinte.",
+          "sources": [
+            "1. Escopo do projeto.pdf Google Drive"
+          ],
+          "more": null,
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        },
+        {
+          "pressed": [
+            "false",
+            "false",
+            "true"
+          ],
+          "question": "Qual foi o orçamento aprovado para mídia?",
+          "answer": "Não encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia.",
+          "sources": [],
+          "more": null,
+          "live": "polite",
+          "scopeNote": true,
+          "label": true,
+          "captionVisible": true,
+          "btnTruncated": false
+        }
+      ],
+      "hiddenPreviewText": [],
+      "faqOpen": 7,
+      "contrast": [],
+      "minFontPx": 12,
+      "smallTargets": []
+    }
+  },
+  "console": [],
+  "failed": [],
+  "controls": [
+    {
+      "tag": "A",
+      "text": "Pular para o conteúdo",
+      "href": "#landing-main",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "arquivio.",
+      "href": "#landing-main",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Produto",
+      "href": "#produto",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Integrações",
+      "href": "#integracoes",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Como funciona",
+      "href": "#como-funciona",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Dúvidas",
+      "href": "#perguntas",
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Entrar",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Criar conta",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Abrir navegação",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Produto",
+      "href": "#produto",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Integrações",
+      "href": "#integracoes",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Como funciona",
+      "href": "#como-funciona",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Dúvidas",
+      "href": "#perguntas",
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Entrar",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Criar conta",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Começar com o Arquivio",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Já tenho uma conta",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Resposta com fontes",
+      "href": null,
+      "ariaPressed": "true"
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Com menção @",
+      "href": null,
+      "ariaPressed": "false"
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Sem evidência suficiente",
+      "href": null,
+      "ariaPressed": "false"
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Quais ferramentas posso conectar?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "O Arquivio altera meus arquivos?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Quem pode consultar os documentos?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "E se faltar informação?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Que conteúdo é compatível?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Quando os documentos ficam disponíveis?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Como a IA usa o conteúdo?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Criar minha conta",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "arquivio.",
+      "href": "#landing-main",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Privacidade",
+      "href": "/privacidade",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Termos de uso",
+      "href": "/termos",
+      "ariaPressed": null
+    }
+  ],
+  "ariaLabels": [
+    "Arquivio, início",
+    "Navegação principal",
+    "Abrir navegação",
+    "Navegação móvel",
+    "Escolha um exemplo da demonstração",
+    "Exemplo de conversa com documentos",
+    "Documentos utilizados",
+    "Biblioteca ilustrativa",
+    "Busca de arquivos ilustrativa",
+    "Ferramentas que você pode conectar",
+    "Arquivio, voltar ao início",
+    "Informações legais"
+  ],
+  "anchors": {
+    "produto": {
+      "hash": "#produto",
+      "top": 16
+    },
+    "integracoes": {
+      "hash": "#integracoes",
+      "top": 8
+    },
+    "como-funciona": {
+      "hash": "#como-funciona",
+      "top": 0
+    },
+    "perguntas": {
+      "hash": "#perguntas",
+      "top": 0
+    },
+    "targetsExist": [
+      [
+        "landing-main",
+        true
+      ],
+      [
+        "produto",
+        true
+      ],
+      [
+        "integracoes",
+        true
+      ],
+      [
+        "como-funciona",
+        true
+      ],
+      [
+        "perguntas",
+        true
+      ]
+    ]
+  },
+  "focus": [
+    {
+      "t": "Pular para o conteúdo",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "arquivio.",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Produto",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Integrações",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Como funciona",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Dúvidas",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Entrar",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Criar conta",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Começar com o Arquivio",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Já tenho uma conta",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Resposta com fontes",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Com menção @",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Sem evidência suficiente",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    },
+    {
+      "t": "Quais ferramentas posso cone",
+      "outline": "solid 3px rgb(150, 91, 13)"
+    }
+  ],
+  "signup": {
+    "header Criar conta": [
+      "http://127.0.0.1:5181/api/auth/login?screen_hint=sign-up"
+    ],
+    "hero Começar": [
+      "http://127.0.0.1:5181/api/auth/login?screen_hint=sign-up"
+    ],
+    "closing Criar minha conta": [
+      "http://127.0.0.1:5181/api/auth/login?screen_hint=sign-up"
+    ]
+  },
+  "login": {
+    "header Entrar": "http://127.0.0.1:5181/login",
+    "hero Já tenho uma conta": "http://127.0.0.1:5181/login"
+  },
+  "legal": {
+    "/privacidade": {
+      "url": "http://127.0.0.1:5181/privacidade",
+      "h1": "Política de Privacidade"
+    },
+    "/termos": {
+      "url": "http://127.0.0.1:5181/termos",
+      "h1": "Termos de Uso"
+    }
+  },
+  "mobileSignup": [
+    "http://127.0.0.1:5181/api/auth/login?screen_hint=sign-up"
+  ],
+  "mobileLogin": "http://127.0.0.1:5181/login",
+  "mobileAnchor": "#perguntas",
+  "reducedMotion": {
+    "pending": 0,
+    "threadAnimation": "none",
+    "btnTransition": "0s",
+    "hiddenSections": 0,
+    "case3": "Não encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia."
+  },
+  "noJs": {
+    "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+    "hidden": 0
+  }
+}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { MentionComposer, type MentionCandidate } from "./mention-composer";
+import "./interface-motion.css";
 
 type Api = <T>(path: string, init?: RequestInit) => Promise<T>;
 type Key = { id: string; name: string; prefix: string; scopes: string[]; last_used_at: string | null; expires_at: string | null; revoked_at: string | null };
@@ -80,6 +81,6 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
         <button ref={createButton} disabled={busy || selectedScopes.length === 0 || nodes.length > 20} className="min-h-11 rounded bg-primary px-4 py-2 font-semibold text-white">{busy ? "Salvando…" : "Criar chave"}</button>
       </form>
     </>}
-    {secret && <dialog ref={dialog} onCancel={closeSecret} onClose={() => setSecret(null)} aria-labelledby="api-secret-title" className="w-full max-w-lg rounded-lg border border-line-soft bg-white p-6 backdrop:bg-black/40"><h3 id="api-secret-title" className="text-xl font-semibold">Copie sua chave agora</h3><p className="mt-2 text-sm">Ela será exibida apenas uma vez. Guarde em um local seguro.</p><textarea readOnly aria-label="Chave de API" value={secret} className="mt-4 w-full break-all rounded border p-3 font-mono text-sm" /><div className="mt-4 flex gap-3"><button type="button" onClick={() => void copy()} className="min-h-11 rounded bg-primary px-4 text-white">{copied ? "Copiada" : "Copiar chave"}</button><button type="button" onClick={closeSecret} className="min-h-11 rounded border px-4">Fechar</button></div></dialog>}
+    {secret && <dialog ref={dialog} onCancel={closeSecret} onClose={() => setSecret(null)} aria-labelledby="api-secret-title" className="w-full max-w-lg rounded-lg border border-line-soft bg-white p-6 backdrop:bg-black/40" data-arquivio-motion-root=""><div data-arquivio-motion="panel"><h3 id="api-secret-title" className="text-xl font-semibold">Copie sua chave agora</h3><p className="mt-2 text-sm">Ela será exibida apenas uma vez. Guarde em um local seguro.</p><textarea readOnly aria-label="Chave de API" value={secret} className="mt-4 w-full break-all rounded border p-3 font-mono text-sm" /><div className="mt-4 flex gap-3"><button type="button" onClick={() => void copy()} className="min-h-11 rounded bg-primary px-4 text-white">{copied ? "Copiada" : "Copiar chave"}</button><button type="button" onClick={closeSecret} className="min-h-11 rounded border px-4">Fechar</button></div></div></dialog>}
   </section>;
 }

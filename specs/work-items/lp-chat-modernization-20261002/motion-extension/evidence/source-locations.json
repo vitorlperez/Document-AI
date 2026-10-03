@@ -1,0 +1,176 @@
+[
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/modal-dismiss.tsx",
+    "line": 11,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/modal-dismiss.tsx",
+    "line": 33,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/components/ui/sheet.tsx",
+    "line": 5,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/product/library-screen.tsx",
+    "line": 19,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/product/integrations-screen.tsx",
+    "line": 24,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/conversation-tour.tsx",
+    "line": 16,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/product/chat-workspace.tsx",
+    "line": 17,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/access-settings.tsx",
+    "line": 11,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/mobile-nav.tsx",
+    "line": 44,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/product/types-and-api.tsx",
+    "line": 26,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/components/ui/dialog.tsx",
+    "line": 10,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/components/ui/alert-dialog.tsx",
+    "line": 9,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/components/ui/drawer.tsx",
+    "line": 8,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/components/ui/command.tsx",
+    "line": 32,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/components/ui/sidebar.tsx",
+    "line": 185,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/product/library-grid.tsx",
+    "line": 36,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/question-scope.tsx",
+    "line": 24,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/mention-composer.tsx",
+    "line": 92,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/product/shell.tsx",
+    "line": 15,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/organization-onboarding.tsx",
+    "line": 23,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/landing-page.tsx",
+    "line": 172,
+    "valid": true
+  },
+  {
+    "doc": "INVENTORY.md",
+    "path": "frontend/app/globals.css",
+    "line": 1,
+    "valid": true
+  },
+  {
+    "doc": "implementation-plan.md",
+    "path": "frontend/app/landing.css",
+    "line": 111,
+    "valid": true
+  },
+  {
+    "doc": "implementation-plan.md",
+    "path": "frontend/app/product/library-screen.tsx",
+    "line": 26,
+    "valid": true
+  },
+  {
+    "doc": "implementation-plan.md",
+    "path": "frontend/app/product/integrations-screen.tsx",
+    "line": 44,
+    "valid": true
+  },
+  {
+    "doc": "implementation-plan.md",
+    "path": "frontend/app/conversation-tour.tsx",
+    "line": 25,
+    "valid": true
+  },
+  {
+    "doc": "implementation-plan.md",
+    "path": "frontend/app/access-settings.tsx",
+    "line": 39,
+    "valid": true
+  },
+  {
+    "doc": "implementation-plan.md",
+    "path": "frontend/components/ui/sheet.tsx",
+    "line": 47,
+    "valid": true
+  },
+  {
+    "doc": "implementation-plan.md",
+    "path": "frontend/app/mobile-nav.tsx",
+    "line": 59,
+    "valid": true
+  }
+]

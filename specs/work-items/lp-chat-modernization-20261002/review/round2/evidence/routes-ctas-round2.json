@@ -1,0 +1,69 @@
+{
+  "base": "http://127.0.0.1:5181",
+  "anchors": [
+    {
+      "viewport": 1440,
+      "href": "http://127.0.0.1:5181/#integracoes",
+      "targetExists": true
+    },
+    {
+      "viewport": 390,
+      "href": "http://127.0.0.1:5181/#perguntas",
+      "targetExists": true
+    }
+  ],
+  "signups": {
+    "proof": "only /api/auth/login is intercepted and aborted before auth; this verifies frontend destination, not signup flow",
+    "actions": [
+      {
+        "action": "header signup",
+        "target": "http://127.0.0.1:5181/api/auth/login?screen_hint=sign-up",
+        "interceptedBeforeBackend": true
+      },
+      {
+        "action": "hero signup",
+        "target": "http://127.0.0.1:5181/api/auth/login?screen_hint=sign-up",
+        "interceptedBeforeBackend": true
+      },
+      {
+        "action": "closing signup",
+        "target": "http://127.0.0.1:5181/api/auth/login?screen_hint=sign-up",
+        "interceptedBeforeBackend": true
+      },
+      {
+        "action": "mobile signup",
+        "target": "http://127.0.0.1:5181/api/auth/login?screen_hint=sign-up",
+        "interceptedBeforeBackend": true
+      }
+    ]
+  },
+  "logins": {
+    "proof": "real public /login route; no credentials entered or submitted",
+    "actions": [
+      {
+        "action": "header login",
+        "url": "http://127.0.0.1:5181/login",
+        "h1": "Sua equipe sabe.\nEncontre a resposta.",
+        "consoleErrors": [
+          "[vinext] RSC prefetch setup error: TypeError: te is not a function\n    at http://127.0.0.1:5181/_next/static/chunks/link-BzKbLNQz.js:2:4491"
+        ]
+      },
+      {
+        "action": "hero login",
+        "url": "http://127.0.0.1:5181/login",
+        "h1": "Sua equipe sabe.\nEncontre a resposta.",
+        "consoleErrors": [
+          "[vinext] RSC prefetch setup error: TypeError: te is not a function\n    at http://127.0.0.1:5181/_next/static/chunks/link-BzKbLNQz.js:2:4491"
+        ]
+      },
+      {
+        "action": "mobile login",
+        "url": "http://127.0.0.1:5181/login",
+        "h1": "Sua equipe sabe.\nEncontre a resposta.",
+        "consoleErrors": [
+          "[vinext] RSC prefetch setup error: TypeError: te is not a function\n    at http://127.0.0.1:5181/_next/static/chunks/link-BzKbLNQz.js:2:4491"
+        ]
+      }
+    ]
+  }
+}

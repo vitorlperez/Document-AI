@@ -1,0 +1,622 @@
+{
+  "url": "http://127.0.0.1:5181/",
+  "apiBase": "/api",
+  "mocks": false,
+  "interception": false,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "requestFailures": [],
+  "responses": [
+    {
+      "url": "http://127.0.0.1:5181/",
+      "status": 200,
+      "type": "document"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/css/index.BXY6DNAl.css",
+      "status": 200,
+      "type": "stylesheet"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/css/product-app.BQ8EMvtK.css",
+      "status": 200,
+      "type": "stylesheet"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/hash-Cp347hhd.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/rolldown-runtime-C60lm6uB.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/app-elements-H_Dr48wG.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/framework-D_rUT4EX.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/record-uXSNv6cl.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/protocol-headers-B9-bVeat.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/app-rsc-render-mode-CvTCGruk.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/app-rsc-cache-busting-C49N4xPd.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/headers-C_MtfdF4.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/deployment-id-DFhHa9wO.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/navigation-errors-D5LMQqDL.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/layout-segment-context-r75NDiK9.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/page-C8uDRDZn.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/Icon-Dsrrr-Ct.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/link-QUesMa0l.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/product-app-Bq1w7q5M.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/query-B_ym6Bnd.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/app-route-prefetch-policy-BpGdPbJh.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/_next/static/chunks/index-DK72Z7ke.js",
+      "status": 200,
+      "type": "script"
+    },
+    {
+      "url": "http://127.0.0.1:5181/landing/fonts/manrope-latin-var.woff2",
+      "status": 200,
+      "type": "font"
+    },
+    {
+      "url": "http://127.0.0.1:5181/landing/fonts/ibm-plex-sans-latin-var.woff2",
+      "status": 200,
+      "type": "font"
+    },
+    {
+      "url": "http://127.0.0.1:5181/landing/document-context.webp",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "http://127.0.0.1:5181/api/session",
+      "status": 200,
+      "type": "fetch"
+    }
+  ],
+  "snapshot": {
+    "title": "Arquivio — O conhecimento da sua equipe, com fontes",
+    "bodyText": "Pular para o conteúdo\narquivio.\nProduto\nIntegrações\nComo funciona\nDúvidas\nEntrar\nCriar conta\n\nSEU CONHECIMENTO, COM CONTEXTO\n\nA resposta está nos arquivos.\nAgora você sabe onde.\n\nPergunte ao Arquivio. Receba uma resposta direta e os documentos que a sustentam.\n\nComeçar com o Arquivio\nJá tenho uma conta\n\nConexões de leitura · originais preservados\n\nVEJA A EXPERIÊNCIA\n\nConverse com seus documentos.Confira a origem.\nResposta com fontes\nCom menção @\nSem evidência suficiente\narquivio.\nEstúdio Aurora\nPRÉVIA ILUSTRATIVA\nNova conversa\nTodas as ferramentas\n\nO que ficou definido para a primeira entrega?\n\nArquivio\nTodas as ferramentas\n\nA primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.\n\nDocumentos utilizados\n1.\nEscopo do projeto.pdf\nGoogle Drive\n2.\nReunião de alinhamento\nNotion\n3.\nCronograma de entregas\nOneDrive\n\nVer mais 2 documentos\n\nO que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta\nTodas as ferramentas\n0/1000\nEnviar\n\nSomente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.\n\nBiblioteca\nArquivos sincronizados\nBiblioteca\nGoogle Drive\nProjeto Aurora\nNotion\nOneDrive\nSharePoint\n\nA conversa usa somente as ferramentas e menções selecionadas na mensagem.\n\nBuscar arquivos\n\nEncontre arquivos e pastas pelo nome em todas as fontes conectadas.\n\nNome de arquivo ou pasta\nA busca consulta somente nomes; o conteúdo permanece no escopo da conversa.\nPrévia da área de consultas do Arquivio.\nExemplos fictícios.\n\nINTEGRAÇÕES DISPONÍVEIS\n\n4 fontes.\n1 lugar para perguntar.\n\nConecte o que sua equipe já usa. Os arquivos originais permanecem nas suas ferramentas.\n\nGoogle Drive\nOneDrive\nNotion\nSharePoint\n\nO QUE MUDA NA ROTINA\n\nDa procura à resposta,\nsem perder o caminho.\n\nO conhecimento da equipe já está nos documentos. O Arquivio ajuda a encontrar o trecho certo e a voltar à fonte sempre que você precisar de mais detalhes.\n\n01 / ENCONTRE\nPergunte como você perguntaria a um colega.\n\nRecupere decisões, entregas e informações registradas sem abrir cada arquivo por conta própria.\n\n02 / DELIMITE\nEscolha onde buscar.\n\nConsulte todo o conteúdo indexado ou restrinja a pergunta a uma ferramenta ou pasta específica.\n\n03 / CONFIRA\nVolte aos documentos.\n\nVeja as fontes apresentadas com a resposta e abra os originais para verificar o contexto completo.\n\nCOMO FUNCIONA\n\nSeus arquivos continuam onde estão.\nAs respostas ficam mais perto.\n01\nConecte as fontes\n\nEscolha materiais compartilháveis no Google Drive, OneDrive, Notion ou SharePoint. As conexões são de leitura e preservam os originais.\n\n02\nAguarde a sincronização\n\nO Arquivio processa o conteúdo selecionado em segundo plano. A consulta considera o que já foi sincronizado e indexado.\n\n03\nPergunte com contexto\n\nDefina o escopo, faça sua pergunta e confira os documentos que sustentam a resposta.\n\nTodos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais compartilháveis com a equipe.\n\nANTES DE COMEÇAR\n\nO que você\nprecisa saber.\nQuais ferramentas posso conectar?\nO Arquivio altera meus arquivos?\nQuem pode consultar os documentos?\nE se faltar informação?\nQue conteúdo é compatível?\nQuando os documentos ficam disponíveis?\nComo a IA usa o conteúdo?\n\nCOMECE PELOS SEUS DOCUMENTOS\n\nMenos procura.\nMais contexto.\nCriar minha conta\narquivio.\n\nConhecimento que encontra o seu contexto.\n\nPrivacidade\nTermos de uso",
+    "font": {
+      "body": "\"Arquivio LP Text\", system-ui, Arial, sans-serif",
+      "heading": "\"Arquivio LP Display\", system-ui, Arial, sans-serif",
+      "bodyLoaded": true,
+      "headingLoaded": true
+    },
+    "assetResources": [
+      {
+        "url": "http://127.0.0.1:5181/landing/fonts/manrope-latin-var.woff2",
+        "transferSize": 24436
+      },
+      {
+        "url": "http://127.0.0.1:5181/landing/fonts/ibm-plex-sans-latin-var.woff2",
+        "transferSize": 46700
+      },
+      {
+        "url": "http://127.0.0.1:5181/landing/document-context.webp",
+        "transferSize": 4246
+      }
+    ]
+  },
+  "rows": [
+    {
+      "viewport": {
+        "width": 375,
+        "height": 667
+      },
+      "documentWidth": 375,
+      "bodyWidth": 375,
+      "stageColumns": "343px",
+      "boxes": {
+        ".landing-hero": {
+          "x": 16,
+          "y": 76,
+          "width": 343,
+          "height": 346,
+          "position": "static"
+        },
+        ".landing-preview-heading": {
+          "x": 16,
+          "y": 450,
+          "width": 343,
+          "height": 79,
+          "position": "static"
+        },
+        ".landing-demo-options": {
+          "x": 16,
+          "y": 541,
+          "width": 343,
+          "height": 94,
+          "position": "static"
+        },
+        ".landing-user-message": {
+          "x": 69,
+          "y": 768,
+          "width": 275,
+          "height": 89,
+          "position": "static"
+        },
+        ".landing-answer": {
+          "x": 31,
+          "y": 873,
+          "width": 313,
+          "height": 347,
+          "position": "static"
+        },
+        ".landing-answer-sources > div": {
+          "x": 41,
+          "y": 1014,
+          "width": 293,
+          "height": 54,
+          "position": "static"
+        },
+        ".landing-composer-hint": {
+          "x": 31,
+          "y": 1392,
+          "width": 313,
+          "height": 40,
+          "position": "static"
+        },
+        ".landing-app-search": {
+          "x": 17,
+          "y": 1722,
+          "width": 341,
+          "height": 180,
+          "position": "static"
+        },
+        ".landing-story-art": {
+          "x": 16,
+          "y": 2903,
+          "width": 213,
+          "height": 159,
+          "position": "static"
+        },
+        ".landing-story-intro h2": {
+          "x": 16,
+          "y": 2679,
+          "width": 343,
+          "height": 70,
+          "position": "static"
+        },
+        ".landing-story-intro > p:last-of-type": {
+          "x": 16,
+          "y": 2770,
+          "width": 343,
+          "height": 105,
+          "position": "static"
+        }
+      },
+      "alerts": [],
+      "storyArtOverlapsHeadingRect": false,
+      "firstSourceVisibleInInitialViewport": false
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "stageColumns": "358px",
+      "boxes": {
+        ".landing-hero": {
+          "x": 16,
+          "y": 76,
+          "width": 358,
+          "height": 346,
+          "position": "static"
+        },
+        ".landing-preview-heading": {
+          "x": 16,
+          "y": 450,
+          "width": 358,
+          "height": 79,
+          "position": "static"
+        },
+        ".landing-demo-options": {
+          "x": 16,
+          "y": 541,
+          "width": 358,
+          "height": 94,
+          "position": "static"
+        },
+        ".landing-user-message": {
+          "x": 70,
+          "y": 768,
+          "width": 289,
+          "height": 89,
+          "position": "static"
+        },
+        ".landing-answer": {
+          "x": 31,
+          "y": 873,
+          "width": 328,
+          "height": 347,
+          "position": "static"
+        },
+        ".landing-answer-sources > div": {
+          "x": 41,
+          "y": 1014,
+          "width": 308,
+          "height": 54,
+          "position": "static"
+        },
+        ".landing-composer-hint": {
+          "x": 31,
+          "y": 1392,
+          "width": 328,
+          "height": 40,
+          "position": "static"
+        },
+        ".landing-app-search": {
+          "x": 17,
+          "y": 1722,
+          "width": 356,
+          "height": 180,
+          "position": "static"
+        },
+        ".landing-story-art": {
+          "x": 16,
+          "y": 2852,
+          "width": 222,
+          "height": 166,
+          "position": "static"
+        },
+        ".landing-story-intro h2": {
+          "x": 16,
+          "y": 2629,
+          "width": 358,
+          "height": 70,
+          "position": "static"
+        },
+        ".landing-story-intro > p:last-of-type": {
+          "x": 16,
+          "y": 2719,
+          "width": 358,
+          "height": 105,
+          "position": "static"
+        }
+      },
+      "alerts": [],
+      "storyArtOverlapsHeadingRect": false,
+      "firstSourceVisibleInInitialViewport": false
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "stageColumns": "704px",
+      "boxes": {
+        ".landing-hero": {
+          "x": 32,
+          "y": 104,
+          "width": 704,
+          "height": 399,
+          "position": "static"
+        },
+        ".landing-preview-heading": {
+          "x": 32,
+          "y": 543,
+          "width": 704,
+          "height": 54,
+          "position": "static"
+        },
+        ".landing-demo-options": {
+          "x": 32,
+          "y": 614,
+          "width": 704,
+          "height": 44,
+          "position": "static"
+        },
+        ".landing-user-message": {
+          "x": 280,
+          "y": 771,
+          "width": 435,
+          "height": 66,
+          "position": "static"
+        },
+        ".landing-answer": {
+          "x": 221,
+          "y": 852,
+          "width": 494,
+          "height": 305,
+          "position": "static"
+        },
+        ".landing-answer-sources > div": {
+          "x": 269,
+          "y": 993,
+          "width": 436,
+          "height": 40,
+          "position": "static"
+        },
+        ".landing-composer-hint": {
+          "x": 221,
+          "y": 1294,
+          "width": 494,
+          "height": 20,
+          "position": "static"
+        },
+        ".landing-app-search": {
+          "x": 33,
+          "y": 1330,
+          "width": 702,
+          "height": 117,
+          "position": "static"
+        },
+        ".landing-story-art": {
+          "x": 493,
+          "y": 2161,
+          "width": 179,
+          "height": 134,
+          "position": "absolute"
+        },
+        ".landing-story-intro h2": {
+          "x": 32,
+          "y": 2196,
+          "width": 640,
+          "height": 80,
+          "position": "static"
+        },
+        ".landing-story-intro > p:last-of-type": {
+          "x": 32,
+          "y": 2295,
+          "width": 428,
+          "height": 79,
+          "position": "static"
+        }
+      },
+      "alerts": [],
+      "storyArtOverlapsHeadingRect": true,
+      "firstSourceVisibleInInitialViewport": true
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "documentWidth": 1024,
+      "bodyWidth": 1024,
+      "stageColumns": "960px",
+      "boxes": {
+        ".landing-hero": {
+          "x": 32,
+          "y": 112,
+          "width": 960,
+          "height": 424,
+          "position": "static"
+        },
+        ".landing-preview-heading": {
+          "x": 32,
+          "y": 576,
+          "width": 960,
+          "height": 56,
+          "position": "static"
+        },
+        ".landing-demo-options": {
+          "x": 32,
+          "y": 648,
+          "width": 960,
+          "height": 44,
+          "position": "static"
+        },
+        ".landing-user-message": {
+          "x": 311,
+          "y": 805,
+          "width": 660,
+          "height": 66,
+          "position": "static"
+        },
+        ".landing-answer": {
+          "x": 221,
+          "y": 887,
+          "width": 750,
+          "height": 280,
+          "position": "static"
+        },
+        ".landing-answer-sources > div": {
+          "x": 269,
+          "y": 1003,
+          "width": 692,
+          "height": 40,
+          "position": "static"
+        },
+        ".landing-composer-hint": {
+          "x": 221,
+          "y": 1282,
+          "width": 750,
+          "height": 20,
+          "position": "static"
+        },
+        ".landing-app-search": {
+          "x": 33,
+          "y": 1318,
+          "width": 958,
+          "height": 98,
+          "position": "static"
+        },
+        ".landing-story-art": {
+          "x": 493,
+          "y": 2189,
+          "width": 179,
+          "height": 134,
+          "position": "absolute"
+        },
+        ".landing-story-intro h2": {
+          "x": 32,
+          "y": 2223,
+          "width": 640,
+          "height": 90,
+          "position": "static"
+        },
+        ".landing-story-intro > p:last-of-type": {
+          "x": 32,
+          "y": 2333,
+          "width": 428,
+          "height": 79,
+          "position": "static"
+        }
+      },
+      "alerts": [],
+      "storyArtOverlapsHeadingRect": true,
+      "firstSourceVisibleInInitialViewport": false
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "stageColumns": "517.438px 714.562px",
+      "boxes": {
+        ".landing-hero": {
+          "x": 80,
+          "y": 120,
+          "width": 517,
+          "height": 548,
+          "position": "sticky"
+        },
+        ".landing-preview-heading": {
+          "x": 645,
+          "y": 120,
+          "width": 715,
+          "height": 59,
+          "position": "static"
+        },
+        ".landing-demo-options": {
+          "x": 645,
+          "y": 195,
+          "width": 715,
+          "height": 44,
+          "position": "static"
+        },
+        ".landing-user-message": {
+          "x": 895,
+          "y": 352,
+          "width": 444,
+          "height": 66,
+          "position": "static"
+        },
+        ".landing-answer": {
+          "x": 834,
+          "y": 434,
+          "width": 505,
+          "height": 305,
+          "position": "static"
+        },
+        ".landing-answer-sources > div": {
+          "x": 882,
+          "y": 575,
+          "width": 447,
+          "height": 40,
+          "position": "static"
+        },
+        ".landing-composer-hint": {
+          "x": 834,
+          "y": 876,
+          "width": 505,
+          "height": 20,
+          "position": "static"
+        },
+        ".landing-app-search": {
+          "x": 646,
+          "y": 912,
+          "width": 713,
+          "height": 117,
+          "position": "static"
+        },
+        ".landing-story-art": {
+          "x": 80,
+          "y": 1994,
+          "width": 320,
+          "height": 240,
+          "position": "static"
+        },
+        ".landing-story-intro h2": {
+          "x": 80,
+          "y": 1758,
+          "width": 517,
+          "height": 97,
+          "position": "static"
+        },
+        ".landing-story-intro > p:last-of-type": {
+          "x": 80,
+          "y": 1875,
+          "width": 428,
+          "height": 79,
+          "position": "static"
+        }
+      },
+      "alerts": [],
+      "storyArtOverlapsHeadingRect": false,
+      "firstSourceVisibleInInitialViewport": true
+    }
+  ]
+}

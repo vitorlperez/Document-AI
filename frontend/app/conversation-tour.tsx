@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import "./onboarding.css";
+import "./interface-motion.css";
+import { playSurfaceEntry } from "./interface-motion";
 
 const steps = [
   { target: "composer", title: "Pergunte aos seus documentos", description: "Escreva uma pergunta em linguagem natural e envie. A resposta usa conteúdo já indexado e traz fontes para você conferir. Digite @ para mencionar um arquivo ou pasta." },
@@ -22,6 +24,15 @@ export function ConversationTour({ onComplete }: { onComplete: (exit: TourExit) 
   const [rect, setRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const [position, setPosition] = useState({ top: 80, left: 16 });
   const step = steps[index];
+  const card = useRef<HTMLElement>(null);
+  const shownIndex = useRef(index);
+  useEffect(() => {
+    // Step changes keep the same dialog/card/buttons; only the step text gets a short visual entry.
+    if (shownIndex.current === index) return;
+    shownIndex.current = index;
+    const text = card.current ? Array.from(card.current.querySelectorAll<HTMLElement>(":scope > .onboarding-eyebrow, :scope > #tour-title, :scope > #tour-description")) : [];
+    return playSurfaceEntry(text, { offsetY: 6 });
+  }, [index]);
   useEffect(() => {
     const modal = dialog.current;
     const previous = document.activeElement as HTMLElement | null;
@@ -73,9 +84,9 @@ export function ConversationTour({ onComplete }: { onComplete: (exit: TourExit) 
     catch (caught) { setError(caught instanceof Error ? caught.message : "Não foi possível salvar. Tente novamente."); }
     finally { setBusy(false); }
   }
-  return <dialog ref={dialog} className="conversation-tour" aria-labelledby="tour-title" aria-describedby="tour-description" onCancel={(event) => { event.preventDefault(); void finish(); }} onClick={(event) => { if (!busy && !(event.target as HTMLElement).closest(".tour-card")) void finish(); }}>
+  return <dialog ref={dialog} className="conversation-tour" data-arquivio-motion-root="" aria-labelledby="tour-title" aria-describedby="tour-description" onCancel={(event) => { event.preventDefault(); void finish(); }} onClick={(event) => { if (!busy && !(event.target as HTMLElement).closest(".tour-card")) void finish(); }}>
     <div className={`tour-highlight ${rect ? "" : "tour-highlight-fallback"}`} style={rect ?? undefined} aria-hidden="true" />
-    <section className="tour-card" style={position} aria-busy={busy}>
+    <section ref={card} className="tour-card" style={position} aria-busy={busy} data-arquivio-motion="tour-card">
       <p className="onboarding-eyebrow">Conheça seu espaço · {index + 1} de {steps.length}</p>
       <h2 id="tour-title">{step.title}</h2>
       <p id="tour-description">{step.description}</p>

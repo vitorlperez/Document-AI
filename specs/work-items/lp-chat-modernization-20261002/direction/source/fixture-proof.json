@@ -1,0 +1,63 @@
+{
+  "proof": [
+    {
+      "file": "components.html",
+      "title": "Arquivio | Fixture técnico da direção",
+      "bodyWidth": 1280,
+      "viewport": 1280,
+      "font": "\"IBM Plex Sans\", system-ui, Arial, sans-serif",
+      "root": "#1c6052",
+      "states": [
+        "source-answer",
+        "mention",
+        "no-evidence",
+        "Loading",
+        "Empty",
+        "Error",
+        "Populated",
+        "Edge",
+        "Untouched",
+        "Dirty-valid",
+        "Submitted-pending"
+      ]
+    },
+    {
+      "file": "components.html",
+      "viewport": 375,
+      "overflow": false
+    },
+    {
+      "reducedMotion": "0s"
+    },
+    {
+      "file": "preview/colors.html",
+      "title": "Arquivio DNA — Colors",
+      "bodyWidth": 1280,
+      "viewport": 1280,
+      "font": "\"IBM Plex Sans\", system-ui, Arial, sans-serif",
+      "root": "#1c6052",
+      "states": []
+    },
+    {
+      "file": "preview/typography.html",
+      "title": "Arquivio DNA — Typography",
+      "bodyWidth": 1280,
+      "viewport": 1280,
+      "font": "\"IBM Plex Sans\", system-ui, Arial, sans-serif",
+      "root": "#1c6052",
+      "states": []
+    },
+    {
+      "file": "preview/spacing.html",
+      "title": "Arquivio DNA — Spacing, Radius, Shadow, Motion",
+      "bodyWidth": 1280,
+      "viewport": 1280,
+      "font": "\"IBM Plex Sans\", system-ui, Arial, sans-serif",
+      "root": "#1c6052",
+      "states": []
+    }
+  ],
+  "externalRequests": [],
+  "errors": [],
+  "protectedUnchanged": true
+}

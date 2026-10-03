@@ -1,0 +1,239 @@
+{
+  "base": "http://localhost:3000",
+  "at": "2026-10-03T14:56:30.291Z",
+  "viewports": {
+    "390": {
+      "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+      "stage": true,
+      "fonts": true,
+      "overflow": false,
+      "sessionAlert": false,
+      "cases": 3,
+      "faq": [
+        {
+          "name": "lp-disclosure-in",
+          "d": 200
+        }
+      ],
+      "caseAnim": [
+        {
+          "name": "lp-case-in",
+          "d": 200
+        }
+      ],
+      "menu": [
+        {
+          "name": "lp-menu-in",
+          "d": 200
+        }
+      ],
+      "api": {
+        "/me": 401
+      },
+      "errors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "nonGet": []
+    },
+    "1440": {
+      "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+      "stage": true,
+      "fonts": true,
+      "overflow": false,
+      "sessionAlert": false,
+      "cases": 3,
+      "faq": [
+        {
+          "name": "lp-disclosure-in",
+          "d": 200
+        }
+      ],
+      "caseAnim": [
+        {
+          "name": "lp-case-in",
+          "d": 200
+        }
+      ],
+      "menu": null,
+      "api": {
+        "/me": 401
+      },
+      "errors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "nonGet": []
+    }
+  },
+  "checks": [
+    {
+      "n": "1440: new LP (stage+fonts), 3 cases, 7 FAQ, no overflow, no session alert",
+      "ok": true,
+      "d": {
+        "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+        "stage": true,
+        "fonts": true,
+        "overflow": false,
+        "sessionAlert": false,
+        "cases": 3,
+        "faq": 7
+      }
+    },
+    {
+      "n": "1440: case lp-case-in 200ms",
+      "ok": true,
+      "d": [
+        {
+          "name": "lp-case-in",
+          "d": 200
+        }
+      ]
+    },
+    {
+      "n": "1440: FAQ lp-disclosure-in 200ms",
+      "ok": true,
+      "d": [
+        {
+          "name": "lp-disclosure-in",
+          "d": 200
+        }
+      ]
+    },
+    {
+      "n": "1440: real anonymous session (GET /me on API) and only GET requests",
+      "ok": true,
+      "d": {
+        "api": {
+          "/me": 401
+        },
+        "nonGet": []
+      }
+    },
+    {
+      "n": "1440: console/page errors only the expected anonymous 401",
+      "ok": true,
+      "d": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "n": "390: new LP (stage+fonts), 3 cases, 7 FAQ, no overflow, no session alert",
+      "ok": true,
+      "d": {
+        "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+        "stage": true,
+        "fonts": true,
+        "overflow": false,
+        "sessionAlert": false,
+        "cases": 3,
+        "faq": 7
+      }
+    },
+    {
+      "n": "390: case lp-case-in 200ms",
+      "ok": true,
+      "d": [
+        {
+          "name": "lp-case-in",
+          "d": 200
+        }
+      ]
+    },
+    {
+      "n": "390: FAQ lp-disclosure-in 200ms",
+      "ok": true,
+      "d": [
+        {
+          "name": "lp-disclosure-in",
+          "d": 200
+        }
+      ]
+    },
+    {
+      "n": "390: menu lp-menu-in 200ms",
+      "ok": true,
+      "d": [
+        {
+          "name": "lp-menu-in",
+          "d": 200
+        }
+      ]
+    },
+    {
+      "n": "390: real anonymous session (GET /me on API) and only GET requests",
+      "ok": true,
+      "d": {
+        "api": {
+          "/me": 401
+        },
+        "nonGet": []
+      }
+    },
+    {
+      "n": "390: console/page errors only the expected anonymous 401",
+      "ok": true,
+      "d": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "n": "signup CTA .landing-header-actions .landing-button",
+      "ok": true,
+      "d": [
+        "http://localhost:8000/auth/login?screen_hint=sign-up",
+        "http://localhost:3000/",
+        "http://localhost:3000/",
+        "http://localhost:3000/",
+        "http://localhost:3000/privacidade",
+        "http://localhost:3000/",
+        "http://localhost:3000/termos"
+      ]
+    },
+    {
+      "n": "signup CTA .landing-hero-actions .landing-button",
+      "ok": true,
+      "d": [
+        "http://localhost:8000/auth/login?screen_hint=sign-up",
+        "http://localhost:3000/",
+        "http://localhost:3000/",
+        "http://localhost:3000/",
+        "http://localhost:3000/privacidade",
+        "http://localhost:3000/",
+        "http://localhost:3000/termos"
+      ]
+    },
+    {
+      "n": "signup CTA .landing-closing .landing-button",
+      "ok": true,
+      "d": [
+        "http://localhost:8000/auth/login?screen_hint=sign-up",
+        "http://localhost:3000/",
+        "http://localhost:3000/",
+        "http://localhost:3000/",
+        "http://localhost:3000/privacidade",
+        "http://localhost:3000/",
+        "http://localhost:3000/termos"
+      ]
+    },
+    {
+      "n": "login CTA .landing-header-actions .landing-login",
+      "ok": true,
+      "d": "http://localhost:3000/login"
+    },
+    {
+      "n": "login CTA .landing-hero-actions .landing-login",
+      "ok": true,
+      "d": "http://localhost:3000/login"
+    },
+    {
+      "n": "legal /privacidade",
+      "ok": true,
+      "d": "http://localhost:3000/privacidade"
+    },
+    {
+      "n": "legal /termos",
+      "ok": true,
+      "d": "http://localhost:3000/termos"
+    }
+  ],
+  "ok": true
+}

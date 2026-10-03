@@ -1,0 +1,32 @@
+{
+  "case": {
+    "computed": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+    "animations": [
+      {
+        "name": "lp-case-in",
+        "timing": "linear",
+        "computed": "linear"
+      }
+    ]
+  },
+  "faq": {
+    "computed": "cubic-bezier(0.4, 0, 0.2, 1)",
+    "animations": [
+      {
+        "name": "lp-disclosure-in",
+        "timing": "linear",
+        "computed": "linear"
+      }
+    ]
+  },
+  "menu": {
+    "computed": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+    "animations": [
+      {
+        "name": "lp-menu-in",
+        "timing": "linear",
+        "computed": "linear"
+      }
+    ]
+  }
+}

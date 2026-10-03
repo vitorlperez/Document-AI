@@ -8,6 +8,7 @@ import { SyncBanner, useSyncStatus } from "./sync-status";
 import { ToolsSidebar, type ToolSelection } from "./tools-sidebar";
 import { type Company, type LibraryNode, type LibraryPage, type User, api, companyPath, roleLabel } from "./product/types-and-api";
 import "./mobile-chat.css";
+import "./interface-motion.css";
 
 /** Contract C5: below 768px the mobile shell (header + drawer) replaces the desktop header. */
 const MOBILE_QUERY = "(max-width: 767px)";
@@ -82,7 +83,7 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
       <button type="button" data-tour="new-conversation" className="mobile-header-new" onClick={newConversation}><Plus size={16} aria-hidden="true" />Nova conversa</button>
     </header>
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="left" showCloseButton={false} id="mobile-drawer" className="mobile-drawer" aria-describedby="mobile-drawer-description" onCloseAutoFocus={(event) => { event.preventDefault(); menuButtonRef.current?.focus({ preventScroll: true }); }}>
+      <SheetContent side="left" showCloseButton={false} motionProfile="arquivio" id="mobile-drawer" className="mobile-drawer" aria-describedby="mobile-drawer-description" onCloseAutoFocus={(event) => { event.preventDefault(); menuButtonRef.current?.focus({ preventScroll: true }); }}>
         <div className="mobile-drawer-head">
           <Brand compact />
           <SheetClose className="mobile-header-button" aria-label="Fechar menu"><X size={20} aria-hidden="true" /></SheetClose>

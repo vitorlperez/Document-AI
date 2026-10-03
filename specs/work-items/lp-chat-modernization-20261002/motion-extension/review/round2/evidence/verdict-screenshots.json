@@ -1,0 +1,332 @@
+{
+  "base": "http://127.0.0.1:5181/",
+  "mode": "public runtime; clean contexts; no mocks/routes/interception",
+  "captures": [
+    {
+      "name": "desktop",
+      "file": "verdict-desktop-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "httpStatus": 200,
+      "title": "A resposta está nos arquivos.\nAgora você sabe onde.",
+      "cases": 3,
+      "faq": 7,
+      "sessionAlertCount": 0,
+      "responseY": 475,
+      "sourceY": 575,
+      "fonts": [
+        {
+          "family": "Arquivio LP Display",
+          "status": "loaded"
+        },
+        {
+          "family": "Arquivio LP Text",
+          "status": "loaded"
+        }
+      ],
+      "scrollWidth": 1440,
+      "viewportWidth": 1440,
+      "errors": []
+    },
+    {
+      "name": "mobile",
+      "file": "verdict-mobile-390x844.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "httpStatus": 200,
+      "title": "A resposta está nos arquivos.\nAgora você sabe onde.",
+      "cases": 3,
+      "faq": 7,
+      "sessionAlertCount": 0,
+      "responseY": 799,
+      "sourceY": 893,
+      "fonts": [
+        {
+          "family": "Arquivio LP Display",
+          "status": "loaded"
+        },
+        {
+          "family": "Arquivio LP Text",
+          "status": "loaded"
+        }
+      ],
+      "scrollWidth": 390,
+      "viewportWidth": 390,
+      "errors": []
+    }
+  ],
+  "failures": [],
+  "requests": [
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/css/index.BXY6DNAl.css"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/css/product-app.BDgqNwyj.css"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/index-CFTM1NdI.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/rolldown-runtime-C60lm6uB.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/framework-D_rUT4EX.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/app-elements-H_Dr48wG.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/hash-Cp347hhd.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/record-uXSNv6cl.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/app-rsc-cache-busting-RF4k9hUy.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/app-rsc-render-mode-CvTCGruk.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/headers-C_MtfdF4.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/protocol-headers-B9-bVeat.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/deployment-id-DFhHa9wO.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/navigation-errors-D5LMQqDL.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/layout-segment-context-D8SVy9y4.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/page-C2630mV2.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/product-app-BHDQo1rC.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/Icon-Dsrrr-Ct.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/link-D86dSKGf.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/app-route-prefetch-policy-Djkf1kmy.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/query-B_ym6Bnd.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/landing/fonts/manrope-latin-var.woff2"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/landing/fonts/ibm-plex-sans-latin-var.woff2"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/landing/document-context.webp"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/api/session"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/css/index.BXY6DNAl.css"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/css/product-app.BDgqNwyj.css"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/index-CFTM1NdI.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/rolldown-runtime-C60lm6uB.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/framework-D_rUT4EX.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/app-elements-H_Dr48wG.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/hash-Cp347hhd.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/record-uXSNv6cl.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/app-rsc-cache-busting-RF4k9hUy.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/app-rsc-render-mode-CvTCGruk.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/headers-C_MtfdF4.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/protocol-headers-B9-bVeat.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/deployment-id-DFhHa9wO.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/navigation-errors-D5LMQqDL.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/layout-segment-context-D8SVy9y4.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/page-C2630mV2.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/product-app-BHDQo1rC.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/Icon-Dsrrr-Ct.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/link-D86dSKGf.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/app-route-prefetch-policy-Djkf1kmy.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/_next/static/chunks/query-B_ym6Bnd.js"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/landing/fonts/manrope-latin-var.woff2"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/landing/fonts/ibm-plex-sans-latin-var.woff2"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/landing/document-context.webp"
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:5181",
+      "path": "/api/session"
+    }
+  ],
+  "session": {
+    "status": 200,
+    "body": "null",
+    "method": "GET",
+    "origin": "http://127.0.0.1:5181"
+  },
+  "finishedAt": "2026-10-03T06:10:47.581Z"
+}

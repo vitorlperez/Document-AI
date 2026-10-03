@@ -1,0 +1,8 @@
+arquivio-lp-preview-20261002 7e5e014818e7 Up 9 hours
+document-ai-frontend-1 8adf705e8a92 Up 21 hours
+document-ai-api-1 c186d59a7ac2 Up 25 hours (healthy)
+document-ai-beat-1 ea889b065da0 Up 25 hours
+document-ai-worker-1 781f1a64bc32 Up 25 hours
+document-ai-redis-1 4f12acc8a6f6 Up 2 days (healthy)
+document-ai-postgres-1 1ff70f338675 Up 2 days (healthy)
+document-ai-docling-1 a1429827439e Up 2 days (healthy)

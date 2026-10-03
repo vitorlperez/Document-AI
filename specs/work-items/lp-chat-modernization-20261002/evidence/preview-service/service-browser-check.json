@@ -1,0 +1,56 @@
+{
+  "base": "http://127.0.0.1:5181",
+  "at": "2026-10-03T04:20:04.575Z",
+  "viewports": {
+    "390": {
+      "title": "Arquivio — O conhecimento da sua equipe, com fontes",
+      "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+      "fonts": {
+        "display": true,
+        "text": true
+      },
+      "sessionAlert": false,
+      "cases": [
+        "Resposta com fontes",
+        "Com menção @",
+        "Sem evidência suficiente"
+      ],
+      "stage": "358px",
+      "overflowX": false,
+      "storyArt": true,
+      "responses": {
+        "/landing/fonts/manrope-latin-var.woff2": "200 font/woff2",
+        "/landing/fonts/ibm-plex-sans-latin-var.woff2": "200 font/woff2",
+        "/landing/document-context.webp": "200 image/webp",
+        "/api/session": "200 application/json"
+      },
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "1440": {
+      "title": "Arquivio — O conhecimento da sua equipe, com fontes",
+      "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+      "fonts": {
+        "display": true,
+        "text": true
+      },
+      "sessionAlert": false,
+      "cases": [
+        "Resposta com fontes",
+        "Com menção @",
+        "Sem evidência suficiente"
+      ],
+      "stage": "517.438px 714.562px",
+      "overflowX": false,
+      "storyArt": true,
+      "responses": {
+        "/landing/fonts/manrope-latin-var.woff2": "200 font/woff2",
+        "/landing/fonts/ibm-plex-sans-latin-var.woff2": "200 font/woff2",
+        "/landing/document-context.webp": "200 image/webp",
+        "/api/session": "200 application/json"
+      },
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  }
+}

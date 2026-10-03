@@ -1,0 +1,703 @@
+{
+  "base": "http://127.0.0.1:5181",
+  "apiMode": "real same-origin BFF; first visit without mocks or interception",
+  "firstVisit": {
+    "url": "http://127.0.0.1:5181/",
+    "httpStatus": 200,
+    "apiSession": {
+      "url": "http://127.0.0.1:5181/api/session",
+      "status": 200
+    },
+    "consoleErrors": [],
+    "pageErrors": [],
+    "requestFailures": [],
+    "assetResponses": [
+      {
+        "url": "http://127.0.0.1:5181/landing/fonts/manrope-latin-var.woff2",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:5181/landing/fonts/ibm-plex-sans-latin-var.woff2",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:5181/landing/document-context.webp",
+        "status": 200
+      }
+    ],
+    "title": "Arquivio — O conhecimento da sua equipe, com fontes",
+    "loadedFonts": {
+      "display": true,
+      "text": true
+    }
+  },
+  "actionSequence": [
+    {
+      "tag": "A",
+      "text": "Pular para o conteúdo",
+      "href": "#landing-main",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "arquivio.",
+      "href": "#landing-main",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Produto",
+      "href": "#produto",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Integrações",
+      "href": "#integracoes",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Como funciona",
+      "href": "#como-funciona",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Dúvidas",
+      "href": "#perguntas",
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Entrar",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Criar conta",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Abrir navegação",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Produto",
+      "href": "#produto",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Integrações",
+      "href": "#integracoes",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Como funciona",
+      "href": "#como-funciona",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Dúvidas",
+      "href": "#perguntas",
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Entrar",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Criar conta",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Começar com o Arquivio",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Já tenho uma conta",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Resposta com fontes",
+      "href": null,
+      "ariaPressed": "true"
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Com menção @",
+      "href": null,
+      "ariaPressed": "false"
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Sem evidência suficiente",
+      "href": null,
+      "ariaPressed": "false"
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Quais ferramentas posso conectar?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "O Arquivio altera meus arquivos?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Quem pode consultar os documentos?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "E se faltar informação?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Que conteúdo é compatível?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Quando os documentos ficam disponíveis?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "SUMMARY",
+      "text": "Como a IA usa o conteúdo?",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Criar minha conta",
+      "href": null,
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "arquivio.",
+      "href": "#landing-main",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Privacidade",
+      "href": "/privacidade",
+      "ariaPressed": null
+    },
+    {
+      "tag": "A",
+      "text": "Termos de uso",
+      "href": "/termos",
+      "ariaPressed": null
+    }
+  ],
+  "expectedActionSequenceCount": 31,
+  "viewports": [
+    {
+      "viewport": {
+        "width": 375,
+        "height": 667
+      },
+      "documentWidth": 375,
+      "bodyWidth": 375,
+      "stageColumns": "343px",
+      "question": {
+        "y": 700,
+        "x": 69,
+        "w": 275,
+        "h": 62
+      },
+      "answer": {
+        "y": 811,
+        "x": 31,
+        "w": 313,
+        "h": 50
+      },
+      "firstSource": {
+        "y": 905,
+        "x": 39,
+        "w": 297,
+        "h": 40
+      },
+      "answerVisibleInFold": false,
+      "sourceVisibleInFold": false,
+      "chatPx": 16,
+      "warningFontSizes": [
+        {
+          "text": "Conexões de leitura · originais preservados",
+          "px": 13
+        },
+        {
+          "text": "PRÉVIA ILUSTRATIVA",
+          "px": 13
+        },
+        {
+          "text": "Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.",
+          "px": 13
+        },
+        {
+          "text": "A conversa usa somente as ferramentas e menções selecionadas na mensagem.",
+          "px": 13
+        },
+        {
+          "text": "A busca consulta somente nomes; o conteúdo permanece no escopo da conversa.",
+          "px": 13
+        },
+        {
+          "text": "Prévia da área de consultas do Arquivio. Exemplos fictícios.",
+          "px": 13
+        },
+        {
+          "text": "Todos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais c",
+          "px": 15
+        }
+      ],
+      "minWarningPx": 13,
+      "smallTargets": [],
+      "clickableCount": 25,
+      "art": {
+        "y": 2744,
+        "x": 16,
+        "w": 213,
+        "h": 159
+      },
+      "artTextOverlaps": [],
+      "imageBackground": "url(\"http://127.0.0.1:5181/landing/document-context.webp\")"
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "stageColumns": "358px",
+      "question": {
+        "y": 687,
+        "x": 70,
+        "w": 289,
+        "h": 62
+      },
+      "answer": {
+        "y": 799,
+        "x": 31,
+        "w": 328,
+        "h": 50
+      },
+      "firstSource": {
+        "y": 893,
+        "x": 39,
+        "w": 312,
+        "h": 40
+      },
+      "answerVisibleInFold": true,
+      "sourceVisibleInFold": false,
+      "chatPx": 16,
+      "warningFontSizes": [
+        {
+          "text": "Conexões de leitura · originais preservados",
+          "px": 13
+        },
+        {
+          "text": "PRÉVIA ILUSTRATIVA",
+          "px": 13
+        },
+        {
+          "text": "Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.",
+          "px": 13
+        },
+        {
+          "text": "A conversa usa somente as ferramentas e menções selecionadas na mensagem.",
+          "px": 13
+        },
+        {
+          "text": "A busca consulta somente nomes; o conteúdo permanece no escopo da conversa.",
+          "px": 13
+        },
+        {
+          "text": "Prévia da área de consultas do Arquivio. Exemplos fictícios.",
+          "px": 13
+        },
+        {
+          "text": "Todos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais c",
+          "px": 15
+        }
+      ],
+      "minWarningPx": 13,
+      "smallTargets": [],
+      "clickableCount": 25,
+      "art": {
+        "y": 2681,
+        "x": 16,
+        "w": 222,
+        "h": 166
+      },
+      "artTextOverlaps": [],
+      "imageBackground": "url(\"http://127.0.0.1:5181/landing/document-context.webp\")"
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "stageColumns": "704px",
+      "question": {
+        "y": 793,
+        "x": 365,
+        "w": 350,
+        "h": 43
+      },
+      "answer": {
+        "y": 894,
+        "x": 259,
+        "w": 456,
+        "h": 50
+      },
+      "firstSource": {
+        "y": 993,
+        "x": 269,
+        "w": 436,
+        "h": 40
+      },
+      "answerVisibleInFold": true,
+      "sourceVisibleInFold": true,
+      "chatPx": 16,
+      "warningFontSizes": [
+        {
+          "text": "Conexões de leitura · originais preservados",
+          "px": 13
+        },
+        {
+          "text": "PRÉVIA ILUSTRATIVA",
+          "px": 13
+        },
+        {
+          "text": "Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.",
+          "px": 13
+        },
+        {
+          "text": "A conversa usa somente as ferramentas e menções selecionadas na mensagem.",
+          "px": 13
+        },
+        {
+          "text": "A busca consulta somente nomes; o conteúdo permanece no escopo da conversa.",
+          "px": 13
+        },
+        {
+          "text": "Prévia da área de consultas do Arquivio. Exemplos fictícios.",
+          "px": 13
+        },
+        {
+          "text": "Todos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais c",
+          "px": 15
+        }
+      ],
+      "minWarningPx": 13,
+      "smallTargets": [],
+      "clickableCount": 25,
+      "art": {
+        "y": 2396,
+        "x": 32,
+        "w": 240,
+        "h": 180
+      },
+      "artTextOverlaps": [],
+      "imageBackground": "url(\"http://127.0.0.1:5181/landing/document-context.webp\")"
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "documentWidth": 1024,
+      "bodyWidth": 1024,
+      "stageColumns": "386.391px 533.609px",
+      "question": {
+        "y": 394,
+        "x": 621,
+        "w": 350,
+        "h": 43
+      },
+      "answer": {
+        "y": 494,
+        "x": 517,
+        "w": 454,
+        "h": 50
+      },
+      "firstSource": {
+        "y": 594,
+        "x": 527,
+        "w": 434,
+        "h": 40
+      },
+      "answerVisibleInFold": true,
+      "sourceVisibleInFold": true,
+      "chatPx": 16,
+      "warningFontSizes": [
+        {
+          "text": "Conexões de leitura · originais preservados",
+          "px": 13
+        },
+        {
+          "text": "PRÉVIA ILUSTRATIVA",
+          "px": 13
+        },
+        {
+          "text": "Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.",
+          "px": 13
+        },
+        {
+          "text": "A conversa usa somente as ferramentas e menções selecionadas na mensagem.",
+          "px": 13
+        },
+        {
+          "text": "A busca consulta somente nomes; o conteúdo permanece no escopo da conversa.",
+          "px": 13
+        },
+        {
+          "text": "Prévia da área de consultas do Arquivio. Exemplos fictícios.",
+          "px": 13
+        },
+        {
+          "text": "Todos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais c",
+          "px": 15
+        }
+      ],
+      "minWarningPx": 13,
+      "smallTargets": [],
+      "clickableCount": 24,
+      "art": {
+        "y": 2375,
+        "x": 32,
+        "w": 320,
+        "h": 240
+      },
+      "artTextOverlaps": [],
+      "imageBackground": "url(\"http://127.0.0.1:5181/landing/document-context.webp\")"
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "stageColumns": "517.438px 714.562px",
+      "question": {
+        "y": 375,
+        "x": 989,
+        "w": 350,
+        "h": 43
+      },
+      "answer": {
+        "y": 475,
+        "x": 872,
+        "w": 467,
+        "h": 50
+      },
+      "firstSource": {
+        "y": 575,
+        "x": 882,
+        "w": 447,
+        "h": 40
+      },
+      "answerVisibleInFold": true,
+      "sourceVisibleInFold": true,
+      "chatPx": 16,
+      "warningFontSizes": [
+        {
+          "text": "Conexões de leitura · originais preservados",
+          "px": 13
+        },
+        {
+          "text": "PRÉVIA ILUSTRATIVA",
+          "px": 13
+        },
+        {
+          "text": "Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.",
+          "px": 13
+        },
+        {
+          "text": "A conversa usa somente as ferramentas e menções selecionadas na mensagem.",
+          "px": 13
+        },
+        {
+          "text": "A busca consulta somente nomes; o conteúdo permanece no escopo da conversa.",
+          "px": 13
+        },
+        {
+          "text": "Prévia da área de consultas do Arquivio. Exemplos fictícios.",
+          "px": 13
+        },
+        {
+          "text": "Todos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais c",
+          "px": 15
+        }
+      ],
+      "minWarningPx": 13,
+      "smallTargets": [],
+      "clickableCount": 24,
+      "art": {
+        "y": 1988,
+        "x": 80,
+        "w": 320,
+        "h": 240
+      },
+      "artTextOverlaps": [],
+      "imageBackground": "url(\"http://127.0.0.1:5181/landing/document-context.webp\")"
+    }
+  ],
+  "browserChecks": {
+    "actionCount": 31,
+    "actionSequenceMatchesRound2Evidence": true,
+    "demo": [
+      {
+        "name": "Resposta com fontes",
+        "pressed": "true",
+        "sourceCount": 3,
+        "expectedCount": 3,
+        "evidenceText": "Arquivio\nTodas as ferramentas\n\nA primeira entrega inclui o diagnóstico de marca e a proposta de posicionamento.\n\nDocumentos utilizados\n1.\nEscopo do projeto.pdf\nGoogle Drive\n2.\nReunião de alinhamento\nNotion\n3.\nCronograma de entregas\nOneDrive\n\nVer mais 2 documentos",
+        "expectedPhrasePresent": true,
+        "negativeHasNoSources": null
+      },
+      {
+        "name": "Com menção @",
+        "pressed": "true",
+        "sourceCount": 1,
+        "expectedCount": 1,
+        "evidenceText": "Google Drive\n\nQuais são os prazos previstos neste documento?\nArquivo: Escopo do projeto.pdf",
+        "expectedPhrasePresent": true,
+        "negativeHasNoSources": null
+      },
+      {
+        "name": "Sem evidência suficiente",
+        "pressed": "true",
+        "sourceCount": 0,
+        "expectedCount": 0,
+        "evidenceText": "Arquivio\nNotion\n\nNão encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia.",
+        "expectedPhrasePresent": true,
+        "negativeHasNoSources": true
+      }
+    ],
+    "faqCount": 7,
+    "faqKeyboard": 7,
+    "faqAllAnswersRendered": true,
+    "menuOpenEnter": true,
+    "menuClosesSpace": true,
+    "menuItems": [
+      "Produto",
+      "Integrações",
+      "Como funciona",
+      "Dúvidas",
+      "Entrar",
+      "Criar conta"
+    ],
+    "targetChecks": [
+      {
+        "href": "#landing-main",
+        "exists": true
+      },
+      {
+        "href": "#landing-main",
+        "exists": true
+      },
+      {
+        "href": "#produto",
+        "exists": true
+      },
+      {
+        "href": "#integracoes",
+        "exists": true
+      },
+      {
+        "href": "#como-funciona",
+        "exists": true
+      },
+      {
+        "href": "#perguntas",
+        "exists": true
+      },
+      {
+        "href": "#produto",
+        "exists": true
+      },
+      {
+        "href": "#integracoes",
+        "exists": true
+      },
+      {
+        "href": "#como-funciona",
+        "exists": true
+      },
+      {
+        "href": "#perguntas",
+        "exists": true
+      },
+      {
+        "href": "#landing-main",
+        "exists": true
+      }
+    ],
+    "integrationsFour": true,
+    "fourCTAs": true,
+    "pageRoutes": [
+      {
+        "route": "/login",
+        "status": 200,
+        "h1": "Sua equipe sabe.\nEncontre a resposta."
+      },
+      {
+        "route": "/privacidade",
+        "status": 200,
+        "h1": "Política de Privacidade"
+      },
+      {
+        "route": "/termos",
+        "status": 200,
+        "h1": "Termos de Uso"
+      }
+    ],
+    "reducedMotion": {
+      "hiddenReveal": 0,
+      "transformedReveal": 0,
+      "buttonTransition": "0s",
+      "threadAnimation": "none"
+    }
+  },
+  "noJs": {
+    "httpStatus": 200,
+    "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+    "visibleCaseButtons": 3,
+    "faqCount": 7
+  }
+}

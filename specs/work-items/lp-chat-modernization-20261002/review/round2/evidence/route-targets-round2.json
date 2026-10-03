@@ -1,0 +1,42 @@
+{
+  "base": "http://127.0.0.1:5181",
+  "method": "direct anonymous navigation; no mocks/intercepts; no form submission",
+  "routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "h1": "A resposta está nos arquivos.\nAgora você sabe onde.",
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "path": "/login",
+      "status": 200,
+      "h1": "Sua equipe sabe.\nEncontre a resposta.",
+      "consoleErrors": [
+        "[vinext] RSC prefetch setup error: TypeError: te is not a function\n    at http://127.0.0.1:5181/_next/static/chunks/link-BzKbLNQz.js:2:4491"
+      ],
+      "pageErrors": []
+    },
+    {
+      "path": "/privacidade",
+      "status": 200,
+      "h1": "Política de Privacidade",
+      "consoleErrors": [
+        "[vinext] RSC prefetch setup error: TypeError: te is not a function\n    at http://127.0.0.1:5181/_next/static/chunks/link-BzKbLNQz.js:2:4491",
+        "[vinext] RSC prefetch setup error: TypeError: te is not a function\n    at http://127.0.0.1:5181/_next/static/chunks/link-BzKbLNQz.js:2:4491"
+      ],
+      "pageErrors": []
+    },
+    {
+      "path": "/termos",
+      "status": 200,
+      "h1": "Termos de Uso",
+      "consoleErrors": [
+        "[vinext] RSC prefetch setup error: TypeError: te is not a function\n    at http://127.0.0.1:5181/_next/static/chunks/link-BzKbLNQz.js:2:4491",
+        "[vinext] RSC prefetch setup error: TypeError: te is not a function\n    at http://127.0.0.1:5181/_next/static/chunks/link-BzKbLNQz.js:2:4491"
+      ],
+      "pageErrors": []
+    }
+  ]
+}

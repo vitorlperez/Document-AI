@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-03",
+  "branch": "design/lp-chat-modernization-20261002",
+  "base": "a43dbdd",
+  "preview": "http://127.0.0.1:5181/",
+  "checks": [
+    { "command": "cd frontend && npx tsc --noEmit -p .", "exitCode": 0, "evidence": "fresh-tsc.log" },
+    { "command": "cd frontend && npm run lint", "exitCode": 0, "evidence": "fresh-lint.log" },
+    { "command": "cd frontend && VITE_API_BASE_URL=/api npm run build", "exitCode": 0, "evidence": "fresh-build.log" },
+    { "command": "cd frontend && node --import tsx --test tests/*.test.mjs", "exitCode": 0, "result": "98 pass / 0 fail", "evidence": "fresh-tests.log" },
+    { "command": "cd frontend && docker build -f Dockerfile.production --build-arg VITE_API_BASE_URL=/api -t arquivio-lp-preview:motion-review-20261003 .", "exitCode": 0, "evidence": "docker-build.log" },
+    { "command": "curl / and curl /api/session against the production preview", "exitCode": 0, "result": "200 and 200 null; no mocks", "evidence": "fresh-curl.log" },
+    { "command": "fresh Chromium public runtime, 375/390/768/1024/1440 plus no-JS and reduced-motion", "exitCode": 0, "result": "19/19", "evidence": "public-runtime-fresh.json" },
+    { "command": "independent synthetic fail-closed motion harness (LP + M1–M5 + adversaries)", "exitCode": 0, "result": "92/92; 0 unexpected API calls; 0 external hosts", "evidence": "fixture/motion-qa-report.json" },
+    { "command": "synthetic M1/M4 pre-existing issue reproductions", "exitCode": 0, "result": "failed:null label and M4 top-left geometry captured", "evidence": "legacy/motion-qa-report.json" },
+    { "command": "protected-path preservation hash audit and unchanged diff", "exitCode": 0, "result": "11/11 stored hashes match; zero protected diffs", "evidence": "protected-paths-audit.json" },
+    { "command": "git diff --quiet a43dbdd -- modal-dismiss and unused dialog/sidebar/drawer/command primitives", "exitCode": 0 },
+    { "command": "git diff --check a43dbdd", "exitCode": 0 },
+    { "command": "validate review JSON and authored Markdown whitespace", "exitCode": 0, "result": "17 files; no invalid JSON or trailing whitespace" },
+    { "command": "clean public screenshot verdict capture (desktop + mobile)", "exitCode": 0, "evidence": "verdict-screenshots.json" }
+  ],
+  "verdict": "PASS técnico da extensão H4; H4 aprovação humana final pendente.",
+  "reviewerDidNotEditProductImplementation": true,
+  "commitOrPush": false
+}

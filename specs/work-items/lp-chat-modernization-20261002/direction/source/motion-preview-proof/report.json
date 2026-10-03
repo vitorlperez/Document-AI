@@ -1,0 +1,3872 @@
+{
+  "browser": "chromium / chrome headed",
+  "samples": [
+    0,
+    50
+  ],
+  "cards": [
+    {
+      "name": "dotty",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "00-0.png",
+          "sha256": "8e378816ce2f4d1e0f8f85a3983a85bca646e60310f01839cc4687144c1e79f9",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "content": "\"\""
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "00-50.png",
+          "sha256": "8e378816ce2f4d1e0f8f85a3983a85bca646e60310f01839cc4687144c1e79f9",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "content": "\"..\""
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "content": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "initialFade",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "01-0.png",
+          "sha256": "4e4b4683c8be9d1c83985f30202691ebcb29701277aa9b6740f1a5d326bc1ca4",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "color": "rgb(14, 14, 17)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "01-50.png",
+          "sha256": "4e4b4683c8be9d1c83985f30202691ebcb29701277aa9b6740f1a5d326bc1ca4",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "color": "rgba(14, 14, 17, 0.224)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "color": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "rainbowLoop",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "02-0.png",
+          "sha256": "d5b99eae4c8a6f8fd88c15f7756d3444b2afeccae809c7ec228c14c45b9fbc1b",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "28px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 50%",
+            "angle": "",
+            "x": 61.875,
+            "y": 34,
+            "time": 0,
+            "properties": {
+              "background-position-x": "0%",
+              "background-position-y": "50%"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "02-50.png",
+          "sha256": "00ed32a59ab1ce59ad6140335f8a8453bd807665d3a98925f13ab1ed7a8e0369",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "28px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "-155.112% 50%",
+            "angle": "",
+            "x": 61.875,
+            "y": 34,
+            "time": 400,
+            "properties": {
+              "background-position-x": "-155.112%",
+              "background-position-y": "50%"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "background-position-x": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "grow-down",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "03-0.png",
+          "sha256": "072a0f550e8148b7be9538cb3b28e25dbbe39a7344c0c83044f5b894bd0f2f68",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 0, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 48,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 0, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "03-50.png",
+          "sha256": "86a06d43e03958d4fad7dd389fb05026b5a6561ed6bea77a52cd8128a4ea20ac",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 0.775561, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 29.38653564453125,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 0.775561, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "fade-in",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "04-0.png",
+          "sha256": "3758dd7316f9a2ca9672832ae717cc60efa7c5ab7a1a139d7f041d130b0e2dbd",
+          "computed": {
+            "opacity": "0",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "0"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "04-50.png",
+          "sha256": "3e53b631c1d51cc4fcd5de108f2d7f1152cad43ef707573304acc94788512119",
+          "computed": {
+            "opacity": "0.775561",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "0.775561"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "fade-collapse",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "05-0.png",
+          "sha256": "b32a68dd27baa323fe5904b7e634f16dad0288575fcebcf0f6bcecf144b10d14",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1",
+              "max-height": "100%"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "05-50.png",
+          "sha256": "4b64ef49647658c7a14a6c09d269aea6baf2f93908487c0d2f53f960b06a0bdf",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "none",
+            "height": "21.5391px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 37.2265625,
+            "time": 400,
+            "properties": {
+              "opacity": "0.224439",
+              "max-height": "22.4439%"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true,
+        "max-height": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "move-square",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "06-0.png",
+          "sha256": "a62e3ee93af7fbd0e01f576f9d2ef9f4edd7dd112c2704e137e2c4ba02b11c19",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "131.875px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 65.9375,
+            "y": 0,
+            "time": 0,
+            "properties": {
+              "padding-top": "0px",
+              "padding-right": "131.875px",
+              "padding-bottom": "131.875px",
+              "padding-left": "0px"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "06-50.png",
+          "sha256": "a62e3ee93af7fbd0e01f576f9d2ef9f4edd7dd112c2704e137e2c4ba02b11c19",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "131.875px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 65.9375,
+            "y": 0,
+            "time": 400,
+            "properties": {
+              "padding-top": "131.875px",
+              "padding-right": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "131.875px"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "padding-top": true,
+        "padding-right": true,
+        "padding-bottom": true,
+        "padding-left": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "breathing",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "07-0.png",
+          "sha256": "9a4dbc8848eac4abe62030f45500329476863989f65a0afecc3bdd36a5c437b8",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "filter": "brightness(1.05)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "07-50.png",
+          "sha256": "f493a9fbe87299147c4fe870841e52c1921eca1970d36eb3690cf0bec7c98bc9",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "filter": "brightness(0.8)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "filter": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "breathing-scale",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "08-0.png",
+          "sha256": "08395c6eead02950008ef4e89a2cb760aa1189facf00844ae590d5c4a5aa989b",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "filter": "brightness(1.05)",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "08-50.png",
+          "sha256": "ee5f4309a99aa02e0771b937882f3170cd55e7bae57fd7892d9c59ed6cb6fc89",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(0.95, 0, 0, 0.95, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 109.07499694824219,
+            "y": 25.20001220703125,
+            "time": 400,
+            "properties": {
+              "filter": "brightness(0.97)",
+              "transform": "matrix(0.95, 0, 0, 0.95, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "filter": true,
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "pulse",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "09-0.png",
+          "sha256": "6bf4318f5ab690f85bd879ab08fa47e2e859d0c2e3ad3015e07244ec3edb2f3c",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "09-50.png",
+          "sha256": "9dd2651032c18035756ec432888202e5c94bc493eca4c474ac795941ea5df213",
+          "computed": {
+            "opacity": "0.5",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "0.5"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "ring-pulse",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "10-0.png",
+          "sha256": "312f50155a2dfc94f38bb2e71fb968afd195b56c159212f159388a131ace5c83",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "box-shadow": "oklab(0.6539 -0.0561669 -0.180775 / 0.3137) 0px 0px 0px 0px"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "10-50.png",
+          "sha256": "70a82b74a4781c6c6bc7483344a4f2e54d04f0d42706186cdb2309967096d282",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "box-shadow": "oklab(0.6539 -0.0561669 -0.180775 / 0.3137) 0px 0px 0px 3px"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "box-shadow": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "ring-pulse-soft",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "11-0.png",
+          "sha256": "6ce027312e08cdf7eac8d75fd3a10cdeba2f592fa2b95bf1f7114e28883b03e7",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "box-shadow": "oklab(0 0 0 / 0) 0px 0px 0px 0px"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "11-50.png",
+          "sha256": "30f04e7094fcd4a9ce160c0a7d97f7326478e66fdcd84bcea1153e8d087d909d",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "box-shadow": "oklab(0.6539 -0.0561669 -0.180775 / 0.2) 0px 0px 0px 2px"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "box-shadow": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "opacity-pulse",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "12-0.png",
+          "sha256": "032f53ae285f40e3696f56ef6e31ab8ab4f5ac5d4249fcb9f639fc6aacee9c99",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "12-50.png",
+          "sha256": "7762f5889d6d8e35e459ccb15599e19d5af0764ceb0866c8017c0638737bb898",
+          "computed": {
+            "opacity": "0.5",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "0.5"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "shimmer",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "13-0.png",
+          "sha256": "276f1a7b120dab4dfa2db291ddb762c6e6a7e4970978281e6225d2e87580ea7e",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, -48, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 59.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -48, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "13-50.png",
+          "sha256": "399c677963a4d18de51b0303568722775fd2a353bcc2861c3cba699ec572571a",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 42.7072, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 150.58224487304688,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 42.7072, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "loading-dot",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "14-0.png",
+          "sha256": "e4e0fb1f9f42f38c2bb1da6e6a431995cfb397e715daab81b36cd3b1b24a464e",
+          "computed": {
+            "opacity": "0",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "0"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "14-50.png",
+          "sha256": "4960a7f63c0337db8a12289bfc77bb0a0fa263f97bc23ec1be7df1b3666a7d24",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "1"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "background-position-spin",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "15-0.png",
+          "sha256": "6247ab9aefea7f9cd98105e833bedaf5fee213e7250a6c48f704eff001f968d1",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "28px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "50% 0%",
+            "angle": "",
+            "x": 61.875,
+            "y": 34,
+            "time": 0,
+            "properties": {
+              "background-position-x": "50%",
+              "background-position-y": "0%"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "15-50.png",
+          "sha256": "6247ab9aefea7f9cd98105e833bedaf5fee213e7250a6c48f704eff001f968d1",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "28px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "50% 77.5561%",
+            "angle": "",
+            "x": 61.875,
+            "y": 34,
+            "time": 400,
+            "properties": {
+              "background-position-x": "50%",
+              "background-position-y": "77.5561%"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "background-position-y": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "shiny-text",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "16-0.png",
+          "sha256": "b49f54d9e61f49bddba56530817d271ff45f2ed28d89ba11614b30eda879be09",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "28px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "-200% 0px",
+            "angle": "",
+            "x": 61.875,
+            "y": 34,
+            "time": 0,
+            "properties": {
+              "background-position-x": "-200%",
+              "background-position-y": "0px"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "16-50.png",
+          "sha256": "2da1141be13b31bfda87ffa6acb7ad37910146f9b9da94b76588805a30c7f9a8",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "28px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "110.225% 0px",
+            "angle": "",
+            "x": 61.875,
+            "y": 34,
+            "time": 400,
+            "properties": {
+              "background-position-x": "110.225%",
+              "background-position-y": "0px"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "background-position-x": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "rainbow",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "17-0.png",
+          "sha256": "860e57339d123e68a33fa2c0842b88317bf75c3e46071f9a388618af90e8cdeb",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "28px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 50%",
+            "angle": "",
+            "x": 61.875,
+            "y": 34,
+            "time": 0,
+            "properties": {
+              "background-position-x": "0%",
+              "background-position-y": "50%"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "17-50.png",
+          "sha256": "ea24c8a653d29eade07a5cb4485964db7295b04d4f9f061811c9d13d18c07ff9",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "28px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "155.112% 50%",
+            "angle": "",
+            "x": 61.875,
+            "y": 34,
+            "time": 400,
+            "properties": {
+              "background-position-x": "155.112%",
+              "background-position-y": "50%"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "background-position-x": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "collapse-down",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "18-0.png",
+          "sha256": "303a360891e4b0b18066ef770dfea82ceb0222cfff930f86c9488ae24eae32f9",
+          "computed": {
+            "opacity": "0",
+            "transform": "none",
+            "height": "0px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 125.875,
+            "y": 48,
+            "time": 0,
+            "properties": {
+              "opacity": "0",
+              "height": "0px"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "18-50.png",
+          "sha256": "303a360891e4b0b18066ef770dfea82ceb0222cfff930f86c9488ae24eae32f9",
+          "computed": {
+            "opacity": "0.775561",
+            "transform": "none",
+            "height": "0px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 125.875,
+            "y": 48,
+            "time": 400,
+            "properties": {
+              "opacity": "0.775561",
+              "height": "0px"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "opacity": true,
+        "height": false
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "collapse-up",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "19-0.png",
+          "sha256": "de5850c7a266e19742aa9052ce31b996a2fee78f47760cc7ac6723ae1387daac",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "0px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 125.875,
+            "y": 48,
+            "time": 0,
+            "properties": {
+              "height": "0px",
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "19-50.png",
+          "sha256": "de5850c7a266e19742aa9052ce31b996a2fee78f47760cc7ac6723ae1387daac",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "none",
+            "height": "0px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 125.875,
+            "y": 48,
+            "time": 400,
+            "properties": {
+              "height": "0px",
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "height": false,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "puzzle-spinner-water-cycle",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "20-0.png",
+          "sha256": "8a87490d5e636a367d725a834720b84e917fe7fbaab0fe2ea412ca6fa9de1820",
+          "computed": {
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 86)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 110,
+            "time": 0,
+            "properties": {
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 86)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "20-50.png",
+          "sha256": "3329098bdbb97d123bdb4365f8cdeb513b1ae6e6b65ed39d9f6e796a9b5704d7",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, -2.34534)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 21.6546630859375,
+            "time": 400,
+            "properties": {
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, -2.34534)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true,
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "puzzle-spinner-wave-back",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "21-0.png",
+          "sha256": "932e7e2b0f1a381ff267ec904292b1bcf4aa18a8ac3d7b4be4b255f1ffcdd91a",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "21-50.png",
+          "sha256": "01062b46eddac1c97d3f7cfc6328b17191b0aaeeafb3912b8e9237e014997a1e",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, -49.6359, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 58.23907470703125,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -49.6359, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "puzzle-spinner-wave-front",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "22-0.png",
+          "sha256": "d730f4d35e29c9b732fd507dcf5e5428de65ab6a87324b1b128c115b02983c09",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, -64, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 43.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -64, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "22-50.png",
+          "sha256": "e9a1c191324de4ccfd4338d7709e500d0a8a18829b506a3fabbcc066e672c7f6",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, -14.3641, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 93.51092529296875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -14.3641, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "ssp-spin",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "23-0.png",
+          "sha256": "7c7b62b50e2b03a4905abd2480c548129dfdece23b391a3edcc8c00f164658dd",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "23-50.png",
+          "sha256": "c7d640712c854a443d6eb686ceff58364b6815a57b4fd6a2f98ee079e14353f3",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(0.159917, -0.98713, 0.98713, 0.159917, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 104.3458251953125,
+            "y": 20.47088623046875,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(0.159917, -0.98713, 0.98713, 0.159917, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "ssp-dash",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "24-0.png",
+          "sha256": "d8e4009ca6bd12b338cad876ab54a62faff7115f16f5a8eb091af94d3ae6b4a7",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "stroke-dasharray": "2px, 98px",
+              "stroke-dashoffset": "0px"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "24-50.png",
+          "sha256": "d8e4009ca6bd12b338cad876ab54a62faff7115f16f5a8eb091af94d3ae6b4a7",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "stroke-dasharray": "70px, 30px",
+              "stroke-dashoffset": "-48px"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "stroke-dasharray": true,
+        "stroke-dashoffset": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "sss-morph",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "25-0.png",
+          "sha256": "47e5521e2e52471c060f9a175b418b2f141f9edcf8c8a0bc0d47b7d96833d848",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "d": "path(\"M 12 3 C 21 3 21 3 21 12 C 21 21 21 21 12 21 C 3 21 3 21 3 12 C 3 3 3 3 12 3 Z\")",
+              "animation-timing-function": "cubic-bezier(0.4, 0, 0.2, 1)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "25-50.png",
+          "sha256": "47e5521e2e52471c060f9a175b418b2f141f9edcf8c8a0bc0d47b7d96833d848",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "d": "path(\"M 12 3 C 16.9181 3.09854 20.9166 7.13884 20.9735 12.0985 C 20.9168 16.9597 16.9181 20.9015 12 20.9015 C 7.0819 20.9015 3.07883 16.9597 3.0265 12.0985 C 3.08321 7.13884 7.0819 3.09854 12 3 Z\")",
+              "animation-timing-function": "cubic-bezier(0.4, 0, 0.2, 1)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "d": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "bgblink",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "26-0.png",
+          "sha256": "c4e6e9c6a3df3a34152452f0f4f5653be87ae2703ed8bd03abaceae687a0e119",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "background-color": "rgba(0, 0, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "26-50.png",
+          "sha256": "c4e6e9c6a3df3a34152452f0f4f5653be87ae2703ed8bd03abaceae687a0e119",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "background-color": "rgba(0, 0, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "background-color": false
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "glint-pass",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "27-0.png",
+          "sha256": "acd1d02d8ad24e0cbe41ed5769847398587073be7a9b46e8bd9ebd2feb388849",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, -48, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 59.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -48, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "27-50.png",
+          "sha256": "c734557131417c77c345494584706bf42787f12e8d02dbf0d5599f35f4dcf05f",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 48.7901, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 156.6650390625,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 48.7901, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "appear",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "28-0.png",
+          "sha256": "db774264e8f80f64f918eec2199773f74bc00c33b30e1d29e9831fb86d31e789",
+          "computed": {
+            "opacity": "0",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 131.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "0",
+              "width": "0px"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "28-50.png",
+          "sha256": "21a711481495f13b5a4cffa30e259b2797405d03298b2c7817203d01f560e9c4",
+          "computed": {
+            "opacity": "0.775561",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 7.7890625,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "0.775561",
+              "width": "248.172px"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true,
+        "width": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "cursor-blink",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "29-0.png",
+          "sha256": "f63a7eaec49b5bf2c960fa7832c8d3ff8beaa751a8f2f3233e55e4a105917454",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "29-50.png",
+          "sha256": "f63a7eaec49b5bf2c960fa7832c8d3ff8beaa751a8f2f3233e55e4a105917454",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "1"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "opacity": false
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "fadeout",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "30-0.png",
+          "sha256": "e9e353e7983120074fb66186cc0300034db358e3afa370a3dda7fadaece81a2d",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "30-50.png",
+          "sha256": "2ee0773c3cb396592d238d3f6af2b2638dfb7225ea192ac55a7057337a985bf0",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "reload",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "31-0.png",
+          "sha256": "2592d2097aea18d60a5620ba96c13dc86468cfdf43f311e261dbd26d9b8e5437",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "31-50.png",
+          "sha256": "48b95e0f3000e7de6fa65fdfa7f11baf5c96a9ef67421f1c1604372446b886c8",
+          "computed": {
+            "opacity": "0.4",
+            "transform": "matrix(0.99, 0, 0, 0.99, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 108.114990234375,
+            "y": 24.239990234375,
+            "time": 400,
+            "properties": {
+              "opacity": "0.4",
+              "transform": "matrix(0.99, 0, 0, 0.99, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true,
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "shake",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "32-0.png",
+          "sha256": "4033da8267d94d32c36d778387577d757629c53e3193cf1165fe44edde420cd8",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "32-50.png",
+          "sha256": "66a4296259d8117088d468a05a729f7c6d82eccb7bea9531519f042714941351",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, -0.826684, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.04830932617188,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -0.826684, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "marquee",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "33-0.png",
+          "sha256": "0d231b78f0825b6b6ba4191f7be7137105b7022673d151a7b3bb018df775a1c0",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "33-50.png",
+          "sha256": "488fa947483393c4d733ad7b2166bd3b75f09b639b3caf166d053134b2d807f0",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, -18.6135, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 89.26153564453125,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -18.6135, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "fade-in-up",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "34-0.png",
+          "sha256": "2a11f1b46bded6428c4f4b331332a3363910e12279889a65409f295d6d0c41d4",
+          "computed": {
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 0, 10)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 34,
+            "time": 0,
+            "properties": {
+              "opacity": "0",
+              "transform": "matrix(1, 0, 0, 1, 0, 10)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "34-50.png",
+          "sha256": "3e1b1dc534270105a6bc41dbc47e0e53a6d702d37a5f68da782947e1a8583f20",
+          "computed": {
+            "opacity": "0.775561",
+            "transform": "matrix(1, 0, 0, 1, 0, 2.24439)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 26.244384765625,
+            "time": 400,
+            "properties": {
+              "opacity": "0.775561",
+              "transform": "matrix(1, 0, 0, 1, 0, 2.24439)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true,
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "ping",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "35-0.png",
+          "sha256": "b0720dc90af41827bc0df3d8f848b94953ad4ea7e9d03117c295b7d808dcd8df",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "35-50.png",
+          "sha256": "4e42d21760235f12d1dd6667c2cfa496a913f3f48e67d5f4dd92af9b4ee85654",
+          "computed": {
+            "opacity": "0.0659322",
+            "transform": "matrix(1.93407, 0, 0, 1.93407, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 85.4573974609375,
+            "y": 1.582366943359375,
+            "time": 500,
+            "properties": {
+              "opacity": "0.0659322",
+              "transform": "matrix(1.93407, 0, 0, 1.93407, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true,
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "enter",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "36-0.png",
+          "sha256": "c83cb2aab0ee82041a7ec652fee83de70946c2b417e31c23c2ea066a30d18092",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "filter": "blur(0px)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "36-50.png",
+          "sha256": "c83cb2aab0ee82041a7ec652fee83de70946c2b417e31c23c2ea066a30d18092",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "filter": "blur(0px)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "opacity": false,
+        "transform": false,
+        "filter": false
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "exit",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "37-0.png",
+          "sha256": "94ae14aff6b6e5485a351a0efa19bda003065cf6fc64b174be2daecc88598594",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "filter": "blur(0px)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "37-50.png",
+          "sha256": "94ae14aff6b6e5485a351a0efa19bda003065cf6fc64b174be2daecc88598594",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "filter": "blur(0px)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "opacity": false,
+        "transform": false,
+        "filter": false
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "dust-floor-human-bob",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "38-0.png",
+          "sha256": "fd3263aa9b270cce2dce170d73586d03cb8d838de113351f0fc5d5bf399a03b1",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "38-50.png",
+          "sha256": "d2439980660f175015cc44a509c7b512c5a8fd0647153b0bb045dae0e9b63e57",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1.03, 0, 0, 1.03, 0, -0.8)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.155029296875,
+            "y": 22.47998046875,
+            "time": 2400,
+            "properties": {
+              "transform": "matrix(1.03, 0, 0, 1.03, 0, -0.8)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "dust-floor-status-pulse",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "39-0.png",
+          "sha256": "20ba9886e328bfb953ba02cd2f4fb9ea4bbf502e358fc454451e288c837349c7",
+          "computed": {
+            "opacity": "0.5",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "0.5",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "39-50.png",
+          "sha256": "f80c6914779851d3216356df768c6a85f20b6abe744bfa719553780de6243045",
+          "computed": {
+            "opacity": "0.0275665",
+            "transform": "matrix(2.51179, 0, 0, 2.51179, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 71.592041015625,
+            "y": -12.28289794921875,
+            "time": 400,
+            "properties": {
+              "opacity": "0.0275665",
+              "transform": "matrix(2.51179, 0, 0, 2.51179, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true,
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "dust-floor-emoji-pop",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "40-0.png",
+          "sha256": "10a8ee6311673967bda2bff3ca12be913f3200f08906ea55d1935d7533c41472",
+          "computed": {
+            "opacity": "0",
+            "transform": "matrix(0.4, 0, 0, 0.4, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 122.27499389648438,
+            "y": 38.399993896484375,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(0.4, 0, 0, 0.4, 0, 0)",
+              "opacity": "0"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "40-50.png",
+          "sha256": "35bdfbd4b76e522dd693a9a454214eac15ec2e85c2a720af5a13388689ddecee",
+          "computed": {
+            "opacity": "0.983359",
+            "transform": "matrix(1.23585, 0, 0, 1.23585, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 102.2144775390625,
+            "y": 18.3394775390625,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1.23585, 0, 0, 1.23585, 0, 0)",
+              "opacity": "0.983359"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "dust-floor-agent-pulse",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "41-0.png",
+          "sha256": "6c4db6cb788c2ab0ff605d817e74dca01c51fc94346de2fd2020aa9abc21788b",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "41-50.png",
+          "sha256": "3ca88c5af4056736d20c74978f8c7f45032001d74e8f96a416dd6a3e2bbe7616",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1.03, 0, 0, 1.03, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.15499877929688,
+            "y": 23.279998779296875,
+            "time": 2300,
+            "properties": {
+              "transform": "matrix(1.03, 0, 0, 1.03, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "dust-floor-halo",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "42-0.png",
+          "sha256": "e494b5be20fa84269e012bc3d78563818232f43b79df42eec4dc50f67fafdd77",
+          "computed": {
+            "opacity": "0.28",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "0.28",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "42-50.png",
+          "sha256": "46884bfa60cb0cf40c0ad0b61791e23fec58eb966239fc77651d9b5951ad9b3e",
+          "computed": {
+            "opacity": "0.12",
+            "transform": "matrix(1.4, 0, 0, 1.4, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 98.2750244140625,
+            "y": 14.399993896484375,
+            "time": 400,
+            "properties": {
+              "opacity": "0.12",
+              "transform": "matrix(1.4, 0, 0, 1.4, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true,
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "dust-floor-trail-dash",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "43-0.png",
+          "sha256": "419efe4a1cb8fb3c62a4d115bdf076dfa71125880676b682c119323535899a25",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "stroke-dashoffset": "0px"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "43-50.png",
+          "sha256": "419efe4a1cb8fb3c62a4d115bdf076dfa71125880676b682c119323535899a25",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "stroke-dashoffset": "-9.30674px"
+            }
+          }
+        }
+      ],
+      "distinctFrames": false,
+      "propertyChanges": {
+        "stroke-dashoffset": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "dust-floor-halo-working",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "44-0.png",
+          "sha256": "f2ce33ada1126b9880b8a48c683cca414f7403797eb3f0639fa9e104d523c8a9",
+          "computed": {
+            "opacity": "0.34",
+            "transform": "matrix(1.05, 0, 0, 1.05, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 106.67500305175781,
+            "y": 22.79998779296875,
+            "time": 0,
+            "properties": {
+              "opacity": "0.34",
+              "transform": "matrix(1.05, 0, 0, 1.05, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "44-50.png",
+          "sha256": "a90c9559d5fcc9f88b1464eb96a83ae2b1ecca00710145585e2a1406deb3baec",
+          "computed": {
+            "opacity": "0.14",
+            "transform": "matrix(1.6, 0, 0, 1.6, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 93.47500610351562,
+            "y": 9.5999755859375,
+            "time": 1700,
+            "properties": {
+              "opacity": "0.14",
+              "transform": "matrix(1.6, 0, 0, 1.6, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true,
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "dust-floor-spark-rotate",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "45-0.png",
+          "sha256": "92a41c75e524bbf0f8c5f91c854f06aea35e27f596c97e26d1bb7046718b44a2",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "45-50.png",
+          "sha256": "5fc257d2073863f3e2b532d4ad30739ff58095bd687e4e13afacaaff8cfd1e06",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(0.159917, -0.98713, 0.98713, 0.159917, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 104.34585571289062,
+            "y": 20.47088623046875,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(0.159917, -0.98713, 0.98713, 0.159917, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "dust-floor-pill-pop",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "46-0.png",
+          "sha256": "26ee296f05a2f584d5ab3e0cace184dcef1328c45ffc8a351e1a1dc8b6856611",
+          "computed": {
+            "opacity": "0",
+            "transform": "matrix(0.85, 0, 0, 0.85, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 111.4749755859375,
+            "y": 27.5999755859375,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(0.85, 0, 0, 0.85, 0, 0)",
+              "opacity": "0"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "46-50.png",
+          "sha256": "bfd6b773307787a216a0be22b7f3267b3dacfe805cdf038e24b05c07d5dfaf58",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1.04405, 0, 0, 1.04405, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 106.81787109375,
+            "y": 22.94287109375,
+            "time": 110,
+            "properties": {
+              "transform": "matrix(1.04405, 0, 0, 1.04405, 0, 0)",
+              "opacity": "1"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "dust-floor-caret-blink",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "47-0.png",
+          "sha256": "7ddfe36ed97da08f5b41f481a0f4f47a17296202f2935ac76743b0f7d05272a8",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "47-50.png",
+          "sha256": "b03a916d1216fdafa1c1a8c4bbe2834548b2cf74c71d71a1f9cd87d6e0b250a4",
+          "computed": {
+            "opacity": "0",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "0"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "dust-floor-door-flash",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "48-0.png",
+          "sha256": "cb3b9884b37612b33b6d9f160638f26b5e9e3023064c3f95ea55fc17e8feff18",
+          "computed": {
+            "opacity": "0",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "0"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "48-50.png",
+          "sha256": "218e65966badaa15c5fbef2e0d17de1426ffed2a1e27245fe87b3426b9642ebe",
+          "computed": {
+            "opacity": "0.604427",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "0.604427"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "dust-floor-door-pulse",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "49-0.png",
+          "sha256": "e9568e6666b8ad8e960ee15d8c1c32251309556da97a4654846e667319352bf4",
+          "computed": {
+            "opacity": "0.25",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "0.25"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "49-50.png",
+          "sha256": "d1d3e778aa319ef9434494f5ced0377562b3a731956043cdbaa131b50cb41a47",
+          "computed": {
+            "opacity": "0.55",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "0.55"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "swipe-out-left",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "50-0.png",
+          "sha256": "9938594053b08cb734c5c535f2a2536cf36a7e20e40c03b18e4e4a3520b4edd0",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "none",
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "50-50.png",
+          "sha256": "a55fc9e3062b8dfcba6d296fa1f4391bd84654430d7c5f94c43e84acc7b89c05",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "none",
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": false,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "swipe-out-right",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "51-0.png",
+          "sha256": "f778c618fc73e6a1c051f7db139c4ee0995221fbb7455e7b089b5df3a692af6b",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "none",
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "51-50.png",
+          "sha256": "f5b110e315dcc96990e9d21a977bb5e586f3c1dd00709e278c8506ef06f10a84",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "none",
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": false,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "swipe-out-up",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "52-0.png",
+          "sha256": "95a5cfc68494e26adf54852c305490043099cd4527e509e6511ca40977845d6e",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "none",
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "52-50.png",
+          "sha256": "a3731964bcfca6834060cea13dd657afc04f285c02f5ab89d801c46642f1f617",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "none",
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": false,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "swipe-out-down",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "53-0.png",
+          "sha256": "d95a35a1c575c92e6f01b54516f64060a666420cd9781470fb8099312c2eb0a5",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "none",
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "53-50.png",
+          "sha256": "785b9ae114ffa83df044b5fa7d67940cf91c113e33fe8de5a329aca6ef092ede",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "none",
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": false,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": false
+    },
+    {
+      "name": "sonner-fade-in",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "54-0.png",
+          "sha256": "e5719072e68fe583d4e4cb0689ba5374bd8e63594c2080114cf46061297885b5",
+          "computed": {
+            "opacity": "0",
+            "transform": "matrix(0.8, 0, 0, 0.8, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 112.67498779296875,
+            "y": 28.79998779296875,
+            "time": 0,
+            "properties": {
+              "opacity": "0",
+              "transform": "matrix(0.8, 0, 0, 0.8, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "54-50.png",
+          "sha256": "6a764892cb3d38fb76410b4cd0da6b85d3a0a1d9d1b507ac98be0bc18dfc290a",
+          "computed": {
+            "opacity": "0.775561",
+            "transform": "matrix(0.955112, 0, 0, 0.955112, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 108.9522705078125,
+            "y": 25.07733154296875,
+            "time": 400,
+            "properties": {
+              "opacity": "0.775561",
+              "transform": "matrix(0.955112, 0, 0, 0.955112, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true,
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "sonner-fade-out",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "55-0.png",
+          "sha256": "d41d9eb8f943e42cc84f48fe5e2b70174e8e3e47d0e2c01e7039e5c0b87b0721",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "55-50.png",
+          "sha256": "c9c58f5b3a6fd6c9883fbd4e39c5f753af3a0158767ecc4d404c88c0dde9b510",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "matrix(0.844888, 0, 0, 0.844888, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 111.59765625,
+            "y": 27.72271728515625,
+            "time": 400,
+            "properties": {
+              "opacity": "0.224439",
+              "transform": "matrix(0.844888, 0, 0, 0.844888, 0, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true,
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "sonner-spin",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "56-0.png",
+          "sha256": "f5ff59342ca30c5e7d972a97115b7c68532cc6becb5f2a5bddeb1f053d3bf243",
+          "computed": {
+            "opacity": "1",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "56-50.png",
+          "sha256": "625641164c31bcda7eea97b8b2a471c1c6b204946b31ee95ea1985f556b299a8",
+          "computed": {
+            "opacity": "0.340773",
+            "transform": "none",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "opacity": "0.340773"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-trusted-marquee",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "57-0.png",
+          "sha256": "25c6b02e264736b683268e60404adf246c910db2a809250d761bca98c7ad82f6",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "57-50.png",
+          "sha256": "5381694c6259895233362dcc67771a086f47ff797054d11fba25145611a937c5",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, -12, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 95.875,
+            "y": 24,
+            "time": 20000,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -12, 0)"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-quote-slide-in-right",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "58-0.png",
+          "sha256": "05ffe8d2d365180cfdd0a3f02f8763200e15aba0e9f7ae75fb2da8462bc6e40b",
+          "computed": {
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 48, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 155.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 48, 0)",
+              "opacity": "0"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "58-50.png",
+          "sha256": "071628f9bab225e00f27648e2bae09b16a9e1b0c3853afc0de52f4e723c8f0bd",
+          "computed": {
+            "opacity": "0.775561",
+            "transform": "matrix(1, 0, 0, 1, 10.7731, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 118.6480712890625,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 10.7731, 0)",
+              "opacity": "0.775561"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-quote-slide-in-left",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "59-0.png",
+          "sha256": "acd00f369ce2e1458302c226635b984f29996c7a3ef3f633c7e474db0b1284ec",
+          "computed": {
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, -48, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 59.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -48, 0)",
+              "opacity": "0"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "59-50.png",
+          "sha256": "21b7b3918ac22691eb7afeea216b9c8b0457b01092b151460dde6dc73827a345",
+          "computed": {
+            "opacity": "0.775561",
+            "transform": "matrix(1, 0, 0, 1, -10.7731, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 97.1019287109375,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -10.7731, 0)",
+              "opacity": "0.775561"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-quote-slide-out-left",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "60-0.png",
+          "sha256": "228eae81fe11c7b0a91b81a8d39cea845027553cacd1021870ac47e325e5ecc7",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "60-50.png",
+          "sha256": "3f77eb07483cbc3de6b74e8575ce04af86edb7361193b1a030b67f5d67f15e26",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "matrix(1, 0, 0, 1, -37.2269, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 70.64805603027344,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -37.2269, 0)",
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-quote-slide-out-right",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "61-0.png",
+          "sha256": "19fe8edc44392464b6decec0a3a450ec313c73c0486034222cd5b03c73680528",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "61-50.png",
+          "sha256": "4bcd264e144e1d210af74b77e163f9bb9809ac86142fa1341c91da4940a29f4d",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "matrix(1, 0, 0, 1, 37.2269, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 145.1019287109375,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 37.2269, 0)",
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-team-slide-in-right",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "62-0.png",
+          "sha256": "a7b05423f4d14480424e9b5da961149340396ad621e24d78672e3dd555f7740a",
+          "computed": {
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 48, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 155.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 48, 0)",
+              "opacity": "0"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "62-50.png",
+          "sha256": "4711c89bf047266c51f2b8f5a8e7f252c3febaed46668bf6c27620b4ba4cb735",
+          "computed": {
+            "opacity": "0.775561",
+            "transform": "matrix(1, 0, 0, 1, 10.7731, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 118.6480712890625,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 10.7731, 0)",
+              "opacity": "0.775561"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-team-slide-in-left",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "63-0.png",
+          "sha256": "28660ccbc94babf37cc7f73e657f27ab9dd482a610437b0d78d10d57038b0e7c",
+          "computed": {
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, -48, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 59.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -48, 0)",
+              "opacity": "0"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "63-50.png",
+          "sha256": "4501d1c3ab302cd38bc69b3813d0c60eff242b7a6e4a0c4553ce3ca25b2d041b",
+          "computed": {
+            "opacity": "0.775561",
+            "transform": "matrix(1, 0, 0, 1, -10.7731, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 97.1019287109375,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -10.7731, 0)",
+              "opacity": "0.775561"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-team-slide-out-left",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "64-0.png",
+          "sha256": "8a7869191f17b00dcdacba343dcd650066e538c55777f76fe9301a3aedaa949c",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "64-50.png",
+          "sha256": "c35eb9383464a425950ef78053512184042cf1260c15d885ed984c86a70cbfed",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "matrix(1, 0, 0, 1, -37.2269, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 70.64805603027344,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -37.2269, 0)",
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-team-slide-out-right",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "65-0.png",
+          "sha256": "4f9dc7377f7431497b499fa4084d945224ac8a85bcb24b1f290c1641f556921b",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "65-50.png",
+          "sha256": "43c0625b3cc6353c26ed44513c0e45e61541913f0a5ce0b43539eb3ba48b27d2",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "matrix(1, 0, 0, 1, 37.2269, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 145.1019287109375,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 37.2269, 0)",
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-team-img-slide-in-right",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "66-0.png",
+          "sha256": "6f110d488f20bd0cb00730bb4ec5bdbf2ac279769cda60200822046e7046b125",
+          "computed": {
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, 16, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 123.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 16, 0)",
+              "opacity": "0"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "66-50.png",
+          "sha256": "3680e58f077f17dcbb359831a5c9acba466b5fb9fd3d8f6dc7413ae36438c860",
+          "computed": {
+            "opacity": "0.775561",
+            "transform": "matrix(1, 0, 0, 1, 3.59102, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 111.46600341796875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 3.59102, 0)",
+              "opacity": "0.775561"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-team-img-slide-in-left",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "67-0.png",
+          "sha256": "96a14aa6bf664f292b9f2b1215812fee85ed2a1486d4cd8374ee217b2589cb7f",
+          "computed": {
+            "opacity": "0",
+            "transform": "matrix(1, 0, 0, 1, -16, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 91.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -16, 0)",
+              "opacity": "0"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "67-50.png",
+          "sha256": "06561d45d175773d3687486197e3e71d09c59f907c7630ca8c540f821bc578cc",
+          "computed": {
+            "opacity": "0.775561",
+            "transform": "matrix(1, 0, 0, 1, -3.59102, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 104.283935546875,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -3.59102, 0)",
+              "opacity": "0.775561"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-team-img-slide-out-left",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "68-0.png",
+          "sha256": "af5387a28e366e1f86532e7e24685be1e35bc0578d0859da4a367027a2a1f1cb",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "68-50.png",
+          "sha256": "53330ce699abb3ca3ee0c60bc6449168dca05d539371d79ca21002c1b6b2f1a9",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "matrix(1, 0, 0, 1, -12.409, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 95.46601867675781,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, -12.409, 0)",
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    },
+    {
+      "name": "home-team-img-slide-out-right",
+      "animationCount": 1,
+      "autoplay": true,
+      "frames": [
+        {
+          "percent": 0,
+          "file": "69-0.png",
+          "sha256": "ac0b03d30501e7064cf72367c24be4ae9b349a4374296aa3b4c773137fa12b50",
+          "computed": {
+            "opacity": "1",
+            "transform": "matrix(1, 0, 0, 1, 0, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 107.875,
+            "y": 24,
+            "time": 0,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "opacity": "1"
+            }
+          }
+        },
+        {
+          "percent": 50,
+          "file": "69-50.png",
+          "sha256": "05a21cf56fca9abc0d8bd56cb02e7ba23c696401b9951eef042ed81b7532abe3",
+          "computed": {
+            "opacity": "0.224439",
+            "transform": "matrix(1, 0, 0, 1, 12.409, 0)",
+            "height": "48px",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundPosition": "0% 0%",
+            "angle": "",
+            "x": 120.28399658203125,
+            "y": 24,
+            "time": 400,
+            "properties": {
+              "transform": "matrix(1, 0, 0, 1, 12.409, 0)",
+              "opacity": "0.224439"
+            }
+          }
+        }
+      ],
+      "distinctFrames": true,
+      "propertyChanges": {
+        "transform": true,
+        "opacity": true
+      },
+      "scrub": true,
+      "play": true,
+      "pause": true,
+      "pass": true
+    }
+  ],
+  "failures": [
+    "dotty",
+    "initialFade",
+    "move-square",
+    "background-position-spin",
+    "collapse-down",
+    "collapse-up",
+    "ssp-dash",
+    "sss-morph",
+    "bgblink",
+    "cursor-blink",
+    "enter",
+    "exit",
+    "dust-floor-trail-dash",
+    "swipe-out-left",
+    "swipe-out-right",
+    "swipe-out-up",
+    "swipe-out-down"
+  ],
+  "reducedMotion": true,
+  "externalRequests": 0,
+  "pageErrors": 0,
+  "pass": false
+}

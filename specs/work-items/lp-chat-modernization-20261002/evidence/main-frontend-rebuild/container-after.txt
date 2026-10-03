@@ -1,0 +1,1 @@
+id=95da528d03a491d4e92b0c4dbebca6d76131f2788a214896910a68279b5d0f10 image=sha256:8b90af61020fb977bcf6c4e39f0c5354b7fe524bcc59795ea50697aa2220639f started=2026-10-03T14:55:06.479448094Z restart=no cmd=[node scripts/run-framework.mjs dev --hostname 0.0.0.0 --port 3000] ports={"3000/tcp":[{"HostIp":"","HostPort":"3000"}]}

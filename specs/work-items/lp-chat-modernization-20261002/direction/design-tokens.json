@@ -1,0 +1,753 @@
+{
+  "$description": "Arquivio design DNA; direction A proposal, pending H2",
+  "$source": "DESIGN.md",
+  "$capturedAt": "2026-10-02 America/Manaus",
+  "A1-identity": {
+    "bg": {
+      "$value": "#f5f7f4",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "fg": {
+      "$value": "#142b25",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "accent": {
+      "$value": "#1c6052",
+      "$type": "color",
+      "confidence": "provided",
+      "source": "../brief-baseline.md §3",
+      "group": "color"
+    },
+    "accent-hover": {
+      "$value": "#124b3f",
+      "$type": "color",
+      "confidence": "provided",
+      "source": "../brief-baseline.md §3",
+      "group": "color"
+    },
+    "brand-ink": {
+      "$value": "#243b35",
+      "$type": "color",
+      "confidence": "provided",
+      "source": "../brief-baseline.md §3",
+      "group": "color"
+    },
+    "font-display": {
+      "$value": "\"Manrope\", system-ui, Arial, sans-serif",
+      "$type": "fontFamily",
+      "confidence": "inferred",
+      "source": "Proposta A; fonts/Manrope-OFL.txt; https://github.com/google/fonts/tree/main/ofl/manrope",
+      "group": "font"
+    },
+    "font-body": {
+      "$value": "\"IBM Plex Sans\", system-ui, Arial, sans-serif",
+      "$type": "fontFamily",
+      "confidence": "inferred",
+      "source": "Proposta A; fonts/IBMPlexSans-OFL.txt; https://github.com/google/fonts/tree/main/ofl/ibmplexsans",
+      "group": "font"
+    }
+  },
+  "A1-structure": {
+    "text-xs": {
+      "$value": "0.8125rem",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "size"
+    },
+    "text-sm": {
+      "$value": "0.875rem",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "size"
+    },
+    "text-base": {
+      "$value": "1rem",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "size"
+    },
+    "text-lg": {
+      "$value": "1.125rem",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "size"
+    },
+    "text-xl": {
+      "$value": "1.375rem",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "size"
+    },
+    "text-2xl": {
+      "$value": "clamp(1.625rem, 1.2rem + 1vw, 2rem)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "size"
+    },
+    "text-3xl": {
+      "$value": "clamp(2rem, 1.4rem + 1.8vw, 2.75rem)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "size"
+    },
+    "text-4xl": {
+      "$value": "clamp(2.125rem, 1.25rem + 3vw, 3.5rem)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "size"
+    },
+    "text-5xl": {
+      "$value": "clamp(2.5rem, 1.5rem + 3vw, 4rem)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "size"
+    },
+    "container-max": {
+      "$value": "1280px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "section-y-sm": {
+      "$value": "48px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "section-y-md": {
+      "$value": "80px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "section-y-lg": {
+      "$value": "112px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "leading-tight": {
+      "$value": "1.08",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "leading-snug": {
+      "$value": "1.3",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "leading-normal": {
+      "$value": "1.55",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "tracking-tight": {
+      "$value": "-0.035em",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "tracking-snug": {
+      "$value": "-0.015em",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "tracking-normal": {
+      "$value": "0em",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "weight-light": {
+      "$value": "500",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "weight-regular": {
+      "$value": "400",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "weight-medium": {
+      "$value": "500",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    },
+    "weight-bold": {
+      "$value": "650",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "layout"
+    }
+  },
+  "A2": {
+    "space-1": {
+      "$value": "4px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "space"
+    },
+    "space-2": {
+      "$value": "8px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "space"
+    },
+    "space-3": {
+      "$value": "12px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "space"
+    },
+    "space-4": {
+      "$value": "16px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "space"
+    },
+    "space-5": {
+      "$value": "20px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "space"
+    },
+    "space-6": {
+      "$value": "24px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "space"
+    },
+    "space-8": {
+      "$value": "32px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "space"
+    },
+    "space-10": {
+      "$value": "40px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "space"
+    },
+    "space-12": {
+      "$value": "48px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "space"
+    },
+    "space-16": {
+      "$value": "64px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "space"
+    },
+    "space-24": {
+      "$value": "96px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "space"
+    },
+    "radius-sm": {
+      "$value": "8px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "radius"
+    },
+    "radius-md": {
+      "$value": "16px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "radius"
+    },
+    "radius-lg": {
+      "$value": "24px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "radius"
+    },
+    "radius-full": {
+      "$value": "9999px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "radius"
+    },
+    "border-width": {
+      "$value": "1px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "focus-width": {
+      "$value": "3px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "focus-offset": {
+      "$value": "3px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "target-min": {
+      "$value": "44px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "motion-fast": {
+      "$value": "140ms",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "motion"
+    },
+    "motion-base": {
+      "$value": "180ms",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "motion"
+    },
+    "motion-slow": {
+      "$value": "240ms",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "motion"
+    },
+    "motion-zero": {
+      "$value": "0ms",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "motion"
+    },
+    "ease-out": {
+      "$value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "ease-in-out": {
+      "$value": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "ease-smooth": {
+      "$value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "fg-muted": {
+      "$value": "#51635a",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "fg-subtle": {
+      "$value": "#51635a",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "success": {
+      "$value": "#1c6052",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "danger": {
+      "$value": "#a83435",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "warning": {
+      "$value": "#965b0d",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "shadow-sm": {
+      "$value": "0 1px 2px #142b2510",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "shadow-md": {
+      "$value": "0 6px 20px #142b2510",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "shadow-lg": {
+      "$value": "0 16px 48px #142b2514",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "shadow-xl": {
+      "$value": "0 24px 60px #142b251a",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "font-mono": {
+      "$value": "ui-monospace, \"SFMono-Regular\", Menlo, monospace",
+      "$type": "fontFamily",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "font"
+    }
+  },
+  "B-slot": {
+    "surface": {
+      "$value": "#ffffff",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "surface-muted": {
+      "$value": "#eaf2ec",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "surface-tint": {
+      "$value": "#eef4e4",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "border": {
+      "$value": "#d5dfd7",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "border-strong": {
+      "$value": "#718379",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "focus-ring": {
+      "$value": "#965b0d",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "accent-soft": {
+      "$value": "#eaf2ec",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "fg-2": {
+      "$value": "var(--fg-muted)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "fg-muted"
+    },
+    "link": {
+      "$value": "var(--accent)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "accent"
+    },
+    "accent-soft-fg": {
+      "$value": "var(--accent)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "accent"
+    },
+    "chat-surface": {
+      "$value": "var(--surface)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "surface"
+    },
+    "chat-ink": {
+      "$value": "var(--fg)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "fg"
+    },
+    "source-surface": {
+      "$value": "var(--surface-muted)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "surface-muted"
+    },
+    "source-ink": {
+      "$value": "var(--accent)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "accent"
+    },
+    "color-bg": {
+      "$value": "var(--bg)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "bg"
+    },
+    "color-fg": {
+      "$value": "var(--fg)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "fg"
+    },
+    "color-accent": {
+      "$value": "var(--accent)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "accent"
+    },
+    "color-muted": {
+      "$value": "var(--fg-muted)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "fg-muted"
+    },
+    "color-surface": {
+      "$value": "var(--surface)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "surface"
+    },
+    "color-source": {
+      "$value": "var(--source-surface)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "source-surface"
+    },
+    "color-danger": {
+      "$value": "var(--danger)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "danger"
+    },
+    "color-success": {
+      "$value": "var(--success)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "success"
+    },
+    "color-focus": {
+      "$value": "var(--focus-ring)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "focus-ring"
+    },
+    "font-sans": {
+      "$value": "var(--font-body)",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "alias",
+      "aliasTo": "font-body"
+    }
+  },
+  "C-extensions": {
+    "signal-lime": {
+      "$value": "#d9f279",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "stage-dark": {
+      "$value": "#102f27",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "stage-ink": {
+      "$value": "#f5f7f4",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "accent-light": {
+      "$value": "#38856f",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "accent-lighter": {
+      "$value": "#b4d5c4",
+      "$type": "color",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "color"
+    },
+    "reveal-offset": {
+      "$value": "8px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "stagger-step": {
+      "$value": "40ms",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "chat-max": {
+      "$value": "760px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "source-number-width": {
+      "$value": "24px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "desktop-gutter": {
+      "$value": "64px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "mobile-gutter": {
+      "$value": "16px",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "label-tracking": {
+      "$value": "0.08em",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    },
+    "illustration-opacity": {
+      "$value": "0.12",
+      "$type": "other",
+      "confidence": "inferred",
+      "source": "Proposta autoral A Contexto vivo, DESIGN.md; inferred; sujeita a H2",
+      "group": "other"
+    }
+  }
+}

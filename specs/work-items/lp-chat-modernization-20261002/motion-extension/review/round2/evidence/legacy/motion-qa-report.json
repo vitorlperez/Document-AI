@@ -1,0 +1,293 @@
+{
+  "base": "http://127.0.0.1:5181",
+  "startedAt": "2026-10-03T05:58:20.456Z",
+  "public": {},
+  "fixture": {
+    "M1": [
+      {
+        "name": "K1 opens immediately, UA focus inside during the entry",
+        "ok": true,
+        "detail": {
+          "open": true,
+          "focusInside": true,
+          "rootAnims": 0,
+          "rootTransform": "none"
+        }
+      },
+      {
+        "name": "panel entry 200ms .92/Y6→final, root dialog not animated/transformed",
+        "ok": true,
+        "detail": [
+          {
+            "name": "aq-panel-in",
+            "type": "CSSAnimation",
+            "duration": 200,
+            "delay": 0,
+            "easing": "linear",
+            "playState": "running",
+            "samples": [
+              {
+                "at": 0,
+                "opacity": "0.92",
+                "transform": "matrix(1, 0, 0, 1, 0, 6)"
+              },
+              {
+                "at": 0.5,
+                "opacity": "0.995686",
+                "transform": "matrix(1, 0, 0, 1, 0, 0.323523)"
+              },
+              {
+                "at": 1,
+                "opacity": "1",
+                "transform": "matrix(1, 0, 0, 1, 0, 1.56259e-09)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backdrop opacity-only fade 200ms",
+        "ok": true,
+        "detail": [
+          {
+            "name": "aq-backdrop-in",
+            "type": "CSSAnimation",
+            "duration": 200,
+            "delay": 0,
+            "easing": "linear",
+            "playState": "running"
+          }
+        ]
+      },
+      {
+        "name": "no replay on 3s polling",
+        "ok": true,
+        "detail": {
+          "replay": 0
+        }
+      },
+      {
+        "name": "K3/K5 X closes at once; focus back on trigger",
+        "ok": true,
+        "detail": {
+          "open": false,
+          "focus": "Sincronizações"
+        }
+      },
+      {
+        "name": "K6 open→Escape→open: one live entry for the latest cycle",
+        "ok": true,
+        "detail": {
+          "open": true,
+          "anims": [
+            {
+              "name": "aq-panel-in",
+              "t": 0
+            }
+          ]
+        }
+      },
+      {
+        "name": "K3 text drag released on backdrop does not close",
+        "ok": true
+      },
+      {
+        "name": "K3/K4 busy: Escape and backdrop blocked, single POST",
+        "ok": true,
+        "detail": {
+          "busyOpen": true,
+          "resyncPosts": 1
+        }
+      },
+      {
+        "name": "K3 busy: X still closes (baseline)",
+        "ok": true
+      },
+      {
+        "name": "K7 native confirm: cancel keeps M1 open/no DELETE; accept one DELETE, M1 stays",
+        "ok": true,
+        "detail": {
+          "afterDismiss": {
+            "open": true,
+            "deletes": 0
+          },
+          "afterAccept": {
+            "open": true,
+            "deletes": 1
+          }
+        }
+      },
+      {
+        "name": "K2 Tab stays within the native modal",
+        "ok": true,
+        "detail": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          true
+        ]
+      },
+      {
+        "name": "no page errors",
+        "ok": true,
+        "detail": []
+      },
+      {
+        "name": "K9 reduced: opens with no aq-* animation (incl. backdrop); member sees no manage actions",
+        "ok": true,
+        "detail": {
+          "panel": 0,
+          "total": 0,
+          "open": true,
+          "manage": false
+        }
+      },
+      {
+        "name": "K9 reduced switched mid-entry: final state at once",
+        "ok": true,
+        "detail": {
+          "mid": 1,
+          "anims": 0,
+          "transform": "none",
+          "opacity": "1"
+        }
+      }
+    ],
+    "M1_preexisting_failed_null": {
+      "syntheticFailedValue": null,
+      "renderedSummary": "Falhas por documento ()",
+      "emptyCountLabel": true
+    },
+    "M4_preexisting_geometry": {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 255
+      },
+      "cssMargin": "0px",
+      "horizontallyCentered": false,
+      "verticallyCentered": false,
+      "secretValueOmitted": true
+    },
+    "M4": [
+      {
+        "name": "K4 double submit → one POST; secret dialog opens on success while load pending",
+        "ok": true,
+        "detail": {
+          "posts1": 1,
+          "open": true,
+          "hasSecret": true
+        }
+      },
+      {
+        "name": "content entry 200ms .92/Y6; dialog root not transformed; string never animated alone",
+        "ok": true,
+        "detail": [
+          {
+            "name": "aq-panel-in",
+            "type": "CSSAnimation",
+            "duration": 200,
+            "delay": 0,
+            "easing": "linear",
+            "playState": "running",
+            "samples": [
+              {
+                "at": 0,
+                "opacity": "0.92",
+                "transform": "matrix(1, 0, 0, 1, 0, 6)"
+              },
+              {
+                "at": 0.5,
+                "opacity": "0.995686",
+                "transform": "matrix(1, 0, 0, 1, 0, 0.323523)"
+              },
+              {
+                "at": 1,
+                "opacity": "1",
+                "transform": "matrix(1, 0, 0, 1, 0, 1.56259e-09)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "copy (local stub) → Copiada",
+        "ok": true
+      },
+      {
+        "name": "K3 click outside does not close (no handler, baseline)",
+        "ok": true
+      },
+      {
+        "name": "K3/K5 Escape: closes at once, secret removed from DOM, focus heading (create busy)",
+        "ok": true,
+        "detail": {
+          "dialogs": 0,
+          "secretInDom": false,
+          "focus": "heading"
+        }
+      },
+      {
+        "name": "K6 new cycle re-enters; copy error stays in section; Fechar clears secret immediately",
+        "ok": true,
+        "detail": {
+          "reopen": 1,
+          "alertOutside": true,
+          "gone": true
+        }
+      },
+      {
+        "name": "no page errors",
+        "ok": true,
+        "detail": []
+      }
+    ],
+    "network": [
+      {
+        "name": "zero unexpected API/non-GET requests, zero external hosts",
+        "ok": true,
+        "detail": {
+          "unexpected": [],
+          "external": []
+        }
+      }
+    ]
+  },
+  "network": {
+    "publicRequests": [],
+    "fixtureApiCalls": [
+      "DELETE /workspace-folders/wf-partial",
+      "GET /library",
+      "GET /library/sync-history",
+      "GET /library/sync-status",
+      "GET /organizations",
+      "GET /organizations/11111111-1111-4111-8111-111111111111/access-settings",
+      "GET /organizations/11111111-1111-4111-8111-111111111111/api-keys",
+      "GET /organizations/11111111-1111-4111-8111-111111111111/mcp-connection",
+      "GET /organizations/11111111-1111-4111-8111-111111111111/mcp-info",
+      "GET /organizations/11111111-1111-4111-8111-111111111111/onboarding",
+      "GET /session",
+      "GET /workspace-folders",
+      "GET /workspace-folders/wf-partial/documents/failures",
+      "GET /workspace-folders/wf-ready/syncs/job-run-fx-25",
+      "POST /library/workspaces/wf-ready/reprocess",
+      "POST /organizations/11111111-1111-4111-8111-111111111111/api-keys"
+    ],
+    "unexpected": [],
+    "external": []
+  },
+  "failures": [],
+  "finishedAt": "2026-10-03T05:58:35.673Z",
+  "summary": {
+    "failures": 0
+  }
+}
