@@ -13,6 +13,8 @@ import json
 import logging
 import re
 import time
+import unicodedata
+from collections import Counter
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
@@ -42,7 +44,7 @@ from app.knowledge.questions import (
     _number_answer_sources,
     _validate_citations,
 )
-from app.knowledge.untrusted import sanitize_label
+from app.knowledge.untrusted import sanitize_label, strip_invisible
 from app.library.models import LibraryNode
 from app.library.service import CatalogFileSnapshot, LibraryService, SyncAccessDenied
 from app.workspaces.models import WorkspaceFolder
@@ -53,12 +55,19 @@ INVENTORY_MAX_ITEMS = 500
 MAX_SYNTHESIS_SOURCES = 24
 MAX_SYNTHESIS_CATALOG_ITEMS = 200
 MAX_PLANNER_HISTORY_MESSAGES = 4
+TOPIC_EVIDENCE_MIN_CHARS = 20
+TOPIC_EVIDENCE_MAX_CHARS = 600
+TOPIC_EVIDENCE_MIN_WORDS = 3
 # Document.index_status values meaning the provider no longer has the file (a revocation of the
 # cited evidence); every other non-indexed state is an index problem, not an authorization change.
 # Production only ever writes "removed"; "deleted" is kept for the test fixtures that mark a
 # document withdrawn with that spelling.
 WITHDRAWN_STATUSES = frozenset({"deleted", "removed"})
 logger = logging.getLogger("document_intelligence.agent")
+
+
+def _normalize_topic_text(text: str) -> str:
+    return " ".join(unicodedata.normalize("NFKC", strip_invisible(text)).split())
 
 
 @contextmanager
@@ -95,6 +104,7 @@ class ToolResult:
     # (item id, leading indexed chunks) per file whose content was asked for; kept out of the
     # payload so the byte-bounded tool results stay small. Input of the per-file summaries.
     file_chunks: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    file_document_ids: tuple[tuple[str, UUID], ...] = ()
 
 
 @runtime_checkable
@@ -118,6 +128,13 @@ class FileSummaryAdapter(Protocol):
     def summarize_file_briefs(
         self, *, question: str, files: list[dict[str, object]], target_chars: int, model: str = ...,
     ) -> dict[int, str]: ...
+
+
+@runtime_checkable
+class FileTopicAdapter(Protocol):
+    def analyze_file_topics(
+        self, *, question: str, files: list[dict[str, object]], model: str = ...,
+    ) -> dict[int, dict[str, object]]: ...
 
 
 @dataclass(frozen=True)
@@ -372,6 +389,9 @@ class ConversationState:
     # The answer that carries the file listing was excluded: its names are not sent to the classifier.
     # `listed_files` stay as targets only, so the current authorization (and its denials) still decides.
     listing_excluded: bool = False
+    listing_truncated: bool = False
+    empty_selection: bool = False
+    direct_folder_inventory: bool = False
 
     @classmethod
     def from_history(
@@ -381,6 +401,7 @@ class ConversationState:
         latest = _latest_answer_index(history)
         window_start = max(len(history) - MAX_PLANNER_HISTORY_MESSAGES, 0)
         listed_files, listing = _previous_listed_files(history)
+        listing_context = (history[listing].context or {}).get("resolved_context") if listing is not None else None
         return cls(
             listed_files=listed_files,
             previous_turn_mentions=_previous_turn_mentions(history),
@@ -391,6 +412,14 @@ class ConversationState:
             ]),
             memory_excluded=latest in excluded,
             listing_excluded=listing in excluded,
+            listing_truncated=bool(
+                isinstance(listing_context, dict) and listing_context.get("inventory_truncated")
+            ),
+            empty_selection=listing is not None and not listed_files,
+            direct_folder_inventory=bool(
+                isinstance(listing_context, dict)
+                and listing_context.get("inventory_scope") == "direct_folder_files"
+            ),
         )
 
     def files(self) -> list[UUID]:
@@ -588,6 +617,7 @@ class AgentService:
             ),
             "previous_turn_had_files": bool(conversation.previous_turn_mentions),
             "has_previous_answer": conversation.previous_answer is not None,
+            "previous_selection_empty": conversation.empty_selection,
         }
         intent_deadline = min(deadline, time.monotonic() + self.models.intent_timeout_seconds)
         for adapter in adapters:
@@ -600,7 +630,8 @@ class AgentService:
                         question=request.question, history=conversation.recent_messages, context=context,
                         model=self.models.planner_model,
                     )
-                return parse_intent(raw, listed_files=len(conversation.listed_files), mentioned=len(mentions))
+                return parse_intent(raw, listed_files=len(conversation.listed_files), mentioned=len(mentions),
+                                    empty_selection=conversation.empty_selection)
             except (AIProviderUnavailable, InvalidIntent, ValueError, TypeError, KeyError) as error:
                 log_agent_phase(
                     logger, phase="intent_fallback", started_at=started_at, deadline=intent_deadline,
@@ -629,7 +660,10 @@ class AgentService:
             # An excluded answer is not "missing": the request is rebuilt from the current sources.
             intent = "summarize_files"
         _require_time(deadline)
-        reachable = self._reauthorize_listed(request, targets, conversation)
+        reachable = (
+            targets if intent in {"inventory_stats", "select_files_by_topic"}
+            else self._reauthorize_listed(request, targets, conversation)
+        )
         run = AgentRun(
             decision=decision, intent=intent, targets=reachable, conversation=conversation,
             unindexed_listed=len(targets) - len(reachable),
@@ -642,7 +676,7 @@ class AgentService:
                 decision.target == "previous_turn_files" or decision.intent == "restructure_previous"
             )
         )
-        if not targets and intent != "conversation" and refers_to_history:
+        if not targets and intent not in {"conversation", "inventory_stats", "select_files_by_topic"} and refers_to_history:
             # Every file the message points at was listed without indexed content.
             run.answer = self._honest_insufficient(
                 QuestionResult(None, "insufficient_evidence", [], RETRIEVAL_STATUS_NO_INDEXED_CONTENT), request, [],
@@ -666,6 +700,8 @@ class AgentService:
         """Turn the decided target into catalog node ids; the request's mentions stay authoritative."""
         if mentions:
             return mentions
+        if conversation.empty_selection and decision.target != "library":
+            return []
         listed = conversation.listed_files
         if decision.target in {"previous_ordinals", "previous_answer_files"} and listed:
             chosen = [listed[index - 1] for index in decision.ordinals] if decision.ordinals else listed
@@ -726,6 +762,8 @@ class AgentService:
                 scope=request.scope, user_id=request.user_id, providers=request.providers,
                 mentions=run.targets, query=run.decision.query,
             )
+        elif not run.targets:
+            listing = self._catalog_inventory(run, request)
         else:
             raise PlanRejected("listing needs one folder, files, or a name search")
         if _json_size([{"name": listing.name, "result": listing.payload}]) > self.limits.max_result_bytes:
@@ -733,10 +771,194 @@ class AgentService:
         run.add(listing)
         if not with_summaries:
             return _catalog_question_result(listing)
+        if listing.name == "catalog_inventory":
+            # Every file gets a row; global synthesis is bounded to 24 sources and
+            # cannot serve as a complete library listing.
+            listing = replace(listing, payload={**listing.payload, "items": [
+                {**item, "excerpt": None} for item in listing.payload["items"]
+            ]})
+            return self._catalog_answer(listing, question=request.question, deadline=deadline)
         return (
             self._synthesize(run, request, deadline=deadline)
             or self._catalog_answer(listing, question=request.question, deadline=deadline)
         )
+
+    def _catalog_inventory(self, run: AgentRun, request: AgentRequest) -> ToolResult:
+        if run.conversation.empty_selection and not request.mentions and run.decision.target != "library":
+            LibraryService(self.session).require_member(scope=request.scope, user_id=request.user_id)
+            return ToolResult("catalog_inventory", {
+                "semantics": "authorized_local_file_inventory", "items": [],
+                "total": 0, "returned": 0, "truncated": False,
+            })
+        folders = {
+            node_id: folder for node_id, folder, _name in run.conversation.listed_files if folder
+        } if not request.mentions else {}
+        nodes, total = LibraryService(self.session).catalog_inventory(
+            scope=request.scope, user_id=request.user_id, providers=request.providers,
+            mentions=run.targets, limit=INVENTORY_MAX_ITEMS, inventory_folder_ids=folders,
+        )
+        listing = self._file_snapshots(request, [node.id for node in nodes])
+        payload = {
+            **listing.payload, "semantics": "authorized_local_file_inventory",
+            "total": total, "returned": len(nodes), "truncated": total > len(nodes),
+        }
+        # Content lives in file_chunks, outside the small, persisted tool payload.
+        payload["items"] = [
+            {key: value for key, value in item.items() if key != "excerpt"}
+            for item in payload["items"]
+        ]
+        # Retain folder provenance when a statistics answer carries the selection forward.
+        for item in payload["items"]:
+            parent = folders.get(UUID(item["id"]))
+            if parent:
+                item["folder_id"] = str(parent)
+        if run.folders() and len(run.folders()) == 1:
+            payload["inventory_folder_id"] = str(run.folders()[0])
+        def result_size():
+            return _json_size([{"name": "catalog_inventory", "result": payload}])
+
+        if result_size() > self.limits.max_result_bytes:
+            # Byte bounds are another partial-list condition, not an invented complete count.
+            while payload["items"] and result_size() > self.limits.max_result_bytes:
+                payload["items"].pop()
+                payload["returned"] = len(payload["items"])
+                payload["truncated"] = True
+            if result_size() > self.limits.max_result_bytes:
+                raise AIProviderUnavailable("document agent result exceeds configured byte limit")
+            kept = {item["id"] for item in payload["items"]}
+            document_ids = {document_id for node_id, document_id in listing.file_document_ids if node_id in kept}
+            listing = replace(listing,
+                              citations=tuple(item for item in listing.citations if item.document_id in document_ids),
+                              file_chunks=tuple(item for item in listing.file_chunks if item[0] in kept),
+                              file_document_ids=tuple(item for item in listing.file_document_ids if item[0] in kept))
+        return replace(listing, name="catalog_inventory", payload=payload)
+
+    def _topic_assessments(
+        self, listing: ToolResult, question: str, deadline: float,
+    ) -> dict[str, dict[str, object]]:
+        """Assess every readable file, not a global semantic top-k; validate file-local quotes.
+
+        A missing/invalid assessment is unknown, never a negative match. A shared timeout
+        bounds all batches; no extra calls start after it expires. Quote checks establish
+        normalized file-local provenance and minimum substance, not semantic entailment.
+        """
+        adapter = self.provider
+        if not isinstance(adapter, FileTopicAdapter):
+            return {}
+        chunks = dict(listing.file_chunks)
+        files = [item for item in listing.payload["items"] if chunks.get(item["id"])]
+        files = [item for item in files if not all(
+            _normalize_topic_text(text).casefold() in {
+                _normalize_topic_text(item["name"]).casefold(),
+                _normalize_topic_text(item["name"].rsplit(".", 1)[0]).casefold(),
+            } for text in chunks[item["id"]]
+        )]
+        assessed = {}
+        call_deadline = min(deadline, time.monotonic() + self.file_summaries.timeout_seconds)
+        for start in range(0, len(files), 10):
+            if time.monotonic() >= call_deadline:
+                break
+            batch = files[start:start + 10]
+            try:
+                with _observed_phase("file_topics", call_deadline), _request_deadline(call_deadline):
+                    generated = adapter.analyze_file_topics(
+                        question=question,
+                        files=[{"name": item["name"], "chunks": list(chunks[item["id"]])} for item in batch],
+                        model=self.file_summaries.model,
+                    )
+            except (AIProviderUnavailable, ValueError, TypeError, AttributeError):
+                continue
+            for index, item in enumerate(batch, 1):
+                entry = generated.get(index) if isinstance(generated, dict) else None
+                if not isinstance(entry, dict) or type(entry.get("matches")) is not bool:
+                    continue
+                quote, topic = entry.get("evidence"), entry.get("topic")
+                if not isinstance(quote, str) or not isinstance(topic, str) or not topic.strip():
+                    continue
+                quote = _normalize_topic_text(quote)
+                words = re.findall(r"[^\W\d_]+", quote)
+                if (
+                    not TOPIC_EVIDENCE_MIN_CHARS <= len(quote) <= TOPIC_EVIDENCE_MAX_CHARS
+                    or sum(len(word) >= 2 for word in words) < TOPIC_EVIDENCE_MIN_WORDS
+                    or not any(
+                        quote.casefold() in _normalize_topic_text(text).casefold()
+                        for text in chunks[item["id"]]
+                    )
+                ):
+                    continue
+                assessed[item["id"]] = {"matches": entry["matches"], "topic": sanitize_label(topic)[:100], "evidence": quote}
+        return assessed
+
+    def _inventory_stats(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        listing = self._catalog_inventory(run, request)
+        run.add(listing)
+        items = listing.payload["items"]
+        total = listing.payload["total"]
+        indexed = sum(item["index_status"] == "indexed" for item in items)
+        assessed = self._topic_assessments(listing, request.question, deadline)
+        citations = []
+        groups = Counter(entry["topic"] for entry in assessed.values())
+        direct_folder_inventory = bool(run.folders() or (
+            not request.mentions and run.decision.target != "library" and (
+                run.conversation.direct_folder_inventory
+                or any(item.get("folder_id") for item in items)
+            )
+        ))
+        answer = f"São {total} arquivos na seleção do catálogo local autorizado."
+        if direct_folder_inventory:
+            answer += "\nNas pastas selecionadas, considero somente os arquivos diretamente nelas; esta contagem não inclui subpastas."
+        answer += f"\nDos {len(items)} arquivos consultados: {indexed} com conteúdo indexado e {len(items) - indexed} sem conteúdo indexado disponível."
+        if groups:
+            answer += "\n\nTemas identificados no conteúdo disponível (um tema principal por arquivo):"
+            for topic, count in groups.most_common():
+                ids = [item["id"] for item in items if assessed.get(item["id"], {}).get("topic") == topic]
+                sources = self._topic_citations(listing, ids, assessed)
+                first = len(citations) + 1
+                citations.extend(sources)
+                markers = ", ".join(str(i) for i in range(first, len(citations) + 1))
+                answer += f"\n- {topic}: {count} arquivo(s) (fontes {markers})."
+        unknown = len(items) - len(assessed)
+        if unknown:
+            answer += f"\n\nNão foi possível avaliar os temas de {unknown} arquivo(s); isso não indica ausência de um tema."
+        truncated = bool(listing.payload["truncated"] or (not request.mentions and run.conversation.listing_truncated))
+        if truncated:
+            answer += "\n\nA listagem consultada é parcial; os temas e estados acima cobrem apenas os arquivos consultados. O número não representa todo o Drive."
+        # Catalog references carry the selection forward. Content citations are relevant
+        # only to assessed themes, not to the deterministic catalog count.
+        return QuestionResult(answer, "supported", citations, "catalog",
+                              resolved_context={"inventory_total": total, "inventory_returned": len(items), "inventory_truncated": truncated,
+                                                "inventory_scope": "direct_folder_files" if direct_folder_inventory else "catalog_selection"})
+
+    def _topic_citations(
+        self, listing: ToolResult, ids: list[str], assessed: dict[str, dict[str, object]],
+    ) -> list[Evidence]:
+        by_document = {item.document_id: item for item in listing.citations}
+        by_node = {node_id: by_document[document_id]
+                   for node_id, document_id in listing.file_document_ids if document_id in by_document}
+        return [replace(by_node[node_id], excerpt=assessed[node_id]["evidence"])
+                for node_id in ids if node_id in by_node]
+
+    def _select_files_by_topic(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        listing = self._catalog_inventory(run, request)
+        assessed = self._topic_assessments(listing, run.decision.standalone_query or request.question, deadline)
+        items = listing.payload["items"]
+        selected = [item for item in items if assessed.get(item["id"], {}).get("matches") is True]
+        ids = [item["id"] for item in selected]
+        citations = self._topic_citations(listing, ids, assessed)
+        run.add(replace(listing, name="select_files_by_topic", payload={**listing.payload, "items": selected}, citations=tuple(citations)))
+        answer = f"Encontrei {len(selected)} de {len(items)} arquivos consultados sobre o tema."
+        for index, item in enumerate(selected, 1):
+            quote = _sentence_preview(assessed[item["id"]]["evidence"], 250)
+            answer += f"\n- {sanitize_label(item['name'])}: {quote} (fonte {index})."
+        unknown = len(items) - len(assessed)
+        if unknown:
+            answer += f"\n\nNão foi possível avaliar {unknown} arquivo(s); a seleção pode estar incompleta."
+        truncated = bool(listing.payload["truncated"] or (not request.mentions and run.conversation.listing_truncated))
+        if truncated:
+            answer += "\n\nA listagem de origem é parcial; esta seleção cobre somente os arquivos consultados."
+        answer += "\n\nA seleção considera o conteúdo indexado disponível para análise, que pode não cobrir todas as partes dos arquivos."
+        return QuestionResult(answer, "supported" if selected else "insufficient_evidence", citations, "catalog",
+                              resolved_context={"inventory_truncated": truncated, "topic_evaluated": len(assessed), "topic_unknown": unknown})
 
     def _summarize_files(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
         if not run.targets:
@@ -796,6 +1018,8 @@ class AgentService:
         "list_files": _list_files,
         "list_files_with_summaries": _list_files,
         "summarize_files": _summarize_files,
+        "inventory_stats": _inventory_stats,
+        "select_files_by_topic": _select_files_by_topic,
         "restructure_previous": _restructure_previous,
         "ask_content": _ask_content,
     }
@@ -905,7 +1129,9 @@ class AgentService:
         answer = _with_unindexed_notice(
             run.answer, run.unindexed_listed if run.intent != "conversation" else 0,
         )
-        if answer.citations:
+        # Statistics explicitly cite only assessed themes. An empty citation set is
+        # intentional; the catalog references, not excerpts, support its file count.
+        if answer.citations or run.intent == "inventory_stats":
             return answer
         consulted = _document_citations([
             *(item for result in run.results for item in result.citations),
@@ -946,6 +1172,8 @@ class AgentService:
             },
             citations=_snapshot_citations(snapshots),
             file_chunks=tuple((str(snapshot.id), snapshot.chunks) for snapshot in snapshots),
+            file_document_ids=tuple((str(snapshot.id), snapshot.document_id) for snapshot in snapshots
+                                    if snapshot.document_id is not None),
         )
 
     def _honest_insufficient(
@@ -1175,6 +1403,11 @@ def _previous_listed_files(
                 continue
         if files:
             return files, position
+        resolved = (message.context or {}).get("resolved_context")
+        if isinstance(resolved, dict) and resolved.get("intent") in {
+            "list_files", "list_files_with_summaries", "inventory_stats", "select_files_by_topic",
+        }:
+            return [], position
     return [], None
 
 
@@ -1293,6 +1526,8 @@ def _catalog_references(results: list[dict[str, object]]) -> list[dict[str, str]
             inventory_folder_id = payload.get("inventory_folder_id")
             if item["kind"] == "file" and isinstance(inventory_folder_id, str):
                 reference["folder_id"] = inventory_folder_id
+            elif item["kind"] == "file" and isinstance(item.get("folder_id"), str):
+                reference["folder_id"] = item["folder_id"]
             references.append(reference)
         return references
     return []
@@ -1321,6 +1556,8 @@ def _catalog_question_result(result: ToolResult, summaries: dict[str, str] | Non
         )
     else:
         prefix = "Itens encontrados no catálogo autorizado:"
+    if result.payload.get("semantics") == "authorized_local_file_inventory":
+        prefix = f"{result.payload['total']} arquivos no catálogo local autorizado (instantâneo local):"
     suffix = (
         f"\n\nMostrando os primeiros {result.payload['returned']} de {result.payload['total']} "
         "itens; refine a pasta para continuar."
@@ -1329,7 +1566,14 @@ def _catalog_question_result(result: ToolResult, summaries: dict[str, str] | Non
     answer = "Nenhum item encontrado no catálogo autorizado." if not rows else prefix + "\n" + "\n".join(rows) + suffix
     return QuestionResult(
         answer=answer, confidence="supported", citations=list(result.citations), retrieval_status="catalog",
-        resolved_context={"catalog_tool": result.name},
+        resolved_context={"catalog_tool": result.name, **({
+            "inventory_total": result.payload["total"],
+            "inventory_returned": result.payload["returned"],
+            "inventory_truncated": result.payload["truncated"],
+            "inventory_scope": (
+                "direct_folder_files" if result.payload.get("inventory_folder_id") else "catalog_selection"
+            ),
+        } if "returned" in result.payload else {})},
     )
 
 

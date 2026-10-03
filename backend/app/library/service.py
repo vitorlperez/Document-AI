@@ -491,6 +491,55 @@ class LibraryService:
         offset = (page - 1) * page_size
         return children[offset:offset + page_size], len(children)
 
+    def catalog_inventory(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]], limit: int = 500,
+        inventory_folder_ids: dict[UUID, UUID] | None = None,
+    ) -> tuple[list[LibraryNode], int]:
+        """Files in the authorized local catalog, including files awaiting indexing.
+
+        Historical references are checked as catalog references, not content selections.
+        Known withdrawn or denied-folder files are excluded; explicit references fail closed.
+        Folder inventory means direct children, consistent with catalog_children.
+        """
+        catalog = self.authorized_catalog(
+            scope=scope, user_id=user_id, providers=providers, mentions=[],
+        )
+        rows = self.session.execute(
+            select(WorkspaceFolder.source_id, Document.external_file_id,
+                   Document.workspace_folder_id, Document.index_status)
+            .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+            .where(Document.organization_id == scope.organization_id,
+                   WorkspaceFolder.organization_id == scope.organization_id)
+        ).all()
+        known = {(source, external) for source, external, _folder, _status in rows}
+        live = {(source, external) for source, external, folder, status in rows
+                if folder in catalog.folder_ids and status not in {"removed", "deleted"}}
+        allowed = {
+            node.id: node for node in catalog.nodes.values()
+            if self._node_path(node, catalog.all_nodes) is not None
+            and (node.kind != "file" or (node.source_id, node.external_id) in live
+                 or (node.source_id, node.external_id) not in known)
+        }
+        roots = []
+        for kind, node_id in dict.fromkeys(mentions):
+            node = allowed.get(node_id)
+            if node is None or node.kind != kind or kind not in {"file", "folder"}:
+                raise SyncAccessDenied("catalog reference is outside the authorized selection")
+            parent_id = (inventory_folder_ids or {}).get(node_id)
+            parent = allowed.get(parent_id) if parent_id else None
+            if parent_id and (parent is None or node.parent_id != parent.id):
+                raise SyncAccessDenied("catalog reference left its inventory folder")
+            roots.append(node)
+        files = [node for node in allowed.values() if node.kind == "file" and (
+            not roots or any(node.id == root.id if root.kind == "file"
+                             else node.parent_id == root.id for root in roots)
+        )]
+        files.sort(key=lambda node: (node.name.casefold(), str(node.id)))
+        if roots and all(node.kind == "file" for node in roots):
+            files = roots  # Preserve the visible ordering of historical references and ordinals.
+        return files[:limit], len(files)
+
     def catalog_search(
         self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
         mentions: list[tuple[str, UUID]], query: str, limit: int = SEARCH_RESULT_LIMIT,
@@ -536,6 +585,12 @@ class LibraryService:
                 )
             )
         )
+        admitted_folders = list(self.session.scalars(
+            select(WorkspaceFolder.id).where(
+                WorkspaceFolder.organization_id == scope.organization_id,
+                folder_is_queryable(),
+            )
+        ))
         files: list[LibraryNode] = []
         for node_id in node_ids:
             node = nodes.get(node_id)
@@ -557,25 +612,52 @@ class LibraryService:
             if node is None or node.kind != "file":
                 raise SyncAccessDenied("catalog file is unavailable")
             files.append(node)
-        rows = self.session.execute(
+        documents = (
             select(
                 WorkspaceFolder.source_id, Document.external_file_id, Document.id,
-                Document.source_url, DocumentChunk.text,
+                Document.source_url, Document.workspace_folder_id,
             )
             .select_from(Document)
-            .outerjoin(
-                DocumentChunk,
-                DocumentChunk.document_id == Document.id,
-            )
             .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
             .where(
                 Document.organization_id == scope.organization_id,
                 WorkspaceFolder.organization_id == scope.organization_id,
                 Document.index_status == "indexed",
+                Document.workspace_folder_id.in_(admitted_folders),
                 Document.external_file_id.in_({node.external_id for node in files}),
                 WorkspaceFolder.source_id.in_({node.source_id for node in files}),
             )
-            .order_by(Document.external_file_id, Document.id, DocumentChunk.position)
+            .subquery()
+        )
+        # Window functions work on PostgreSQL and SQLite. Bound the rows AND text
+        # returned by SQL, rather than fetching every chunk and discarding it in Python.
+        ranked_chunks = (
+            select(
+                DocumentChunk.document_id, DocumentChunk.position,
+                func.substr(DocumentChunk.text, 1, SNAPSHOT_MAX_CHUNK_CHARS).label("text"),
+                func.row_number().over(
+                    partition_by=DocumentChunk.document_id,
+                    order_by=DocumentChunk.position,
+                ).label("chunk_rank"),
+            )
+            .join(documents, documents.c.id == DocumentChunk.document_id)
+            .where(
+                DocumentChunk.organization_id == scope.organization_id,
+                DocumentChunk.workspace_folder_id == documents.c.workspace_folder_id,
+                func.length(func.trim(DocumentChunk.text)) > 0,
+            )
+            .subquery()
+        )
+        rows = self.session.execute(
+            select(
+                documents.c.source_id, documents.c.external_file_id, documents.c.id,
+                documents.c.source_url, ranked_chunks.c.text,
+            )
+            .outerjoin(ranked_chunks, (
+                (ranked_chunks.c.document_id == documents.c.id)
+                & (ranked_chunks.c.chunk_rank <= SNAPSHOT_MAX_CHUNKS)
+            ))
+            .order_by(documents.c.external_file_id, documents.c.id, ranked_chunks.c.position)
         )
         indexed: dict[tuple[UUID, str], tuple[UUID, str, str | None]] = {}
         chunks: dict[tuple[UUID, str], list[str]] = {}

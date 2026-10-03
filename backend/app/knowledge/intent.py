@@ -16,6 +16,8 @@ INTENTS = (
     "list_files",
     "list_files_with_summaries",
     "summarize_files",
+    "inventory_stats",
+    "select_files_by_topic",
     "ask_content",
     "restructure_previous",
     "conversation",
@@ -24,12 +26,15 @@ TARGETS = ("mentioned", "previous_ordinals", "previous_answer_files", "previous_
 INTENT_TOOLS = (
     "list_folder_inventory", "summarize_documents", "retrieve_evidence", "search_library",
     "previous_answer", "none",
+    "catalog_inventory", "analyze_file_topics",
 )
 # The tools each intent may run; a tool outside this set is replaced by the default.
 ALLOWED_TOOLS: dict[str, tuple[str, ...]] = {
     "list_files": ("list_folder_inventory", "search_library"),
     "list_files_with_summaries": ("list_folder_inventory",),
     "summarize_files": ("summarize_documents", "list_folder_inventory"),
+    "inventory_stats": ("catalog_inventory",),
+    "select_files_by_topic": ("analyze_file_topics",),
     "ask_content": ("retrieve_evidence", "search_library"),
     "restructure_previous": ("previous_answer",),
     "conversation": ("none",),
@@ -61,6 +66,10 @@ INTENT_INSTRUCTIONS = (
     "- list_files_with_summaries: list files AND say what each one is about ('do que se trata cada "
     "documento', 'quais arquivos e um resumo de cada').\n"
     "- summarize_files: summarize, explain or describe the content of specific files or of a folder.\n"
+    "- inventory_stats: count FILES ('quantos são?'), optionally explain their main themes. "
+    "Count documents, never entities or facts inside them.\n"
+    "- select_files_by_topic: select which FILES discuss a theme ('quais falam sobre currículo e "
+    "carreira profissional?'). Return matching documents, not a summary of every file.\n"
     "- ask_content: a question about facts, topics or details inside the documents.\n"
     "- restructure_previous: rewrite the previous assistant answer: reorganize, restructure, shorten, "
     "expand, put in topics or tables, translate ('estruture melhor', 'deixa mais curto', 'organiza em "
@@ -81,16 +90,18 @@ INTENT_INSTRUCTIONS = (
     "Fact follow-ups continuing the subject of the previous answer also use these cited sources, "
     "even when the message omits the subject or document names. A latest job, duration or role "
     "question is ask_content, not list_files.\n"
-    "Only when that list is not empty.\n"
+    "Also use this target when context.previous_selection_empty is true and the question continues "
+    "that empty file selection; never widen a follow-up on zero matches to the library.\n"
     "4. previous_turn_files: nothing is attached now, but the message continues the previous turn "
     "(restructuring the previous answer, or 'esse documento', 'nesse arquivo', 'e quem assina?') and "
     "context.previous_turn_had_files is true.\n"
     "5. library: anything else, including conversation.\n"
     "tool: list_folder_inventory, summarize_documents, retrieve_evidence, search_library (file-name "
     "search; put only the name terms in query), previous_answer (restructure_previous) or none "
-    "(conversation). query is empty unless tool is search_library. ordinals is empty unless target is "
+    "(conversation), catalog_inventory (inventory_stats), analyze_file_topics (select_files_by_topic). "
+    "query is empty unless tool is search_library. ordinals is empty unless target is "
     "previous_ordinals.\n"
-    "standalone_query: for ask_content, rewrite the message as one autonomous factual question "
+    "standalone_query: for ask_content or select_files_by_topic, rewrite the message as one autonomous question "
     "using recent_history to resolve omitted subjects and references (person, entity, event, "
     "place, time). Preserve the user's meaning and language. Do not answer it or add facts not "
     "established in the conversation. If context is insufficient, preserve the ambiguity rather "
@@ -98,6 +109,11 @@ INTENT_INSTRUCTIONS = (
     "For other intents use an empty string. This is a semantic retrieval question, distinct "
     "from query (file-name search only).\n"
     "Examples:\n"
+    '- After listing Drive files, "Quantos são e quais os principais temas?" -> inventory_stats, '
+    'previous_answer_files, catalog_inventory.\n'
+    '- After listing files, "Quais falam sobre currículo e carreira profissional?" -> '
+    'select_files_by_topic, previous_answer_files, analyze_file_topics; standalone_query preserves '
+    'the requested career theme.\n'
     '- History: user asks who worked where; assistant describes employment with cited sources. '
     'Current message asks which employment was most recent -> ask_content, previous_answer_files; '
     'standalone_query asks for the most recent employment of the person named in history.\n'
@@ -133,7 +149,7 @@ class InvalidIntent(ValueError):
     """The classifier output is outside the closed schema."""
 
 
-def parse_intent(raw: object, *, listed_files: int, mentioned: int = 0) -> IntentDecision:
+def parse_intent(raw: object, *, listed_files: int, mentioned: int = 0, empty_selection: bool = False) -> IntentDecision:
     """Validate classifier output against the closed schema and the conversation state.
 
     Targets the agent would resolve identically are normalized, so the decision
@@ -156,7 +172,7 @@ def parse_intent(raw: object, *, listed_files: int, mentioned: int = 0) -> Inten
     if not isinstance(retrieval_query, str) or len(retrieval_query) > 1000:
         raise InvalidIntent("retrieval_query must be a string of at most 1000 characters")
     positions = tuple(dict.fromkeys(ordinals))
-    if target == "previous_answer_files" and not listed_files:
+    if target == "previous_answer_files" and not listed_files and not empty_selection:
         # Nothing was listed, so "those files" can only be the ones of the previous turn.
         target = "previous_turn_files"
     if mentioned:
@@ -175,7 +191,7 @@ def parse_intent(raw: object, *, listed_files: int, mentioned: int = 0) -> Inten
         ordinals=positions,
         tool=chosen,
         query=query.strip()[:200] if chosen == "search_library" else "",
-        standalone_query=standalone_query.strip() if intent == "ask_content" else "",
+        standalone_query=standalone_query.strip() if intent in {"ask_content", "select_files_by_topic"} else "",
         retrieval_query=retrieval_query.strip() if intent == "ask_content" else "",
     )
 
