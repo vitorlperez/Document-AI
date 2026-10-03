@@ -1,0 +1,655 @@
+FFFFFFFF.FFFFFF..F......FF                                               [100%]
+=================================== FAILURES ===================================
+_ test_policy_classifier_never_receives_entire_contaminated_answer[node_removed_partial] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10adaaba0>
+mode = 'node_removed_partial'
+
+    @pytest.mark.parametrize("mode", REVOKED)
+    def test_policy_classifier_never_receives_entire_contaminated_answer(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        try:
+            follow(case, provider)
+        except DENIALS:
+            assert mode in {"folder_denied", "provider_excluded", "membership_inactive"}
+        payload = json.dumps(provider.classifier_inputs, ensure_ascii=False)
+        # Even the portion derived from a still-authorized source must disappear:
+        # the approved policy excludes the WHOLE previous answer, not substrings.
+>       assert OLD_SAFE not in payload, "POLICY F-A: entire previous answer reached classifier"
+E       AssertionError: POLICY F-A: entire previous answer reached classifier
+E       assert 'OLD-WHOLE-A...or de alpha.' not in '[{"question...pt-5-nano"}]'
+E         
+E         'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E           ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": ["alpha-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E         ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+
+tests/unit/test_agent_revocation_review.py:199: AssertionError
+_ test_policy_classifier_never_receives_entire_contaminated_answer[node_removed_total] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10b48f920>
+mode = 'node_removed_total'
+
+    @pytest.mark.parametrize("mode", REVOKED)
+    def test_policy_classifier_never_receives_entire_contaminated_answer(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        try:
+            follow(case, provider)
+        except DENIALS:
+            assert mode in {"folder_denied", "provider_excluded", "membership_inactive"}
+        payload = json.dumps(provider.classifier_inputs, ensure_ascii=False)
+        # Even the portion derived from a still-authorized source must disappear:
+        # the approved policy excludes the WHOLE previous answer, not substrings.
+>       assert OLD_SAFE not in payload, "POLICY F-A: entire previous answer reached classifier"
+E       AssertionError: POLICY F-A: entire previous answer reached classifier
+E       assert 'OLD-WHOLE-A...or de alpha.' not in '[{"question...pt-5-nano"}]'
+E         
+E         'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E           ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": [], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E         ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+
+tests/unit/test_agent_revocation_review.py:199: AssertionError
+_ test_policy_classifier_never_receives_entire_contaminated_answer[document_deindexed] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10b3f0920>
+mode = 'document_deindexed'
+
+    @pytest.mark.parametrize("mode", REVOKED)
+    def test_policy_classifier_never_receives_entire_contaminated_answer(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        try:
+>           follow(case, provider)
+
+tests/unit/test_agent_revocation_review.py:193: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_agent_revocation_review.py:172: in follow
+    return AgentService(case.session, provider, AgentLimits()).ask(
+app/knowledge/agent.py:425: in ask
+    run = self.execute(decision, request, conversation, deadline=deadline)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:496: in execute
+    run.answer = self._handlers[intent](self, run, request, deadline)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:598: in _restructure_previous
+    run.add(self.tools.retrieve_evidence(
+app/knowledge/agent.py:311: in retrieve_evidence
+    result = QuestionService(self.session, self.provider).ask_selection(
+app/knowledge/questions.py:918: in ask_selection
+    selection = LibraryService(self.session).resolve_question_selection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <app.library.service.LibraryService object at 0x10b670d40>
+
+    def resolve_question_selection(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]],
+    ) -> QuestionSelection:
+        self.require_member(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        selected = [item for item in contexts if
+                    ("google_drive" if item.source_provider == "google" else item.source_provider) in providers]
+        eligible = [item for item in selected if folder_is_queryable(item, self.session)]
+        coverage = question_coverage(selected)
+        folder_ids = [item.id for item in eligible]
+        if not mentions:
+            return QuestionSelection(folder_ids, None, coverage, [])
+        nodes = self._selection_nodes(scope=scope)
+        source_providers = {item.source_id: item.source_provider for item in selected}
+        documents = self._indexed_selection_documents(scope=scope, folder_ids=folder_ids)
+        document_ids: set[UUID] = set()
+        for kind, node_id in mentions:
+            node = nodes.get(node_id)
+            if node is None or node.kind != kind or node.source_id not in source_providers:
+                raise ValueError("mention is unavailable")
+            if self._node_path(node, nodes) is None:
+                raise ValueError("mention is unavailable")
+            matching_files = [node] if kind == "file" else [
+                file for file in nodes.values() if file.kind == "file" and self._descends_from(file, node, nodes)
+            ]
+            keys = {(file.source_id, file.external_id) for file in matching_files}
+            matched = {document_id for document_id, source_id, external_id in documents
+                       if (source_id, external_id) in keys}
+            if not matched:
+>               raise ValueError("mention is unavailable")
+E               ValueError: mention is unavailable
+
+app/library/service.py:952: ValueError
+_ test_policy_classifier_never_receives_entire_contaminated_answer[scope_restricted] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10b6a0ad0>
+mode = 'scope_restricted'
+
+    @pytest.mark.parametrize("mode", REVOKED)
+    def test_policy_classifier_never_receives_entire_contaminated_answer(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        try:
+            follow(case, provider)
+        except DENIALS:
+            assert mode in {"folder_denied", "provider_excluded", "membership_inactive"}
+        payload = json.dumps(provider.classifier_inputs, ensure_ascii=False)
+        # Even the portion derived from a still-authorized source must disappear:
+        # the approved policy excludes the WHOLE previous answer, not substrings.
+>       assert OLD_SAFE not in payload, "POLICY F-A: entire previous answer reached classifier"
+E       AssertionError: POLICY F-A: entire previous answer reached classifier
+E       assert 'OLD-WHOLE-A...or de alpha.' not in '[{"question...pt-5-nano"}]'
+E         
+E         'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E           ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 1, "previous_answer_listed_files": ["alpha-review.pdf", "beta-denied-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E         ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+
+tests/unit/test_agent_revocation_review.py:199: AssertionError
+_ test_policy_classifier_never_receives_entire_contaminated_answer[folder_denied] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10b701eb0>
+mode = 'folder_denied'
+
+    @pytest.mark.parametrize("mode", REVOKED)
+    def test_policy_classifier_never_receives_entire_contaminated_answer(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        try:
+>           follow(case, provider)
+
+tests/unit/test_agent_revocation_review.py:193: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_agent_revocation_review.py:172: in follow
+    return AgentService(case.session, provider, AgentLimits()).ask(
+app/knowledge/agent.py:425: in ask
+    run = self.execute(decision, request, conversation, deadline=deadline)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:496: in execute
+    run.answer = self._handlers[intent](self, run, request, deadline)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:598: in _restructure_previous
+    run.add(self.tools.retrieve_evidence(
+app/knowledge/agent.py:311: in retrieve_evidence
+    result = QuestionService(self.session, self.provider).ask_selection(
+app/knowledge/questions.py:918: in ask_selection
+    selection = LibraryService(self.session).resolve_question_selection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <app.library.service.LibraryService object at 0x10bbb48f0>
+
+    def resolve_question_selection(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]],
+    ) -> QuestionSelection:
+        self.require_member(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        selected = [item for item in contexts if
+                    ("google_drive" if item.source_provider == "google" else item.source_provider) in providers]
+        eligible = [item for item in selected if folder_is_queryable(item, self.session)]
+        coverage = question_coverage(selected)
+        folder_ids = [item.id for item in eligible]
+        if not mentions:
+            return QuestionSelection(folder_ids, None, coverage, [])
+        nodes = self._selection_nodes(scope=scope)
+        source_providers = {item.source_id: item.source_provider for item in selected}
+        documents = self._indexed_selection_documents(scope=scope, folder_ids=folder_ids)
+        document_ids: set[UUID] = set()
+        for kind, node_id in mentions:
+            node = nodes.get(node_id)
+            if node is None or node.kind != kind or node.source_id not in source_providers:
+                raise ValueError("mention is unavailable")
+            if self._node_path(node, nodes) is None:
+                raise ValueError("mention is unavailable")
+            matching_files = [node] if kind == "file" else [
+                file for file in nodes.values() if file.kind == "file" and self._descends_from(file, node, nodes)
+            ]
+            keys = {(file.source_id, file.external_id) for file in matching_files}
+            matched = {document_id for document_id, source_id, external_id in documents
+                       if (source_id, external_id) in keys}
+            if not matched:
+>               raise ValueError("mention is unavailable")
+E               ValueError: mention is unavailable
+
+app/library/service.py:952: ValueError
+_ test_policy_classifier_never_receives_entire_contaminated_answer[provider_excluded] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10b78aa80>
+mode = 'provider_excluded'
+
+    @pytest.mark.parametrize("mode", REVOKED)
+    def test_policy_classifier_never_receives_entire_contaminated_answer(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        try:
+>           follow(case, provider)
+
+tests/unit/test_agent_revocation_review.py:193: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_agent_revocation_review.py:172: in follow
+    return AgentService(case.session, provider, AgentLimits()).ask(
+app/knowledge/agent.py:425: in ask
+    run = self.execute(decision, request, conversation, deadline=deadline)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:496: in execute
+    run.answer = self._handlers[intent](self, run, request, deadline)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:598: in _restructure_previous
+    run.add(self.tools.retrieve_evidence(
+app/knowledge/agent.py:311: in retrieve_evidence
+    result = QuestionService(self.session, self.provider).ask_selection(
+app/knowledge/questions.py:918: in ask_selection
+    selection = LibraryService(self.session).resolve_question_selection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <app.library.service.LibraryService object at 0x10bb12ba0>
+
+    def resolve_question_selection(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]],
+    ) -> QuestionSelection:
+        self.require_member(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        selected = [item for item in contexts if
+                    ("google_drive" if item.source_provider == "google" else item.source_provider) in providers]
+        eligible = [item for item in selected if folder_is_queryable(item, self.session)]
+        coverage = question_coverage(selected)
+        folder_ids = [item.id for item in eligible]
+        if not mentions:
+            return QuestionSelection(folder_ids, None, coverage, [])
+        nodes = self._selection_nodes(scope=scope)
+        source_providers = {item.source_id: item.source_provider for item in selected}
+        documents = self._indexed_selection_documents(scope=scope, folder_ids=folder_ids)
+        document_ids: set[UUID] = set()
+        for kind, node_id in mentions:
+            node = nodes.get(node_id)
+            if node is None or node.kind != kind or node.source_id not in source_providers:
+>               raise ValueError("mention is unavailable")
+E               ValueError: mention is unavailable
+
+app/library/service.py:942: ValueError
+_ test_policy_classifier_never_receives_entire_contaminated_answer[membership_inactive] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10bb304d0>
+mode = 'membership_inactive'
+
+    @pytest.mark.parametrize("mode", REVOKED)
+    def test_policy_classifier_never_receives_entire_contaminated_answer(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        try:
+            follow(case, provider)
+        except DENIALS:
+            assert mode in {"folder_denied", "provider_excluded", "membership_inactive"}
+        payload = json.dumps(provider.classifier_inputs, ensure_ascii=False)
+        # Even the portion derived from a still-authorized source must disappear:
+        # the approved policy excludes the WHOLE previous answer, not substrings.
+>       assert OLD_SAFE not in payload, "POLICY F-A: entire previous answer reached classifier"
+E       AssertionError: POLICY F-A: entire previous answer reached classifier
+E       assert 'OLD-WHOLE-A...or de alpha.' not in '[{"question...pt-5-nano"}]'
+E         
+E         'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E           ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": ["alpha-review.pdf", "beta-denied-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E         ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+
+tests/unit/test_agent_revocation_review.py:199: AssertionError
+_ test_policy_synthesis_never_receives_contaminated_previous_answer[node_removed_partial] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10b9aea50>
+mode = 'node_removed_partial'
+
+    @pytest.mark.parametrize("mode", ANSWERABLE)
+    def test_policy_synthesis_never_receives_contaminated_previous_answer(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        follow(case, provider)
+        for payload in provider.synthesis_inputs:
+>           assert OLD_SAFE not in payload.get("previous_answer", ""), "POLICY F-A: entire previous_answer retained"
+E           AssertionError: POLICY F-A: entire previous_answer retained
+E           assert 'OLD-WHOLE-A...or de alpha.' not in 'OLD-WHOLE-A...cio 9M. [2].'
+E             
+E             'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E               OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2].
+
+tests/unit/test_agent_revocation_review.py:210: AssertionError
+_ test_policy_synthesis_never_receives_contaminated_previous_answer[document_deindexed] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10b9f8f50>
+mode = 'document_deindexed'
+
+    @pytest.mark.parametrize("mode", ANSWERABLE)
+    def test_policy_synthesis_never_receives_contaminated_previous_answer(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+>       follow(case, provider)
+
+tests/unit/test_agent_revocation_review.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_agent_revocation_review.py:172: in follow
+    return AgentService(case.session, provider, AgentLimits()).ask(
+app/knowledge/agent.py:425: in ask
+    run = self.execute(decision, request, conversation, deadline=deadline)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:496: in execute
+    run.answer = self._handlers[intent](self, run, request, deadline)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:598: in _restructure_previous
+    run.add(self.tools.retrieve_evidence(
+app/knowledge/agent.py:311: in retrieve_evidence
+    result = QuestionService(self.session, self.provider).ask_selection(
+app/knowledge/questions.py:918: in ask_selection
+    selection = LibraryService(self.session).resolve_question_selection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <app.library.service.LibraryService object at 0x10c1c0a70>
+
+    def resolve_question_selection(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]],
+    ) -> QuestionSelection:
+        self.require_member(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        selected = [item for item in contexts if
+                    ("google_drive" if item.source_provider == "google" else item.source_provider) in providers]
+        eligible = [item for item in selected if folder_is_queryable(item, self.session)]
+        coverage = question_coverage(selected)
+        folder_ids = [item.id for item in eligible]
+        if not mentions:
+            return QuestionSelection(folder_ids, None, coverage, [])
+        nodes = self._selection_nodes(scope=scope)
+        source_providers = {item.source_id: item.source_provider for item in selected}
+        documents = self._indexed_selection_documents(scope=scope, folder_ids=folder_ids)
+        document_ids: set[UUID] = set()
+        for kind, node_id in mentions:
+            node = nodes.get(node_id)
+            if node is None or node.kind != kind or node.source_id not in source_providers:
+                raise ValueError("mention is unavailable")
+            if self._node_path(node, nodes) is None:
+                raise ValueError("mention is unavailable")
+            matching_files = [node] if kind == "file" else [
+                file for file in nodes.values() if file.kind == "file" and self._descends_from(file, node, nodes)
+            ]
+            keys = {(file.source_id, file.external_id) for file in matching_files}
+            matched = {document_id for document_id, source_id, external_id in documents
+                       if (source_id, external_id) in keys}
+            if not matched:
+>               raise ValueError("mention is unavailable")
+E               ValueError: mention is unavailable
+
+app/library/service.py:952: ValueError
+_ test_policy_synthesis_never_receives_contaminated_previous_answer[scope_restricted] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10b922210>
+mode = 'scope_restricted'
+
+    @pytest.mark.parametrize("mode", ANSWERABLE)
+    def test_policy_synthesis_never_receives_contaminated_previous_answer(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        follow(case, provider)
+        for payload in provider.synthesis_inputs:
+>           assert OLD_SAFE not in payload.get("previous_answer", ""), "POLICY F-A: entire previous_answer retained"
+E           AssertionError: POLICY F-A: entire previous_answer retained
+E           assert 'OLD-WHOLE-A...or de alpha.' not in 'OLD-WHOLE-A...cio 9M. [2].'
+E             
+E             'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E               OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2].
+
+tests/unit/test_agent_revocation_review.py:210: AssertionError
+_ test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[node_removed_partial] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10c1ebd40>
+mode = 'node_removed_partial'
+
+    @pytest.mark.parametrize("mode", ANSWERABLE)
+    def test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        result = follow(case, provider)
+>       assert OLD_SAFE not in (result.answer or ""), "POLICY F-A: old interpretation recirculated"
+E       AssertionError: POLICY F-A: old interpretation recirculated
+E       assert 'OLD-WHOLE-A...or de alpha.' not in 'OLD-WHOLE-A...ictício 9M..'
+E         
+E         'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E           OLD-WHOLE-ANSWER: interpretação anterior de alpha. (fonte 1). BETA-SYNTHETIC-DENIED: orçamento fictício 9M..
+
+tests/unit/test_agent_revocation_review.py:223: AssertionError
+_ test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[node_removed_total] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10bf0b260>
+mode = 'node_removed_total'
+
+    @pytest.mark.parametrize("mode", ANSWERABLE)
+    def test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        result = follow(case, provider)
+        assert OLD_SAFE not in (result.answer or ""), "POLICY F-A: old interpretation recirculated"
+        assert BETA not in (result.answer or ""), "POLICY F-A: revoked content in observable answer"
+>       assert {citation.document_id for citation in result.citations} <= case.allowed_ids
+E       AssertionError: assert {UUID('80846e...8378ae211d2')} <= set()
+E         
+E         Extra items in the left set:
+E         UUID('80846e7c-ebce-48d0-8a47-b8378ae211d2')
+
+tests/unit/test_agent_revocation_review.py:225: AssertionError
+_ test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[document_deindexed] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10bf13200>
+mode = 'document_deindexed'
+
+    @pytest.mark.parametrize("mode", ANSWERABLE)
+    def test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+>       result = follow(case, provider)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/unit/test_agent_revocation_review.py:222: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_agent_revocation_review.py:172: in follow
+    return AgentService(case.session, provider, AgentLimits()).ask(
+app/knowledge/agent.py:425: in ask
+    run = self.execute(decision, request, conversation, deadline=deadline)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:496: in execute
+    run.answer = self._handlers[intent](self, run, request, deadline)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:598: in _restructure_previous
+    run.add(self.tools.retrieve_evidence(
+app/knowledge/agent.py:311: in retrieve_evidence
+    result = QuestionService(self.session, self.provider).ask_selection(
+app/knowledge/questions.py:918: in ask_selection
+    selection = LibraryService(self.session).resolve_question_selection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <app.library.service.LibraryService object at 0x10bb764e0>
+
+    def resolve_question_selection(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]],
+    ) -> QuestionSelection:
+        self.require_member(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        selected = [item for item in contexts if
+                    ("google_drive" if item.source_provider == "google" else item.source_provider) in providers]
+        eligible = [item for item in selected if folder_is_queryable(item, self.session)]
+        coverage = question_coverage(selected)
+        folder_ids = [item.id for item in eligible]
+        if not mentions:
+            return QuestionSelection(folder_ids, None, coverage, [])
+        nodes = self._selection_nodes(scope=scope)
+        source_providers = {item.source_id: item.source_provider for item in selected}
+        documents = self._indexed_selection_documents(scope=scope, folder_ids=folder_ids)
+        document_ids: set[UUID] = set()
+        for kind, node_id in mentions:
+            node = nodes.get(node_id)
+            if node is None or node.kind != kind or node.source_id not in source_providers:
+                raise ValueError("mention is unavailable")
+            if self._node_path(node, nodes) is None:
+                raise ValueError("mention is unavailable")
+            matching_files = [node] if kind == "file" else [
+                file for file in nodes.values() if file.kind == "file" and self._descends_from(file, node, nodes)
+            ]
+            keys = {(file.source_id, file.external_id) for file in matching_files}
+            matched = {document_id for document_id, source_id, external_id in documents
+                       if (source_id, external_id) in keys}
+            if not matched:
+>               raise ValueError("mention is unavailable")
+E               ValueError: mention is unavailable
+
+app/library/service.py:952: ValueError
+_ test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[scope_restricted] _
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10bbaecf0>
+mode = 'scope_restricted'
+
+    @pytest.mark.parametrize("mode", ANSWERABLE)
+    def test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency(semantic_session, mode):
+        case = make_case(semantic_session)
+        revoke(case, mode)
+        provider = RecordingAI()
+        result = follow(case, provider)
+>       assert OLD_SAFE not in (result.answer or ""), "POLICY F-A: old interpretation recirculated"
+E       AssertionError: POLICY F-A: old interpretation recirculated
+E       assert 'OLD-WHOLE-A...or de alpha.' not in 'OLD-WHOLE-A...ictício 9M..'
+E         
+E         'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E           OLD-WHOLE-ANSWER: interpretação anterior de alpha. (fonte 1). BETA-SYNTHETIC-DENIED: orçamento fictício 9M..
+
+tests/unit/test_agent_revocation_review.py:223: AssertionError
+____ test_history_is_preserved_after_context_exclusion[document_deindexed] _____
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10b76b2f0>
+mode = 'document_deindexed'
+
+    @pytest.mark.parametrize("mode", ["node_removed_partial", "node_removed_total", "document_deindexed"])
+    def test_history_is_preserved_after_context_exclusion(semantic_session, mode):
+        case = make_case(semantic_session)
+        before = persisted_snapshot(case)
+        revoke(case, mode)
+>       follow(case, RecordingAI())
+
+tests/unit/test_agent_revocation_review.py:245: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_agent_revocation_review.py:172: in follow
+    return AgentService(case.session, provider, AgentLimits()).ask(
+app/knowledge/agent.py:425: in ask
+    run = self.execute(decision, request, conversation, deadline=deadline)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:496: in execute
+    run.answer = self._handlers[intent](self, run, request, deadline)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/knowledge/agent.py:598: in _restructure_previous
+    run.add(self.tools.retrieve_evidence(
+app/knowledge/agent.py:311: in retrieve_evidence
+    result = QuestionService(self.session, self.provider).ask_selection(
+app/knowledge/questions.py:918: in ask_selection
+    selection = LibraryService(self.session).resolve_question_selection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <app.library.service.LibraryService object at 0x10bdcca10>
+
+    def resolve_question_selection(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]],
+    ) -> QuestionSelection:
+        self.require_member(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        selected = [item for item in contexts if
+                    ("google_drive" if item.source_provider == "google" else item.source_provider) in providers]
+        eligible = [item for item in selected if folder_is_queryable(item, self.session)]
+        coverage = question_coverage(selected)
+        folder_ids = [item.id for item in eligible]
+        if not mentions:
+            return QuestionSelection(folder_ids, None, coverage, [])
+        nodes = self._selection_nodes(scope=scope)
+        source_providers = {item.source_id: item.source_provider for item in selected}
+        documents = self._indexed_selection_documents(scope=scope, folder_ids=folder_ids)
+        document_ids: set[UUID] = set()
+        for kind, node_id in mentions:
+            node = nodes.get(node_id)
+            if node is None or node.kind != kind or node.source_id not in source_providers:
+                raise ValueError("mention is unavailable")
+            if self._node_path(node, nodes) is None:
+                raise ValueError("mention is unavailable")
+            matching_files = [node] if kind == "file" else [
+                file for file in nodes.values() if file.kind == "file" and self._descends_from(file, node, nodes)
+            ]
+            keys = {(file.source_id, file.external_id) for file in matching_files}
+            matched = {document_id for document_id, source_id, external_id in documents
+                       if (source_id, external_id) in keys}
+            if not matched:
+>               raise ValueError("mention is unavailable")
+E               ValueError: mention is unavailable
+
+app/library/service.py:952: ValueError
+_________ test_coverage_listed_unindexed_file_requires_honest_warning __________
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10bcb68d0>
+
+    def test_coverage_listed_unindexed_file_requires_honest_warning(semantic_session):
+        case = make_case(semantic_session, listing=True)
+        case.docs[1].index_status = "failed"
+        semantic_session.commit()
+        provider = Classifies(intent="summarize_files", target="previous_answer_files", tool="summarize_documents")
+        result = follow(case, provider)
+        answer = result.answer or ""
+        assert {c.document_id for c in result.citations} == {case.docs[0].id}
+        # Accept a safe count-based notice or a named authorized-file notice; do not
+        # prescribe an internal field or force a particular UI sentence.
+        notice = re.search(r"sem (?:conteúdo |texto )?(?:indexad|índice)|não (?:está|foi|há|tem).*indexad|"
+                           r"não indexad|falha.*(?:extração|indexação)|não.*(?:consegui|possível).*ler", answer, re.I)
+>       assert notice, "SPEC F-B: one listed file was omitted without an honest index/coverage warning"
+E       AssertionError: SPEC F-B: one listed file was omitted without an honest index/coverage warning
+E       assert None
+
+tests/unit/test_agent_revocation_review.py:311: AssertionError
+__________ test_unavailable_listed_name_not_disclosed_to_ai_or_error ___________
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10c5d3410>
+
+    def test_unavailable_listed_name_not_disclosed_to_ai_or_error(semantic_session):
+        case = make_case(semantic_session, listing=True)
+        semantic_session.delete(case.nodes[1])
+        semantic_session.commit()
+        provider = RecordingAI()
+        with pytest.raises(SyncAccessDenied) as error:
+            follow(case, provider)
+        assert "beta-denied-review.pdf" not in str(error.value)
+>       assert "beta-denied-review.pdf" not in json.dumps(provider.classifier_inputs), "F-A/B: unauthorized name in AI payload"
+E       AssertionError: F-A/B: unauthorized name in AI payload
+E       assert 'beta-denied-review.pdf' not in '[{"question...pt-5-nano"}]'
+E         
+E         'beta-denied-review.pdf' is contained here:
+E           quivo)\n- beta-denied-review.pdf (Arquivo)"}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": ["alpha-review.pdf", "beta-denied-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}]
+E         ?           ++++++++++++++++++++++
+
+tests/unit/test_agent_revocation_review.py:324: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[node_removed_partial]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[node_removed_total]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[document_deindexed]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[scope_restricted]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[folder_denied]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[provider_excluded]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_classifier_never_receives_entire_contaminated_answer[membership_inactive]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_synthesis_never_receives_contaminated_previous_answer[node_removed_partial]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_synthesis_never_receives_contaminated_previous_answer[document_deindexed]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_synthesis_never_receives_contaminated_previous_answer[scope_restricted]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[node_removed_partial]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[node_removed_total]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[document_deindexed]
+FAILED tests/unit/test_agent_revocation_review.py::test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency[scope_restricted]
+FAILED tests/unit/test_agent_revocation_review.py::test_history_is_preserved_after_context_exclusion[document_deindexed]
+FAILED tests/unit/test_agent_revocation_review.py::test_coverage_listed_unindexed_file_requires_honest_warning
+FAILED tests/unit/test_agent_revocation_review.py::test_unavailable_listed_name_not_disclosed_to_ai_or_error
+17 failed, 9 passed in 2.39s

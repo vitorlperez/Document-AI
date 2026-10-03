@@ -19,7 +19,7 @@ from dataclasses import dataclass, field, replace
 from typing import ClassVar, Protocol, runtime_checkable
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.logging import log_agent_phase
@@ -53,6 +53,11 @@ INVENTORY_MAX_ITEMS = 500
 MAX_SYNTHESIS_SOURCES = 24
 MAX_SYNTHESIS_CATALOG_ITEMS = 200
 MAX_PLANNER_HISTORY_MESSAGES = 4
+# Document.index_status values meaning the provider no longer has the file (a revocation of the
+# cited evidence); every other non-indexed state is an index problem, not an authorization change.
+# Production only ever writes "removed"; "deleted" is kept for the test fixtures that mark a
+# document withdrawn with that spelling.
+WITHDRAWN_STATUSES = frozenset({"deleted", "removed"})
 logger = logging.getLogger("document_intelligence.agent")
 
 
@@ -361,14 +366,31 @@ class ConversationState:
     previous_answer: str | None
     # Last messages as the classifier sees them, including the end of cited answers.
     recent_messages: list[dict[str, object]] = field(default_factory=list)
+    # The previous answer cited a document that is no longer authorized: it is kept out of everything
+    # the AI sees and the request is rebuilt from current sources.
+    memory_excluded: bool = False
+    # The answer that carries the file listing was excluded: its names are not sent to the classifier.
+    # `listed_files` stay as targets only, so the current authorization (and its denials) still decides.
+    listing_excluded: bool = False
 
     @classmethod
-    def from_history(cls, history: list[ConversationMessage]) -> ConversationState:
+    def from_history(
+        cls, history: list[ConversationMessage], *, excluded: frozenset[int] = frozenset(),
+    ) -> ConversationState:
+        """`excluded` holds the indexes of assistant answers whose provenance is no longer authorized."""
+        latest = _latest_answer_index(history)
+        window_start = max(len(history) - MAX_PLANNER_HISTORY_MESSAGES, 0)
+        listed_files, listing = _previous_listed_files(history)
         return cls(
-            listed_files=_previous_listed_files(history),
+            listed_files=listed_files,
             previous_turn_mentions=_previous_turn_mentions(history),
-            previous_answer=_previous_answer(history),
-            recent_messages=_planner_history(history),
+            previous_answer=None if latest is None or latest in excluded else history[latest].content,
+            recent_messages=_planner_history([
+                message for index, message in enumerate(history[window_start:], window_start)
+                if index not in excluded
+            ]),
+            memory_excluded=latest in excluded,
+            listing_excluded=listing in excluded,
         )
 
     def files(self) -> list[UUID]:
@@ -414,16 +436,134 @@ class AgentService:
     ) -> tuple[QuestionResult, list[dict[str, object]], list[dict[str, str]]]:
         deadline = time.monotonic() + self.limits.max_seconds
         request = AgentRequest(scope, user_id, question, providers, list(mentions))
-        conversation = ConversationState.from_history(history)
+        # Provenance is rechecked against today's authorization before anything reaches the AI.
+        excluded, usable_nodes = self._revalidate_memory(request, history)
+        conversation = ConversationState.from_history(history, excluded=excluded)
         if not conversation.listed_files:
+            cited = _previous_cited_files(self.session, history, scope.organization_id)
+            if excluded and usable_nodes is not None:
+                cited = [entry for entry in cited if entry[0] in usable_nodes]
             conversation = replace(
-                conversation,
-                listed_files=_previous_cited_files(self.session, history, scope.organization_id),
+                conversation, listed_files=cited, listing_excluded=_latest_answer_index(history) in excluded,
             )
         decision = self.classify(request, conversation, deadline=deadline)
         with _request_deadline(deadline):
             run = self.execute(decision, request, conversation, deadline=deadline)
         return run.finish(self.cite(run))
+
+    def _revalidate_memory(
+        self, request: AgentRequest, history: list[ConversationMessage],
+    ) -> tuple[frozenset[int], set[UUID] | None]:
+        """Indexes of earlier answers whose cited documents are not (all) authorized now.
+
+        Only the answers the flow can actually use are checked: the planner window, the latest
+        answer (previous_answer) and the one that carries the file listing. An answer is excluded
+        whole, not just the denied sentence: it can paraphrase the revoked source anywhere. Two cases
+        count: a cited document is gone from the current scope (removed, folder/provider/membership
+        denied, withdrawn index); or the request restricts the selection to part of what the answer
+        cited, so the rest would leak into the narrower scope. An answer unrelated to a newly chosen
+        selection is plain history and stays (owner decision P2).
+
+        Also returns the file nodes still authorized; None when the current authorization could not
+        be resolved (everything checked is then excluded and the later stages raise the real denial).
+        """
+        used = set(range(max(len(history) - MAX_PLANNER_HISTORY_MESSAGES, 0), len(history)))
+        used.update(index for index in (_latest_answer_index(history), _previous_listed_files(history)[1])
+                    if index is not None)
+        provenance: dict[int, tuple[set[UUID], set[UUID]]] = {}
+        for index in sorted(used):
+            if history[index].role == "assistant":
+                documents, nodes = _answer_provenance(history[index])
+                if documents or nodes:
+                    provenance[index] = (documents, nodes)
+        listed, listing_index = _previous_listed_files(history)
+        inventory = {node_id: folder for node_id, folder, _name in listed if folder}
+        if not provenance and not inventory:
+            return frozenset(), set()
+        organization_id = request.scope.organization_id
+        library = LibraryService(self.session)
+
+        def authorized(mentions: list[tuple[str, UUID]], all_nodes: dict[UUID, LibraryNode] | None = None):
+            return library.authorized_catalog(
+                scope=request.scope, user_id=request.user_id, providers=request.providers,
+                mentions=mentions, all_nodes=all_nodes,
+            )
+
+        try:
+            catalog = authorized([])
+        except (SyncAccessDenied, ValueError):
+            unresolved = set(provenance)
+            if inventory and listing_index is not None:
+                unresolved.add(listing_index)
+            return frozenset(unresolved), None
+        allowed, admitted_folders = catalog.nodes, catalog.folder_ids
+        cited_ids = {document for documents, _nodes in provenance.values() for document in documents}
+        listed_externals = {
+            allowed[node_id].external_id for _documents, nodes in provenance.values()
+            for node_id in nodes if node_id in allowed
+        }
+        rows = list(self.session.execute(
+            select(
+                Document.id, Document.workspace_folder_id, WorkspaceFolder.source_id,
+                Document.external_file_id, Document.index_status,
+            )
+            .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+            .where(
+                Document.organization_id == organization_id, WorkspaceFolder.organization_id == organization_id,
+                or_(Document.id.in_(cited_ids), Document.external_file_id.in_(listed_externals)),
+            )
+        ))
+        # A failed or pending index is not a revocation (ADR-0007: retained index, no new ACL); a
+        # provider-side deletion is. A document counts only inside a folder admitted today: a ready
+        # sibling folder of the same source does not vouch for a denied one.
+        live = {
+            (source, external) for _id, folder, source, external, status in rows
+            if folder in admitted_folders and status not in WITHDRAWN_STATUSES
+        }
+        known = {(source, external) for _id, _folder, source, external, _status in rows}
+
+        def usable(nodes_in_scope: dict[UUID, LibraryNode]) -> tuple[set[UUID], set[UUID]]:
+            """(documents, file nodes) readable inside this node set."""
+            files = {
+                (node.source_id, node.external_id): node.id for node in nodes_in_scope.values()
+                if node.kind == "file" and ((node.source_id, node.external_id) in live
+                                            or (node.source_id, node.external_id) not in known)
+            }
+            documents = {
+                document_id for document_id, folder, source, external, status in rows
+                if document_id in cited_ids and folder in admitted_folders and status not in WITHDRAWN_STATUSES
+                and (source, external) in files
+            }
+            return documents, set(files.values())
+
+        documents_now, nodes_now = usable(allowed)
+        selected: tuple[set[UUID], set[UUID]] | None = None
+        excluded = set()
+        # A listed file that left its listed folder (same source, so the catalog still admits it) is an
+        # inventory reference the later snapshot check denies as a whole; its name must not reach the AI
+        # in the meantime, so the answer that carries the listing is kept out like a revoked one.
+        if listing_index is not None and any(
+            node_id not in catalog.all_nodes
+            or library._node_path(catalog.all_nodes[node_id], catalog.all_nodes) is None
+            or folder not in catalog.all_nodes
+            or not library._descends_from(catalog.all_nodes[node_id], catalog.all_nodes[folder], catalog.all_nodes)
+            for node_id, folder in inventory.items()
+        ):
+            excluded.add(listing_index)
+        for index, (documents, nodes) in provenance.items():
+            if not documents <= documents_now or not nodes <= nodes_now:
+                excluded.add(index)
+                continue
+            if request.mentions:
+                if selected is None:
+                    try:
+                        selected = usable(authorized(request.mentions, catalog.all_nodes).nodes)
+                    except (SyncAccessDenied, ValueError):
+                        return frozenset(set(provenance) | excluded), None
+                inside = len(documents & selected[0]) + len(nodes & selected[1])
+                if inside and not (documents <= selected[0] and nodes <= selected[1]):
+                    excluded.add(index)
+        return frozenset(excluded), nodes_now
 
     # Stage 1 -----------------------------------------------------------------
 
@@ -441,7 +581,11 @@ class AgentService:
             "mentioned_folders": sum(kind == "folder" for kind, _ in mentions),
             "mentioned_files": sum(kind == "file" for kind, _ in mentions),
             # Names only (the user already saw them); ids and URLs never reach the model.
-            "previous_answer_listed_files": [name for _id, _folder, name in conversation.listed_files],
+            # Omitted with an excluded answer: its listing can name files that are no longer authorized.
+            "previous_answer_listed_files": (
+                [] if conversation.listing_excluded
+                else [name for _id, _folder, name in conversation.listed_files]
+            ),
             "previous_turn_had_files": bool(conversation.previous_turn_mentions),
             "has_previous_answer": conversation.previous_answer is not None,
         }
@@ -478,14 +622,27 @@ class AgentService:
         if intent == "conversation" and targets:
             # Attached files mean the message is about them, whatever its wording.
             intent = "ask_content"
-        if intent == "restructure_previous" and conversation.previous_answer is None:
+        if (
+            intent == "restructure_previous" and conversation.previous_answer is None
+            and not conversation.memory_excluded
+        ):
+            # An excluded answer is not "missing": the request is rebuilt from the current sources.
             intent = "summarize_files"
         _require_time(deadline)
-        targets = self._reauthorize_listed(request, targets, conversation)
-        run = AgentRun(decision=decision, intent=intent, targets=targets, conversation=conversation)
-        if not targets and intent != "conversation" and decision.target in {
-            "previous_ordinals", "previous_answer_files",
-        }:
+        reachable = self._reauthorize_listed(request, targets, conversation)
+        run = AgentRun(
+            decision=decision, intent=intent, targets=reachable, conversation=conversation,
+            unindexed_listed=len(targets) - len(reachable),
+        )
+        targets = reachable
+        # A message that leans on the conversation has nothing left to lean on when its files are
+        # unreadable, or when the answer it refers to was excluded: no widening to the whole library.
+        refers_to_history = decision.target in {"previous_ordinals", "previous_answer_files"} or (
+            conversation.memory_excluded and not request.mentions and (
+                decision.target == "previous_turn_files" or decision.intent == "restructure_previous"
+            )
+        )
+        if not targets and intent != "conversation" and refers_to_history:
             # Every file the message points at was listed without indexed content.
             run.answer = self._honest_insufficient(
                 QuestionResult(None, "insufficient_evidence", [], RETRIEVAL_STATUS_NO_INDEXED_CONTENT), request, [],
@@ -599,9 +756,11 @@ class AgentService:
                 scope=request.scope, user_id=request.user_id, question=request.question,
                 providers=request.providers, mentions=run.targets, answer_mode="evidence",
             ))
-        synthesized = self._synthesize(
-            run, request, deadline=deadline, previous_answer=run.conversation.previous_answer or "",
-        )
+        previous_answer = run.conversation.previous_answer or ""
+        if run.conversation.memory_excluded and not previous_answer:
+            # The earlier answer is out; what gets restructured is the current evidence itself.
+            previous_answer = _evidence_draft(_synthesis_sources(run.results))
+        synthesized = self._synthesize(run, request, deadline=deadline, previous_answer=previous_answer)
         if synthesized is not None:
             return synthesized
         # The model could not restructure verifiably: the evaluated per-file summary is the next best.
@@ -743,8 +902,11 @@ class AgentService:
         read become the Fontes, and a conversation reply keeps the conversation's.
         """
         assert run.answer is not None
-        if run.answer.citations:
-            return run.answer
+        answer = _with_unindexed_notice(
+            run.answer, run.unindexed_listed if run.intent != "conversation" else 0,
+        )
+        if answer.citations:
+            return answer
         consulted = _document_citations([
             *(item for result in run.results for item in result.citations),
             *(
@@ -753,7 +915,7 @@ class AgentService:
             ),
             *run.conversation_citations,
         ])
-        return replace(run.answer, citations=consulted) if consulted else run.answer
+        return replace(answer, citations=consulted) if consulted else answer
 
     # Tools shared by the stages ----------------------------------------------
 
@@ -881,6 +1043,8 @@ class AgentRun:
     answer: QuestionResult | None = None
     conversation_citations: list[Evidence] = field(default_factory=list)
     fallback: str | None = None
+    # Listed files still authorized but without indexed content, left out of this answer.
+    unindexed_listed: int = 0
 
     def folders(self) -> list[UUID]:
         return [node_id for kind, node_id in self.targets if kind == "folder"]
@@ -916,6 +1080,19 @@ def _require_time(deadline: float) -> None:
         raise AIProviderUnavailable("document agent deadline exceeded")
 
 
+def _with_unindexed_notice(result: QuestionResult, count: int) -> QuestionResult:
+    """Say that listed files were left out for lack of indexed content; count only, no names."""
+    if not count or not result.answer or result.retrieval_status == RETRIEVAL_STATUS_NO_INDEXED_CONTENT:
+        return result
+    notice = (
+        f"Observação: {count} arquivo da lista anterior ficou sem conteúdo indexado e não foi "
+        "considerado nesta resposta." if count == 1 else
+        f"Observação: {count} arquivos da lista anterior ficaram sem conteúdo indexado e não foram "
+        "considerados nesta resposta."
+    )
+    return replace(result, answer=f"{result.answer}\n\n{notice}")
+
+
 def _document_citations(evidence: Iterable[Evidence]) -> list[Evidence]:
     """One citation per document, in first-use order, preferring an entry that has a link."""
     chosen: dict[UUID, Evidence] = {}
@@ -926,11 +1103,24 @@ def _document_citations(evidence: Iterable[Evidence]) -> list[Evidence]:
     return list(chosen.values())
 
 
-def _previous_answer(history: list[ConversationMessage]) -> str | None:
-    for message in reversed(history):
-        if message.role == "assistant" and message.content.strip():
-            return message.content
-    return None
+def _answer_provenance(message: ConversationMessage) -> tuple[set[UUID], set[UUID]]:
+    """Documents cited and file nodes listed by one stored answer."""
+    documents: set[UUID] = set()
+    nodes: set[UUID] = set()
+    citations = (message.response or {}).get("citations")
+    for item in citations if isinstance(citations, list) else []:
+        try:
+            documents.add(UUID(str(item.get("document_id"))))
+        except (AttributeError, ValueError):
+            continue
+    references = (message.context or {}).get("references")
+    for item in references if isinstance(references, list) else []:
+        if isinstance(item, dict) and item.get("kind") == "file":
+            try:
+                nodes.add(UUID(str(item.get("id"))))
+            except ValueError:
+                continue
+    return documents, nodes
 
 
 def _previous_turn_mentions(history: list[ConversationMessage]) -> list[tuple[str, UUID]]:
@@ -954,9 +1144,21 @@ def _previous_turn_mentions(history: list[ConversationMessage]) -> list[tuple[st
     return []
 
 
-def _previous_listed_files(history: list[ConversationMessage]) -> list[tuple[UUID, UUID | None, str]]:
-    """Files of the latest answer that listed any, in the order the user saw them."""
-    for message in reversed(history):
+def _latest_answer_index(history: list[ConversationMessage]) -> int | None:
+    """Index of the latest assistant answer with content: the previous answer of the conversation."""
+    return next(
+        (index for index in range(len(history) - 1, -1, -1)
+         if history[index].role == "assistant" and history[index].content.strip()),
+        None,
+    )
+
+
+def _previous_listed_files(
+    history: list[ConversationMessage],
+) -> tuple[list[tuple[UUID, UUID | None, str]], int | None]:
+    """Files of the latest answer that listed any, in the order the user saw them, and its index."""
+    for position in range(len(history) - 1, -1, -1):
+        message = history[position]
         references = (message.context or {}).get("references")
         if not isinstance(references, list):
             continue
@@ -972,8 +1174,8 @@ def _previous_listed_files(history: list[ConversationMessage]) -> list[tuple[UUI
             except ValueError:
                 continue
         if files:
-            return files
-    return []
+            return files, position
+    return [], None
 
 
 def _previous_cited_files(
@@ -1048,6 +1250,11 @@ def _synthesis_sources(results: list[ToolResult]) -> list[Evidence]:
             seen.add(item.chunk_id)
             sources.append(item)
     return sources[:MAX_SYNTHESIS_SOURCES]
+
+
+def _evidence_draft(sources: list[Evidence]) -> str:
+    """Excerpts of the current sources with their [n] markers: a base that cites nothing else."""
+    return "\n".join(f"{item.excerpt.strip()} [{index}]" for index, item in enumerate(sources, 1))
 
 
 def _synthesis_catalog(results: list[ToolResult]) -> list[dict[str, object]]:

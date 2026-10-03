@@ -1,0 +1,27 @@
+Re-review lote 1 (Missão 40) — 2026-10-03 — pane-398 (oc-conveyor)
+Diff: backend/app/knowledge/agent.py (+221/-31) + tests/unit/test_agent_revocation_sibling_folder.py (novo, 4 casos) + "Decisão P2" no acceptance-contract.md
+
+COMANDOS (cwd=backend)
+GREEN pytest test_agent_revocation_review.py + test_agent_revocation_sibling_folder.py ........ exit 0  34 passed
+GREEN pytest test_agent_revocation_sibling_folder.py ........................................ exit 0  4 passed
+git stash push -- backend/app/knowledge/agent.py ............................................ exit 0
+RED   pytest test_agent_revocation_sibling_folder.py (sem fix) .............................. exit 1  3 failed, 1 passed (controle admitted_folder passa)
+        FAILED denied_folder_with_ready_sibling_keeps_old_answer_away_from_ai
+        FAILED listed_but_uncited_withdrawn_file_excludes_the_answer
+        FAILED names_hidden_only_when_the_listing_answer_itself_is_excluded
+RED   pytest test_agent_revocation_review.py (sem patch) .................................... exit 1  17 failed, 13 passed (igual à rodada 1)
+git stash pop ............................................................................... exit 0; cmp diff antes/depois = IDENTICAL; --stat 221+/31-
+pytest tests/unit ........................................................................... exit 0  1102 passed
+pytest tests/api tests/integration .......................................................... exit 0  258 passed, 20 skipped
+5 suítes focadas do dossiê .................................................................. exit 0  73 passed
+ruff check app/knowledge/agent.py + os 2 arquivos de teste ................................. exit 0
+sha1 test_agent_revocation_review.py = 3d16369... (inalterado vs rodada 1); sibling = ba8330f...
+git status backend: M app/knowledge/agent.py; ?? 2 testes novos. tests/unit/test_document_agent.py sem alteração.
+
+PROBES (scratch /tmp/rv)
+P1 pasta irmã (rodada 1: OLD=True BETA=True) agora OLD=False BETA=False; P1b: resposta "sem conteúdo indexado", sem citações.
+P2 inalterado (previous_answer de doc disjunto mantido) = decisão do dono registrada.
+Q1 listagem + pasta negada + irmã pronta: ValueError (negação), OLD=False, nomes=False, synthesis=0.
+Q2 irmã pronta + B removed: OLD=False BETA=False, resposta com ALPHA e sem BETA.
+Q3 ordinais com listagem autorizada: classifier recebe ['alpha-review.pdf','beta-denied-review.pdf']; cita só o 2º (beta, ainda autorizado).
+Q4/P3 custo: 10 statements por turno (h×1 = h×10), 18 com menção; 3 cargas completas de LibraryNode com menção.

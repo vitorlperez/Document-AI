@@ -1,0 +1,17 @@
+........................................................................ [ 25%]
+........................................................................ [ 51%]
+........................................................................ [ 77%]
+..........................................ssssssssssssssssssss           [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/starlette/testclient.py:53
+  /Users/vitorperez/Documents/Document-AI/backend/.venv/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/api/test_multiscope_questions_api.py::test_invalid_scope_is_rejected_before_generation[scope0]
+tests/api/test_multiscope_questions_api.py::test_invalid_scope_is_rejected_before_generation[scope1]
+  /Users/vitorperez/Documents/Document-AI/backend/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1100: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    result = context.run(func, *args)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+258 passed, 20 skipped, 3 warnings in 18.56s
+exit 0

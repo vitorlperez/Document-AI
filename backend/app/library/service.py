@@ -62,6 +62,19 @@ class LibrarySync:
 
 
 @dataclass(frozen=True)
+class AuthorizedCatalog:
+    """One resolution of the catalog a request may read.
+
+    `nodes` is the authorized subset, `folder_ids` the admitted workspace folders and `all_nodes`
+    the organization's full node map, reusable for further resolutions in the same request.
+    """
+
+    nodes: dict[UUID, LibraryNode]
+    folder_ids: frozenset[UUID]
+    all_nodes: dict[UUID, LibraryNode]
+
+
+@dataclass(frozen=True)
 class IndexedDocumentProvenance:
     """A workspace-scoped local document behind a shared library file."""
 
@@ -816,10 +829,23 @@ class LibraryService:
         mentions: list[tuple[str, UUID]],
     ) -> dict[UUID, LibraryNode]:
         """Rebuild a catalog authorization set for every tool invocation."""
-        selection = self.resolve_question_selection(
+        return self.authorized_catalog(
             scope=scope, user_id=user_id, providers=providers, mentions=mentions,
+        ).nodes
+
+    def authorized_catalog(
+        self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
+        mentions: list[tuple[str, UUID]], all_nodes: dict[UUID, LibraryNode] | None = None,
+    ) -> AuthorizedCatalog:
+        """Authorized nodes and admitted folder ids from a single selection resolution.
+
+        Same rule as every catalog tool; pass the `all_nodes` of an earlier result to avoid reloading
+        the catalog when resolving again in the same request.
+        """
+        selection = self.resolve_question_selection(
+            scope=scope, user_id=user_id, providers=providers, mentions=mentions, all_nodes=all_nodes,
         )
-        nodes = self._selection_nodes(scope=scope)
+        nodes = all_nodes if all_nodes is not None else self._selection_nodes(scope=scope)
         contexts = self.question_contexts(scope=scope, user_id=user_id)
         normalized_providers = {"google_drive" if provider == "google" else provider for provider in providers}
         allowed_sources = {
@@ -837,7 +863,7 @@ class LibraryService:
             if roots and not any(self._descends_from(node, root, nodes) for root in roots):
                 continue
             allowed[node.id] = node
-        return allowed
+        return AuthorizedCatalog(allowed, frozenset(selection.folder_ids), nodes)
 
     @staticmethod
     def _node_path(node: LibraryNode, nodes: dict[UUID, LibraryNode]) -> str | None:
@@ -921,7 +947,7 @@ class LibraryService:
 
     def resolve_question_selection(
         self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
-        mentions: list[tuple[str, UUID]],
+        mentions: list[tuple[str, UUID]], all_nodes: dict[UUID, LibraryNode] | None = None,
     ) -> QuestionSelection:
         self.require_member(scope=scope, user_id=user_id)
         contexts = self.question_contexts(scope=scope, user_id=user_id)
@@ -932,7 +958,7 @@ class LibraryService:
         folder_ids = [item.id for item in eligible]
         if not mentions:
             return QuestionSelection(folder_ids, None, coverage, [])
-        nodes = self._selection_nodes(scope=scope)
+        nodes = all_nodes if all_nodes is not None else self._selection_nodes(scope=scope)
         source_providers = {item.source_id: item.source_provider for item in selected}
         documents = self._indexed_selection_documents(scope=scope, folder_ids=folder_ids)
         document_ids: set[UUID] = set()

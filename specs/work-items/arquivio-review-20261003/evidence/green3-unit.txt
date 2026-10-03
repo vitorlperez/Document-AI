@@ -1,0 +1,27 @@
+........................................................................ [  6%]
+........................................................................ [ 12%]
+........................................................................ [ 19%]
+........................................................................ [ 25%]
+........................................................................ [ 32%]
+........................................................................ [ 38%]
+........................................................................ [ 45%]
+........................................................................ [ 51%]
+........................................................................ [ 58%]
+........................................................................ [ 64%]
+........................................................................ [ 71%]
+........................................................................ [ 77%]
+........................................................................ [ 84%]
+........................................................................ [ 90%]
+........................................................................ [ 97%]
+............................                                             [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/starlette/testclient.py:53
+  /Users/vitorperez/Documents/Document-AI/backend/.venv/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/unit/test_migration_sql.py::test_integration_migration_chain_preserves_main_revision
+  /Users/vitorperez/Documents/Document-AI/backend/.venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1108 passed, 2 warnings in 29.55s

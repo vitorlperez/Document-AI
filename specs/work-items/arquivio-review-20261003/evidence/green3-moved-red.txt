@@ -1,0 +1,6 @@
+[1m[31mE         ?           ++++++++++++++++++++++[0m
+
+[1m[31mtests/unit/test_agent_revocation_moved_file.py[0m:35: AssertionError
+[36m[1m=========================== short test summary info ============================[0m
+[31mFAILED[0m tests/unit/test_agent_revocation_moved_file.py::[1mtest_moved_listed_file_name_never_reaches_the_classifier[0m - AssertionError: moved listed file: its name reached the classifier
+[31m[31m[1m1 failed[0m, [32m1 passed[0m[31m in 1.15s[0m[0m

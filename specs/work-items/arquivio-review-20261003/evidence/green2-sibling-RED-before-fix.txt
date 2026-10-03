@@ -1,0 +1,29 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_denied_folder_with_ready_sibling_keeps_old_answer_away_from_ai ______
+
+semantic_session = <sqlalchemy.orm.session.Session object at 0x10ac835f0>
+
+    def test_denied_folder_with_ready_sibling_keeps_old_answer_away_from_ai(semantic_session):
+        case = sibling_case(semantic_session)
+        provider = RecordingAI()
+        try:
+            follow(case, provider)
+        except (*DENIALS, ValueError):
+            pass  # a current denial is allowed; derived text must not reach the AI before it
+        payload = json.dumps(
+            [provider.classifier_inputs, provider.synthesis_inputs], ensure_ascii=False, default=str,
+        )
+>       assert OLD_SAFE not in payload, "denied folder: old answer reached the AI because a sibling is ready"
+E       AssertionError: denied folder: old answer reached the AI because a sibling is ready
+E       assert 'OLD-WHOLE-A...or de alpha.' not in '[[{"questio...nano"}], []]'
+E         
+E         'OLD-WHOLE-ANSWER: ... anterior de alpha.' is contained here:
+E           ontent": "OLD-WHOLE-ANSWER: interpretação anterior de alpha. [1]. BETA-SYNTHETIC-DENIED: orçamento fictício 9M. [2]."}], "context": {"mentioned_folders": 0, "mentioned_files": 0, "previous_answer_listed_files": ["alpha-review.pdf", "beta-denied-review.pdf"], "previous_turn_had_files": false, "has_previous_answer": true}, "model": "gpt-5-nano"}], []]
+E         ?           ++++++++++++++++++++++++++++++++++++++++++++++++++
+
+tests/unit/test_agent_revocation_sibling_folder.py:56: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_agent_revocation_sibling_folder.py::test_denied_folder_with_ready_sibling_keeps_old_answer_away_from_ai
+1 failed, 1 passed in 0.73s
+exit 1
