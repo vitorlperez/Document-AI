@@ -27,7 +27,7 @@ secrets = dotenv_values(args.env)
 base = QuestionResult('A entrega será em 7 de outubro [1].', 'supported', [
     Evidence(uuid4(), 'Plano sintético', uuid4(), 'A entrega será em 7 de outubro.', None, '', 1.0)
 ], 'sufficient_evidence')
-assessor = JevAnswerAssessor(secrets.get('TYPESAFE_API_KEY'), settings=AssessmentSettings(mode='shadow'))
+assessor = JevAnswerAssessor(secrets.get('TYPESAFE_API_KEY'), settings=AssessmentSettings(mode='shadow', external_enabled=True))
 judge = OfflineAnswerJudge(secrets.get('OPENAI_API_KEY'), model=secrets.get('AGENT_SYNTHESIS_MODEL') or 'gpt-5-mini')
 runs = []
 for label, text in [('supported', base.answer), ('unsupported', 'A entrega será em 31 de dezembro [1].')]:

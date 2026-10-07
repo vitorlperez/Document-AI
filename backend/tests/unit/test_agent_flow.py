@@ -240,7 +240,7 @@ def test_classifier_decides_inventory_with_summaries_and_synthesizes_with_source
         (document.id, document.source_url)
     ]
     assert result.retrieval_status == "catalog"
-    assert result.resolved_context["assessment"]["outcome"] == "unavailable"
+    assert result.resolved_context["assessment"]["outcome"] == "skipped"
     assert {key: value for key, value in result.resolved_context.items() if key != "assessment"} == {
         "intent": "list_files_with_summaries", "decided_by": "llm",
         "target": "mentioned", "tools": ["list_library_children"],

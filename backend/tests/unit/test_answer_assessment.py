@@ -20,7 +20,7 @@ def answer():
 
 
 def test_shadow_preserves_cited_answer_and_records_rejection(monkeypatch):
-    assessor = JevAnswerAssessor('key')
+    assessor = JevAnswerAssessor('key', settings=AssessmentSettings(mode='shadow', external_enabled=True))
     monkeypatch.setattr(assessor, '_post', lambda body: {'answers': {
         k: {'noul': 0.1} for k in ('grounded', 'relevant', 'safe')
     }})
@@ -34,7 +34,7 @@ def test_shadow_preserves_cited_answer_and_records_rejection(monkeypatch):
 
 @pytest.mark.parametrize('value', [None, True, '0.9', -1, 2, math.nan, math.inf])
 def test_invalid_scores_cannot_approve(monkeypatch, value):
-    assessor = JevAnswerAssessor('key', settings=AssessmentSettings(mode='enforce'))
+    assessor = JevAnswerAssessor('key', settings=AssessmentSettings(mode='enforce', external_enabled=True))
     monkeypatch.setattr(assessor, '_post', lambda body: {'answers': {
         k: {'noul': value} for k in ('grounded', 'relevant', 'safe')
     }})
@@ -52,7 +52,7 @@ def test_no_credentials_or_off_never_calls_provider(monkeypatch, mode, key):
 
 
 def test_no_answer_and_oversize_skip_http(monkeypatch):
-    assessor = JevAnswerAssessor('key')
+    assessor = JevAnswerAssessor('key', settings=AssessmentSettings(mode='shadow', external_enabled=True))
     monkeypatch.setattr(assessor, '_post', lambda body: pytest.fail('unexpected network'))
     absent = replace(answer(), answer=None, citations=[])
     assert assessor.assess(question='Q', result=absent, intent='ask_content', catalog=[]).answer is None
@@ -61,7 +61,7 @@ def test_no_answer_and_oversize_skip_http(monkeypatch):
 
 
 def test_error_is_shadow_only_and_content_not_in_metadata(monkeypatch):
-    assessor = JevAnswerAssessor('key')
+    assessor = JevAnswerAssessor('key', settings=AssessmentSettings(mode='shadow', external_enabled=True))
     def fail(body):
         raise AIProviderUnavailable('sensitive contents')
     monkeypatch.setattr(assessor, '_post', fail)
@@ -100,7 +100,7 @@ def test_assessment_deadline_is_bounded_by_request(monkeypatch):
     import time
 
     from app.knowledge.questions import _REQUEST_DEADLINE, request_deadline
-    assessor = JevAnswerAssessor('key')
+    assessor = JevAnswerAssessor('key', settings=AssessmentSettings(mode='shadow', external_enabled=True))
     deadlines = []
     def post(body):
         deadlines.append(_REQUEST_DEADLINE.get())
@@ -132,3 +132,64 @@ def test_catalog_cannot_self_validate_generated_answer_or_send_internal_ids():
              'excerpt': 'unnecessary text'}]}}
     ])
     assert state['catalog'] == [{'total': 1, 'items': [{'name': 'Plano', 'kind': 'file'}]}]
+
+
+def test_default_with_existing_typesafe_key_never_sends_documents(monkeypatch):
+    assessor = JevAnswerAssessor('existing-production-key')
+    monkeypatch.setattr(assessor, '_post', lambda body: pytest.fail('unapproved transfer'))
+    result = assessor.assess(question='Q', result=answer(), intent='ask_content', catalog=[])
+    assert result.answer == answer().answer
+    assert result.resolved_context['assessment']['local_checks']['citations_present'] is True
+    assert result.resolved_context['assessment']['external_enabled'] is False
+
+
+def test_explicit_shadow_without_external_optin_never_sends(monkeypatch):
+    assessor = JevAnswerAssessor('key', settings=AssessmentSettings(mode='shadow'))
+    monkeypatch.setattr(assessor, '_post', lambda body: pytest.fail('unapproved transfer'))
+    result = assessor.assess(question='Q', result=answer(), intent='ask_content', catalog=[])
+    assert result.resolved_context['assessment']['reason'] == 'external_disabled'
+
+
+@pytest.mark.parametrize('variable,value', [('AGENT_ASSESSMENT_MODE', 'bogus'),
+    ('AGENT_ASSESSMENT_TIMEOUT_SECONDS', '10')])
+def test_invalid_config_degrades_without_breaking_delivery(monkeypatch, variable, value):
+    from app.knowledge.answer_assessment import load_assessment_settings
+    monkeypatch.setenv(variable, value)
+    load_assessment_settings.cache_clear()
+    assessor = JevAnswerAssessor('key')
+    monkeypatch.setattr(assessor, '_post', lambda body: pytest.fail('unapproved transfer'))
+    assert assessor.assess(question='Q', result=answer(), intent='ask_content', catalog=[]).answer
+    assert assessor.settings.mode == 'off'
+    load_assessment_settings.cache_clear()
+
+
+def test_unserializable_state_preserves_shadow_answer(monkeypatch):
+    assessor = JevAnswerAssessor('key', settings=AssessmentSettings(mode='shadow', external_enabled=True))
+    monkeypatch.setattr(assessor, '_post', lambda body: pytest.fail('invalid state sent'))
+    result = assessor.assess(question='Q', result=answer(), intent='list_files', catalog=[
+        {'result': {'items': [{'name': uuid4(), 'kind': 'file'}]}}
+    ])
+    assert result.answer == answer().answer
+    assert result.resolved_context['assessment']['reason'] == 'provider_error'
+
+
+@pytest.mark.parametrize('mode', [None, 'bogus'])
+def test_factory_with_key_and_no_optin_does_not_send(monkeypatch, semantic_session, mode):  # noqa: F811
+    from app.core.config import Settings
+    from app.knowledge.agent import agent_service_from_settings
+    from app.knowledge.answer_assessment import load_assessment_settings
+    from tests.unit.test_agent_flow import IntentProvider, _folder_with_files
+    monkeypatch.delenv('AGENT_ASSESSMENT_MODE', raising=False)
+    monkeypatch.delenv('AGENT_ASSESSMENT_EXTERNAL_ENABLED', raising=False)
+    if mode is not None:
+        monkeypatch.setenv('AGENT_ASSESSMENT_MODE', mode)
+    load_assessment_settings.cache_clear()
+    monkeypatch.setattr(JevAnswerAssessor, '_post', lambda *a: pytest.fail('unapproved transfer'))
+    scope, user, folder, _ = _folder_with_files(semantic_session)
+    settings = Settings(database_url='postgresql://test:test@localhost/test', typesafe_api_key='key',
+                        agent_intent_engine='llm')
+    result, _, _ = agent_service_from_settings(semantic_session, IntentProvider(), settings).ask(
+        scope=scope, user_id=user.id, question='Liste arquivos', providers=['google_drive'],
+        mentions=[('folder', folder.id)], history=[])
+    assert result.answer and result.resolved_context['assessment']['mode'] == 'off'
+    load_assessment_settings.cache_clear()
