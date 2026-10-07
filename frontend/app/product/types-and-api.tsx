@@ -30,7 +30,7 @@ export type ManualSync = { skipped?: number | null; skipped_items?: SkippedItem[
 export type Member = { id: string; email: string; role: Role };
 export type Source = { id: string; provider: string; status: string; account_email: string | null; connected_by_email?: string | null };
 export const latestSourcePerProvider = (items: Source[]) => [...new Map(items.map((item) => [item.provider, item])).values()];
-export type ToolCategory = "Arquivos" | "Documentação";
+export type ToolCategory = "Arquivos" | "Documentação" | "Projetos";
 type RemoteFolder = CatalogFolder;
 export type ScopeCatalog = { folders: RemoteFolder[]; root_files: { available: boolean; label: string }; all_accessible: { available: boolean; label: string } };
 export type SavedQuery = { id: string; workspace_folder_id: string; name: string; query: string };
@@ -74,10 +74,11 @@ const providerFromName = (name: string) => ({
   onedrive: "onedrive",
   sharepoint: "sharepoint",
   notion: "notion",
+  clickup: "clickup",
 } as Record<string, string | undefined>)[name.trim().toLowerCase()];
 export function ProviderMark({ provider, size = "md" }: { provider?: string | null; size?: "sm" | "md" }) {
   const key = providerKey(provider ?? "");
-  if (["google", "onedrive", "sharepoint", "notion", "github", "teams"].includes(key)) return <ProviderLogo provider={key as ProviderLogoName} size={size === "sm" ? 18 : 26} />;
+  if (["google", "onedrive", "sharepoint", "notion", "clickup", "github", "teams"].includes(key)) return <ProviderLogo provider={key as ProviderLogoName} size={size === "sm" ? 18 : 26} />;
   return <HardDrive aria-hidden="true" size={size === "sm" ? 16 : 20} />;
 }
 export function LibraryNodeIcon({ item, size = 16 }: { item: LibraryNode; size?: number }) {

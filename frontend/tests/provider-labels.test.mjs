@@ -8,6 +8,7 @@ test("providerLabel names every provider", () => {
   assert.equal(providerLabel("onedrive"), "OneDrive");
   assert.equal(providerLabel("google_drive"), "Google Drive");
   assert.equal(providerLabel("notion"), "Notion");
+  assert.equal(providerLabel("clickup"), "ClickUp");
 });
 
 test("oauthErrorMessage explains tenant mismatch and admin consent for SharePoint", () => {

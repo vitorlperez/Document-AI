@@ -78,7 +78,7 @@ def primary_only(keys: Sequence[str | None]) -> Callable[[str], bool]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--provider", choices=("google_drive", "onedrive", "notion"), required=True)
+    parser.add_argument("--provider", choices=("google_drive", "onedrive", "notion", "clickup"), required=True)
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
     settings = get_settings()

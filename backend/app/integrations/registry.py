@@ -8,6 +8,7 @@ from app.ingestion.extraction.cache import CachingOcr
 from app.ingestion.extraction.engines import build_ocr
 from app.ingestion.google_drive import GoogleDriveDocumentProvider
 from app.integrations.base import ProviderCapabilities, ProviderNotConfigured, SourceProvider
+from app.integrations.clickup import ClickUpDocumentProvider, ClickUpOAuthClient
 from app.integrations.google_drive import CredentialCipher, GoogleDriveOAuthClient
 from app.integrations.notion import NotionDocumentProvider, NotionOAuthClient
 from app.integrations.onedrive import MicrosoftGraphClient, OneDriveCipher, OneDriveDocumentProvider
@@ -85,6 +86,47 @@ class NotionProviderAdapter:
                 redirect_uri=settings.notion_oauth_redirect_uri,
             ),
             CredentialCipher(keys[0], fallback_keys=keys[1:]),
+        )
+
+    def discover(self, *, encrypted_credentials, selections, known_documents=None, force_file_ids=None, force_full=False, progress_callback=None):
+        return self._provider.discover(
+            encrypted_credentials=encrypted_credentials,
+            selections=selections,
+            known_documents=known_documents,
+            force_file_ids=force_file_ids,
+            force_full=force_full,
+            progress_callback=progress_callback,
+        )
+
+    def folders(self, *, encrypted_credentials):
+        return self._provider.folders(encrypted_credentials=encrypted_credentials)
+
+    def folders_for_selections(self, *, encrypted_credentials, selections):
+        return self._provider.folders_for_selections(
+            encrypted_credentials=encrypted_credentials, selections=selections,
+        )
+
+
+class ClickUpProviderAdapter:
+    key = "clickup"
+    capabilities = ProviderCapabilities(
+        supports_oauth=True,
+        supports_hierarchical_scopes=True,
+        supports_incremental_sync=False,
+    )
+
+    def __init__(self, settings: Settings):
+        keys = settings.cipher_keys("clickup")
+        self._provider = ClickUpDocumentProvider(
+            ClickUpOAuthClient(
+                client_id=settings.clickup_oauth_client_id,
+                client_secret=settings.clickup_oauth_client_secret.get_secret_value()
+                if settings.clickup_oauth_client_secret
+                else None,
+                redirect_uri=settings.clickup_oauth_redirect_uri,
+            ),
+            CredentialCipher(keys[0], fallback_keys=keys[1:]),
+            include_closed_tasks=settings.clickup_include_closed_tasks,
         )
 
     def discover(self, *, encrypted_credentials, selections, known_documents=None, force_file_ids=None, force_full=False, progress_callback=None):
@@ -190,6 +232,7 @@ class IntegrationRegistry:
         self._factories: dict[str, Callable[[], SourceProvider]] = {
             "google_drive": lambda: GoogleDriveProviderAdapter(settings),
             "notion": lambda: NotionProviderAdapter(settings),
+            "clickup": lambda: ClickUpProviderAdapter(settings),
             "onedrive": lambda: OneDriveProviderAdapter(settings),
             "sharepoint": lambda: SharePointProviderAdapter(settings),
         }

@@ -71,7 +71,7 @@ class QuestionInput(BaseModel):
             if not self.providers or len(self.providers) > 3:
                 raise ValueError("selection requires one or more providers")
             normalized = ["google_drive" if item == "google" else item for item in self.providers]
-            if any(item not in {"google_drive", "notion", "onedrive"} for item in normalized):
+            if any(item not in {"google_drive", "notion", "onedrive", "clickup"} for item in normalized):
                 raise ValueError("provider is invalid")
             if len(set(normalized)) != len(normalized):
                 raise ValueError("providers must be distinct")

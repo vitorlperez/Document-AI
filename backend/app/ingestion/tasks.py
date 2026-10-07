@@ -337,10 +337,13 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 document.external_file_id: (document.modified_at, document.index_status)
                 for document in known_rows
             }
-            if source_provider == "notion":
+            if source_provider in {"notion", "clickup"}:
+                from app.integrations.clickup import CLICKUP_PROCESSING_VERSION
                 from app.integrations.notion import NOTION_PROCESSING_VERSION
+                expected_version = (NOTION_PROCESSING_VERSION if source_provider == "notion"
+                                    else CLICKUP_PROCESSING_VERSION)
                 if any(document.index_status == "indexed" and
-                       document.processing_version != NOTION_PROCESSING_VERSION
+                       document.processing_version != expected_version
                        for document in known_rows):
                     # Each space owns its index. Another space may already have
                     # repaired the shared library node while this body is legacy.
