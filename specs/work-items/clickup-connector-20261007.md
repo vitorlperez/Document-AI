@@ -35,7 +35,7 @@
 | --- | --- | --- |
 | Specification analyst | Read-only | Esta seção + ADR-0019 |
 | Implementation owner | `backend/app/integrations/clickup.py`, `registry.py`, `api/integrations.py`, `core/config.py`, `ingestion/tasks.py`, `api/ingestion.py`, `library/service.py` (nome do provider), `scripts/rekey_sources.py`, frontend (`provider-*`, `integrations-screen`, `types-and-api`, `question-scope`, `new-space-options`), infra (`render.yaml`, `docker-compose.yml`), docs | Mudança de produção |
-| Test engineer | `backend/tests/unit/test_clickup_integration.py`, `backend/tests/api/test_company_library_api.py` (8 testes ao final), `frontend/tests/provider-labels.test.mjs`, `frontend/tests/new-space-options.test.mjs` | Testes automatizados |
+| Test engineer | `backend/tests/unit/test_clickup_integration.py`, `backend/tests/api/test_company_library_api.py` (9 testes ao final), `frontend/tests/provider-labels.test.mjs`, `frontend/tests/new-space-options.test.mjs` | Testes automatizados |
 | Feature validator | Read-only | Gate independente (ver Validator report) |
 
 ## Acceptance criteria and test matrix

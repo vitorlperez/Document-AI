@@ -16,9 +16,9 @@ Decisões e limites: `specs/adr/ADR-0019-clickup-connector.md`.
 
 Tarefas viram um documento cada. O teto por organização é `ACTIVE_DOCUMENT_LIMIT` (padrão do código: 500, ADR-0003).
 
-**Decisão (2026-10-07): valor inicial `ACTIVE_DOCUMENT_LIMIT=1500` na API e no Worker do Railway** (3× o padrão). Base da escolha, só com limites que o projeto já tem:
+**Decisão (2026-10-07): valor inicial `ACTIVE_DOCUMENT_LIMIT=1500` na API e no Worker do Railway** (só o Worker aplica o teto de fato; a API apenas enfileira) (3× o padrão). Base da escolha, só com limites que o projeto já tem:
 
-- `MONTHLY_LIMITS["embedding_tokens"] = 1_000_000` por organização/mês (`app/audit_usage/service.py`, constante de código, não variável de ambiente). Uma tarefa tem em média 150–400 tokens (título, fatos, descrição); 1.500 documentos ≈ 225–600 mil tokens, ou seja, 22–60% do orçamento do mês no pior caso, sobrando margem para reindexações e perguntas.
+- `MONTHLY_LIMITS["embedding_tokens"] = 1_000_000` por organização/mês (`app/audit_usage/service.py`, constante de código, não variável de ambiente). Estimativa (não medida): uma tarefa tem 150–400 tokens (título, fatos, descrição); o orçamento é compartilhado com perguntas e com as outras fontes, e o teto de documentos conta todos os documentos indexados da organização, não só os do ClickUp; 1.500 documentos ≈ 225–600 mil tokens, ou seja, 22–60% do orçamento do mês no pior caso, sobrando margem para reindexações e perguntas.
 - `processed_bytes` (2 GB/mês) não é restrição: 1.500 tarefas são poucos MB.
 - Armazenamento: ~6 KB de vetor por chunk no Postgres, ou cerca de 9–15 MB para 1.500 documentos.
 - Subir o limite além de ~3.000 documentos **não adianta** sem também subir `MONTHLY_LIMITS["embedding_tokens"]` (mudança de código e revisão de custo): o orçamento mensal de embeddings acaba antes.
