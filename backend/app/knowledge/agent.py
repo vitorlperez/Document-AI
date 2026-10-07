@@ -1,7 +1,7 @@
 """The document agent: one framework-independent flow over bounded local tools.
 
 classify intent (small model, closed schema) -> execute tools -> synthesize one
-grounded answer -> attach citations. The library is a local projected catalog,
+grounded answer -> attach citations -> assess delivery. The library is a local projected catalog,
 not a live provider inventory. Listing always means direct children from that
 catalog; search and retrieval never access remote URLs, credentials, or arbitrary
 database records.
@@ -428,13 +428,19 @@ class ConversationState:
         return attached or [node_id for node_id, _folder, _name in self.listed_files]
 
 
+class AnswerAssessor(Protocol):
+    def assess(self, *, question: str, result: QuestionResult, intent: str,
+               catalog: list) -> QuestionResult: ...
+
+
 class AgentService:
-    """The single document-agent flow, in four stages with narrow interfaces:
+    """The single document-agent flow, in five stages with narrow interfaces:
 
     1. classify: a small model maps the message to a closed IntentDecision;
     2. execute: the decided local tools run, each one tenant/member scoped;
     3. synthesize: one grounded call writes the answer from the tool outputs;
     4. cite: the answer always carries the documents it used, with their links.
+    5. assess: bounded JEV decisions record quality in shadow before delivery.
 
     A model failure never ends in a silent empty answer: the classifier falls back to a
     relevance search, an unverifiable synthesis keeps the extractive or per-file answer,
@@ -445,8 +451,12 @@ class AgentService:
         self, session: Session, provider: SemanticProvider, limits: AgentLimits,
         models: FlowModels | None = None, file_summaries: FileSummaries | None = None,
         intent_classifier: IntentClassifierAdapter | None = None,
+        answer_assessor: AnswerAssessor | None = None,
     ):
         self.session, self.provider, self.limits = session, provider, limits
+        from app.knowledge.answer_assessment import JevAnswerAssessor
+
+        self.answer_assessor = answer_assessor or JevAnswerAssessor(None)
         # Decides the intent in place of the provider (AGENT_INTENT_ENGINE=jev); None uses the provider.
         self.intent_classifier = intent_classifier
         self.models = models or FlowModels()
@@ -478,7 +488,9 @@ class AgentService:
         decision = self.classify(request, conversation, deadline=deadline)
         with _request_deadline(deadline):
             run = self.execute(decision, request, conversation, deadline=deadline)
-        return run.finish(self.cite(run))
+        with _request_deadline(deadline):
+            assessed = self.assess(run, self.cite(run), question=question)
+        return run.finish(assessed)
 
     def _revalidate_memory(
         self, request: AgentRequest, history: list[ConversationMessage],
@@ -1143,6 +1155,14 @@ class AgentService:
         ])
         return replace(answer, citations=consulted) if consulted else answer
 
+    # Stage 5 -----------------------------------------------------------------
+
+    def assess(self, run: AgentRun, result: QuestionResult, *, question: str) -> QuestionResult:
+        return self.answer_assessor.assess(
+            question=question, result=result, intent=run.intent,
+            catalog=[{'name': item.name, 'result': item.payload} for item in run.results],
+        )
+
     # Tools shared by the stages ----------------------------------------------
 
     def _reauthorized_citations(self, request: AgentRequest, files: list[UUID]) -> list[Evidence]:
@@ -1657,6 +1677,12 @@ def _request_deadline(deadline: float):
 
 def agent_service_from_settings(session: Session, provider: SemanticProvider, settings) -> AgentService:
     """Build the same bounded agent for browser and programmatic requests."""
+    from app.knowledge.answer_assessment import JevAnswerAssessor
+
+    answer_assessor = JevAnswerAssessor(
+        settings.typesafe_api_key.get_secret_value() if settings.typesafe_api_key else None,
+        model=settings.agent_jev_model,
+    )
     intent_classifier = None
     if settings.agent_intent_engine == "jev" and settings.typesafe_api_key:
         from app.knowledge.jev import JevIntentClassifier
@@ -1679,5 +1705,5 @@ def agent_service_from_settings(session: Session, provider: SemanticProvider, se
         file_summaries=FileSummaries(target_chars=settings.agent_file_summary_chars,
                                     model=settings.agent_file_summary_model,
                                     timeout_seconds=settings.agent_file_summary_timeout_seconds),
-        intent_classifier=intent_classifier,
+        intent_classifier=intent_classifier, answer_assessor=answer_assessor,
     )

@@ -1,0 +1,47 @@
+{
+  "skills": [
+    "graphify",
+    "sdd-feature-delivery",
+    "oc-builder",
+    "oc-stamp"
+  ],
+  "tests": {
+    "passed": 1466,
+    "failed": 0,
+    "warnings": 4,
+    "seconds": 29.35
+  },
+  "commands": [
+    {
+      "cmd": "cd backend && .venv/bin/pytest tests/unit tests/api -q --tb=short",
+      "exitCode": 0
+    },
+    {
+      "cmd": "cd backend && .venv/bin/ruff check <owned Python production/tests/probe paths>",
+      "exitCode": 0
+    },
+    {
+      "cmd": "cd frontend && ./node_modules/.bin/tsc --noEmit --skipLibCheck --jsx react-jsx --moduleResolution bundler --module esnext --target es2022 --esModuleInterop --types react,node,vite/client app/product/chat-workspace.tsx app/product/types-and-api.tsx",
+      "exitCode": 0
+    },
+    {
+      "cmd": "cd backend && PYTHONPATH=. .venv/bin/python scripts/answer_assessment_probe.py --env ../.env --output ../specs/work-items/ai-answer-assessment-20261007/live-probe.json",
+      "exitCode": 0
+    },
+    {
+      "cmd": "graphify update .",
+      "exitCode": 0
+    },
+    {
+      "cmd": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "limits": [
+    "Independent validation is pending with pilot, dossier remains validating.",
+    "No production deployment, no customer-corpus evaluation; live provider proof uses synthetic evidence.",
+    "Full frontend typecheck and ESLint interrupted after blocking dependency file reads; focused component typecheck passes.",
+    "Thresholds provisional; enforce must remain disabled until reviewed pilot data.",
+    "Shared generated graphs updated but excluded from this worker commit to avoid mixing concurrent work."
+  ]
+}
