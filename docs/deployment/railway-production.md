@@ -48,6 +48,7 @@ MICROSOFT_SHAREPOINT_REDIRECT_URI=https://app.seudominio.com/api/data-sources/sh
 NOTION_OAUTH_CLIENT_ID=<client id>
 NOTION_OAUTH_CLIENT_SECRET=<segredo>
 NOTION_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/notion/oauth/callback
+ACTIVE_DOCUMENT_LIMIT=1500   # API e Worker; padrão do código é 500 (ver docs/integracoes/clickup-runbook.md §2)
 CLICKUP_OAUTH_CLIENT_ID=<client id>
 CLICKUP_OAUTH_CLIENT_SECRET=<segredo>
 CLICKUP_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/clickup/oauth/callback
