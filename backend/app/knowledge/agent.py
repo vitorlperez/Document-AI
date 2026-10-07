@@ -771,7 +771,7 @@ class AgentService:
 
     def assess(self, run: AgentRun, result: QuestionResult, *, question: str) -> QuestionResult:
         return self.answer_assessor.assess(
-            question=question, result=result, intent=run.intent,
+            question=run.decision.standalone_query or question, result=result, intent=run.intent,
             catalog=[{'name': item.name, 'result': item.payload} for item in run.results],
         )
 

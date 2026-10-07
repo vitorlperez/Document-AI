@@ -6,7 +6,7 @@
 Fonte: pedido autorizado do pane-470 e spec 001 (F4, qualidade, isolamento). Fluxo fixo classify → execute/synthesize → cite → assess → finish. JEV TypeSafe já existe em `knowledge/jev.py`; o auditado usa HTTP, não SDK. Não criar dependência.
 
 ## Decisions
-Autorização: usuário permite seguir recomendações sem perguntas. Shadow é padrão: jamais troca a resposta; off evita chamadas; enforce é opt-in e não será ativado. JEV usa credencial/modelo já existentes, timeout até 2 s dentro do orçamento global, estado limitado a 24 KB, nenhuma repetição ou regeneração. LLM judge apenas offline, opt-in usando OpenAI existente. Feedback substituível por mensagem, apenas dono ativo da conversa; persistir no JSON context já existente sem migração, conteúdo/response imutáveis. Não mudar retenção. Sem rollout remoto nesta tarefa.
+Autorização: usuário permite seguir recomendações sem perguntas. Correção de privacidade: off/false é padrão; shadow exige opt-in duplo e jamais troca a resposta; off evita chamadas; enforce é opt-in e não será ativado. JEV usa credencial/modelo já existentes, timeout até 2 s dentro do orçamento global, estado limitado a 24 KB, nenhuma repetição ou regeneração. LLM judge apenas offline, opt-in usando OpenAI existente. Feedback substituível por mensagem, apenas dono ativo da conversa; persistir no JSON context já existente sem migração, conteúdo/response imutáveis. Não mudar retenção. Rollout seguro autorizado após validação independente, a partir de worktree limpo sobre origin/main; nunca push/deploy do checkout compartilhado.
 
 ## Ownership
 Worker pane-474: knowledge/agent.py, knowledge/answer_assessment.py, knowledge/agent_eval.py, api/answer_feedback.py, app/main.py (router), UI chat (tipos feedback locais; types-and-api pertence ao ClickUp), novos testes e este dossier. Não editar config.py, ingestion.py, conectores, Dockerfiles/Railway (outras frentes). Validator: piloto deve atribuir revisão independente após implementação.
@@ -47,3 +47,15 @@ Pendente: revisão independente; não declarar done até validação.
 
 ## Limitações e rollout
 Piloto deve atribuir validação independente do commit e repetir testes relevantes. Dossiê permanece validating, não done. Não houve deploy. Não havia DATABASE_URL nem serviço de banco local ativo neste pane; faltam avaliação com corpus autorizado atual e tráfego real do piloto, testes de UI em browser e resultados de lint/full frontend. A aplicação mantém shadow e registra indisponibilidade sem credencial; não promover enforce com esses dois casos. PDFs/Canvas não necessários: entregáveis são código e evidência textual, nenhum artefato visual independente.
+
+
+## Revisão pane-476 e correções (2026-10-07)
+Revisão 702e959: 0 críticos/5 avisos, aprovado com condições. Contagens independentes: working tree 1466 (inclui 36 ClickUp não commitados), commit isolado 1430, cherry-pick sobre origin/main 1349. Tsc completo/eslint passaram na revisão. Não confundir com baseline de release.
+1. Settings inválidas: cache por processo; ValidationError degrada off/false com log sem valores; teste via factory/ask com MODE=bogus.
+2. Default off + external_enabled=false; chave existente não basta. Mesmo mode=shadow isolado não envia. Estrutura local e feedback permanecem disponíveis. Runbook novo descreve dados/provedor e variáveis para Railway/Render/Docker; docs gerais/config/compose estão fora do ownership e não são sobrescritas.
+3. Opt-in externo continua síncrono: adiciona latência/custo; timeout herdado é por fase. P95/custo do piloto são gate antes de mantê-lo ligado. Padrão desligado não tem chamada extra.
+4. Montagem/json.dumps dentro do try; TypeError/AttributeError preservam shadow. Offline judge já tem exceções registradas por run_case, sem erro do provedor em relatório.
+5. Standalone_query usada quando disponível. Sem standalone, relevância de follow-ups requer calibração antes de enforce.
+Regressão red→green: quatro testes novos falharam no código anterior (transferência automática e config inválida); versão corrigida passa. Validação independente da correção pendente pane-476; rollout somente depois.
+
+Correção: suite compartilhada atual 1488 passed (34.06s, exit0); contagem inclui outras frentes e não será usada como baseline de release. Ruff próprio exit0; default inspecionado off/false; graphify AST exit0. Novo relatório completo optin-tests.txt.

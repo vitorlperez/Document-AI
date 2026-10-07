@@ -16,5 +16,5 @@ def test_offline_judge_records_failure_and_rolls_back(semantic_session):  # noqa
                    scope=scope, user_id=user.id, limits=AgentLimits(), models=FlowModels(), judge=Judge())
     assert run.error is None
     assert run.judge is None and run.judge_error == 'AIProviderUnavailable'
-    assert run.assessment['mode'] == 'shadow'
+    assert run.assessment['mode'] == 'off'
     assert not semantic_session.in_transaction()
