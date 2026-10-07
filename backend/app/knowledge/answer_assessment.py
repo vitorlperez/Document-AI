@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import re
 import time
 from dataclasses import replace
 from functools import lru_cache
@@ -29,7 +30,7 @@ from app.knowledge.questions import (
 )
 
 logger = logging.getLogger(__name__)
-VERSION = 'answer-assessment-v2'
+VERSION = 'answer-assessment-v3'
 MAX_STATE_BYTES = 24_000
 CHECKS = {
     'grounded': 'Are all factual claims in the answer supported by the numbered cited excerpts '
@@ -99,6 +100,34 @@ def probability(value: object) -> float:
     return float(value)
 
 
+def local_answer_quality(result: QuestionResult, intent: str) -> dict:
+    """Check observable citation integrity, not whether a source proves a claim.
+
+    Run in every mode without provider calls; warnings remain shadow telemetry.
+    No content or document identifiers are copied into recorded diagnostics.
+    """
+    text = result.answer or ''
+    numbers = re.findall(r'\[(\d+)\]', text)
+    for marker in re.findall(r'\((?:fonte|fontes)\s+\d+(?:\s*(?:,|e)\s*\d+)*\)', text, re.IGNORECASE):
+        numbers.extend(re.findall(r'\d+', marker))
+    checks = {
+        'answer_present': bool((result.answer or '').strip()),
+        'citation_numbers_valid': all(len(number) <= 6 and 1 <= int(number) <= len(result.citations)
+                                      for number in numbers),
+        'cited_excerpts_present': all(bool(item.excerpt.strip()) for item in result.citations),
+        'document_evidence_present': bool(result.citations) or intent != 'ask_content'
+            or result.confidence == 'insufficient_evidence',
+    }
+    issues = [issue for check, issue in (
+        ('answer_present', 'empty_answer'),
+        ('citation_numbers_valid', 'invalid_citation_reference'),
+        ('cited_excerpts_present', 'empty_cited_excerpt'),
+        ('document_evidence_present', 'missing_document_evidence'),
+    ) if not checks[check]]
+    return {'kind': 'citation_integrity', 'outcome': 'warn' if issues else 'pass',
+            'issues': issues, 'checks': checks, 'semantic_grounding': 'not_evaluated'}
+
+
 class JevAnswerAssessor(JevIntentClassifier):
     """Reuse the existing System One transport, model pin, errors and instrumentation."""
 
@@ -140,6 +169,7 @@ class JevAnswerAssessor(JevIntentClassifier):
                 except (AIProviderUnavailable, KeyError, TypeError, ValueError, AttributeError):
                     reason = 'provider_error'
         metadata = {'external_enabled': self.settings.external_enabled,
+                    'local_evaluation': local_answer_quality(result, intent),
                     'local_checks': {'answer_present': bool(result.answer),
                                      'citations_present': bool(result.citations),
                                      'cited_excerpts_present': all(bool(c.excerpt) for c in result.citations)},

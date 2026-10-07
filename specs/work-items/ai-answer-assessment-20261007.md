@@ -1,6 +1,6 @@
 # ai-answer-assessment-20261007 - Avaliação da resposta, judge offline e feedback
 
-**Status:** done
+**Status:** validating
 
 ## Source and outcome
 Fonte: pedido autorizado do pane-470 e spec 001 (F4, qualidade, isolamento). Fluxo fixo classify → execute/synthesize → cite → assess → finish. JEV TypeSafe já existe em `knowledge/jev.py`; o auditado usa HTTP, não SDK. Não criar dependência.
@@ -82,3 +82,21 @@ Correção: suite compartilhada atual 1488 passed (34.06s, exit0); contagem incl
 - production-smoke.py é reprodução descartável ligada a fc0b64b e às variáveis do container, não ferramenta reutilizável. Não mudar o gate para testar outro SHA sem validação nova.
 - Consulta read-only pós-run por prefixes dos fixtures: organizations `Synthetic assessment rollout smoke%` = 0; users `assessment-smoke-%@example.test` = 0. Conexão independente confirmou ausência de resíduos PostgreSQL dos ensaios. Redis de rate limit/uso não está coberto pelo rollback SQL e não foi inspecionado/limpo neste smoke; não extrapolar ausência de resíduo para Redis.
 - Revisão independente pane-476 aprovou dossier e artifacts para commit documental; ressalvas baixas incorporadas. Arquivos graphify (incluindo .rebuild.lock) não entram neste commit, para preservar fronteiras com outputs concorrentes.
+
+## Complemento local e incidente confirmado (2026-10-07)
+
+Pedido adicional: não confundir ausência de HTTP com avaliação semântica. A versão v2 oferecia somente três booleans estruturais; shadow/external=false produz skipped/external_disabled, não escores. Novo avaliador local v3 após cite: diagnósticos determinísticos de integridade de citações, pass/warn + issues, sem texto/IDs em metadados, sem HTTP nem alteração da resposta. semantic_grounding=not_evaluated é obrigatório: não concluir verdade/relevância/segurança com pass estrutural. Saudações/inventário/insuficiência honesta não requerem fonte documental. Tipos de marcadores: [N] e (fonte/fontes N), incluindo grupos e índices enormes sem int conversion excessiva.
+
+Critérios adicionais: diagnosticar [99]/(fontes 1 e 99), trecho vazio, resposta documental apoiada sem fonte e resposta vazia; aprovar integridade válida; preservar resposta/citações; executar mesmo off/config inválida e sem provider; não vazar conteúdo. Red: 8 testes falharam por local_evaluation ausente. Green: 41 foco; suite isolada sobre ClickUp d48571d: 1422 passed, 4 warnings, 36.74 s. Ruff excludes CI e export_openapi --check exit0. Novo diff é answer_assessment.py, test_local_answer_quality.py, ADR/runbook/dossier; nenhum arquivo ClickUp/config.py/ingestion.py/Railway alterado. Revisão independente pendente antes de publicar o código.
+
+Produção após deploy ClickUp d48571d: shadow/external=false foi configurado sem deploy extra e entrou no restart; smoke HTTP200, motivo external_disabled, checks probabilísticos vazios, somente local_checks. PUT up/down200 e rollback PostgreSQL confirmados. Isso NÃO foi prova de judge semântico. Novo local_evaluation será demonstrado após rollout aprovado desta correção.
+
+Incidente confirmado pelo responsável pane-476: valores completos das chaves de produção OpenAI (projeto padrão, não admin) e TypeSafe expostos em uma saída de ferramenta de sua auditoria, transcript/contexto da sessão. Nenhum indício conhecido de uso indevido; não reabrir/reproduzir valores. Responsável verificou ausência no repo e não tem mecanismo autorizado de redação retrospectiva. Rotação é necessária, não opção hipotética.
+
+Dependentes: mesma chave OpenAI em API/Worker/Frontend; Beat sem ambas. TypeSafe somente API; cópia no .env local usa mesma TypeSafe e deve ser substituída ou removida após revogação. OpenAI local diferente, não incluído neste incidente. Sem acesso admin de provider: OpenAI painel403/browser, nenhuma OPENAI_ADMIN_KEY no ambiente (API admin requer essa credencial); TypeSafe console/login sem sessão e nenhum mecanismo de rotação no MCP. Não inventar endpoint/admin ou usar chave padrão como admin.
+
+Contenção aplicada com skip-deploys: API AGENT_INTENT_ENGINE=llm para cortar fluxo legado TypeSafe no próximo restart, external=false preservado. Revogar remotamente exige ação humana; retirar chave local não revoga o segredo já exposto. Não remover OpenAI de serviços ativos sem replacement e provocar indisponibilidade.
+
+Ação humana mínima: criar novas chaves nos painéis OpenAI e TypeSafe e atualizar, via UI segura do Railway (não chat/log), OPENAI_API_KEY em API/Worker/Frontend e TYPESAFE_API_KEY em API. Avisar que replacements estão aplicados; operador executa restart/verifica readiness, pergunta e dependentes; revogar antigas nos dois painéis em seguida e conferir uso no período. Overlap minimiza downtime mas exposição só termina com revogação. AGENT_INTENT_ENGINE=llm é contenção de provider legado; habilitar TypeSafe shadow/external não é necessário para entrega local e permanece uma opção dependente de consentimento específico. Judge semântico OpenAI offline já existe; torná-lo online é evolução separada com custo/latência/calibração explícitos.
+
+Fontes primárias: https://developers.openai.com/api/reference/resources/admin/subresources/organization/subresources/projects/subresources/api_keys/methods/delete (admin key necessária); https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety (rotacionar chave exposta); https://docs.typesafe.ai/introduction/quickstart (chave no dashboard). Nenhum valor, fingerprint ou segredo neste registro.

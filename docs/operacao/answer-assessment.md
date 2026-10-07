@@ -25,3 +25,9 @@ Variáveis opcionais: AGENT_ASSESSMENT_TIMEOUT_SECONDS=2 (máximo 5); GROUNDING_
 Shadow habilitado é síncrono e soma latência de uma chamada TypeSafe por resposta; o deadline HTTP herdado é por operação, não garantia de tempo total/p95. Não manter ligado antes de medir p95 e custo no piloto. Não habilitar enforce antes da revisão de 20 perguntas reais, incluindo follow-ups/saudações/inventário/contradições/injeção. Usa standalone_query quando disponível; quando ausente, falta contexto conversacional e a relevância ainda pode ser subestimada.
 
 `agent_eval --llm-judge` é opt-in offline, usando o OpenAI já configurado; não transfere documentos à TypeSafe quando o gate dela está desligado. `--feedback-output` exporta votos e verificações locais/externas do usuário autorizado, sem texto. Rollback: off/false e restart; sem migração.
+
+## Avaliação local durante conversa
+
+`local_evaluation` roda em todos os modos, sem HTTP, e registra `kind=citation_integrity`, `outcome=pass|warn`, checks e issues: resposta vazia, marcador [N]/(fontes N) fora das fontes fornecidas, trecho citado vazio e resposta ask_content apoiada sem fonte. Não bloqueia nem muda texto/citações: avaliação estrutural em shadow. Um pass NÃO comprova verdade/sustentação/relevância/segurança semântica; `semantic_grounding=not_evaluated` é explícito. Catálogo/saudação e reconhecimento de evidência insuficiente não exigem citação documental.
+
+Com mode=shadow/external=false, o ramo externo continua `outcome=skipped`, `reason=external_disabled`, checks probabilísticos vazios. O resultado útil separado é local_evaluation; HTTP zero prova só ausência de transferência. Judge semântico continua offline opt-in OpenAI existente; opção futura de reutilizar esse judge no runtime exige orçamento/calibração/revisão própria, nunca habilitar TypeSafe sem consentimento específico.

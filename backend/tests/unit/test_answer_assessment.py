@@ -192,4 +192,5 @@ def test_factory_with_key_and_no_optin_does_not_send(monkeypatch, semantic_sessi
         scope=scope, user_id=user.id, question='Liste arquivos', providers=['google_drive'],
         mentions=[('folder', folder.id)], history=[])
     assert result.answer and result.resolved_context['assessment']['mode'] == 'off'
+    assert result.resolved_context['assessment']['local_evaluation']['kind'] == 'citation_integrity'
     load_assessment_settings.cache_clear()
