@@ -14,7 +14,16 @@ Decisões e limites: `specs/adr/ADR-0018-clickup-connector.md`.
 
 ## 2. Cota de documentos (decidir antes do piloto)
 
-Tarefas viram um documento cada. O teto por organização é `ACTIVE_DOCUMENT_LIMIT` (padrão 500). Estime `tarefas abertas + Docs` do workspace e suba o limite da API e do worker com folga (ex.: 5.000), ou selecione só os Spaces/Lists relevantes. Veja a contagem real após a primeira sincronização em Integrações → Gerenciar.
+Tarefas viram um documento cada. O teto por organização é `ACTIVE_DOCUMENT_LIMIT` (padrão do código: 500, ADR-0003).
+
+**Decisão (2026-10-07): valor inicial `ACTIVE_DOCUMENT_LIMIT=1500` na API e no Worker do Railway** (3× o padrão). Base da escolha, só com limites que o projeto já tem:
+
+- `MONTHLY_LIMITS["embedding_tokens"] = 1_000_000` por organização/mês (`app/audit_usage/service.py`, constante de código, não variável de ambiente). Uma tarefa tem em média 150–400 tokens (título, fatos, descrição); 1.500 documentos ≈ 225–600 mil tokens, ou seja, 22–60% do orçamento do mês no pior caso, sobrando margem para reindexações e perguntas.
+- `processed_bytes` (2 GB/mês) não é restrição: 1.500 tarefas são poucos MB.
+- Armazenamento: ~6 KB de vetor por chunk no Postgres, ou cerca de 9–15 MB para 1.500 documentos.
+- Subir o limite além de ~3.000 documentos **não adianta** sem também subir `MONTHLY_LIMITS["embedding_tokens"]` (mudança de código e revisão de custo): o orçamento mensal de embeddings acaba antes.
+
+Critério para subir: depois da primeira sincronização, `embedding_tokens` do mês abaixo de 60% e documentos ativos acima de 80% do teto → subir em degraus (1.500 → 2.500) junto com a revisão do orçamento de embeddings. Enquanto isso, orgs com mais tarefas abertas que o teto devem selecionar só os Spaces/Lists relevantes (ou, para incluir tarefas fechadas, `CLICKUP_INCLUDE_CLOSED_TASKS=true` só depois de subir o teto).
 
 ## 3. Checklist do piloto (precisa de um workspace real)
 
