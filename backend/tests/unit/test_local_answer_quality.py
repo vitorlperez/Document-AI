@@ -59,3 +59,16 @@ def test_out_of_range_canonical_and_bracket_markers(monkeypatch, marker):
 def test_canonical_source_marker_passes(monkeypatch):
     quality = evaluate(monkeypatch, replace(answer(), answer='Prazo (fontes 1 e 1).'))
     assert quality['outcome'] == 'pass'
+
+
+def test_local_failure_cannot_break_default_delivery(monkeypatch):
+    assessor = JevAnswerAssessor('key', settings=AssessmentSettings(mode='off'))
+    monkeypatch.setattr(assessor, '_post', lambda *args: pytest.fail('external transfer'))
+    result = replace(answer(), citations=[replace(answer().citations[0], excerpt=None)])
+    output = assessor.assess(question='Q', result=result, intent='ask_content', catalog=[])
+    assert output.answer == result.answer
+    assert output.citations == result.citations
+    assert output.resolved_context['assessment']['reason'] == 'disabled'
+    quality = output.resolved_context['assessment']['local_evaluation']
+    assert quality == {'kind': 'citation_integrity', 'outcome': 'error',
+                       'issues': ['evaluation_failed'], 'semantic_grounding': 'not_evaluated'}

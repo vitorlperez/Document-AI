@@ -168,8 +168,13 @@ class JevAnswerAssessor(JevIntentClassifier):
                         reason = 'evaluated'
                 except (AIProviderUnavailable, KeyError, TypeError, ValueError, AttributeError):
                     reason = 'provider_error'
+        try:
+            local_evaluation = local_answer_quality(result, intent)
+        except Exception:  # noqa: BLE001 - telemetry must never prevent answer delivery
+            local_evaluation = {'kind': 'citation_integrity', 'outcome': 'error',
+                                'issues': ['evaluation_failed'], 'semantic_grounding': 'not_evaluated'}
         metadata = {'external_enabled': self.settings.external_enabled,
-                    'local_evaluation': local_answer_quality(result, intent),
+                    'local_evaluation': local_evaluation,
                     'local_checks': {'answer_present': bool(result.answer),
                                      'citations_present': bool(result.citations),
                                      'cited_excerpts_present': all(bool(c.excerpt) for c in result.citations)},
