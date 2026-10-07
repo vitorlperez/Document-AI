@@ -1,12 +1,12 @@
 # ai-answer-assessment-20261007 - Avaliação da resposta, judge offline e feedback
 
-**Status:** validating
+**Status:** done
 
 ## Source and outcome
 Fonte: pedido autorizado do pane-470 e spec 001 (F4, qualidade, isolamento). Fluxo fixo classify → execute/synthesize → cite → assess → finish. JEV TypeSafe já existe em `knowledge/jev.py`; o auditado usa HTTP, não SDK. Não criar dependência.
 
 ## Decisions
-Autorização: usuário permite seguir recomendações sem perguntas. Correção de privacidade: off/false é padrão; shadow exige opt-in duplo e jamais troca a resposta; off evita chamadas; enforce é opt-in e não será ativado. JEV usa credencial/modelo já existentes, timeout até 2 s dentro do orçamento global, estado limitado a 24 KB, nenhuma repetição ou regeneração. LLM judge apenas offline, opt-in usando OpenAI existente. Feedback substituível por mensagem, apenas dono ativo da conversa; persistir no JSON context já existente sem migração, conteúdo/response imutáveis. Não mudar retenção. Rollout seguro autorizado após validação independente, a partir de worktree limpo sobre origin/main; nunca push/deploy do checkout compartilhado.
+Autorização: usuário permite seguir recomendações sem perguntas. Correção de privacidade: off/false é padrão; shadow exige opt-in duplo e jamais troca a resposta; off evita chamadas; enforce é opt-in e não será ativado. JEV usa credencial/modelo já existentes, timeout HTTP configurado em 2 s por operação, sem garantia de timeout total, estado limitado a 24 KB, nenhuma repetição ou regeneração. LLM judge apenas offline, opt-in usando OpenAI existente. Feedback substituível por mensagem, apenas dono ativo da conversa; persistir no JSON context já existente sem migração, conteúdo/response imutáveis. Não mudar retenção. Rollout seguro autorizado após validação independente, a partir de worktree limpo sobre origin/main; nunca push/deploy do checkout compartilhado.
 
 ## Ownership
 Worker pane-474: knowledge/agent.py, knowledge/answer_assessment.py, knowledge/agent_eval.py, api/answer_feedback.py, app/main.py (router), UI chat (tipos feedback locais; types-and-api pertence ao ClickUp), novos testes e este dossier. Não editar config.py, ingestion.py, conectores, Dockerfiles/Railway (outras frentes). Validator: piloto deve atribuir revisão independente após implementação.
@@ -29,10 +29,10 @@ Credenciais OpenAI/TypeSafe presentes no .env local (valores nunca impressos); D
 
 ## Commands and results
 - pytest red inicial: coleta falhou por módulo assessment ausente (exit 2), antes da implementação.
-- Suite final: `cd backend && .venv/bin/pytest tests/unit tests/api -q --tb=short` → 1466 passed, 4 warnings, 29.35 s, exit 0. Output completo em ai-answer-assessment-20261007/backend-tests.txt. Uma expectativa legada de igualdade de resolved_context foi atualizada para incluir assessment, sem alterar answer/citações.
+- Suite compartilhada anterior (inclui 36 testes ClickUp fora do commit): `cd backend && .venv/bin/pytest tests/unit tests/api -q --tb=short` → 1466 passed, 4 warnings, 29.35 s, exit 0. Output completo em ai-answer-assessment-20261007/backend-tests.txt. Uma expectativa legada de igualdade de resolved_context foi atualizada para incluir assessment, sem alterar answer/citações.
 - Foco: 65 passed/exit 0 (antes do último teste de whitelist; final suite inclui todos).
 - Ruff em todos os módulos Python/testes/probe próprios: exit 0, All checks passed.
-- Typecheck focado com flags equivalentes ao componente e tipos react/node/vite/client: exit 0. Typecheck de projeto e ESLint ficaram bloqueados lendo dependências (sample do processo aponta node::fs::Read/uv_fs_read/read); interrompidos, exit 130, não declarados limpos. Não alterar node_modules ou código alheio para contornar.
+- Frontend final: `tsc --noEmit` completo exit 0 e eslint do chat exit 0, reproduzidos por pane-474 e pane-476. Job frontend do CI 37703106636 success. O bloqueio inicial de leitura de dependências (interrupção exit 130) foi superado na release; não é limitação atual.
 - `agent_eval --help`: flags llm-judge, judge-model, feedback-output presentes, exit 0.
 - Probe APIs reais: fonte sintética suportada JEV pass, grounded .97/relevant .93/safe .96, 600.41 ms; fonte com data inventada JEV reject, .02/.07/.8, 450.12 ms. Judge OpenAI grounding 1/0, relevance 1/1, completeness 1/0, 3.960/2.928 s. Resultado em live-probe.json; não é medição de corpus de cliente/p95/calibração estatística.
 - `graphify update .` AST exit 0; grafo compartilhado atualizado, labels semânticos exigem refresh separado. Grafo não entra no commit desta frente para não misturar outputs concorrentes.
@@ -42,11 +42,11 @@ Credenciais OpenAI/TypeSafe presentes no .env local (valores nunca impressos); D
 - Skills aplicadas: graphify, sdd-feature-delivery; skills: inline [oc-builder, oc-stamp].
 
 ## Validator report
-Pendente: revisão independente; não declarar done até validação.
+Pane-476 aprovou 88441a0 e release fc0b64b sem findings bloqueantes; validação independente reproduziu 1356 unit/api na release, Ruff com excludes do CI, export_openapi --check e uma única alembic head (20261001_0027). Adversariais confirmaram HTTP zero com chave existente em defaults/opt-in incompleto/config inválida; falha de serialização preserva resposta.
 
 
 ## Limitações e rollout
-Piloto deve atribuir validação independente do commit e repetir testes relevantes. Dossiê permanece validating, não done. Não houve deploy. Não havia DATABASE_URL nem serviço de banco local ativo neste pane; faltam avaliação com corpus autorizado atual e tráfego real do piloto, testes de UI em browser e resultados de lint/full frontend. A aplicação mantém shadow e registra indisponibilidade sem credencial; não promover enforce com esses dois casos. PDFs/Canvas não necessários: entregáveis são código e evidência textual, nenhum artefato visual independente.
+Validação independente e smoke de produção concluídos. Rollout registrado abaixo. Não havia DATABASE_URL nem serviço de banco local ativo neste pane; faltam avaliação com corpus autorizado atual, p95 em tráfego real do piloto e teste visual de UI em browser; lint/full frontend passaram na release e CI. A aplicação mantém off/false por padrão; não promover enforce com esses dois casos. PDFs/Canvas não necessários: entregáveis são código e evidência textual, nenhum artefato visual independente.
 
 
 ## Revisão pane-476 e correções (2026-10-07)
@@ -56,6 +56,29 @@ Revisão 702e959: 0 críticos/5 avisos, aprovado com condições. Contagens inde
 3. Opt-in externo continua síncrono: adiciona latência/custo; timeout herdado é por fase. P95/custo do piloto são gate antes de mantê-lo ligado. Padrão desligado não tem chamada extra.
 4. Montagem/json.dumps dentro do try; TypeError/AttributeError preservam shadow. Offline judge já tem exceções registradas por run_case, sem erro do provedor em relatório.
 5. Standalone_query usada quando disponível. Sem standalone, relevância de follow-ups requer calibração antes de enforce.
-Regressão red→green: quatro testes novos falharam no código anterior (transferência automática e config inválida); versão corrigida passa. Validação independente da correção pendente pane-476; rollout somente depois.
+Regressão red→green: quatro testes novos falharam no código anterior (transferência automática e config inválida); versão corrigida passa. Validação independente da correção aprovada pane-476; gate cumprido antes do rollout.
 
 Correção: suite compartilhada atual 1488 passed (34.06s, exit0); contagem inclui outras frentes e não será usada como baseline de release. Ruff próprio exit0; default inspecionado off/false; graphify AST exit0. Novo relatório completo optin-tests.txt.
+
+## Release e exceção de integração (2026-10-07)
+- Release isolada em `/tmp/document-ai-assessment-release`: e2edfb5 + fc0b64b sobre main 4b5d2ae, árvore limpa, sem arquivos ClickUp/config.py/ingestion.py/Railway. Conteúdo da feature equivalente a 88441a0 aprovado.
+- Checks locais frescos: unit/api 1356 passed, 4 warnings, 28.08 s (exit 0); Ruff com excludes do CI, export_openapi --check, tsc completo e eslint do chat exit 0. Contagem 1488 aplica ao checkout compartilhado/commit com ClickUp; não à release.
+- CI GitHub do SHA exato fc0b64b14617edb987798c2a306daacf552c228f: run 37703106636, backend success + frontend success. Revisão independente pane-476 sem blockers.
+- Decisão explícita do piloto dentro da autorização do usuário: exceção ao PR por ausência de autenticação HTTPS/GitHub; integrar por fast-forward SSH somente SHA exato aprovado com CI verde. Não usar force push, ignorar proteção ou integrar mudanças após CI sem revalidar. A skill sdd-feature-delivery e references/workflow.md exigem revisão/evidências, sem proibição normativa desta exceção.
+- `git merge-base --is-ancestor origin/main fc0b64b...` exit 0 e `git push origin fc0b64b14617edb987798c2a306daacf552c228f:refs/heads/main` exit 0: main avançou 4b5d2ae → fc0b64b. Sem push do checkout compartilhado.
+- Produção API: AGENT_ASSESSMENT_MODE=off, AGENT_ASSESSMENT_EXTERNAL_ENABLED=false, confirmados após integração. Worker sem overrides usa os mesmos defaults. ACTIVE_DOCUMENT_LIMIT=1500 em API/Worker foi preparado por pane-471 e entrou neste deploy; nenhuma alteração nossa nas otimizações de Railway.
+- Autodeploy API/Worker/Frontend/Beat success, SHA fc0b64b; `/api/health/ready` público HTTP 200. ClickUp foi avisado do SHA e rebasará depois deste smoke; não há espera circular.
+- Este registro documental posterior não altera o SHA de código aprovado/integrado. Não promover avaliação externa/shadow/enforce; legado classificador JEV continua sendo fluxo independente preexistente.
+
+## Smoke da release em produção
+- Container API de fc0b64b, configurações reais; TestClient sobre o ASGI implantado, autenticação real por cookie de sessão sintético (sem override de current_user), tenant sintético exclusivo e PostgreSQL real. Session factory ligada a transação externa com savepoints: commits da API e releituras SQL funcionam; rollback final remove toda fixture. Não ler documentos/tenants existentes.
+- Pergunta sintética “Olá!” em selection/google_drive: HTTP 200; assessment.reason=disabled, external_enabled=false. Transporte externo do assessor instrumentado para falhar se chamado: 0 chamadas. O classificador JEV legado permanece configurado; a pergunta sintética pode usar esse fluxo preexistente, sem documento de cliente.
+- PUT feedback up e down: 200/200, votos confirmados no transcript e por novas sessões SQL após commit em savepoint; resposta original preservada. Mensagem persistida mantém disabled/false. Rollback final confirmado por conexão SQL independente: usuário e tenant sintéticos ausentes, nenhuma fixture persistente. Script reproduzível em ai-answer-assessment-20261007/production-smoke.py; evidência compacta em production-smoke.json.
+- Limite: pergunta/votos exercitados no ASGI dentro do container com PostgreSQL real, não no browser/proxy público; readiness atravessou proxy público com HTTP 200. Não afirmar teste visual de 👍/👎 nem persistência sobrevivendo rollback deste smoke.
+- Primeiro ensaio devolveu 422 por selection sem providers; fixture corrigida para google_drive, sem alteração no produto. Primeiro SSH por nomes não conectou; IDs explícitos conectaram.
+- pane-471 recebeu “smoke ok” e pode integrar ClickUp após revisão/CI verdes do SHA exato.
+
+## Ressalvas da prova pontual
+- production-smoke.py é reprodução descartável ligada a fc0b64b e às variáveis do container, não ferramenta reutilizável. Não mudar o gate para testar outro SHA sem validação nova.
+- Consulta read-only pós-run por prefixes dos fixtures: organizations `Synthetic assessment rollout smoke%` = 0; users `assessment-smoke-%@example.test` = 0. Conexão independente confirmou ausência de resíduos PostgreSQL dos ensaios. Redis de rate limit/uso não está coberto pelo rollback SQL e não foi inspecionado/limpo neste smoke; não extrapolar ausência de resíduo para Redis.
+- Revisão independente pane-476 aprovou dossier e artifacts para commit documental; ressalvas baixas incorporadas. Arquivos graphify (incluindo .rebuild.lock) não entram neste commit, para preservar fronteiras com outputs concorrentes.
