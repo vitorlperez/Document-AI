@@ -1,0 +1,37 @@
+{
+  "code_sha": "fc0b64b14617edb987798c2a306daacf552c228f",
+  "ci_run": 37703106636,
+  "services": {
+    "API": "SUCCESS",
+    "Worker": "SUCCESS",
+    "Frontend": "SUCCESS",
+    "Beat": "SUCCESS"
+  },
+  "public_readiness_http": 200,
+  "question_http": 200,
+  "assessment_reason": "disabled",
+  "external_enabled": false,
+  "assessment_http_calls": 0,
+  "feedback_http": [
+    200,
+    200
+  ],
+  "postgresql_votes_reread": [
+    "up",
+    "down"
+  ],
+  "response_preserved": true,
+  "cleanup": "outer transaction rollback",
+  "transport": "deployed ASGI in API container, public readiness only",
+  "transcript_votes_reread": [
+    "up",
+    "down"
+  ],
+  "cleanup_verified": "independent SQL connection: synthetic user and organization absent",
+  "post_run_residue_counts": {
+    "synthetic_organizations": 0,
+    "synthetic_users": 0
+  },
+  "redis_cleanup": "not covered by PostgreSQL rollback; not inspected",
+  "reuse": "point-in-time proof pinned to fc0b64b, not a reusable tool"
+}
