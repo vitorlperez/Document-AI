@@ -91,3 +91,18 @@ test("Notion root options retain all-content coverage and do not promote legacy 
   assert.equal(all.allAccessibleTaken, true);
   assert.ok(all.folders.every((item) => item.coveredBy === "Everything"));
 });
+
+test("ClickUp offers every workspace, space, folder and list with its full path and flags covered children", () => {
+  const catalog = [
+    { id: "clickup:workspace:w", name: "Acme", kind: "workspace", parent_ids: [] },
+    { id: "clickup:space:s", name: "Projetos", kind: "space", parent_ids: ["clickup:workspace:w"] },
+    { id: "clickup:list:l", name: "Contratos", kind: "list", parent_ids: ["clickup:space:s"] },
+  ];
+  const { folders } = newSpaceOptions(catalog, [{ name: "Projetos", selection_kind: "selected", selection_folder_ids: ["clickup:space:s"] }], "clickup");
+  assert.deepEqual(folders.map((folder) => [folder.id, folder.existingSpace, folder.coveredBy]), [
+    ["clickup:workspace:w", null, null],
+    ["clickup:space:s", "Projetos", null],
+    ["clickup:list:l", null, "Projetos"],
+  ]);
+  assert.equal(catalogItemPath(catalog[2], catalog), "Acme / Projetos / Contratos");
+});

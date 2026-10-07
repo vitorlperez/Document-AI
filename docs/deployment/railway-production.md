@@ -36,6 +36,7 @@ TYPESAFE_API_KEY=<segredo; só a API usa, o worker ignora>
 GOOGLE_TOKEN_ENCRYPTION_KEY=<chave Fernet estável>
 MICROSOFT_TOKEN_ENCRYPTION_KEY=<chave Fernet estável>
 NOTION_TOKEN_ENCRYPTION_KEY=<chave Fernet estável>
+CLICKUP_TOKEN_ENCRYPTION_KEY=<chave Fernet estável>
 GOOGLE_OAUTH_CLIENT_ID=<client id>
 GOOGLE_OAUTH_CLIENT_SECRET=<segredo>
 GOOGLE_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/google/oauth/callback
@@ -47,6 +48,10 @@ MICROSOFT_SHAREPOINT_REDIRECT_URI=https://app.seudominio.com/api/data-sources/sh
 NOTION_OAUTH_CLIENT_ID=<client id>
 NOTION_OAUTH_CLIENT_SECRET=<segredo>
 NOTION_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/notion/oauth/callback
+CLICKUP_OAUTH_CLIENT_ID=<client id>
+CLICKUP_OAUTH_CLIENT_SECRET=<segredo>
+CLICKUP_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/clickup/oauth/callback
+# Opcional do ClickUp (padrão false): CLICKUP_INCLUDE_CLOSED_TASKS=true indexa também tarefas fechadas
 ```
 
 A API precisa ainda de:
@@ -85,6 +90,7 @@ Depois de HTTPS funcionar, cadastre os callbacks exatos:
 - Microsoft Entra: `https://app.seudominio.com/api/data-sources/onedrive/oauth/callback` e os tipos de conta/permissões aprovados para OneDrive pessoal e corporativo.
 - Microsoft Entra (SharePoint, mesmo app multi-tenant): `https://app.seudominio.com/api/data-sources/sharepoint/oauth/callback` e a permissão delegada `Sites.Read.All`. O valor deve casar caractere por caractere com `MICROSOFT_SHAREPOINT_REDIRECT_URI`. Veja `docs/integracoes/sharepoint-runbook-consentimento-admin.md`.
 - Notion: `https://app.seudominio.com/api/data-sources/notion/oauth/callback`.
+- ClickUp (app OAuth em Settings > Apps): `https://app.seudominio.com/api/data-sources/clickup/oauth/callback`. Veja `docs/integracoes/clickup-runbook.md`.
 - Resend: verifique o domínio do remetente de convites.
 
 Se um provedor aceita apenas um callback por aplicação, use credenciais de homologação separadas para evitar substituir o callback já usado por produção.
@@ -92,7 +98,7 @@ Se um provedor aceita apenas um callback por aplicação, use credenciais de hom
 ## 6. Verificar e liberar
 
 1. Publique primeiro em homologação, nesta ordem: Postgres/Redis, API com migração concluída, worker e frontend. Confira os logs do pre-deploy: migração concluída uma vez, API saudável em `/health/ready`, worker conectado ao Redis e frontend com a URL correta da API. Em deploys futuros, só atualize o worker após a migração da API quando ele depender do novo esquema.
-2. Teste login, logout, convite, acesso de admin, conexão e reconexão de Google Drive/Notion/OneDrive, sincronização de um conjunto pequeno, embeddings, resposta com referências e reprocessamento após reinício do worker. Confira que o worker registra estado terminal do job e que segredos/texto integral não aparecem nos logs.
+2. Teste login, logout, convite, acesso de admin, conexão e reconexão de Google Drive/Notion/OneDrive/ClickUp, sincronização de um conjunto pequeno, embeddings, resposta com referências e reprocessamento após reinício do worker. Confira que o worker registra estado terminal do job e que segredos/texto integral não aparecem nos logs.
 3. Ative backups agendados do volume do Postgres, mantenha `pg_dump` periódico em armazenamento **fora do projeto Railway** e restaure um dump em homologação. Registre tempo de restauração e idade do backup. Backups do volume são úteis para erros locais; o dump externo cobre perda do projeto/volume.
 4. Configure alertas de falha de deploy, serviço indisponível, memória, volume do banco e gasto. Compare CPU, RAM, tempo de sincronização e fatura na primeira semana com o orçamento definido.
 5. Só então replique a configuração no ambiente de produção, mantenha os serviços na mesma região, rode uma sincronização controlada e habilite autodeploy após o primeiro deploy validado.

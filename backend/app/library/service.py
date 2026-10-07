@@ -1292,6 +1292,7 @@ class LibraryService:
         provider_name = {
             "google_drive": "Google Drive",
             "notion": "Notion",
+            "clickup": "ClickUp",
             "onedrive": "OneDrive",
             "sharepoint": "SharePoint",
         }.get(source.provider, source.provider.replace("_", " ").title())

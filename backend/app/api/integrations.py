@@ -10,6 +10,14 @@ from sqlalchemy.orm import Session
 from app.api.auth import current_user, database_session
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
+from app.integrations.clickup import (
+    ClickUpAccessDenied,
+    ClickUpConnectionService,
+    ClickUpOAuthClient,
+    ClickUpOAuthInvalid,
+    ClickUpOAuthUnavailable,
+)
+from app.integrations.errors import SourceItemUnavailable, SourceRemoteUnauthorized
 from app.integrations.google_drive import (
     CredentialCipher,
     GoogleAccessDenied,
@@ -86,6 +94,37 @@ def notion_service(request: Request, session: Session) -> NotionConnectionServic
             redirect_uri=request.app.state.settings.notion_oauth_redirect_uri,
         ),
     )
+
+
+def clickup_service(request: Request, session: Session) -> ClickUpConnectionService:
+    settings = request.app.state.settings
+    keys = settings.cipher_keys("clickup")
+    return ClickUpConnectionService(
+        session,
+        CredentialCipher(keys[0], fallback_keys=keys[1:]),
+        ClickUpOAuthClient(
+            client_id=settings.clickup_oauth_client_id,
+            client_secret=settings.clickup_oauth_client_secret.get_secret_value()
+            if settings.clickup_oauth_client_secret
+            else None,
+            redirect_uri=settings.clickup_oauth_redirect_uri,
+        ),
+    )
+
+
+def clickup_remote_folders(request: Request, session: Session, source: DataSource, *, organization_id: UUID, user_id: UUID):
+    """Admin-only remote catalog of a ClickUp source; revoked credentials flag it for reconnection."""
+    clickup_service(request, session).require_admin(scope=OrganizationScope(organization_id), user_id=user_id)
+    try:
+        return (
+            IntegrationRegistry(request.app.state.settings)
+            .get("clickup")
+            .folders(encrypted_credentials=source.encrypted_credentials)
+        )
+    except (SourceRemoteUnauthorized, SourceItemUnavailable) as error:
+        source.status = "reauth_required"
+        session.commit()
+        raise HTTPException(409, "reauthentication required") from error
 
 
 def onedrive_service(request: Request, session: Session) -> OneDriveConnectionService:
@@ -309,6 +348,57 @@ def notion_callback(
     return {"id": str(source.id), "status": source.status}
 
 
+@router.get("/data-sources/clickup/oauth/start")
+def start_clickup(
+    organization_id: UUID,
+    request: Request,
+    source_id: UUID | None = None,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> RedirectResponse:
+    secret = request.cookies.get(request.app.state.settings.auth_session_cookie_name)
+    if not secret:
+        raise HTTPException(401, "authentication required")
+    try:
+        url = clickup_service(request, session).begin(
+            scope=OrganizationScope(organization_id),
+            user_id=user.id,
+            session_secret=secret,
+            source_id=source_id,
+        )
+    except ClickUpOAuthUnavailable as error:
+        raise HTTPException(503, "integration unavailable") from error
+    except (ClickUpAccessDenied, ClickUpOAuthInvalid) as error:
+        raise HTTPException(403, "not allowed") from error
+    return RedirectResponse(url, status_code=302)
+
+
+@router.get("/data-sources/clickup/oauth/callback", response_model=None)
+def clickup_callback(
+    code: str, state: str, request: Request, session: Session = Depends(database_session)
+) -> dict[str, str] | RedirectResponse:
+    secret = request.cookies.get(request.app.state.settings.auth_session_cookie_name)
+    if not secret:
+        raise HTTPException(401, "authentication failed")
+    try:
+        source = clickup_service(request, session).complete(
+            raw_state=state, code=code, session_secret=secret
+        )
+    except ClickUpOAuthInvalid as error:
+        raise HTTPException(401, "authentication failed") from error
+    except ClickUpAccessDenied as error:
+        raise HTTPException(403, "not allowed") from error
+    except ClickUpOAuthUnavailable as error:
+        raise HTTPException(503, "integration unavailable") from error
+    if "text/html" in request.headers.get("accept", "").lower():
+        app_url = request.app.state.settings.public_app_url.rstrip("/")
+        return RedirectResponse(
+            f"{app_url}/companies/{source.organization_id}/integrations?connected=clickup",
+            status_code=303,
+        )
+    return {"id": str(source.id), "status": source.status}
+
+
 def _start_google_oauth(
     *,
     organization_id: UUID,
@@ -438,13 +528,13 @@ def disconnect_source(
             DataSource.organization_id == organization_id,
         )
     )
-    services = {**MICROSOFT_SERVICES, "notion": notion_service}
+    services = {**MICROSOFT_SERVICES, "notion": notion_service, "clickup": clickup_service}
     build_service = services.get(source.provider if source is not None else "", service)
     try:
         build_service(request, session).disconnect(
             scope=OrganizationScope(organization_id), user_id=user.id, source_id=source_id
         )
-    except (GoogleAccessDenied, OneDriveAccessDenied, OneDriveOAuthInvalid, NotionAccessDenied) as error:
+    except (GoogleAccessDenied, OneDriveAccessDenied, OneDriveOAuthInvalid, NotionAccessDenied, ClickUpAccessDenied) as error:
         raise HTTPException(403, "not allowed") from error
 
 
@@ -528,6 +618,17 @@ def scope_catalog(
                          "parent_ids": list(item.parent_ids)} for item in rows],
             "root_files": {"available": False, "label": "Páginas acessíveis"},
             "all_accessible": {"available": True, "label": "Todas as páginas acessíveis"},
+        }
+    if source is not None and source.provider == "clickup":
+        try:
+            rows = clickup_remote_folders(request, session, source, organization_id=organization_id, user_id=user.id)
+        except (ClickUpAccessDenied, ClickUpOAuthInvalid, ClickUpOAuthUnavailable) as error:
+            raise HTTPException(status_code=403, detail="not allowed") from error
+        return {
+            "folders": [{"id": item.id, "name": item.name, "kind": item.kind,
+                         "parent_ids": list(item.parent_ids)} for item in rows],
+            "root_files": {"available": False, "label": "Itens avulsos"},
+            "all_accessible": {"available": True, "label": "Todos os espaços acessíveis do ClickUp"},
         }
     if source is not None and source.provider in MICROSOFT_SERVICES:
         try:
@@ -643,6 +744,9 @@ def select_scope(
                 .get("notion")
                 .folders(encrypted_credentials=selected_source.encrypted_credentials)
             )
+        elif selected_source.provider == "clickup":
+            remote = clickup_remote_folders(
+                request, session, selected_source, organization_id=organization_id, user_id=user.id)
         elif selected_source.provider == "onedrive":
             remote = onedrive_service(request, session).folders(
                 scope=scoped,
@@ -689,7 +793,7 @@ def select_scope(
     except OneDriveReauthRequired as error:
         session.commit()
         raise HTTPException(409, "reauthentication required") from error
-    except NotionAccessDenied as error:
+    except (NotionAccessDenied, ClickUpAccessDenied) as error:
         raise HTTPException(403, "not allowed") from error
     except GoogleOAuthInvalid as error:
         session.commit()

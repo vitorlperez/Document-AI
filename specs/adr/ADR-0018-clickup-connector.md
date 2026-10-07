@@ -1,0 +1,34 @@
+# ADR-0018: Conector ClickUp (tarefas e Docs, somente leitura)
+
+- **Status:** Aprovado e implementado; piloto em workspace real pendente (credenciais do app OAuth)
+- **Data:** 2026-10-07
+- **Decisor:** produto (usuário), com os demais defaults desta ADR
+- **Relaciona-se com:** ADR-0012 (núcleo HTTP), ADR-0013 (chave por provider); `specs/research/integracoes-analise-2026-09-29.md` §4 classificou ClickUp como "fora de foco"; esta ADR registra a decisão explícita do produto de integrá-lo mesmo assim.
+
+## Contexto
+
+Agências e consultorias do ICP gerenciam trabalho em ClickUp. Tarefas (briefing, escopo, decisões nos comentários da descrição) e Docs são conhecimento citável. O pipeline já aceita qualquer fonte que entregue `DiscoveredDocument` + árvore `RemoteFolder`; o ClickUp é um conector de "árvore de itens de texto", como o Notion, sem baixar arquivos.
+
+## Decisões
+
+| # | Decisão |
+|---|---|
+| D1 | Provider novo `clickup` (`DataSource` próprio), módulo `app/integrations/clickup.py`, seguindo `notion.py`: cliente OAuth + serviço de conexão (`OAuthConnectionServiceBase`) + `ClickUpDocumentProvider`. Sem microserviço novo, sem migração de banco. |
+| D2 | OAuth 2.0 *authorization code* ([ClickUp — Authentication](https://developer.clickup.com/docs/authentication)): autorização em `https://app.clickup.com/api`, troca em `POST /api/v2/oauth/token` com `client_id`, `client_secret`, `code`. O token **não expira e não há refresh token** (documentação oficial, "subject to change"): credencial guarda `refresh_token=None`, `expires_at=None`; revogação aparece como 401 e marca a fonte `reauth_required`. O usuário escolhe quais Workspaces autorizar; `GET /api/v2/team` lista só os autorizados. |
+| D3 | Somente leitura; sem webhooks. Nenhum escopo granular existe no ClickUp: o token dá acesso a tudo que o usuário conector vê nos Workspaces autorizados (mesmo risco R-A3 do SharePoint: o conteúdo lido com o token do admin fica visível a todos os membros; `uniform_access_confirmed` continua obrigatório). |
+| D4 | Árvore da biblioteca `ClickUp → Workspace → Space → Folder → List → tarefa`; Docs ficam sob o Space/Folder/List pai (parent.type 4/5/6) ou sob o Workspace (7/12). IDs de contêiner `clickup:workspace:`, `clickup:space:`, `clickup:folder:`, `clickup:list:`; documentos `clickup:task:{id}` e `clickup:doc:{id}`. Qualquer nível é selecionável, e `all_accessible` é permitido; `root_files` não existe. |
+| D5 | **Um documento por tarefa** (citação precisa) e um por Doc (páginas concatenadas com títulos hierárquicos, `content_format=text/md`). Texto da tarefa: título, caminho da lista, status, prioridade, responsáveis, etiquetas, vencimento, tarefa-pai, campos personalizados simples (texto, número, URL, e-mail, telefone, dropdown/labels resolvidos, data) e descrição em Markdown. Tarefas só com título continuam indexadas (achar "existe uma tarefa X?" é um caso de uso). **Fora do escopo v1:** comentários, anexos, checklists, histórico, campos de usuário/relacionamento. |
+| D6 | **Tarefas fechadas e arquivadas não são indexadas por padrão** (`CLICKUP_INCLUDE_CLOSED_TASKS=false`): é histórico, não conhecimento de trabalho, e limita o custo de embedding e o volume de documentos. Ligar a variável inclui as fechadas (a próxima sincronização completa as adiciona). |
+| D7 | Sem cursor incremental na API (nenhum delta/changes feed; `supports_incremental_sync=False`). Cada sincronização lista os Workspaces/Spaces/Folders/Lists (poucas chamadas) e as tarefas por lista (100 por página); o que não mudou (`date_updated` igual ao `modified_at` do `Document` indexado) volta só como metadado (`catalog_documents`) e não é re-lido nem re-embedado. Docs não alterados também não têm as páginas re-lidas (1 chamada por Doc só quando mudou). Remoções = IDs conhecidos que sumiram do snapshot. Leitura parcial nunca prova remoção, por área: lista ilegível (403/404) bloqueia só remoções de tarefas, Docs indisponíveis ou página de Doc ilegível bloqueiam só remoções de Docs, e **qualquer** leitura parcial proíbe `full_snapshot` (que removeria tudo que faltou na rodada). Mudança do formato de texto (`CLICKUP_PROCESSING_VERSION`) força reindexação completa, como no Notion. |
+| D8 | Limite de taxa: 100 req/min por token nos planos Free, Unlimited e Business; 1.000 no Business Plus; 10.000 no Enterprise ([ClickUp — Rate Limits](https://developer.clickup.com/docs/rate-limits)). `RemoteHttp` com intervalo mínimo de 0,7 s (≈85 req/min, abaixo do menor teto) e retry/backoff em 429. Um workspace grande leva minutos, não segundos (ex.: 5.000 tarefas ≈ 50 páginas ≈ 35 s só de listagem). |
+| D9 | Chave de cifra própria `CLICKUP_TOKEN_ENCRYPTION_KEY`, sem fallback legado; em produção, com `CLICKUP_OAUTH_CLIENT_ID` definido, a chave própria e distinta é exigida (mesmo critério do Notion, ADR-0013). Uma fonte ClickUp por organização (reconectar reutiliza a fonte). |
+| D10 | Docs (API v3) podem estar indisponíveis no plano/token: 403/404 em `GET /api/v3/workspaces/{id}/docs` não falha a sincronização; tarefas continuam e nenhuma remoção de Doc é declarada. |
+| D11 | A biblioteca projeta só os contêineres selecionados e seus ancestrais (`folders_for_selections`, como no Notion): nomes de Spaces/Lists não selecionados não ficam navegáveis por todos os membros. Um 429 espera o `X-RateLimit-Reset` (Unix) quando não há `Retry-After`. |
+
+## Consequências
+
+- **Cota de documentos ativos (`ACTIVE_DOCUMENT_LIMIT`, padrão 500 por organização, `app/ingestion/service.py`):** tarefas são muitos documentos pequenos. Uma organização com milhares de tarefas abertas atinge o teto e a sincronização falha com `organization active document limit reached`. O custo marginal é baixo (embedding ≈ US$ 0,02 por milhão de tokens; ~6 KB de vetor por chunk no Postgres), então o remédio é subir o limite da organização-piloto deliberadamente, não agrupar tarefas. Decisão de operação em `docs/integracoes/clickup-runbook.md`.
+- O texto de uma tarefa inalterada inclui o caminho da lista no momento em que foi indexada; renomear uma lista só atualiza esse texto quando a tarefa muda (ou em reprocessamento completo). A árvore da biblioteca é atualizada na hora.
+- Sem ACL por tarefa/lista (R-A3) e a limitação conhecida de projeção multi-espaço da mesma fonte (R-A2, `specs/security-hardening-followups.md`) valem também aqui.
+- O parâmetro `parent.type` dos Docs (4=Space, 5=Folder, 6=List, 7=Everything, 12=Workspace) vem da referência do endpoint "Create a Doc" da ClickUp; um valor desconhecido cai no Workspace.
+- Validação ponta a ponta contra um workspace real não foi possível sem as credenciais do app OAuth: o contrato HTTP foi construído sobre a documentação oficial e coberto por testes com respostas simuladas. Ver `docs/integracoes/clickup-runbook.md` (checklist de piloto).

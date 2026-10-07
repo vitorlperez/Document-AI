@@ -1,4 +1,4 @@
-export type CatalogFolder = { id: string; name: string; selectable?: boolean; parent_ids?: string[]; kind?: "folder" | "page" | "database" | "data_source" };
+export type CatalogFolder = { id: string; name: string; selectable?: boolean; parent_ids?: string[]; kind?: "folder" | "page" | "database" | "data_source" | "workspace" | "space" | "list" };
 export type ExistingSpace = { name: string; selection_kind?: string; selection_folder_ids?: string[] };
 /** `existingSpace` names the space that already is this folder: choosing it re-syncs that space completely. */
 export type NewSpaceFolder = CatalogFolder & { coveredBy: string | null; existingSpace: string | null };
