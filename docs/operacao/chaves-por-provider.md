@@ -2,8 +2,9 @@
 
 API e worker devem receber as mesmas chaves de cada provider. Google usa
 `GOOGLE_TOKEN_ENCRYPTION_KEY`, OneDrive usa `MICROSOFT_TOKEN_ENCRYPTION_KEY` e
-Notion usa `NOTION_TOKEN_ENCRYPTION_KEY`. Em produção, chaves preenchidas devem
-ser distintas e Notion habilitado exige sua própria chave.
+Notion usa `NOTION_TOKEN_ENCRYPTION_KEY` e ClickUp usa `CLICKUP_TOKEN_ENCRYPTION_KEY`. Em
+produção, chaves preenchidas devem ser distintas e Notion/ClickUp habilitados
+exigem sua própria chave (ClickUp não tem fallback legado).
 
 Para gerar uma chave em um terminal seguro:
 

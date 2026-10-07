@@ -4,6 +4,7 @@
 
 - **Arquivos:** Google Drive e OneDrive estão ativos; Dropbox permanece futuro.
 - **Documentação:** Notion está ativo; GitHub Markdown, GitLab e Confluence permanecem futuros.
+- **Projetos:** ClickUp está ativo (tarefas e Docs, somente leitura; ADR-0018).
 - **Comunicação:** Slack, Microsoft Teams e outras fontes de decisões da equipe.
 
 Integrações futuras podem aparecer como "Em breve", mas somente fontes com adapter e fluxo OAuth implementados devem permitir conexão.
@@ -36,6 +37,7 @@ O produto atual concluiu essa sequência para OneDrive; a lista é mantida como 
 | Google Drive | Docs (export TXT), PDF, DOCX, Markdown; com `NEW_FORMATS_ENABLED=true`: TXT, CSV, XLSX, PPTX, Sheets (export XLSX), Slides (export PPTX) |
 | OneDrive | PDF, DOCX, Markdown; com `NEW_FORMATS_ENABLED=true`: TXT, CSV, XLSX, PPTX |
 | Notion | Markdown do adapter existente |
+| ClickUp | Markdown: uma tarefa ou um Doc por documento (sem comentários nem anexos) |
 
 Formatos novos permanecem desligados por padrão. `ACTIVE_DOCUMENT_LIMIT` mantém o default 500.
 Extração limita bytes a 25 MiB (ZIP descomprimido 200 MiB e razão 200), texto a 600.000 caracteres e chunks a 2.000 por documento. Planilhas: 20 abas, 5.000 linhas/aba, 60 colunas, 2.000 caracteres/célula; cada bloco carrega cabeçalhos e número das linhas. Abas ocultas são ignoradas; linhas/colunas ocultas são incluídas; fórmulas usam o valor em cache, sem calcular fórmulas. Slides preservam número e título; notas do orador são rotuladas separadamente. Imagens, macros, gráficos e formatos legados continuam fora do escopo.

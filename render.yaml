@@ -62,6 +62,16 @@ services:
         sync: false
       - key: NOTION_TOKEN_ENCRYPTION_LEGACY_FALLBACK
         value: "true"
+      - key: CLICKUP_OAUTH_CLIENT_ID
+        sync: false
+      - key: CLICKUP_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: CLICKUP_OAUTH_REDIRECT_URI
+        sync: false
+      - key: CLICKUP_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: CLICKUP_INCLUDE_CLOSED_TASKS
+        value: "false"
       - key: RESEND_API_KEY
         sync: false
       - key: INVITATION_FROM_EMAIL

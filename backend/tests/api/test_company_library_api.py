@@ -805,3 +805,149 @@ def test_sync_history_and_status_report_empty_files_as_skipped(api):
     assert run["skipped_items"] == [{"external_id": "blank", "name": "Untitled", "reason": "empty_content"}]
     item = client.get(f"/library/sync-status?organization_id={organization}").json()["items"][0]
     assert (item["state"], item["processed"], item["total"], item["failed"], item["skipped"]) == ("ready", 2, 2, 0, 1)
+
+
+def _clickup_source(factory, organization: str) -> str:
+    source_id = seed_library(factory, organization)
+    with factory.begin() as session:
+        session.get(DataSource, UUID(source_id)).provider = "clickup"
+    return source_id
+
+
+def _fake_clickup_registry(monkeypatch, *, rows=None, error=None):
+    from types import SimpleNamespace
+
+    from app.api import integrations
+
+    def folders(**_):
+        if error is not None:
+            raise error
+        return rows
+
+    monkeypatch.setattr(integrations, "IntegrationRegistry", lambda _: SimpleNamespace(
+        get=lambda _: SimpleNamespace(folders=folders)))
+
+
+def test_clickup_catalog_exposes_the_hierarchy_and_saves_a_folder_scope(api, monkeypatch):
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = _clickup_source(factory, organization)
+    _fake_clickup_registry(monkeypatch, rows=[
+        RemoteFolder("clickup:workspace:w", "Acme", kind="workspace"),
+        RemoteFolder("clickup:space:s", "Projetos", ("clickup:workspace:w",), kind="space"),
+        RemoteFolder("clickup:list:l", "Contratos", ("clickup:space:s",), kind="list")])
+    catalog = client.get(f"/data-sources/{source_id}/scope-catalog?organization_id={organization}")
+    assert catalog.status_code == 200
+    assert catalog.json()["folders"][2] == {"id": "clickup:list:l", "name": "Contratos", "kind": "list",
+                                           "parent_ids": ["clickup:space:s"]}
+    assert catalog.json()["root_files"]["available"] is False
+    assert catalog.json()["all_accessible"]["available"] is True
+    selected = client.post(f"/workspace-folders/selections?organization_id={organization}", json={
+        "source_id": source_id, "mode": "selected", "folder_ids": ["clickup:space:s"],
+        "uniform_access_confirmed": True,
+    })
+    assert selected.status_code == 201
+    unknown = client.post(f"/workspace-folders/selections?organization_id={organization}", json={
+        "source_id": source_id, "mode": "selected", "folder_ids": ["clickup:list:elsewhere"],
+        "uniform_access_confirmed": True,
+    })
+    assert unknown.status_code == 422
+    with factory() as session:
+        workspace = session.get(WorkspaceFolder, UUID(selected.json()["id"]))
+        assert workspace.name == "Projetos"
+
+
+@pytest.mark.parametrize("role", ["member", "inactive", "outsider"])
+def test_clickup_catalog_and_selection_reject_non_admins(api, monkeypatch, role):
+    from app.organizations.models import Membership, MembershipRole
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = _clickup_source(factory, organization)
+    _fake_clickup_registry(monkeypatch, rows=[RemoteFolder("clickup:list:l", "Contratos", kind="list")])
+    with factory.begin() as session:
+        if role == "member": session.query(Membership).one().role = MembershipRole.MEMBER
+        if role == "inactive": session.query(Membership).one().is_active = False
+    if role == "outsider": login(client, "outsider")
+    assert client.get(f"/data-sources/{source_id}/scope-catalog?organization_id={organization}").status_code in {403, 404}
+    response = client.post(f"/workspace-folders/selections?organization_id={organization}", json={
+        "source_id": source_id, "mode": "all_accessible", "uniform_access_confirmed": True,
+    })
+    assert response.status_code in {403, 404}
+    with factory() as session:
+        assert session.query(WorkspaceFolder).filter_by(source_id=UUID(source_id)).count() == 1  # seeded scope only
+
+
+@pytest.mark.parametrize("failure", ["unauthorized", "forbidden"])
+def test_clickup_revoked_token_asks_for_reconnection_instead_of_failing(api, monkeypatch, failure):
+    from app.integrations.clickup import ClickUpRemoteUnauthorized
+    from app.integrations.errors import SourceItemUnavailable
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = _clickup_source(factory, organization)
+    _fake_clickup_registry(monkeypatch, error=ClickUpRemoteUnauthorized() if failure == "unauthorized" else SourceItemUnavailable("restricted_resource"))
+    response = client.get(f"/data-sources/{source_id}/scope-catalog?organization_id={organization}")
+    assert response.status_code == 409 and response.json() == {"detail": "reauthentication required"}
+    with factory() as session:
+        assert session.get(DataSource, UUID(source_id)).status == "reauth_required"
+
+
+def test_clickup_disconnect_is_admin_only_and_clears_the_credentials(api):
+    from app.organizations.models import Membership, MembershipRole
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source_id = _clickup_source(factory, organization)
+    with factory.begin() as session:
+        session.query(Membership).one().role = MembershipRole.MEMBER
+    assert client.delete(f"/data-sources/{source_id}?organization_id={organization}").status_code == 403
+    with factory.begin() as session:
+        session.query(Membership).one().role = MembershipRole.OWNER
+    assert client.delete(f"/data-sources/{source_id}?organization_id={organization}").status_code == 204
+    with factory() as session:
+        source = session.get(DataSource, UUID(source_id))
+        assert (source.status, source.encrypted_credentials) == ("disconnected", None)
+
+
+def test_clickup_oauth_start_requires_configuration(api):
+    client, _ = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    response = client.get(f"/data-sources/clickup/oauth/start?organization_id={organization}", follow_redirects=False)
+    assert response.status_code == 503 and response.json() == {"detail": "integration unavailable"}
+
+
+def test_clickup_oauth_round_trip_stores_only_encrypted_credentials(api, monkeypatch):
+    import httpx
+    from cryptography.fernet import Fernet
+    from pydantic import SecretStr
+    client, factory = api
+    settings = client.app.state.settings
+    key = Fernet.generate_key().decode()
+    for name, value in {"clickup_oauth_client_id": "cid", "clickup_oauth_client_secret": SecretStr("csecret"),
+                        "clickup_oauth_redirect_uri": "http://api.example.test/data-sources/clickup/oauth/callback",
+                        "clickup_token_encryption_key": SecretStr(key)}.items():
+        monkeypatch.setattr(settings, name, value)
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    started = client.get(f"/data-sources/clickup/oauth/start?organization_id={organization}", follow_redirects=False)
+    assert started.status_code == 302
+    assert started.headers["location"].startswith("https://app.clickup.com/api?")
+    state = parse_qs(urlparse(started.headers["location"]).query)["state"][0]
+    monkeypatch.setattr(httpx, "post", lambda url, **kw: httpx.Response(
+        200, json={"access_token": "clickup-secret-token"}, request=httpx.Request("POST", url)))
+    monkeypatch.setattr(httpx, "get", lambda url, **kw: httpx.Response(
+        200, json={"user": {"email": "Owner@Example.Test"}}, request=httpx.Request("GET", url)))
+    done = client.get(f"/data-sources/clickup/oauth/callback?code=the-code&state={state}",
+                      headers={"accept": "text/html"}, follow_redirects=False)
+    assert done.status_code == 303
+    assert done.headers["location"] == f"http://app.example.test/companies/{organization}/integrations?connected=clickup"
+    assert "the-code" not in done.headers["location"] and state not in done.headers["location"]
+    with factory() as session:
+        source = session.scalar(select(DataSource).where(DataSource.provider == "clickup"))
+        assert (source.status, source.account_email) == ("connected", "owner@example.test")
+        assert source.encrypted_credentials and "clickup-secret-token" not in source.encrypted_credentials
+    replay = client.get(f"/data-sources/clickup/oauth/callback?code=the-code&state={state}")
+    assert replay.status_code == 401

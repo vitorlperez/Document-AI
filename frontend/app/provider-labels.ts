@@ -3,6 +3,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   onedrive: "OneDrive",
   sharepoint: "SharePoint",
   notion: "Notion",
+  clickup: "ClickUp",
 };
 
 export function providerLabel(provider: string | null | undefined): string {

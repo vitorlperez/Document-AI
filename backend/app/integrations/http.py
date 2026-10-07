@@ -61,6 +61,17 @@ def parse_retry_after(value: str | None, *, now: datetime | None = None) -> floa
     return max(0.0, seconds) if math.isfinite(seconds) else None
 
 
+def parse_rate_limit_reset(value: str | None, *, now: datetime | None = None) -> float | None:
+    """`X-RateLimit-Reset` as a Unix timestamp (ClickUp 429s carry it instead of Retry-After)."""
+    try:
+        reset = float(value or "")
+    except ValueError:
+        return None
+    if not math.isfinite(reset) or not 1e9 <= reset < 4e9:  # seconds-left or milliseconds: not a Unix timestamp
+        return None
+    return max(1.0, reset - (now or datetime.now(UTC)).timestamp())  # floor: clock skew must not mean "no wait"
+
+
 @dataclass(frozen=True)
 class RetryPolicy:
     max_attempts: int = 5  # total tries, the first included
@@ -102,6 +113,8 @@ class RemoteHttp:
             if not idempotent or not self._retryable(response):
                 return response
             retry_after = parse_retry_after(response.headers.get("Retry-After"))
+            if retry_after is None:
+                retry_after = parse_rate_limit_reset(response.headers.get("X-RateLimit-Reset"))
             delay = self._delay(attempt, retry_after)
             last = attempt == self.policy.max_attempts - 1
             if response.status_code in _THROTTLE_STATUSES:
