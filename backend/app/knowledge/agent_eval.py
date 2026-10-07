@@ -23,7 +23,8 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
-from app.knowledge.agent import AgentLimits, AgentService, FlowModels
+from app.knowledge.agent import AgentLimits, AgentService, FlowModels, agent_service_from_settings
+from app.knowledge.answer_assessment import OfflineAnswerJudge
 from app.knowledge.questions import SemanticProvider
 
 _URL = re.compile(r"https?://|www\.", re.IGNORECASE)
@@ -55,6 +56,9 @@ class EvalRun:
     catalog_files_named: int
     must_mention_hits: int
     must_mention_total: int
+    assessment: dict | None = None
+    judge: dict | None = None
+    judge_error: str | None = None
 
 
 def load_cases(path: Path, *, folder_id: UUID | None) -> list[EvalCase]:
@@ -82,13 +86,24 @@ def load_cases(path: Path, *, folder_id: UUID | None) -> list[EvalCase]:
 def run_case(
     session: Session, provider: SemanticProvider, case: EvalCase, *, scope: OrganizationScope,
     user_id: UUID, limits: AgentLimits, models: FlowModels,
+    settings=None, judge: OfflineAnswerJudge | None = None,
 ) -> EvalRun:
     started = time.monotonic()
+    judged, judge_error = None, None
     try:
-        result, _tool_results, references = AgentService(session, provider, limits, models=models).ask(
+        agent = (agent_service_from_settings(session, provider, settings) if settings is not None
+                 else AgentService(session, provider, limits, models=models))
+        result, tool_results, references = agent.ask(
             scope=scope, user_id=user_id, question=case.question, providers=case.providers,
             mentions=case.mentions, history=[],
         )
+        if judge is not None and result.answer:
+            try:
+                judged = judge.judge(question=case.question, result=result,
+                                     intent=str((result.resolved_context or {}).get('intent', '')),
+                                     catalog=tool_results)
+            except Exception as error:  # noqa: BLE001 - no provider text in reports
+                judge_error = type(error).__name__
     except Exception as error:  # noqa: BLE001 - the report records any failure
         return EvalRun(
             case.id, "error", "error", round(time.monotonic() - started, 2), type(error).__name__,
@@ -116,15 +131,18 @@ def run_case(
         catalog_files_named=sum(name.casefold() in folded for name in files),
         must_mention_hits=sum(term.casefold() in folded for term in case.must_mention),
         must_mention_total=len(case.must_mention),
+        assessment=context.get("assessment"), judge=judged, judge_error=judge_error,
     )
 
 
 def run_all(
     session: Session, provider: SemanticProvider, cases: list[EvalCase], *, scope: OrganizationScope,
     user_id: UUID, limits: AgentLimits, models: FlowModels,
+    settings=None, judge: OfflineAnswerJudge | None = None,
 ) -> list[EvalRun]:
     return [
-        run_case(session, provider, case, scope=scope, user_id=user_id, limits=limits, models=models)
+        run_case(session, provider, case, scope=scope, user_id=user_id, limits=limits, models=models,
+                 settings=settings, judge=judge)
         for case in cases
     ]
 
@@ -148,7 +166,30 @@ def markdown_report(runs: list[EvalRun]) -> str:
         lines.append(
             f"\nClassifier decided {classified}/{len(runs)}; answers with linked sources {cited}/{len(runs)}."
         )
+    judged = [run for run in runs if run.judge is not None]
+    lines.append(f"\nOffline judge: {len(judged)}/{len(runs)} evaluated; "
+                 f"{sum(run.judge_error is not None for run in runs)} errors.")
+    if judged:
+        for key in ('grounding', 'relevance', 'completeness'):
+            lines.append(f"Mean {key}: {sum(run.judge[key] for run in judged) / len(judged):.3f}")
     return "\n".join(lines)
+
+
+def feedback_calibration(session: Session, *, scope: OrganizationScope, user_id: UUID) -> list[dict]:
+    """Export only this member's labeled decision metadata, never prompts or excerpts."""
+    from sqlalchemy import select
+
+    from app.knowledge.models import Conversation, ConversationMessage
+    from app.library.service import LibraryService
+
+    LibraryService(session).require_member(scope=scope, user_id=user_id)
+    messages = session.scalars(select(ConversationMessage).join(
+        Conversation, Conversation.id == ConversationMessage.conversation_id,
+    ).where(Conversation.organization_id == scope.organization_id, Conversation.user_id == user_id,
+            ConversationMessage.role == 'assistant'))
+    return [{'message_id': str(message.id), 'feedback': message.context['feedback'],
+             'assessment': (message.context.get('resolved_context') or {}).get('assessment')}
+            for message in messages if (message.context or {}).get('feedback')]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -162,6 +203,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--folder-id", type=UUID)
     parser.add_argument("--cases", type=Path, default=Path("scripts/agent_eval_cases.json"))
     parser.add_argument("--output", type=Path, help="write the full runs, answers included, as JSON")
+    parser.add_argument('--llm-judge', action='store_true', help='opt-in paid offline evaluation')
+    parser.add_argument('--judge-model', help='defaults to the configured synthesis model')
+    parser.add_argument('--feedback-output', type=Path, help='export own votes and shadow decisions, no content')
     args = parser.parse_args(argv)
 
     settings = get_settings()
@@ -181,8 +225,14 @@ def main(argv: list[str] | None = None) -> int:
     with session_factory() as session:
         runs = run_all(
             session, provider, cases, scope=OrganizationScope(args.organization_id), user_id=args.user_id,
-            limits=limits, models=models,
+            limits=limits, models=models, settings=settings,
+            judge=OfflineAnswerJudge(provider.api_key, model=args.judge_model or settings.agent_synthesis_model)
+            if args.llm_judge else None,
         )
+        if args.feedback_output:
+            args.feedback_output.write_text(json.dumps(
+                feedback_calibration(session, scope=OrganizationScope(args.organization_id),
+                                     user_id=args.user_id), ensure_ascii=False, indent=2), encoding='utf-8')
     print(markdown_report(runs))
     if args.output:
         args.output.write_text(

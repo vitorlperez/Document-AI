@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, ExternalLink, FileText, HelpCircle, RefreshCw, Send, Sparkles } from "lucide-react";
+import { ChevronRight, ExternalLink, FileText, HelpCircle, RefreshCw, Send, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { type OnboardingState } from "../organization-onboarding";
@@ -11,8 +11,25 @@ import { SyncIndicator, useSyncStatus } from "../sync-status";
 import { ToolsSidebar, useToolsSidebarCollapsed } from "../tools-sidebar";
 import { MentionComposer, type MentionCandidate } from "../mention-composer";
 import { mentionSummary } from "../mention-label";
-import { type Company, type LibraryNode, type LibraryPage, type LibraryContext, type LibrarySync, type SavedQuery, type Evidence, type Answer, type ConversationMessage, type PersistedConversationMessage, api, messageFor, useLatestRequest, answerText, citationSourceKey, compactCitations, libraryPath } from "./types-and-api";
+import { type Company, type LibraryNode, type LibraryPage, type LibraryContext, type LibrarySync, type SavedQuery, type Evidence, type Answer, type ConversationMessage as BaseConversationMessage, type PersistedConversationMessage as BasePersistedConversationMessage, api, messageFor, useLatestRequest, answerText, citationSourceKey, compactCitations, libraryPath } from "./types-and-api";
 import { LoadingIndicator, NewConversationButton } from "./shared-ui";
+
+type ConversationMessage = BaseConversationMessage & { feedback?: "up" | "down"; persisted?: boolean };
+type PersistedConversationMessage = Omit<BasePersistedConversationMessage, "context"> & {
+  context: (NonNullable<BasePersistedConversationMessage["context"]> & { feedback?: { vote: "up" | "down" } }) | null;
+};
+
+function restoredMessages(messages: PersistedConversationMessage[]): ConversationMessage[] {
+  let previousProviders: string[] = [];
+  return messages.map((message) => {
+    const providers = message.context?.providers ?? (message.role === "assistant" ? previousProviders : []);
+    if (message.role === "user") previousProviders = providers;
+    const contextName = providers.length > 0 ? providers.map(toolLabel).join(", ") : "Todas as ferramentas";
+    return message.role === "assistant"
+      ? { id: message.id, role: "assistant", content: message.content, contextName, persisted: true, feedback: message.context?.feedback?.vote, answer: message.response ? { ...message.response, citations: compactCitations(message.response.citations ?? []) } : undefined }
+      : { id: message.id, role: "user", content: message.content, contextName, providers, mentions: message.context?.mentions, allTools: providers.length === 0 };
+  });
+}
 
 export function CompanyDashboard({ company, onboarding, onOnboardingChange, onConnect, setError, setNotice }: { company: Company; onboarding: OnboardingState; onOnboardingChange: (state: OnboardingState) => void; onConnect: () => void; setError: (value: string | null) => void; setNotice: (value: string | null) => void }) {
   const [replayTour, setReplayTour] = useState(false);
@@ -96,13 +113,7 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
       ).then((conversation) => {
         if (conversationEpoch.current !== epoch) return;
         setConversationId(conversation.id);
-        setMessages(conversation.messages.map((message) => {
-          const providers = message.context?.providers ?? [];
-          const contextName = providers.length > 0 ? providers.map(toolLabel).join(", ") : "Todas as ferramentas";
-          return message.role === "assistant"
-            ? { id: message.id, role: "assistant", content: message.content, contextName, answer: message.response ? { ...message.response, citations: compactCitations(message.response.citations ?? []) } : undefined }
-            : { id: message.id, role: "user", content: message.content, contextName, providers, mentions: message.context?.mentions, allTools: providers.length === 0 };
-        }));
+        setMessages(restoredMessages(conversation.messages));
       }).catch(() => {
         if (conversationEpoch.current !== epoch) return;
         window.sessionStorage.removeItem(key);
@@ -180,6 +191,13 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
         window.sessionStorage.setItem(`arquivio:conversation:${company.id}`, result.conversation_id);
       }
       setMessages((items) => items.map((item) => item.id === pendingId ? { ...item, pending: false, answer } : item));
+      // Refresh the canonical transcript: never attach a vote to a temporary request UUID.
+      if (result.conversation_id) {
+        try {
+          const saved = await api<{ messages: PersistedConversationMessage[] }>(`/organizations/${company.id}/conversations/${result.conversation_id}`);
+          if (conversationEpoch.current === requestEpoch) setMessages(restoredMessages(saved.messages));
+        } catch { /* Keep the delivered answer; feedback becomes available on successful restore. */ }
+      }
     } catch (caught) {
       if (conversationEpoch.current !== requestEpoch) return;
       const error = messageFor(caught);
@@ -193,7 +211,8 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
       <ToolsSidebar orgId={company.id} canManage={canManage} collapsed={toolsCollapsed} onToggle={toggleTools} tools={syncStatus.tools} loading={syncStatus.loading} libraryRoots={roots} onAdd={onConnect} onSelectTool={(tool) => router.push(libraryPath(company.id, tool.libraryNodeId))} />
       <main id="consultas" className="conversation-panel relative flex min-h-[560px] min-w-0 flex-col bg-white">
         <div className="chat-topbar flex shrink-0 items-center justify-end gap-1 border-b border-line-soft bg-white px-3 py-1.5 sm:px-5"><SyncIndicator tools={syncStatus.tools} /><button type="button" onClick={onShowTour} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:bg-sage" aria-label="Rever tour do app"><HelpCircle size={16} aria-hidden="true" /><span className="hidden sm:inline">Conhecer o app</span></button><NewConversationButton onClick={startNewConversation} disabled={asking} /></div>
-        <div ref={transcriptRef} role="log" aria-label="Conversa com seus documentos" aria-live="polite" className="flex-1 overflow-y-auto px-5 py-6 sm:px-7">{messages.length > 0 ? <div className="mx-auto max-w-3xl space-y-5">{messages.map((message) => message.role === "user" ? <div key={message.id} className="ml-auto max-w-[85%]"><p className="mb-1 text-right text-xs font-medium text-muted-foreground">{message.contextName}</p><div className="conversation-question px-4 py-3 text-sm leading-6">{message.content}{Boolean(message.mentions?.length) && <span className="mt-2 block text-xs">{mentionSummary(message.mentions ?? [])}</span>}</div>{message.contextId && <button disabled={saving} onClick={() => { void saveQuestion(message); }} className="mt-1.5 block ml-auto text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-40">Salvar pergunta</button>}</div> : <article key={message.id} className="conversation-answer"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-sage-selected text-primary"><Sparkles size={15} /></span><div><p className="text-sm font-semibold text-ink">Arquivio</p><p className="text-xs text-muted-foreground">{message.contextName}</p></div></div>{message.pending ? <div className="mt-4 rounded-md bg-paper px-3 py-2.5"><LoadingIndicator label="A IA está analisando as evidências e preparando a resposta…" className="text-sm text-muted-foreground" /></div> : message.error ? <div className="mt-4 text-sm leading-6 text-rose-700"><p>Não foi possível concluir esta pergunta: {message.error}</p><button type="button" className="mt-2 min-h-11 underline" onClick={() => { setQuestion(message.content); setMentions(message.mentions ?? []); setAllTools(message.allTools ?? true); setQueryProviders(message.providers ?? []); composerRef.current?.focus(); }}>Repetir com este contexto</button></div> : message.answer ? <><AssistantAnswer messageId={message.id} answer={message.answer} /></> : null}</article>)}</div> : <div className="mx-auto flex h-full max-w-md flex-col items-center justify-center py-16 text-center"><span className="grid size-12 place-items-center rounded-lg bg-sage text-primary"><Sparkles size={22} /></span><h2 className="mt-4 text-lg font-semibold text-ink">O que você quer descobrir?</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Pergunte sobre conteúdo indexado. Se quiser restringir a pergunta, escolha ferramentas abaixo ou mencione arquivos e pastas com @ ou /.</p>{canAsk && <div className="mt-6 flex flex-wrap justify-center gap-2">{["Quais são os principais prazos?", "O que foi definido sobre as entregas?", "Quais são as responsabilidades da equipe?"].map((prompt) => <button key={prompt} onClick={() => { setQuestion(prompt); setMentions([]); composerRef.current?.focus(); }} className="rounded-md border border-line px-3 py-2 text-xs text-muted-foreground hover:border-primary hover:bg-sage">{prompt}</button>)}</div>}</div>}</div>
+        <div ref={transcriptRef} role="log" aria-label="Conversa com seus documentos" aria-live="polite" className="flex-1 overflow-y-auto px-5 py-6 sm:px-7">{messages.length > 0 ? <div className="mx-auto max-w-3xl space-y-5">{messages.map((message) => message.role === "user" ? <div key={message.id} className="ml-auto max-w-[85%]"><p className="mb-1 text-right text-xs font-medium text-muted-foreground">{message.contextName}</p><div className="conversation-question px-4 py-3 text-sm leading-6">{message.content}{Boolean(message.mentions?.length) && <span className="mt-2 block text-xs">{mentionSummary(message.mentions ?? [])}</span>}</div>{message.contextId && <button disabled={saving} onClick={() => { void saveQuestion(message); }} className="mt-1.5 block ml-auto text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-40">Salvar pergunta</button>}</div> : <article key={message.id} className="conversation-answer"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-sage-selected text-primary"><Sparkles size={15} /></span><div><p className="text-sm font-semibold text-ink">Arquivio</p><p className="text-xs text-muted-foreground">{message.contextName}</p></div></div>{message.pending ? <div className="mt-4 rounded-md bg-paper px-3 py-2.5"><LoadingIndicator label="A IA está analisando as evidências e preparando a resposta…" className="text-sm text-muted-foreground" /></div> : message.error ? <div className="mt-4 text-sm leading-6 text-rose-700"><p>Não foi possível concluir esta pergunta: {message.error}</p><button type="button" className="mt-2 min-h-11 underline" onClick={() => { setQuestion(message.content); setMentions(message.mentions ?? []); setAllTools(message.allTools ?? true); setQueryProviders(message.providers ?? []); composerRef.current?.focus(); }}>Repetir com este contexto</button></div> : message.answer ? <><AssistantAnswer messageId={message.id} answer={message.answer} />
+        {message.persisted && conversationId && <AnswerFeedback organizationId={company.id} conversationId={conversationId} messageId={message.id} initialVote={message.feedback} />}</> : null}</article>)}</div> : <div className="mx-auto flex h-full max-w-md flex-col items-center justify-center py-16 text-center"><span className="grid size-12 place-items-center rounded-lg bg-sage text-primary"><Sparkles size={22} /></span><h2 className="mt-4 text-lg font-semibold text-ink">O que você quer descobrir?</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Pergunte sobre conteúdo indexado. Se quiser restringir a pergunta, escolha ferramentas abaixo ou mencione arquivos e pastas com @ ou /.</p>{canAsk && <div className="mt-6 flex flex-wrap justify-center gap-2">{["Quais são os principais prazos?", "O que foi definido sobre as entregas?", "Quais são as responsabilidades da equipe?"].map((prompt) => <button key={prompt} onClick={() => { setQuestion(prompt); setMentions([]); composerRef.current?.focus(); }} className="rounded-md border border-line px-3 py-2 text-xs text-muted-foreground hover:border-primary hover:bg-sage">{prompt}</button>)}</div>}</div>}</div>
         <form data-tour="composer" onSubmit={(event) => { void ask(event); }} className="conversation-composer shrink-0 bg-white p-4 sm:px-7 sm:py-5">
           <div className="rounded-lg border border-line bg-white p-2 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-sage-selected">
             <MentionComposer organizationId={company.id} value={question} onChange={setQuestion} mentions={mentions} onMentionsChange={setMentions} all={allTools} providers={queryProviders} disabled={asking || restoringConversation} textareaRef={composerRef} onSubmit={() => composerRef.current?.form?.requestSubmit()} />
@@ -208,6 +227,30 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
       </main>
     </div>
   </div></>;
+}
+
+function AnswerFeedback({ organizationId, conversationId, messageId, initialVote }: { organizationId: string; conversationId: string; messageId: string; initialVote?: "up" | "down" }) {
+  const [vote, setVote] = useState(initialVote);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const submitting = useRef(false);
+  async function submit(next: "up" | "down") {
+    if (submitting.current) return;
+    submitting.current = true;
+    setBusy(true); setError(null);
+    try {
+      await api(`/organizations/${organizationId}/conversations/${conversationId}/messages/${messageId}/feedback`, { method: "PUT", body: JSON.stringify({ vote: next }) });
+      setVote(next);
+    } catch (caught) { setError(messageFor(caught)); }
+    finally { submitting.current = false; setBusy(false); }
+  }
+  return <div className="mt-3" aria-label="Avaliar resposta">
+    <div className="flex items-center gap-1">{(["up", "down"] as const).map((value) => <button key={value} type="button" disabled={busy} aria-pressed={vote === value} aria-label={value === "up" ? "Resposta útil" : "Resposta não útil"} onClick={() => { void submit(value); }} className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-sage disabled:opacity-40 ${vote === value ? "bg-sage-selected text-primary" : "text-muted-foreground"}`}>
+      {value === "up" ? <ThumbsUp size={16} aria-hidden="true" /> : <ThumbsDown size={16} aria-hidden="true" />}
+    </button>)}</div>
+    {vote && !error && <p role="status" className="text-xs text-muted-foreground">Avaliação registrada.</p>}
+    {error && <p role="alert" className="text-xs text-rose-700">Não foi possível registrar: {error}</p>}
+  </div>;
 }
 
 function AssistantAnswer({ messageId, answer }: { messageId: string; answer: Answer }) {
