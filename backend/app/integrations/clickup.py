@@ -1,4 +1,4 @@
-"""ClickUp OAuth and API adapter: tasks and Docs as read-only knowledge (ADR-0018)."""
+"""ClickUp OAuth and API adapter: tasks and Docs as read-only knowledge (ADR-0019)."""
 
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
@@ -310,7 +310,7 @@ class ClickUpDocumentProvider:
         """Only selected containers and their ancestors are projected into the library.
 
         Names of Spaces/Lists the admin did not select must not become browsable
-        by every member (there is no per-item ACL, ADR-0018 D3).
+        by every member (there is no per-item ACL, ADR-0019 D3).
         """
         containers = self._containers
         if containers is None:
@@ -429,7 +429,7 @@ class ClickUpDocumentProvider:
 
     @staticmethod
     def _doc_parent(doc: dict, workspace_id: str, containers: dict[str, RemoteFolder]) -> str:
-        """Container of a Doc; an unknown or malformed parent falls back to its Workspace (ADR-0018 D4)."""
+        """Container of a Doc; an unknown or malformed parent falls back to its Workspace (ADR-0019 D4)."""
         parent = doc.get("parent") if isinstance(doc.get("parent"), dict) else {}
         try:
             prefix = _DOC_PARENT_PREFIX.get(int(parent.get("type")))
@@ -476,7 +476,7 @@ def _custom_field_text(field: dict) -> str:
 
 
 def _task_text(task: dict, path: str, siblings: dict[str, dict]) -> str:
-    """Searchable Markdown for one task; attachments and comments are out of scope (ADR-0018)."""
+    """Searchable Markdown for one task; attachments and comments are out of scope (ADR-0019)."""
     header = [f"# {task.get('name') or 'Tarefa sem título'}"]
     facts = [("Lista", path), ("Status", _name_of(task.get("status"), "status")),
              ("Prioridade", _name_of(task.get("priority"), "priority")),
