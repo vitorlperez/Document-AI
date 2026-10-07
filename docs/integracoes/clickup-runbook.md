@@ -1,6 +1,6 @@
 # ClickUp — runbook de ativação e piloto
 
-Decisões e limites: `specs/adr/ADR-0018-clickup-connector.md`.
+Decisões e limites: `specs/adr/ADR-0019-clickup-connector.md`.
 
 ## 1. Criar o app OAuth (ação humana, ~10 min)
 

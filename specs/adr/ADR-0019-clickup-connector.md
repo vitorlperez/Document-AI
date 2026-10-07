@@ -1,4 +1,4 @@
-# ADR-0018: Conector ClickUp (tarefas e Docs, somente leitura)
+# ADR-0019: Conector ClickUp (tarefas e Docs, somente leitura)
 
 - **Status:** Aprovado e implementado; piloto em workspace real pendente (credenciais do app OAuth)
 - **Data:** 2026-10-07

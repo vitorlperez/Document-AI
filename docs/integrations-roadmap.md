@@ -4,7 +4,7 @@
 
 - **Arquivos:** Google Drive e OneDrive estão ativos; Dropbox permanece futuro.
 - **Documentação:** Notion está ativo; GitHub Markdown, GitLab e Confluence permanecem futuros.
-- **Projetos:** ClickUp está ativo (tarefas e Docs, somente leitura; ADR-0018).
+- **Projetos:** ClickUp está ativo (tarefas e Docs, somente leitura; ADR-0019).
 - **Comunicação:** Slack, Microsoft Teams e outras fontes de decisões da equipe.
 
 Integrações futuras podem aparecer como "Em breve", mas somente fontes com adapter e fluxo OAuth implementados devem permitir conexão.

@@ -4,7 +4,7 @@
 
 ## Source and outcome
 
-- Source specification: pedido do produto (missão "Missao 45", 2026-10-07) + `specs/adr/ADR-0018-clickup-connector.md`; padrão de `specs/adr/ADR-0016-sharepoint-connector.md` e `backend/app/integrations/notion.py`. Análise prévia `specs/research/integracoes-analise-2026-09-29.md` §4 recomendava não priorizar ClickUp; a decisão do produto prevalece (registrado na ADR).
+- Source specification: pedido do produto (missão "Missao 45", 2026-10-07) + `specs/adr/ADR-0019-clickup-connector.md`; padrão de `specs/adr/ADR-0016-sharepoint-connector.md` e `backend/app/integrations/notion.py`. Análise prévia `specs/research/integracoes-analise-2026-09-29.md` §4 recomendava não priorizar ClickUp; a decisão do produto prevalece (registrado na ADR).
 - User outcome: um Owner/Admin conecta o ClickUp por OAuth, escolhe Workspace/Space/Folder/List (ou tudo) e as tarefas e Docs entram na biblioteca da empresa, indexados e citáveis, como qualquer outra fonte.
 - Non-goals: escrita no ClickUp, webhooks, comentários, anexos, checklists, histórico, campos de usuário/relacionamento, ACL por tarefa, tarefas fechadas/arquivadas por padrão, MCP de terceiros ao vivo.
 
@@ -12,14 +12,14 @@
 
 | Decision | Owner | Status | ADR / rationale |
 | --- | --- | --- | --- |
-| Integrar ClickUp apesar do "fora de foco" da pesquisa | produto (usuário) | aprovado | ADR-0018 |
-| Provider `clickup` no padrão Notion, sem migração e sem serviço novo | implementação | aprovado | ADR-0018 D1 |
-| Token sem expiração/refresh (docs oficiais) | implementação | aprovado | ADR-0018 D2 |
-| Um documento por tarefa; fechadas fora por padrão | implementação | aprovado | ADR-0018 D5/D6 |
-| Sem delta de API: re-listar e pular o que não mudou; sem remoções com leitura parcial | implementação | aprovado | ADR-0018 D7 |
-| Intervalo 0,7 s (limite 100 req/min) | implementação | aprovado | ADR-0018 D8 |
-| Chave de cifra própria `CLICKUP_TOKEN_ENCRYPTION_KEY` | implementação | aprovado | ADR-0018 D9 |
-| `ACTIVE_DOCUMENT_LIMIT` (500) precisa subir para orgs com muitas tarefas | produto/operação | **pendente de ação humana** | ADR-0018 Consequências; runbook §2 |
+| Integrar ClickUp apesar do "fora de foco" da pesquisa | produto (usuário) | aprovado | ADR-0019 |
+| Provider `clickup` no padrão Notion, sem migração e sem serviço novo | implementação | aprovado | ADR-0019 D1 |
+| Token sem expiração/refresh (docs oficiais) | implementação | aprovado | ADR-0019 D2 |
+| Um documento por tarefa; fechadas fora por padrão | implementação | aprovado | ADR-0019 D5/D6 |
+| Sem delta de API: re-listar e pular o que não mudou; sem remoções com leitura parcial | implementação | aprovado | ADR-0019 D7 |
+| Intervalo 0,7 s (limite 100 req/min) | implementação | aprovado | ADR-0019 D8 |
+| Chave de cifra própria `CLICKUP_TOKEN_ENCRYPTION_KEY` | implementação | aprovado | ADR-0019 D9 |
+| `ACTIVE_DOCUMENT_LIMIT` (500) precisa subir para orgs com muitas tarefas | produto/operação | **pendente de ação humana** | ADR-0019 Consequências; runbook §2 |
 
 ## Ready checklist
 
@@ -33,7 +33,7 @@
 
 | Role | Module/files owned | Deliverable |
 | --- | --- | --- |
-| Specification analyst | Read-only | Esta seção + ADR-0018 |
+| Specification analyst | Read-only | Esta seção + ADR-0019 |
 | Implementation owner | `backend/app/integrations/clickup.py`, `registry.py`, `api/integrations.py`, `core/config.py`, `ingestion/tasks.py`, `api/ingestion.py`, `library/service.py` (nome do provider), `scripts/rekey_sources.py`, frontend (`provider-*`, `integrations-screen`, `types-and-api`, `question-scope`, `new-space-options`), infra (`render.yaml`, `docker-compose.yml`), docs | Mudança de produção |
 | Test engineer | `backend/tests/unit/test_clickup_integration.py`, `backend/tests/api/test_company_library_api.py` (8 testes ao final), `frontend/tests/provider-labels.test.mjs`, `frontend/tests/new-space-options.test.mjs` | Testes automatizados |
 | Feature validator | Read-only | Gate independente (ver Validator report) |
