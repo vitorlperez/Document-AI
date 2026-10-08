@@ -1,0 +1,73 @@
+{
+  "question_http": 200,
+  "local_evaluation": {
+    "kind": "citation_integrity",
+    "outcome": "pass",
+    "issues": [],
+    "checks": {
+      "answer_present": true,
+      "citation_numbers_valid": true,
+      "cited_excerpts_present": true,
+      "document_evidence_present": true
+    },
+    "semantic_grounding": "not_evaluated"
+  },
+  "typesafe_runtime_credential_removed": true,
+  "intent_engine": "llm",
+  "decided_by": "llm",
+  "mode": "shadow",
+  "local_checks": {
+    "answer_present": true,
+    "citations_present": false,
+    "cited_excerpts_present": true
+  },
+  "reason": "external_disabled",
+  "external_enabled": false,
+  "assessment_http_calls": 0,
+  "typesafe_http_calls": 0,
+  "feedback_http": [
+    200,
+    200
+  ],
+  "votes_reread_postgresql": [
+    "up",
+    "down"
+  ],
+  "response_preserved": true,
+  "auth": "real session cookie, synthetic tenant",
+  "transport": "deployed ASGI in API container",
+  "cleanup": "outer PostgreSQL transaction rollback",
+  "code_sha": "c4e64e09b22aa587e26b0aab10d4dfa3aee02f5e",
+  "ci_run": 37705121403,
+  "cleanup_verified": true,
+  "public_readiness_http": 200,
+  "remote_key_revocation": "pending human provider dashboard",
+  "local_examples": [
+    {
+      "kind": "citation_integrity",
+      "outcome": "pass",
+      "issues": [],
+      "checks": {
+        "answer_present": true,
+        "citation_numbers_valid": true,
+        "cited_excerpts_present": true,
+        "document_evidence_present": true
+      },
+      "semantic_grounding": "not_evaluated"
+    },
+    {
+      "kind": "citation_integrity",
+      "outcome": "warn",
+      "issues": [
+        "invalid_citation_reference"
+      ],
+      "checks": {
+        "answer_present": true,
+        "citation_numbers_valid": false,
+        "cited_excerpts_present": true,
+        "document_evidence_present": true
+      },
+      "semantic_grounding": "not_evaluated"
+    }
+  ]
+}
