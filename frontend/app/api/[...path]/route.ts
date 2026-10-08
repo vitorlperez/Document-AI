@@ -24,7 +24,17 @@ async function proxy(request: NextRequest): Promise<Response> {
   upstream.pathname = sessionProbe ? "/me" : incoming.pathname.slice("/api".length);
   upstream.search = incoming.search;
 
-  const headers = forwardedRequestHeaders(request.headers);
+  let headers: Headers;
+  try {
+    headers = forwardedRequestHeaders(request.headers, {
+      ipSource: process.env.AUTH_CLIENT_IP_SOURCE,
+      secret: process.env.AUTH_PROXY_SECRET,
+      method: request.method,
+      path: upstream.pathname,
+    });
+  } catch {
+    return new Response("Trusted ingress is unavailable", { status: 503, headers: { "cache-control": "no-store" } });
+  }
 
   try {
     const upstreamResponse = await fetch(upstream, {

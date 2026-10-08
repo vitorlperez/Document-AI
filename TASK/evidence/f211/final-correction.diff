@@ -1,0 +1,1138 @@
+diff --git a/backend/app/api/auth.py b/backend/app/api/auth.py
+--- a/backend/app/api/auth.py
++++ b/backend/app/api/auth.py
+@@ -27,8 +27,7 @@
+     hash_secret,
+ )
+ from app.identity.client_ip import auth_client_ip
+-from app.identity.models import AuthIdentity, ProviderSessionRevocation, User
+-from app.identity.revocations import complete_provider_revocation
++from app.identity.models import AuthIdentity, User
+ from app.identity.verification_context import (
+     CONTEXT_COOKIE,
+     make_verification_context,
+@@ -183,7 +182,6 @@
+         return response
+     if not isinstance(result, VerifiedIdentity):
+         raise HTTPException(401, "authentication failed")
+-    _check_pending_revocation(request, session, result)
+     service = IdentityService(session)
+     user = service.establish_identity(result)
+     _, raw_session = service.create_session(user_id=user.id, ttl_hours=settings.auth_session_ttl_hours, provider_session_id=result.provider_session_id)
+@@ -207,14 +205,6 @@
+         raise HTTPException(503, "authentication unavailable") from None
+ 
+ 
+-def _check_pending_revocation(request: Request, session: Session, identity: VerifiedIdentity) -> None:
+-    if identity.provider != "workos" or not session.get(ProviderSessionRevocation, identity.subject):
+-        return
+-    complete_provider_revocation(session, request.app.state.auth_gateway, identity.subject)
+-    # Cleanup also revokes the newly issued provider session. Authenticate anew.
+-    raise HTTPException(503, "session revocation pending; authenticate again")
+-
+-
+ @router.post("/auth/password")
+ def password_login(payload: PasswordInput, request: Request, session: Session = Depends(database_session)) -> Response:
+     _limit_auth(request, str(payload.email))
+@@ -278,12 +268,10 @@
+     identity = session.scalar(select(AuthIdentity).where(AuthIdentity.provider == "workos", AuthIdentity.provider_subject == subject))
+     if identity:
+         IdentityService(session).revoke_user_sessions(user_id=identity.user_id)
+-    if not session.get(ProviderSessionRevocation, subject):
+-        session.add(ProviderSessionRevocation(provider_subject=subject))
+-    # A remote outage cannot roll back local revocation after token consumption.
++    # WorkOS confirms the reset and automatically revokes its active sessions.
++    # Persist every local revocation before returning; no remote retry or marker.
+     session.commit()
+-    revoked = complete_provider_revocation(session, request.app.state.auth_gateway, subject)
+-    result = {"status": "password_reset"} if revoked else {"status": "password_reset", "session_revocation_pending": True}
++    result = {"status": "password_reset"}
+     safe_return = _safe_invitation_return_to(request.cookies.get("document_intelligence_return_to"))
+     if safe_return:
+         result["return_to"] = safe_return
+@@ -352,7 +340,6 @@
+     except AuthenticationUnavailable as error:
+         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="authentication failed") from error
+     service = IdentityService(session)
+-    _check_pending_revocation(request, session, identity)
+     user = service.establish_identity(identity)
+     _, raw_session = service.create_session(
+         user_id=user.id,
+diff --git a/backend/app/core/config.py b/backend/app/core/config.py
+--- a/backend/app/core/config.py
++++ b/backend/app/core/config.py
+@@ -8,7 +8,7 @@
+ class Settings(BaseSettings):
+     """Runtime configuration with no permissive production defaults."""
+ 
+-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
++    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
+ 
+     database_url: PostgresDsn
+ 
+@@ -53,7 +53,7 @@
+     @field_validator("auth_proxy_secret")
+     @classmethod
+     def validate_auth_proxy_secret(cls, value):
+-        if value is not None and len(value.get_secret_value()) < 32:
++        if value is not None and len(value.get_secret_value().strip()) < 32:
+             raise ValueError("AUTH_PROXY_SECRET must contain at least 32 characters")
+         return value
+ 
+@@ -63,10 +63,25 @@
+         from ipaddress import ip_network
+         for item in value.split(","):
+             if item.strip():
+-                network = ip_network(item.strip())
++                try:
++                    network = ip_network(item.strip())
++                except ValueError:
++                    raise ValueError("AUTH_TRUSTED_PROXY_CIDRS must contain valid CIDRs") from None
+                 if network.prefixlen == 0:
+-                    raise ValueError("Trust only the frontend peer network, never all addresses")
++                    raise ValueError("AUTH_TRUSTED_PROXY_CIDRS must trust only frontend peers, never /0")
+         return value
++
++    @model_validator(mode="after")
++    def validate_production_auth_proxy(self):
++        if self.environment.strip().lower() == "production":
++            missing = []
++            if not self.auth_proxy_secret:
++                missing.append("AUTH_PROXY_SECRET")
++            if not any(item.strip() for item in self.auth_trusted_proxy_cidrs.split(",")):
++                missing.append("AUTH_TRUSTED_PROXY_CIDRS")
++            if missing:
++                raise ValueError(f"Production requires valid {' and '.join(missing)} before startup")
++        return self
+ 
+     workos_api_key: SecretStr | None = None
+     workos_client_id: str | None = None
+diff --git a/backend/app/identity/auth.py b/backend/app/identity/auth.py
+--- a/backend/app/identity/auth.py
++++ b/backend/app/identity/auth.py
+@@ -115,19 +115,24 @@
+             body = error.response_json or {}
+             code = body.get("code") or body.get("error")
+             token = body.get("pending_authentication_token")
++            if error.status_code == 429:
++                raise AuthenticationRateLimited(retry_after=getattr(error, "retry_after", None)) from None
++            if (error.status_code or 0) >= 500:
++                raise AuthenticationUnavailable("authentication provider is unavailable") from None
++            # A failed credential/code remains an error even if the provider
++            # repeats a pending token. Only challenges can use hosted fallback.
++            if code in {"invalid_credentials", "invalid_grant", "email_verification_code_invalid"}:
++                raise AuthenticationRejected("Não foi possível autenticar. Confira os dados e tente novamente.") from None
+             if code == "email_verification_required" and isinstance(token, str) and token:
+                 return PendingEmailVerification(token=token, verification_id=body.get("email_verification_id"))
+             if code in {
+                 "mfa_challenge", "mfa_enrollment", "sso_required",
+                 "organization_selection_required", "organization_authentication_methods_required",
+                 "authentication_method_not_allowed", "email_password_auth_disabled",
+-                "radar_challenge", "radar_sign_up_challenge", "passkey_progressive_enrollment",
+-            }:
++                "radar_challenge", "radar_sign_up_challenge", "radar_email_challenge", "radar_sms_challenge",
++                "passkey_progressive_enrollment",
++            } or (400 <= (error.status_code or 0) < 500 and isinstance(token, str) and token and code != "email_verification_required"):
+                 return HostedAuthenticationRequired()
+-            if error.status_code == 429:
+-                raise AuthenticationRateLimited(retry_after=getattr(error, "retry_after", None)) from None
+-            if (error.status_code or 0) >= 500:
+-                raise AuthenticationUnavailable("authentication provider is unavailable") from None
+             raise AuthenticationRejected("Não foi possível autenticar. Confira os dados e tente novamente.") from None
+         except WorkOSError:
+             raise AuthenticationUnavailable("authentication provider is unavailable") from None
+@@ -217,20 +222,6 @@
+         except Exception as error:
+             raise AuthenticationUnavailable("authentication provider is unavailable") from error
+ 
+-    def revoke_user_sessions(self, *, user_id: str) -> None:
+-        try:
+-            resource = self._client().user_management
+-            # Snapshot every page before mutation so cursor pagination cannot
+-            # skip sessions when entries disappear during revocation.
+-            session_ids = [item.id for item in resource.list_sessions(user_id, limit=100).auto_paging_iter()]
+-            for session_id in session_ids:
+-                try:
+-                    resource.revoke_session(session_id=session_id)
+-                except APIError as error:
+-                    if error.status_code != 404:
+-                        raise
+-        except WorkOSError:
+-            raise AuthenticationUnavailable("authentication provider is unavailable") from None
+ 
+ 
+ class IdentityService:
+diff --git a/backend/app/identity/models.py b/backend/app/identity/models.py
+--- a/backend/app/identity/models.py
++++ b/backend/app/identity/models.py
+@@ -37,10 +37,3 @@
+     provider_session_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+-
+-
+-class ProviderSessionRevocation(CreatedAtMixin, Base):
+-    """Durable retry marker containing a provider user ID, never a credential."""
+-
+-    __tablename__ = "provider_session_revocations"
+-    provider_subject: Mapped[str] = mapped_column(String(255), primary_key=True)
+diff --git a/backend/app/identity/revocations.py b/backend/app/identity/revocations.py
+--- a/backend/app/identity/revocations.py
++++ /dev/null
+@@ -1,26 +0,0 @@
+-"""Retry provider revocation after local sessions were durably invalidated."""
+-
+-from sqlalchemy import select
+-from sqlalchemy.orm import Session
+-
+-from app.identity.auth import AuthenticationUnavailable, WorkOSAuthKitGateway
+-from app.identity.models import ProviderSessionRevocation
+-
+-
+-def complete_provider_revocation(session: Session, gateway: WorkOSAuthKitGateway, subject: str) -> bool:
+-    pending = session.scalar(select(ProviderSessionRevocation).where(ProviderSessionRevocation.provider_subject == subject).with_for_update())
+-    if not pending:
+-        return True
+-    try:
+-        gateway.revoke_user_sessions(user_id=subject)
+-    except AuthenticationUnavailable:
+-        session.rollback()  # marker and local revocation were already committed
+-        return False
+-    session.delete(pending)
+-    session.commit()
+-    return True
+-
+-
+-def drain_provider_revocations(session: Session, gateway: WorkOSAuthKitGateway) -> int:
+-    subjects = list(session.scalars(select(ProviderSessionRevocation.provider_subject).order_by(ProviderSessionRevocation.created_at).limit(100)))
+-    return sum(complete_provider_revocation(session, gateway, subject) for subject in subjects)
+diff --git a/backend/alembic/versions/20261008_0028_provider_session_revocations.py b/backend/alembic/versions/20261008_0028_provider_session_revocations.py
+--- a/backend/alembic/versions/20261008_0028_provider_session_revocations.py
++++ /dev/null
+@@ -1,22 +0,0 @@
+-"""Durable WorkOS session-revocation retries after password reset."""
+-
+-import sqlalchemy as sa
+-
+-from alembic import op
+-
+-revision = "20261008_0028"
+-down_revision = "20261001_0027"
+-branch_labels = None
+-depends_on = None
+-
+-
+-def upgrade() -> None:
+-    op.create_table(
+-        "provider_session_revocations",
+-        sa.Column("provider_subject", sa.String(255), primary_key=True),
+-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+-    )
+-
+-
+-def downgrade() -> None:
+-    op.drop_table("provider_session_revocations")
+diff --git a/backend/app/ingestion/tasks.py b/backend/app/ingestion/tasks.py
+--- a/backend/app/ingestion/tasks.py
++++ b/backend/app/ingestion/tasks.py
+@@ -58,10 +58,6 @@
+         "schedule-connected-source-reconciliation": {
+             "task": "document_intelligence.ingestion.schedule",
+             "schedule": timedelta(minutes=interval_minutes),
+-        },
+-        "retry-provider-session-revocations": {
+-            "task": "document_intelligence.identity.revoke_sessions",
+-            "schedule": timedelta(minutes=1),
+         },
+         "purge-extraction-cache": {
+             "task": "document_intelligence.ingestion.purge_extraction_cache",
+@@ -679,22 +675,3 @@
+             service.release_for_retry(job_id=UUID(job_id), expected_run_token=run_token)
+             session.commit()
+             raise self.retry(exc=error, countdown=10 * (2**self.request.retries)) from error
+-
+-
+-@celery_app.task(name="document_intelligence.identity.revoke_sessions")
+-def retry_provider_session_revocations() -> int:
+-    from app.identity.auth import WorkOSAuthKitGateway
+-    from app.identity.revocations import drain_provider_revocations
+-
+-    settings = get_settings()
+-    engine = build_engine(settings)
+-    try:
+-        with build_session_factory(engine)() as session:
+-            gateway = WorkOSAuthKitGateway(
+-                api_key=settings.workos_api_key.get_secret_value() if settings.workos_api_key else None,
+-                client_id=settings.workos_client_id,
+-                redirect_uri=settings.workos_redirect_uri,
+-            )
+-            return drain_provider_revocations(session, gateway)
+-    finally:
+-        engine.dispose()
+diff --git a/backend/tests/api/test_auth_and_invitations.py b/backend/tests/api/test_auth_and_invitations.py
+--- a/backend/tests/api/test_auth_and_invitations.py
++++ b/backend/tests/api/test_auth_and_invitations.py
+@@ -494,18 +494,45 @@
+     assert response.json()["redirect_url"] == "http://app.example.test"
+ 
+ 
+-def test_password_reset_revokes_local_sessions_and_does_not_authenticate(auth_api, monkeypatch):
+-    client, factory, gateway, _ = auth_api
+-    raw_session = callback(client, gateway, code="reset", email="person@example.com", subject="user_reset")
+-    monkeypatch.setattr(gateway, "confirm_password_reset", lambda **kwargs: "user_reset", raising=False)
+-    monkeypatch.setattr(gateway, "revoke_user_sessions", lambda **kwargs: None, raising=False)
++def test_password_reset_revokes_all_local_sessions_without_provider_retry_or_login_block(auth_api, monkeypatch):
++    client, factory, gateway, _ = auth_api
++    subject = "user_reset"
++    old_secrets = [callback(client, gateway, code=f"reset-{i}", email="person@example.com", subject=subject) for i in range(4)]
++    unrelated_secret = callback(client, gateway, code="unrelated", email="other@example.com", subject="user_other")
++    with factory.begin() as session:
++        rows = list(session.scalars(select(UserSession).join(AuthIdentity, AuthIdentity.user_id == UserSession.user_id).where(AuthIdentity.provider_subject == subject)))
++        rows[0].expires_at = datetime.now(UTC) - timedelta(hours=1)
++        rows[1].revoked_at = datetime.now(UTC) - timedelta(hours=2)
++        previously_revoked = rows[1].revoked_at.replace(tzinfo=None)
++    monkeypatch.setattr(gateway, "confirm_password_reset", lambda **kwargs: subject, raising=False)
++    def redundant_provider_call(**kwargs):
++        pytest.fail("WorkOS reset already revokes provider sessions; no separate revocation call")
++    monkeypatch.setattr(gateway, "revoke_user_sessions", redundant_provider_call, raising=False)
++    client.cookies.clear()
++    client.cookies.set("document_intelligence_session", old_secrets[2], domain="testserver.local")
+     response = client.post("/auth/password-reset/confirm", json={"token": "reset-token", "password": "new-long-password"})
++    assert response.status_code == 200
+     assert response.json() == {"status": "password_reset"}
+     assert client.cookies.get("document_intelligence_session") is None
+-    client.cookies.set("document_intelligence_session", raw_session)
+-    assert client.get("/me").status_code == 401
+-    with factory() as session:
+-        assert session.scalar(select(UserSession)).revoked_at is not None
++    with factory() as session:
++        rows = list(session.scalars(select(UserSession).join(AuthIdentity, AuthIdentity.user_id == UserSession.user_id).where(AuthIdentity.provider_subject == subject)))
++        assert len(rows) == 4
++        assert all(row.revoked_at is not None for row in rows)
++        assert any(row.revoked_at.replace(tzinfo=None) == previously_revoked for row in rows)
++    for secret in old_secrets:
++        client.cookies.clear()
++        client.cookies.set("document_intelligence_session", secret)
++        assert client.get("/me").status_code == 401
++    client.cookies.clear()
++    client.cookies.set("document_intelligence_session", unrelated_secret)
++    assert client.get("/me").status_code == 200
++    client.cookies.clear()
++    password_gateway(monkeypatch, gateway, VerifiedIdentity(provider="workos", subject=subject, email="person@example.com"))
++    assert client.post("/auth/password", json={"email": "person@example.com", "password": "new-long-password"}).status_code == 200
++    assert client.get("/me").status_code == 200
++    fresh_hosted = callback(client, gateway, code="after-reset", email="person@example.com", subject=subject)
++    assert fresh_hosted not in old_secrets
++    assert client.get("/me").status_code == 200
+ 
+ 
+ def test_password_reset_request_returns_only_generic_status(auth_api, monkeypatch):
+@@ -607,39 +634,15 @@
+         assert session.scalar(select(func.count()).select_from(UserSession)) == 0
+ 
+ 
+-def test_password_reset_revokes_provider_sessions_even_without_local_identity(auth_api, monkeypatch):
+-    client, _, gateway, _ = auth_api
+-    calls = []
++def test_password_reset_without_local_identity_needs_no_provider_revocation(auth_api, monkeypatch):
++    client, factory, gateway, _ = auth_api
+     monkeypatch.setattr(gateway, "confirm_password_reset", lambda **kw: "user_not_local", raising=False)
+-    monkeypatch.setattr(gateway, "revoke_user_sessions", lambda **kw: calls.append(kw), raising=False)
+-    response = client.post("/auth/password-reset/confirm", json={"token": "reset-token", "password": "new-long-password"})
+-    assert response.json() == {"status": "password_reset"}
+-    assert calls == [{"user_id": "user_not_local"}]
+-
+-
+-def test_reset_outage_keeps_local_revocation_durable_and_retries_provider(auth_api, monkeypatch):
+-    from app.identity.models import ProviderSessionRevocation
+-    client, factory, gateway, _ = auth_api
+-    raw = callback(client, gateway, code="reset-outage", email="person@example.com", subject="user_reset_outage")
+-    monkeypatch.setattr(gateway, "confirm_password_reset", lambda **kw: "user_reset_outage", raising=False)
+-    def unavailable(**kw): raise AuthenticationUnavailable("private")
+-    monkeypatch.setattr(gateway, "revoke_user_sessions", unavailable, raising=False)
++    monkeypatch.setattr(gateway, "revoke_user_sessions", lambda **kw: pytest.fail("redundant provider revocation"), raising=False)
+     response = client.post("/auth/password-reset/confirm", json={"token": "reset-token", "password": "new-long-password"})
+     assert response.status_code == 200
+-    assert response.json() == {"status": "password_reset", "session_revocation_pending": True}
+-    client.cookies.set("document_intelligence_session", raw)
+-    assert client.get("/me").status_code == 401
+-    with factory() as session:
+-        assert session.get(ProviderSessionRevocation, "user_reset_outage") is not None
+-        assert session.scalar(select(UserSession)).revoked_at is not None
+-    password_gateway(monkeypatch, gateway, VerifiedIdentity(provider="workos", subject="user_reset_outage", email="person@example.com"))
+-    assert client.post("/auth/password", json={"email": "person@example.com", "password": "new-long-password"}).status_code == 503
+-    monkeypatch.setattr(gateway, "revoke_user_sessions", lambda **kw: None)
+-    # Successful drain revokes this provider authentication too. Require a fresh login.
+-    assert client.post("/auth/password", json={"email": "person@example.com", "password": "new-long-password"}).status_code == 503
+-    assert client.post("/auth/password", json={"email": "person@example.com", "password": "new-long-password"}).status_code == 200
+-    with factory() as session:
+-        assert session.get(ProviderSessionRevocation, "user_reset_outage") is None
++    assert response.json() == {"status": "password_reset"}
++    with factory() as session:
++        assert session.scalar(select(func.count()).select_from(UserSession)) == 0
+ 
+ 
+ def test_resend_is_bound_to_authenticated_pending_context_and_throttled(auth_api, monkeypatch):
+@@ -673,42 +676,12 @@
+     assert len(calls) == 1
+ 
+ 
+-def test_revocation_worker_retries_durable_marker_without_local_identity(auth_api, monkeypatch):
+-    from types import SimpleNamespace
+-
+-    from app.identity.models import ProviderSessionRevocation
+-    from app.ingestion import tasks
+-    client, factory, gateway, _ = auth_api
+-    with factory.begin() as session:
+-        session.add(ProviderSessionRevocation(provider_subject="provider_only"))
+-    disposed = []
+-    monkeypatch.setattr(tasks, "get_settings", lambda: client.app.state.settings)
+-    monkeypatch.setattr(tasks, "build_engine", lambda settings: SimpleNamespace(dispose=lambda: disposed.append(True)))
+-    monkeypatch.setattr(tasks, "build_session_factory", lambda engine: factory)
+-    monkeypatch.setattr("app.identity.auth.WorkOSAuthKitGateway", lambda **kw: gateway)
+-    calls = []
+-    def unavailable(**kw):
+-        calls.append(kw)
+-        raise AuthenticationUnavailable("provider unavailable")
+-    monkeypatch.setattr(gateway, "revoke_user_sessions", unavailable, raising=False)
+-    assert tasks.retry_provider_session_revocations.run() == 0
+-    with factory() as session:
+-        assert session.get(ProviderSessionRevocation, "provider_only") is not None
+-    monkeypatch.setattr(gateway, "revoke_user_sessions", lambda **kw: calls.append(kw))
+-    assert tasks.retry_provider_session_revocations.run() == 1
+-    with factory() as session:
+-        assert session.get(ProviderSessionRevocation, "provider_only") is None
+-        assert session.scalar(select(func.count()).select_from(AuthIdentity)) == 0
+-    assert calls == [{"user_id": "provider_only"}, {"user_id": "provider_only"}]
+-    assert disposed == [True, True]
+-
+ 
+ def test_registration_invitation_survives_reset_and_hosted_fallback(auth_api, monkeypatch):
+     client, _, gateway, _ = auth_api
+     invitation = "/invitations/" + "b" * 43
+     monkeypatch.setattr(gateway, "register_account", lambda **kw: None, raising=False)
+     monkeypatch.setattr(gateway, "confirm_password_reset", lambda **kw: "user_invited", raising=False)
+-    monkeypatch.setattr(gateway, "revoke_user_sessions", lambda **kw: None, raising=False)
+     registered = client.post("/auth/register", json={"email": "invited@example.com", "return_to": invitation})
+     assert registered.json() == {"status": "registration_pending"}
+     reset = client.post("/auth/password-reset/confirm", json={"token": "test-reset", "password": "long-password"})
+diff --git a/backend/tests/unit/test_identity_auth.py b/backend/tests/unit/test_identity_auth.py
+--- a/backend/tests/unit/test_identity_auth.py
++++ b/backend/tests/unit/test_identity_auth.py
+@@ -221,17 +221,6 @@
+     assert calls == [{"email": "existing@example.test"}]
+ 
+ 
+-def test_provider_revocation_uses_all_pages(monkeypatch):
+-    from types import SimpleNamespace
+-    gateway = WorkOSAuthKitGateway(api_key="test", client_id="client", redirect_uri="http://callback.test")
+-    calls = []
+-    page = SimpleNamespace(auto_paging_iter=lambda: iter([SimpleNamespace(id="session_1"), SimpleNamespace(id="session_2")]))
+-    resource = SimpleNamespace(list_sessions=lambda user_id, **kw: page, revoke_session=lambda **kw: calls.append(kw))
+-    monkeypatch.setattr(gateway, "_client", lambda: SimpleNamespace(user_management=resource))
+-    gateway.revoke_user_sessions(user_id="user_1")
+-    assert calls == [{"session_id": "session_1"}, {"session_id": "session_2"}]
+-
+-
+ @pytest.mark.parametrize("operation,kwargs", [
+     ("authenticate_password", {"email": "person@example.test", "password": "test", "ip_address": None, "user_agent": None}),
+     ("verify_email", {"token": "secret", "code": "123456", "ip_address": None, "user_agent": None}),
+diff --git a/backend/tests/unit/test_workos_sdk_contract.py b/backend/tests/unit/test_workos_sdk_contract.py
+--- a/backend/tests/unit/test_workos_sdk_contract.py
++++ b/backend/tests/unit/test_workos_sdk_contract.py
+@@ -6,7 +6,13 @@
+ import pytest
+ from workos import WorkOSClient
+ 
+-from app.identity.auth import AuthenticationRateLimited, WorkOSAuthKitGateway
++from app.identity.auth import (
++    AuthenticationRateLimited,
++    AuthenticationRejected,
++    AuthenticationUnavailable,
++    HostedAuthenticationRequired,
++    WorkOSAuthKitGateway,
++)
+ 
+ USER = {
+     "object": "user", "id": "user_test", "email": "person@example.test",
+@@ -81,3 +87,37 @@
+         gateway.request_password_reset(email=USER["email"])
+     assert error.value.retry_after == 120
+     assert "private" not in str(error.value)
++
++
++@pytest.mark.parametrize("code,pending", [
++    ("radar_email_challenge", True), ("radar_sms_challenge", True),
++    ("radar_challenge", False), ("radar_sign_up_challenge", False),
++    ("future_challenge", True),
++])
++@pytest.mark.parametrize("operation", ["password", "verify"])
++def test_radar_and_pending_challenges_use_hosted_fallback(sdk_gateway, code, pending, operation):
++    body = {"code": code}
++    if pending:
++        body["pending_authentication_token"] = "private-pending-token"
++    gateway = sdk_gateway(lambda request: httpx.Response(403, json=body))
++    if operation == "password":
++        result = gateway.authenticate_password(email=USER["email"], password="test-password", ip_address=None, user_agent=None)
++    else:
++        result = gateway.verify_email(token="private-pending-token", code="123456", ip_address=None, user_agent=None)
++    assert isinstance(result, HostedAuthenticationRequired)
++
++
++@pytest.mark.parametrize("status,body,expected", [
++    (400, {"code": "invalid_credentials"}, AuthenticationRejected),
++    (400, {"error": "invalid_grant", "pending_authentication_token": "private-token"}, AuthenticationRejected),
++    (400, {"code": "email_verification_code_invalid", "pending_authentication_token": "private-token"}, AuthenticationRejected),
++    (400, {"code": "invalid_credentials", "pending_authentication_token": "private-token"}, AuthenticationRejected),
++    (403, {"code": "unknown_error"}, AuthenticationRejected),
++    (429, {"code": "radar_email_challenge", "pending_authentication_token": "private-token"}, AuthenticationRateLimited),
++    (503, {"code": "radar_email_challenge", "pending_authentication_token": "private-token"}, AuthenticationUnavailable),
++])
++def test_credentials_and_outages_remain_errors_even_with_pending_context(sdk_gateway, status, body, expected):
++    gateway = sdk_gateway(lambda request: httpx.Response(status, json=body))
++    with pytest.raises(expected) as error:
++        gateway.authenticate_password(email=USER["email"], password="test-password", ip_address=None, user_agent=None)
++    assert "private" not in str(error.value)
+diff --git a/backend/tests/unit/test_sync_beat.py b/backend/tests/unit/test_sync_beat.py
+--- a/backend/tests/unit/test_sync_beat.py
++++ b/backend/tests/unit/test_sync_beat.py
+@@ -7,7 +7,6 @@
+     schedule = celery_app.conf.beat_schedule
+     assert schedule["schedule-connected-source-reconciliation"]["task"] == "document_intelligence.ingestion.schedule"
+     assert "purge-extraction-cache" in schedule
+-    assert schedule["retry-provider-session-revocations"]["task"] == "document_intelligence.identity.revoke_sessions"
+ 
+ 
+ def test_compose_runs_a_celery_beat_service() -> None:
+diff --git a/backend/tests/unit/test_authentication_migration_sql.py b/backend/tests/unit/test_authentication_migration_sql.py
+--- a/backend/tests/unit/test_authentication_migration_sql.py
++++ b/backend/tests/unit/test_authentication_migration_sql.py
+@@ -20,7 +20,7 @@
+     assert result.returncode == 0, result.stderr
+     sql = result.stdout
+     assert "ALTER TABLE memberships ADD COLUMN deactivated_at" in sql
+-    for table in ("auth_identities", "user_sessions", "membership_invitations", "provider_session_revocations"):
++    for table in ("auth_identities", "user_sessions", "membership_invitations"):
+         assert f"CREATE TABLE {table}" in sql
+     assert "secret_hash VARCHAR(64) NOT NULL" in sql
+     assert "token_hash VARCHAR(64) NOT NULL" in sql
+diff --git a/backend/tests/api/test_csrf_origin.py b/backend/tests/api/test_csrf_origin.py
+--- a/backend/tests/api/test_csrf_origin.py
++++ b/backend/tests/api/test_csrf_origin.py
+@@ -24,6 +24,8 @@
+             database_url="postgresql+psycopg://test_user:not-a-secret@localhost:5432/test_db",
+             public_app_url="https://app.example.test",
+             environment="production",
++            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
++            auth_trusted_proxy_cidrs="127.0.0.1/32",
+         )
+     )
+     _use_empty_database(app)
+@@ -42,6 +44,8 @@
+             database_url="postgresql+psycopg://test_user:not-a-secret@localhost:5432/test_db",
+             public_app_url="https://app.example.test",
+             environment="production",
++            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
++            auth_trusted_proxy_cidrs="127.0.0.1/32",
+         )
+     )
+     _use_empty_database(app)
+diff --git a/backend/tests/unit/test_pilot_deployment.py b/backend/tests/unit/test_pilot_deployment.py
+--- a/backend/tests/unit/test_pilot_deployment.py
++++ b/backend/tests/unit/test_pilot_deployment.py
+@@ -13,6 +13,8 @@
+         Settings(
+             database_url="postgresql+psycopg://test:test@localhost/test",
+             environment="production",
++            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
++            auth_trusted_proxy_cidrs="127.0.0.1/32",
+             public_app_url="https://app.example.com",
+         )
+     )
+diff --git a/backend/tests/unit/test_provider_keyring.py b/backend/tests/unit/test_provider_keyring.py
+--- a/backend/tests/unit/test_provider_keyring.py
++++ b/backend/tests/unit/test_provider_keyring.py
+@@ -31,10 +31,12 @@
+ def test_notion_keys_are_own_first_and_google_only_as_legacy_fallback() -> None:
+     google, notion = key(), key()
+     with_fallback = Settings(
++        _env_file=None,
+         database_url=DB, google_token_encryption_key=google, notion_token_encryption_key=notion
+     )
+     assert with_fallback.cipher_keys("notion") == [notion, google]
+     no_fallback = Settings(
++        _env_file=None,
+         database_url=DB,
+         google_token_encryption_key=google,
+         notion_token_encryption_key=notion,
+@@ -48,19 +50,26 @@
+     shared = key()
+     with pytest.raises(ValidationError):
+         Settings(
++            _env_file=None,
+             database_url=DB,
+             environment="production",
++            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
++            auth_trusted_proxy_cidrs="127.0.0.1/32",
+             google_token_encryption_key=shared,
+             notion_token_encryption_key=shared,
+         )
+     with pytest.raises(ValidationError):
+         Settings(
++            _env_file=None,
+             database_url=DB,
+             environment="production",
++            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
++            auth_trusted_proxy_cidrs="127.0.0.1/32",
+             google_token_encryption_key=shared,
+             microsoft_token_encryption_key=shared,
+         )
+     Settings(
++        _env_file=None,
+         database_url=DB,
+         environment="development",
+         google_token_encryption_key=shared,
+@@ -71,8 +80,11 @@
+ def test_production_notion_requires_own_key_even_during_legacy_window():
+     with pytest.raises(ValidationError):
+         Settings(
++            _env_file=None,
+             database_url=DB,
+             environment="production",
++            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
++            auth_trusted_proxy_cidrs="127.0.0.1/32",
+             notion_oauth_client_id="enabled",
+             google_token_encryption_key=key(),
+             notion_token_encryption_legacy_fallback=True,
+@@ -81,6 +93,7 @@
+ 
+ def test_disabled_legacy_fallback_does_not_encrypt_with_google_key():
+     settings = Settings(
++        _env_file=None,
+         database_url=DB,
+         google_token_encryption_key=key(),
+         notion_token_encryption_legacy_fallback=False,
+diff --git a/backend/tests/unit/test_jev_intent.py b/backend/tests/unit/test_jev_intent.py
+--- a/backend/tests/unit/test_jev_intent.py
++++ b/backend/tests/unit/test_jev_intent.py
+@@ -155,7 +155,9 @@
+ ) -> None:
+     # The worker and MCP services share these settings without classifying, so startup must not fail.
+     settings = Settings(_env_file=None, database_url=DATABASE_URL, environment="production",
+-                        public_app_url="https://app.example.test", typesafe_api_key=None)
++                        public_app_url="https://app.example.test", typesafe_api_key=None,
++                        auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
++                        auth_trusted_proxy_cidrs="127.0.0.1/32")
+     records: list[logging.LogRecord] = []
+     handler = logging.Handler()
+     handler.emit = records.append
+diff --git a/frontend/app/api/proxy-headers.mjs b/frontend/app/api/proxy-headers.mjs
+--- a/frontend/app/api/proxy-headers.mjs
++++ b/frontend/app/api/proxy-headers.mjs
+@@ -21,7 +21,7 @@
+   }
+   // Opt-in contract: this server is reachable ONLY through a Railway edge
+   // that overwrites X-Real-IP. No XFF chain or caller-supplied signature is used.
+-  if (options.ipSource) {
++  if (options.path?.startsWith("/auth/") && options.ipSource) {
+     if (options.ipSource !== "railway" || !options.secret || options.secret.length < 32) {
+       throw new Error("Trusted IP ingress is not configured");
+     }
+diff --git a/frontend/tests/proxy-headers.test.mjs b/frontend/tests/proxy-headers.test.mjs
+--- a/frontend/tests/proxy-headers.test.mjs
++++ b/frontend/tests/proxy-headers.test.mjs
+@@ -55,3 +55,18 @@
+   assert.throws(() => forwardedRequestHeaders(new Headers(), proxyOptions), /IP/);
+   assert.throws(() => forwardedRequestHeaders(new Headers({"x-real-ip": "a, b"}), proxyOptions), /IP/);
+ });
++
++test("only auth routes require signed IP context; session and API stay available", () => {
++  for (const path of ["/me", "/session", "/health/ready", "/organizations", "/authenticators"]) {
++    const headers = forwardedRequestHeaders(new Headers({
++      cookie: "opaque-session", "x-auth-client-ip": "203.0.113.66",
++      "x-auth-ip-signature": "forged", "x-auth-ip-timestamp": "1",
++    }), { ...proxyOptions, path });
++    assert.equal(headers.get("cookie"), "opaque-session");
++    for (const name of ["x-auth-client-ip", "x-auth-ip-signature", "x-auth-ip-timestamp"]) {
++      assert.equal(headers.get(name), null);
++    }
++    assert.doesNotThrow(() => forwardedRequestHeaders(new Headers(), { ...proxyOptions, path, secret: undefined }));
++  }
++  assert.throws(() => forwardedRequestHeaders(new Headers(), proxyOptions), /IP/);
++});
+diff --git a/frontend/app/product/custom-login.tsx b/frontend/app/product/custom-login.tsx
+--- a/frontend/app/product/custom-login.tsx
++++ b/frontend/app/product/custom-login.tsx
+@@ -11,8 +11,8 @@
+ type Mode = "sign-in" | "sign-up" | "forgot" | "reset" | "verify";
+ type AuthResult = { status: "authenticated" | "email_verification_required" | "hosted_authentication_required" | "registration_pending"; redirect_url?: string };
+ 
+-export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo, passwordReset = false, revocationPending = false }: {
+-  onLogin: () => void; initialMode?: "sign-in" | "sign-up"; resetToken?: string; returnTo?: string; passwordReset?: boolean; revocationPending?: boolean;
++export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo, passwordReset = false }: {
++  onLogin: () => void; initialMode?: "sign-in" | "sign-up"; resetToken?: string; returnTo?: string; passwordReset?: boolean;
+ }) {
+   const [mode, setMode] = useState<Mode>(resetToken ? "reset" : initialMode);
+   const [email, setEmail] = useState("");
+@@ -21,7 +21,7 @@
+   const [visible, setVisible] = useState(false);
+   const [busy, setBusy] = useState(false);
+   const [error, setError] = useState<string | null>(null);
+-  const [notice, setNotice] = useState<string | null>(revocationPending ? "Senha atualizada. Estamos encerrando as sessões anteriores; tente entrar em instantes." : passwordReset ? "Senha atualizada. Entre com sua nova senha." : null);
++  const [notice, setNotice] = useState<string | null>(passwordReset ? "Senha atualizada. Entre com sua nova senha." : null);
+   const [hostedRequired, setHostedRequired] = useState(false);
+   const [resendAfter, setResendAfter] = useState(0);
+   const changeMode = (next: Mode) => { setMode(next); setPassword(""); setCode(""); setError(null); setNotice(null); setHostedRequired(false); setVisible(false); };
+@@ -42,11 +42,10 @@
+         await api("/auth/password-reset", { method: "POST", body: JSON.stringify({ email }) });
+         setNotice("Se este e-mail tiver uma conta, você receberá um link para redefinir a senha. Confira também o spam.");
+       } else if (mode === "reset") {
+-        const result = await api<{ session_revocation_pending?: boolean; return_to?: string }>("/auth/password-reset/confirm", { method: "POST", body: JSON.stringify({ token: resetToken, password }) });
++        const result = await api<{ return_to?: string }>("/auth/password-reset/confirm", { method: "POST", body: JSON.stringify({ token: resetToken, password }) });
+         const query = new URLSearchParams({ password_reset: "1" });
+         const destination = safeInvitationReturnTo(result.return_to ?? returnTo);
+         if (destination) query.set("return_to", destination);
+-        if (result.session_revocation_pending) query.set("revocation_pending", "1");
+         window.location.replace(`/login?${query.toString()}`);
+       } else {
+         const result = await api<AuthResult>(mode === "verify" ? "/auth/verify-email" : mode === "sign-up" ? "/auth/register" : "/auth/password", {
+diff --git a/frontend/app/product-app.tsx b/frontend/app/product-app.tsx
+--- a/frontend/app/product-app.tsx
++++ b/frontend/app/product-app.tsx
+@@ -97,7 +97,7 @@
+   const logout = async () => { try { const { redirect_url } = await api<{ redirect_url: string }>("/auth/logout", { method: "POST" }); setUser(null); setCompanies([]); window.location.replace(redirect_url); } catch (caught) { setError(messageFor(caught)); } };
+   if (loading && screen === "home" && pathname === "/") return <LandingPage onLogin={() => router.push("/login")} onSignUp={() => router.push("/login?mode=sign-up")} />;
+   if (loading) return <Loading />;
+-  if (!user || (pathname === "/login" && Boolean(resetToken))) return <>{screen === "home" && pathname === "/" ? <LandingPage onLogin={() => router.push("/login")} onSignUp={() => router.push("/login?mode=sign-up")} /> : <SignIn onLogin={() => beginLogin("sign-in")} passwordReset={searchParams.get("password_reset") === "1"} revocationPending={searchParams.get("revocation_pending") === "1"} initialMode={searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in"} resetToken={resetToken} returnTo={loginReturnTo} />}{error && <div role="alert" className="session-error"><CircleAlert size={20} /><div><p>{error}</p><button onClick={() => { void loadSession(); }}>Tentar novamente</button></div></div>}</>;
++  if (!user || (pathname === "/login" && Boolean(resetToken))) return <>{screen === "home" && pathname === "/" ? <LandingPage onLogin={() => router.push("/login")} onSignUp={() => router.push("/login?mode=sign-up")} /> : <SignIn onLogin={() => beginLogin("sign-in")} passwordReset={searchParams.get("password_reset") === "1"} initialMode={searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in"} resetToken={resetToken} returnTo={loginReturnTo} />}{error && <div role="alert" className="session-error"><CircleAlert size={20} /><div><p>{error}</p><button onClick={() => { void loadSession(); }}>Tentar novamente</button></div></div>}</>;
+   if (screen === "invitation") return <InvitationAcceptance token={params.token} onAccepted={(organizationId) => router.replace(companyPath(organizationId))} />;
+   if (screen === "home" && companies.length > 0) return <Loading />;
+   if (screen === "home") return <Onboarding user={user} onCreated={(created) => { setCompanies((items) => [...items, created]); router.push(companyPath(created.id)); }} />;
+diff --git a/backend/docs/custom-workos-login.md b/backend/docs/custom-workos-login.md
+--- a/backend/docs/custom-workos-login.md
++++ b/backend/docs/custom-workos-login.md
+@@ -2,18 +2,18 @@
+ 
+ A tela `/login` usa marca, cores e tipografia do Arquivio. O backend integra o SDK Python WorkOS 10.3; nenhuma chave WorkOS ou segredo de proxy chega ao cliente. SSO, social, MFA, seleção de organização e políticas adicionais continuam no AuthKit hospedado, com o callback e o `state` existentes.
+ 
+-## Fluxos e correções de h-kq
++## Fluxos
+ 
+ - `POST /auth/password`: e-mail/senha; sessão local opaca somente para identidade verificada.
+ - `POST /auth/register`: recebe **apenas e-mail**, cria usuário sem senha quando necessário e solicita um link de definição de senha. Endereço existente recebe a mesma resposta e o mesmo fluxo de recuperação; nenhuma credencial existente é sobrescrita antes da prova de posse da caixa. O dono define a senha em `/login?token=…`. O WorkOS documenta que confirmar um reset também verifica um e-mail ainda não verificado. Não há senha escolhida pelo atacante para ser vinculada posteriormente por OAuth/SSO. Não se pressupõe que o WorkOS invalida senhas não verificadas ao vincular identidades: esse comportamento específico não foi demonstrado. Contas com senha criadas anteriormente devem usar recuperação para substituí-la.
+ - `POST /auth/verify-email`: mantém o desafio para contas existentes que precisam de confirmação; token pendente em cookie HttpOnly de 10 minutos. Há limite local compartilhado Redis de 5 tentativas/minuto por hash do token, além do limite de 60/IP/minuto. Trocar IP não reinicia o limite do token. Nenhum código/token aparece na chave Redis.
+ - `POST /auth/verify-email/resend`: exige contexto HttpOnly assinado, vinculado ao token pendente e válido por 10 minutos. Recupera o objeto de verificação e chama `send_verification_email` para o usuário associado; não aceita um e-mail/ID arbitrário do navegador. Limite adicional de 1 reenvio/minuto por verificação. Cookie expirado exige novo login.
+ - `POST /auth/password-reset`: resposta genérica, incluindo endereço inexistente; `sent` significa solicitação aceita, **não confirmação de entrega**.
+-- `POST /auth/password-reset/confirm`: define a senha e revoga sessões locais, além de listar/revogar todas as páginas de sessões WorkOS, mesmo sem `AuthIdentity` local. Não autentica automaticamente.
++- `POST /auth/password-reset/confirm`: define a senha e revoga **todas** as sessões locais do usuário associado ao subject WorkOS, incluindo sessões em outros dispositivos. Não autentica automaticamente. O WorkOS revoga automaticamente todas as suas sessões ativas quando confirma o reset, inclusive quando ainda não existe `AuthIdentity` local.
+ 
+-Se o WorkOS falhar na revogação, a revogação local e uma pendência em `provider_session_revocations` já estão commitadas no banco pela aplicação. Isso não é um commit Git. A resposta informa `session_revocation_pending`; o login mostra que o encerramento está em andamento. Celery Beat agenda uma tentativa a cada minuto; novos logins também tentam concluir a pendência e não recebem sessão local enquanto ela existir. Uma tentativa que conclui a limpeza deve autenticar novamente, pois sua sessão WorkOS também foi revogada. Sessões externas podem permanecer ativas durante uma indisponibilidade; o sistema não declara encerramento completo nesse caso. Não armazenamos token de reset ou refresh token na pendência.
++A revogação local é persistida antes da resposta de sucesso. Não há segunda chamada de revogação no provedor, fila, marcador que bloqueie login ou tarefa Beat de autenticação. Login por senha e callback hospedado podem criar uma nova sessão imediatamente após o reset bem-sucedido. A revogação pontual WorkOS no logout continua existente.
+ 
+-A migração `20261008_0028` é necessária. A API tenta revogar imediatamente; worker e Beat são necessários para a recuperação automática sem novo login. O worker precisa de `WORKOS_API_KEY`, `WORKOS_CLIENT_ID` e `WORKOS_REDIRECT_URI` do mesmo ambiente. A consulta atual confirmou chave/client disponíveis no worker; configuração efetiva e execução do job em produção não foram alteradas/validadas.
++A migração experimental `20261008_0028` foi removida antes de qualquer aplicação externa. O head permanece `20261001_0027`; este login não acrescenta migração nem exige worker/Beat ou credenciais WorkOS nesses serviços para revogar sessões. Beat continua sendo usado pelo agendamento de ingestão existente.
+ 
+ Convites usam somente `/invitations/<token ASCII>`. O retorno é preservado também em `/login?return_to=…`, no fallback hospedado e após definir a senha quando o cookie de convite ainda existe. Em outro navegador/dispositivo, reabra o convite original: o link padrão de reset não transporta o convite. Retornos externos são rejeitados.
+ 
+@@ -35,7 +35,7 @@
+ 
+ O caminho implementado é: cliente → ingress Railway que define/substitui `X-Real-IP` → frontend → API. **O frontend deve ser acessível exclusivamente pelo ingress confiável**, sem um caminho alternativo que permita ao cliente fornecer esse header diretamente. Railway documenta `X-Real-IP` como IP remoto. Em outro ingress, não habilite o modo Railway sem estabelecer o mesmo contrato de substituição e impedir bypass.
+ 
+-O frontend só ativa essa fonte com `AUTH_CLIENT_IP_SOURCE=railway`. Ele descarta contexto fornecido pelo navegador e assina IP, timestamp, método e caminho com HMAC-SHA256. A API exige assinatura válida com no máximo 60 segundos, IP válido e **peer TCP pertencente a `AUTH_TRUSTED_PROXY_CIDRS`**. Ela usa o IP verificado para Redis e WorkOS/Radar. Os CIDRs devem identificar o frontend ou sua rede estritamente delimitada; `/0` é rejeitado. HMAC continua obrigatório mesmo para um peer permitido. IPv6 é normalizado para não fragmentar buckets.
++O frontend só ativa essa fonte com `AUTH_CLIENT_IP_SOURCE=railway`. Ele descarta contexto fornecido pelo navegador e assina IP, timestamp, método e caminho com HMAC-SHA256 **somente para caminhos `/auth/*`**. `/api/session` (encaminhado a `/me`), healthcheck e demais rotas do proxy permanecem disponíveis sem `X-Real-IP` ou contexto assinado. A API exige assinatura válida com no máximo 60 segundos, IP válido e **peer TCP pertencente a `AUTH_TRUSTED_PROXY_CIDRS`**. Ela usa o IP verificado para Redis e WorkOS/Radar. Os CIDRs devem identificar o frontend ou sua rede estritamente delimitada; `/0` é rejeitado. HMAC continua obrigatório mesmo para um peer permitido. IPv6 é normalizado para não fragmentar buckets.
+ 
+ Configure, sem expor os valores:
+ 
+@@ -45,26 +45,21 @@
+ | API | Mesmo `AUTH_PROXY_SECRET`; `AUTH_TRUSTED_PROXY_CIDRS` dos peers do frontend; `ENVIRONMENT=production`; Redis; origem pública correta |
+ | ASGI | `uvicorn … --no-proxy-headers`, inclusive no start override da Railway; nunca `--forwarded-allow-ips=*` |
+ 
+-O Dockerfile já desabilita a interpretação implícita de forwarded headers. O wrapper Wrangler transporta as variáveis novas como bindings secretos por arquivo temporário privado (0600), sem segredo em argumentos CLI ou bundle do navegador. Produção sem contexto configurado falha fechada; não volta silenciosamente ao bucket global do proxy. Desenvolvimento local sem esse contrato usa o peer TCP e ignora headers forjados.
++O Dockerfile já desabilita a interpretação implícita de forwarded headers. O wrapper Wrangler transporta as variáveis novas como bindings secretos por arquivo temporário privado (0600), sem segredo em argumentos CLI ou bundle do navegador. Com `ENVIRONMENT=production`, a construção de `Settings` falha antes de iniciar a API se faltar `AUTH_PROXY_SECRET` ou uma lista não vazia de `AUTH_TRUSTED_PROXY_CIDRS` válidos. Segredo curto/branco, CIDR inválido e rede `/0` são rejeitados com erro claro e sem valores secretos. Defina `ENVIRONMENT=production` explicitamente; o padrão local continua `development`. Worker, MCP e demais processos que construam o mesmo `Settings` em produção também precisam dessas duas variáveis, embora não executem revogação WorkOS. Contexto inválido em requisições de autenticação continua sendo rejeitado; não volta silenciosamente ao bucket global do proxy. Desenvolvimento local sem esse contrato usa o peer TCP e ignora headers forjados.
+ 
+-Os novos valores **ainda não estão configurados** nos serviços Railway consultados; nenhuma variável/deploy foi alterado. Os testes locais comprovam dois clientes, assinatura/peer, headers forjados e runtime Wrangler. A substituição de headers e os peers da infraestrutura real precisam ser comprovados no ingress quando a aplicação dessa configuração/deploy for autorizada.
++Valide a substituição de headers e os peers na infraestrutura real, junto à impossibilidade de bypass. Este checkout ainda usa Wrangler e diverge da main, que usa `vinext start`; esta correção não altera Dockerfile/runtime nem faz rebase. Reexecute o smoke no artefato/runtime final antes de publicar. Os testes locais de proxy simulam o ingress, não validam a Railway ao vivo.
+ 
+ ## Token de reset e Referer
+ 
+ `/login` responde com `Referrer-Policy: no-referrer` e `Cache-Control: no-store`; a metadata também define `no-referrer` para subrecursos iniciais. O token é capturado apenas em memória no componente e removido da URL com `replaceState` antes do envio do formulário. Não é gravado em storage. Recarregar a página depois da remoção exige reabrir o link de e-mail; a conclusão substitui a navegação por `/login?password_reset=1`. Não foram encontrados scripts de terceiros na tela de login. O token necessariamente chega na URL da primeira navegação; não registrá-lo nos logs do ingress continua sendo requisito operacional.
+ 
+-## Acesso disponível e pendências externas
++## Configuração e validação externas
+ 
+-- Credenciais existentes permitiram **somente GET de usuários e sessões** na API WorkOS real, sem imprimir chave, e-mail, ID pessoal ou endpoint privado. Isso confirma conectividade/permissão de leitura, não autenticação ou entrega.
+-- O browser abriu o Dashboard na tela **Entrar no WorkOS**, sem sessão administrativa. Necessário acesso autenticado com papel **Admin** ao ambiente correspondente ao `WORKOS_CLIENT_ID` para confirmar: e-mail/senha habilitado; verificação obrigatória; e-mails gerenciados de verificação/reset; **Applications → aplicação → Redirects → Password reset URL = origem pública + `/login`**; callback existente preservado.
+-- Necessária uma conta de teste explicitamente designada e uma caixa sob controle da equipe para validar entrega, link/código, cadastro, endereço existente, reset e sessão antiga. Uma conta/organização com MFA e um IdP/usuário de SSO de teste são necessários para validar esses métodos reais.
+-- Também pendem configuração da confiança do proxy, migração, execução do worker/Beat e teste no ingress real. Nenhum ambiente foi publicado, nenhum commit Git foi feito, nenhum e-mail real foi enviado.
++- Acesso autenticado com papel **Admin** ao ambiente correspondente ao `WORKOS_CLIENT_ID` para conferir e-mail/senha habilitado, verificação obrigatória, e-mails gerenciados de verificação/reset e **Applications → aplicação → Redirects → Password reset URL = origem pública + `/login`**, preservando o callback existente.
++- Conta de teste designada e caixa controlada para validar entrega, cadastro, endereço existente, código, reenvio com o mesmo token pendente, reset e invalidação de sessões anteriores. Conta/organização com MFA, IdP/usuário SSO e Radar habilitado conforme política para testar os fallbacks reais. Desafios Radar conhecidos e desafios 4xx pendentes seguem para o AuthKit hospedado; erros de credencial continuam como erros.
++- Configurar a confiança de proxy e `ENVIRONMENT=production`, origem pública, Redis e start command ASGI com `--no-proxy-headers`; comprovar peers, headers do ingress sem bypass e ausência de token nos logs. Não há migração nova nem fila de revogação a operar.
+ 
+-## Prévia e evidências locais
+-
+-Prévia: **http://localhost:3117/login**, build local com backend de demonstração em 8117. `TASK/evidence/f211/preview_gateway.py` usa somente SQLite e gateway determinístico: **não autentica no WorkOS e não envia e-mail**. O login demonstra `demo@example.com` + `preview-password`; confirmação usa `verify@example.com` + a mesma senha e código de demonstração `123456`; reset de demonstração pode ser aberto com `?token=preview-only`.
+-
+-Evidências/reprodução em `TASK/evidence/f211/`: testes de browser, screenshots desktop/mobile, resultado do proxy real frontend/ASGI local e relatório de verificações. O teste do proxy simula a fronteira de ingress; não testa a Railway ao vivo.
++Evidências de execução e dados da demonstração local ficam em `TASK/evidence/f211/`, separados deste contrato permanente. Testes com gateway simulado não comprovam autenticação ou entrega WorkOS reais.
+ 
+ Referências oficiais:
+ 
+@@ -74,5 +69,4 @@
+ - [Identity linking](https://workos.com/docs/authkit/identity-linking)
+ - [Limites](https://workos.com/docs/reference/rate-limits)
+ - [API de sessões](https://workos.com/docs/reference/authkit/session)
+-- [Recomendação de revogar após reset](https://workos.com/blog/workos-sessions-api-session-revocation-sign-out-everywhere)
+ - [Headers do ingress Railway](https://docs.railway.com/networking/public-networking/specs-and-limits)
+diff --git a/docs/deployment/railway-production.md b/docs/deployment/railway-production.md
+--- a/docs/deployment/railway-production.md
++++ b/docs/deployment/railway-production.md
+@@ -31,6 +31,8 @@
+ DATABASE_URL=${{Postgres.DATABASE_URL}}
+ REDIS_URL=${{Redis.REDIS_URL}}
+ PUBLIC_APP_URL=https://app.seudominio.com
++AUTH_PROXY_SECRET=<segredo aleatório compartilhado com o frontend e processos que carregam Settings>
++AUTH_TRUSTED_PROXY_CIDRS=<CIDRs delimitados dos peers do frontend>
+ OPENAI_API_KEY=<segredo>
+ TYPESAFE_API_KEY=<segredo; só a API usa, o worker ignora>
+ GOOGLE_TOKEN_ENCRYPTION_KEY=<chave Fernet estável>
+@@ -60,15 +62,13 @@
+ WORKOS_API_KEY=<segredo>
+ WORKOS_CLIENT_ID=<client id>
+ WORKOS_REDIRECT_URI=https://app.seudominio.com/api/auth/callback
+-AUTH_PROXY_SECRET=<segredo aleatório compartilhado apenas com o frontend>
+-AUTH_TRUSTED_PROXY_CIDRS=<CIDRs delimitados dos peers do frontend>
+ RESEND_API_KEY=<segredo>
+ INVITATION_FROM_EMAIL=convites@seudominio.com
+ ```
+ 
+ As URLs de PostgreSQL exportadas pela Railway são aceitas pelo backend, que seleciona o driver `psycopg` instalado. Use a URL privada `DATABASE_URL` do Postgres, nunca `DATABASE_PUBLIC_URL`. As chaves de criptografia precisam continuar iguais às utilizadas para os tokens já salvos; a troca sem migração torna as conexões existentes ilegíveis. Defina os segredos apenas em Railway Variables, nunca em arquivos versionados. Se alguma integração não estiver pronta para produção, omita suas variáveis e deixe sua conexão indisponível até configurá-la.
+ 
+-O worker não recebe domínio público nem variáveis Resend. Para repetir revogações WorkOS após reset de senha, ele precisa de WORKOS_API_KEY, WORKOS_CLIENT_ID e WORKOS_REDIRECT_URI do mesmo ambiente da API, além do Beat já previsto. Comece com limite de memória adequado para extração de documentos e concorrência Celery igual a 1; aumente somente após medir uso de memória e duração dos jobs.
++O worker não recebe domínio público nem variáveis Resend. Reset de senha revoga as sessões WorkOS automaticamente; não há fila/tarefa Beat de autenticação nem exigência de credenciais WorkOS no worker para esse fluxo. Os processos que carregam o mesmo Settings em produção (incluindo worker e MCP) exigem AUTH_PROXY_SECRET e AUTH_TRUSTED_PROXY_CIDRS válidos na inicialização. Comece com limite de memória adequado para extração de documentos e concorrência Celery igual a 1; aumente somente após medir uso de memória e duração dos jobs.
+ 
+ ## 4. Variável e domínio do frontend
+ 
+@@ -83,7 +83,7 @@
+ 
+ `VITE_API_BASE_URL=/api` é incorporado ao JavaScript durante o build e exige novo build/deploy quando alterado. `API_UPSTREAM_URL` é lido pelo servidor do frontend em runtime e aponta para a API; nunca coloque segredos em variáveis `VITE_*`. O proxy em `/api` mantém o cookie de sessão no mesmo host do frontend. Isto é especialmente necessário com dois domínios gerados `*.up.railway.app`, que o navegador trata como sites distintos para cookies `SameSite=Lax`. O container escuta a porta `PORT` fornecida pela Railway e o health check usa `/`.
+ 
+-Confira a fronteira de IP e as opções de e-mail em [Login WorkOS](../../backend/docs/custom-workos-login.md). O frontend deve receber tráfego exclusivamente pelo ingress confiável que substitui X-Real-IP; a API exige HMAC e peer permitido. A migração 20261008_0028 cria a fila durável de revogações.
++Confira a fronteira de IP e as opções de e-mail em [Login WorkOS](../../backend/docs/custom-workos-login.md). O frontend deve receber tráfego exclusivamente pelo ingress confiável que substitui X-Real-IP; a API exige HMAC e peer permitido. Settings rejeita produção sem segredo de pelo menos 32 caracteres e CIDRs válidos não vazios (sem /0), antes de servir requisições. Somente /api/auth/* exige IP/contexto assinado no proxy; /api/session e demais rotas continuam disponíveis sem esse contexto. A migração experimental 20261008_0028 nunca aplicada externamente foi removida; o head continua 20261001_0027, sem migração adicional para este login. Este checkout diverge da main quanto ao runtime frontend (Wrangler versus vinext start); valide o runtime final antes do deploy, sem assumir que o smoke Wrangler o cobre.
+ 
+ Adicione os endereços públicos ao frontend e à API. Para domínio próprio, crie os registros CNAME e TXT indicados pela Railway e aguarde a emissão TLS. Confirme que `/api/health/ready` no endereço do frontend retorna 200. Não gere domínio público para worker, banco ou Redis. Se configurar `API_UPSTREAM_URL` com o endereço privado da API e a porta correta, a API pode deixar de ter domínio público após os callbacks OAuth serem transferidos para `/api` no frontend.
+ 
+@@ -91,7 +91,7 @@
+ 
+ Depois de HTTPS funcionar, cadastre os callbacks exatos:
+ 
+-- WorkOS: redirect `https://app.seudominio.com/api/auth/callback`; retorno após logout `https://app.seudominio.com/login`.
++- WorkOS: redirect `https://app.seudominio.com/api/auth/callback`; retorno após logout e Password reset URL `https://app.seudominio.com/login`; e-mail/senha e verificação obrigatória habilitados, e-mails gerenciados de verificação/reset ligados.
+ - Google Cloud OAuth: `https://app.seudominio.com/api/data-sources/google/oauth/callback`.
+ - Microsoft Entra: `https://app.seudominio.com/api/data-sources/onedrive/oauth/callback` e os tipos de conta/permissões aprovados para OneDrive pessoal e corporativo.
+ - Microsoft Entra (SharePoint, mesmo app multi-tenant): `https://app.seudominio.com/api/data-sources/sharepoint/oauth/callback` e a permissão delegada `Sites.Read.All`. O valor deve casar caractere por caractere com `MICROSOFT_SHAREPOINT_REDIRECT_URI`. Veja `docs/integracoes/sharepoint-runbook-consentimento-admin.md`.
+diff --git a/TASK/items/F-211.md b/TASK/items/F-211.md
+--- a/TASK/items/F-211.md
++++ b/TASK/items/F-211.md
+@@ -1,15 +1,16 @@
+-# F-211 — Correções do login WorkOS após revisão h-kq
++# F-211 — Login WorkOS: correção final de h-ks/h-kr/h-kq
+ 
+ ## F-211 | categoria: segurança | severidade: alta | status: resolvido localmente
+-- Responsável: pane-489; tarefa autorizada h-kq; árvore compartilhada, sem branch/commit por instrução explícita.
+-- Superfície: backend auth/identity/config, proxy e telas de login, testes e documentação associada.
+-- Reprodução: Next não encaminha contexto IP confiável; clientes distintos compartilham o bucket do peer. Verificação só limita IP. Reset revoga apenas sessões locais.
+-- Hipótese confirmada: limite e Radar usam peer do Next; falta confiança explícita no contexto do ingress. Credencial de cadastro é persistida antes de provar posse da caixa. Revogação ignora sessões WorkOS sem identidade local.
+-- Contrato de e-mail: documentação oficial atual marca password_reset como Sends email e informa entrega padrão configurável. Ausência de execução real NÃO comprova defeito nesse contrato.
+-- Entrega: regressões red/green, confiança assinada + peer permitido, cadastro sem senha pré-verificação, revogação local/provider e comportamento de falha, baixos aplicáveis, graphify atualizado, prévia local; sem enviar e-mails reais, publicar ou commit.
++- Responsável final: pane-491; responsável anterior: pane-489. Handoffs h-ks, h-kr e h-kq lidos integralmente. O fullText h-ks contém duas médias; ambas fazem parte deste escopo.
++- Árvore compartilhada sem branch/commit/publicação/configuração externa/e-mail, por instrução explícita. Sem rebase nem alteração de Dockerfile/runtime nesta correção.
++- Reprodução/causa: reset WorkOS já revoga sessões do provedor automaticamente, mas fila/marcador redundante bloqueavam novo login; Settings só falhava durante requisições; contexto IP era exigido também em rotas sem autenticação. Radar documentado era tratado como credencial inválida.
++- Correção: remover fila/modelo/revocations.py/0028/tarefa Beat/testes de fila/bloqueio e UX pendente; persistir revogação de todas as sessões locais; validar configuração de produção na construção de Settings; assinar somente /auth/*; fallback hospedado para Radar/desafios pendentes, preservando erros de credencial, 429 e 5xx.
++- Preservado: cadastro sem senha e prova da caixa, reenvio assinado, limites por IP/e-mail/token, cookies/CSRF/HMAC/CIDR, retorno de convite, token somente em memória/no-referrer, revogação pontual no logout e visual desktop/mobile.
+ 
+-## Resultado
+-- IP assinado + peer permitido, sem confiança em XFF; produção falha fechada sem configuração. Dois clientes isolados; reproduzido o bloqueio global ao reintroduzir o comportamento antigo somente no processo de teste.
+-- Cadastro sem senha prévia, prova de posse via link WorkOS; limite por token; reenvio com contexto assinado; revogação local e WorkOS com fila durável e retry; retorno de convite e proteção de Referer.
+-- 118 testes backend, 14 frontend, tsc/lint/build passaram; prévia e browser smoke locais sem WorkOS real; API real consultada somente com GET.
+-- Pendências externas: Admin no Dashboard, conta/caixa controlada para fluxo real, configuração do proxy no ingress/deploy e aplicação da migração. Nenhuma publicação, alteração de variáveis externas ou commit Git. Detalhes em backend/docs/custom-workos-login.md e TASK/evidence/f211/verification.md.
++## Evidência final
++- 179 testes backend e 15 frontend, tsc, ESLint, Ruff, build, Alembic heads e graphify update: exit 0. Head único 20261001_0027; 0028 nunca aplicada externamente e removida.
++- HTTP local e browser: seis fluxos de demonstração, 1280/390/320 sem overflow; proxy assinado com dois clientes; /api/session 200/null, /api/health/live 200 e /api/me 401 sem contexto IP.
++- Prévia reconstruída e reiniciada: http://localhost:3117/login, gateway local em 8117, sem WorkOS real ou e-mail.
++- Configuração/validação externas continuam pendentes: Admin WorkOS, conta/caixa de teste, métodos avançados e confiança do ingress/variáveis/start command ASGI. Nenhuma migração adicional nem fila WorkOS é necessária.
++- Limitação preservada: checkout Wrangler diverge da main vinext start; smoke deve ser repetido no artefato/runtime final antes do deploy.
++- Comandos/exit codes, reprodução, diff e resumo para revisão: TASK/evidence/f211/verification.md e final-checks.json. skills: inline [oc-builder, oc-blackbox, oc-stamp].
+diff --git a/TASK/evidence/f211/verification.md b/TASK/evidence/f211/verification.md
+--- a/TASK/evidence/f211/verification.md
++++ b/TASK/evidence/f211/verification.md
+@@ -1,47 +1,91 @@
+-# F-211 / h-kq — evidências da correção
++# F-211 — Evidência final (h-ks/h-kr/h-kq, pane-491)
+ 
+-Conclusão: correções locais verificadas. O fluxo real WorkOS de cadastro, e-mail, autenticação, reset, MFA e SSO ainda não foi executado. Sem publicação, commit Git ou envio de e-mail real. skills: inline [oc-builder, oc-blackbox, oc-stamp]. Handoffs h-kp e h-kq lidos integralmente.
++Correção local concluída e verificada em 08/10/2026. Handoffs h-ks, h-kr e h-kq lidos integralmente; o fullText h-ks contém **duas médias**, ambas corrigidas. Nenhum commit, publicação, configuração externa, rebase ou e-mail real. skills: inline [oc-builder, oc-blackbox, oc-stamp]. Este relatório substitui a evidência anterior de fila durável, removida nesta correção.
+ 
+-## Achados e resultado
++## Resumo de código para a última revisão independente
+ 
+-| Achado | Correção/decisão | Evidência |
++| Superfície | Resultado e ponto de revisão |
++| --- | --- |
++| backend/app/api/auth.py | Reset confirma a senha no WorkOS, procura o subject estável na AuthIdentity, revoga todas as UserSession desse usuário e persiste antes da resposta. Sem revogação adicional no WorkOS, marcador ou bloqueio de login/callback. Mantém force_reauthentication, limpeza dos cookies, retorno seguro e não autentica no reset. |
++| backend/app/identity/auth.py | Remove gateway.revoke_user_sessions redundante. Mantém revoke_provider_session no logout e IdentityService.revoke_user_sessions local. Inclui Radar email/SMS e nomes do SDK, além de desafio 4xx com token pendente. Credenciais/código inválidos, 429 e 5xx são erros, com prioridade sobre fallback. |
++| backend/app/identity/models.py, revocations.py, alembic/0028, ingestion/tasks.py | Modelo, módulo de fila, migração nunca aplicada externamente e tarefa/Beat removidos. models.py/tasks.py e testes de migração/Beat voltam ao estado anterior à fila. Head único 20261001_0027. |
++| backend/app/core/config.py | Model validator exige segredo e CIDRs não vazios em produção na inicialização. Field validators rejeitam segredo curto/branco, CIDRs inválidos e /0. Erros escondem input/segredos. O padrão local development permanece; ENVIRONMENT=production deve ser explícito. Settings compartilhado exige essas variáveis também nos demais serviços de produção que o carregam. |
++| frontend/app/api/proxy-headers.mjs | Só assina/exige contexto para caminho upstream /auth/*. Allowlist continua descartando headers forjados em qualquer caminho; /api/session → /me, healthcheck e demais APIs não exigem ingress IP. route.ts não foi alterado nesta correção. |
++| frontend/app/product/custom-login.tsx, product-app.tsx | Remove apenas estado/resultado/mensagem/query de revogação pendente. Não muda layout, estilo, cadastro sem senha, reenvio, fallback, no-referrer ou token em memória. |
++| testes | Cobertura de múltiplas sessões locais, inclusive expirada, previamente revogada, duas ativas, outra conta intacta e login novo por senha/callback após reset; reset sem identidade local; produção na importação real da API; Radar via SDK 10.3/HTTP interceptado; isolamento de rotas do proxy. Fixtures de produção receberam configuração válida para preservar o objetivo de CSRF/CORS/keyring/intent. Testes keyring isolados do .env local. |
++| docs | Contrato permanente sem dados efêmeros de demo, sem fila/migração exigida, com configurações da inicialização e limitação do runtime. Dados locais somente neste diretório de evidência. |
++
++Diff focado desta rodada: [final-correction.diff](final-correction.diff), incluindo arquivos previamente não rastreados e a remoção de 0028. Não inclui o grafo gerado nem reconta todo o login anterior; compare-o com h-kr. Resumo de arquivos: [final-diff-files.json](final-diff-files.json). Não há commit a revisar; a entrega é a árvore compartilhada atual.
++
++## Verificações frescas
++
++Comandos exatos, cwd, saída e exit code de pytest/Node/tsc/ESLint/Ruff: [final-checks.json](final-checks.json).
++
++| Comando | Exit | Resultado |
+ | --- | --- | --- |
+-| IP do proxy compartilhado | Contexto HMAC sobre IP/método/caminho/timestamp + CIDR do peer; Uvicorn sem forwarded headers; ingress opt-in explícito | Testes API de dois clientes, assinatura forjada, peer não confiável, timestamp/caminho/IP inválidos; proxy Node; `proxy-smoke.json` com build Wrangler → API ASGI local |
+-| Reset supostamente não envia e-mail | Não confirmado como bug. Emissão do token e envio gerenciado são comportamentos distintos; envio depende da configuração do ambiente | Referência oficial marca envio; Custom Emails explica padrão/configuração. Contrato SDK 10.3 testado com HTTP interceptado. Configuração efetiva do Dashboard e recebimento continuam pendentes |
+-| Pré-sequestro | Cadastro cria usuário sem senha. Link WorkOS permite ao dono confirmar o e-mail e definir a senha; cadastro existente não sobrescreve credenciais | Testes API + SDK HTTP para conta nova/existente; browser signup sem campo de senha |
+-| Tentativas de código | 5/min por hash do token pendente, além de IP; sem depender exclusivamente do WorkOS | Teste atravessa seis IPs; bloqueio ocorre na sexta tentativa do mesmo token |
+-| Sessões anteriores ao reset | Revogação local commitada pela aplicação; listagem de todas as páginas e revogação WorkOS mesmo sem usuário local; fila SQL e retry Beat/novo login em caso de falha | Testes sem AuthIdentity, outage/retry, worker, migração offline; nenhuma sessão WorkOS real foi revogada |
+-| Reenvio | Cookie de contexto assinado vinculado ao token; endpoint próprio, 1/min por verificação; prazo de 10 min | Testes de vínculo/forja/limite e SDK recursos reais com HTTP interceptado; browser confirma reenvio simulado |
+-| Convite no fallback | `return_to` validado por política restrita e usado pelo login hospedado; preservado após reset no mesmo navegador | Teste de registro → reset → callback; Node e browser fallback /login |
+-| Token no Referer | Header + metadata `no-referrer`; token só em memória e retirado da URL antes do submit | HTTP da prévia; browser smoke observa remoção e nenhum token de reset em Referer |
+-| 429/e-mail existente | 429 sanitizado e Retry-After real do SDK; endereço existente segue o mesmo fluxo genérico | SDK HTTP 429 com 120 s; API 429; signup novo/existente |
++| Pytest nos 15 arquivos pertinentes listados em final-checks.json | 0 | **179 passed**, 0 falhas; aviso de depreciação AnyIO/Starlette preexistente |
++| Node nos 5 arquivos de auth/proxy/session/landing | 0 | **15 pass**, 0 fail |
++| cd frontend && npx tsc --noEmit | 0 | Sem erros |
++| ESLint nos arquivos frontend de auth/proxy/runtime/testes | 0 | Sem erros |
++| Ruff nos arquivos backend modificados e fixtures de produção | 0 | All checks passed |
++| cd frontend && VITE_API_BASE_URL=/api npm run build | 0 | Build complete, 5 etapas; aviso informativo vinext de classificação estática de rotas |
++| cd backend && DATABASE_URL=postgresql+psycopg://test:test@localhost/test .venv/bin/python -m alembic heads | 0 | **20261001_0027 (head)**; SQL offline também coberto pelo pytest |
++| backend/.venv/bin/python TASK/evidence/f211/proxy_smoke.py | 0 | Cliente 1: 60 tentativas 400, seguinte 429 com Retry-After; cliente 2 continua 400; ausência ingress em auth 503; direto forjado 403; session 200/null, health 200, me 401 sem ingress |
++| node TASK/evidence/f211/browser_smoke.mjs | 0 | **6 fluxos**, 1280/390/320 px reais sem overflow, chunks funcionais, nenhuma falha de sessão inicial |
++| graphify update . | 0 | AST-only: **7678 nós, 21752 arestas, 512 comunidades**; aviso de rótulos de comunidade desatualizados; sem chamada LLM |
++| git diff --check | 0 | Sem whitespace errors |
+ 
+-## Verificações executadas
++Antes da correção, os novos testes produziram 17 falhas de Settings/Radar/reset (mais 2 erros de teardown decorrentes de pytest.fail na chamada redundante). O comando inicial red usou redirecionamento + tail, cujo wrapper saiu 0; a saída pytest registrou as falhas. Node reproduziu a exigência indevida de IP em /me com 1 fail/4 pass, exit 1. As mesmas regressões passam no código final. Um erro inicial de fixture de cookie sem domínio foi corrigido usando o domínio real do TestClient; não foi defeito do app.
+ 
+-- `OCR_ENGINE=none backend/.venv/bin/python -m pytest backend/tests/unit/test_identity_auth.py backend/tests/unit/test_workos_sdk_contract.py backend/tests/api/test_auth_and_invitations.py backend/tests/unit/test_auth_log_redaction.py backend/tests/api/test_route_authorization.py backend/tests/api/test_google_integrations.py backend/tests/unit/test_authentication_migration_sql.py backend/tests/unit/test_sync_beat.py backend/tests/unit/test_ingestion_scheduler.py -q --tb=short` → **118 passed**, exit 0. Aviso preexistente de depreciação AnyIO/Starlette.
+-- Regressão IP: em processo separado, substituir apenas `auth_client_ip` pelo comportamento antigo `request.client.host` e executar `test_two_clients_behind_proxy_have_separate_ip_buckets_and_workos_context` → **falha esperada: segundo cliente recebe 429**, pytest exit 1. O comando de controle conclui exit 0 somente se observar essa falha. Sem editar/reverter arquivo.
+-- `cd frontend && node --test tests/proxy-headers.test.mjs tests/auth-navigation.test.mjs tests/auth-runtime-env.test.mjs tests/session-probe.test.mjs tests/landing-contract.test.mjs` → **14 pass, 0 fail**, exit 0.
+-- `cd frontend && npx tsc --noEmit` → exit 0.
+-- ESLint dos arquivos frontend alterados, incluindo wrapper de runtime e testes → exit 0.
+-- Ruff dos arquivos backend alterados → exit 0.
+-- `cd frontend && VITE_API_BASE_URL=/api npm run build` → **Build complete**, exit 0, 5 etapas concluídas.
+-- `backend/.venv/bin/python TASK/evidence/f211/proxy_smoke.py` → exit 0. **60 tentativas permitidas para cliente 1; seguinte 429; cliente 2 continua com 400 de credencial inválida; ausência de ingress 503; backend direto forjado 403**. Executado com frontend build/Wrangler local e backend fake; a fronteira Railway é simulada.
+-- `node TASK/evidence/f211/browser_smoke.mjs` → exit 0. **1280/390/320 px reais, sem overflow**; signup, reset, login, verificação/reenvio, fallback de convite; dados e gateway de demonstração. Screenshots `login-1280.png`, `login-390.png`, `login-320.png` inspecionados.
+-- `git diff --check` → exit 0.
+-- `graphify query` executado antes da investigação; `graphify update .` AST-only executado após as alterações. Último resultado: **7685 nós, 21786 arestas, 506 comunidades**, exit 0; sem chamada semântica/LLM.
++Durante a preparação: Alembic chamado do cwd errado (255) e preview sem PYTHONPATH (1) foram corrigidos nos comandos. Ruff exigiu check=False no subprocess de startup; corrigido e reexecutado (0). As duas primeiras tentativas da sonda auxiliar tiveram ReadTimeout ao consultar /api/session; uma terceira foi iniciada antes de a API estar pronta e recebeu 502. A causa dos timeouts não foi confirmada. A reprodução isolada da mesma sequência e 66 probes de sessão seguidos passaram; a sonda completa final após readiness também passou. Nenhuma correção de runtime foi feita; mantenha esta ocorrência registrada para a revisão, sem atribuir-lhe causa comprovada. Os servidores auxiliares 3118/8118 foram encerrados.
+ 
+-## Capacidade externa comprovada, sem enviar e-mail
++## Contratos e limites
+ 
+-A CLI Railway está autenticada no projeto ArquivIO. As variáveis foram lidas em memória, em diretório de ligação temporário removido ao terminar; não foram exibidos nem gravados valores secretos em artefatos. API e Worker têm chave/client WorkOS. API e Frontend ainda não têm `AUTH_PROXY_SECRET`; a API não tem CIDRs configurados; o Frontend não tem o modo de ingress configurado. Nenhuma variável foi modificada, nenhum deploy solicitado.
++A referência oficial confirma que reset revoga automaticamente todas as sessões ativas WorkOS; por isso a segunda revogação/fila foi removida. O app continua responsável pelas sessões locais opacas, que não são sessões gerenciadas pelo provedor. [Password reset](https://workos.com/docs/reference/authkit/password-reset).
+ 
+-Usando a chave existente apenas em memória, GET de usuários (limite 1) e GET de sessões (limite 1) responderam na API WorkOS real. Não foram impressos usuários/e-mails/IDs; não houve autenticação, criação, reset, revogação ou envio real. Essa leitura prova conectividade e acesso à API de sessões, não o funcionamento ponta a ponta da nova tela.
++Os nomes documentados de Radar são radar_email_challenge e radar_sms_challenge; nomes do SDK e desafios pendentes seguem para o AuthKit hospedado. Isso só permite iniciar o fluxo hospedado, não conclui/valida Radar real. [Authentication errors](https://workos.com/docs/reference/authkit/authentication-errors).
+ 
+-O browser Overclock abriu o Dashboard e encontrou **Entrar no WorkOS**, sem sessão Admin. Não existe CLI WorkOS instalada; o SDK disponível não oferece configuração desses e-mails/redirects com a chave usada para User Management. Necessário acesso autenticado **Admin ao ambiente correto** para conferir Emails → Configuration e Applications → aplicação → Redirects (password reset URL para `/login`, callback preservado), métodos e verificação obrigatória. Para comprovar recebimento/fluxo real, necessária **conta de teste e caixa de e-mail explicitamente controladas/designadas**, além de conta/organização MFA e IdP/usuário SSO para esses cenários. Não se devem usar as contas existentes descobertas pela consulta de leitura para enviar mensagens ou alterar sessões.
++Sem migração de autenticação nova: 0028 nunca foi aplicada externamente, conforme autorização recebida. Não há tabela/fila/job de revogação para instalar ou operar. O scheduler Beat de ingestão existente foi preservado.
+ 
+-Migração, peers/rede do frontend, substituição de `X-Real-IP` e impossibilidade de bypass do ingress ainda precisam ser aplicados/validados na infraestrutura quando o deploy for autorizado. A origem pública, Redis e worker/Beat também precisam ser conferidos nesse deploy. O comportamento seguro com ausência dessa configuração é falhar fechado.
++## Prévia funcional e reprodução
+ 
+-## Prévia mantida
++**http://localhost:3117/login**, build reconstruído; frontend e API de demonstração reiniciados para carregar o código final. Frontend Wrangler em 3117 e preview_gateway.py em 8117, com logs fora do repositório em /tmp/f211-preview-frontend.log e /tmp/f211-preview-api.log. Gateway determinístico/SQLite: **sem WorkOS real, sem envio de e-mails**.
+ 
+-**http://localhost:3117/login**, servidor de build local ligado a `preview_gateway.py` em 8117. É uma demonstração determinística, sem WorkOS real ou e-mails. O navegador Overclock foi deixado nessa URL. Os processos extras do teste de proxy em 3118/8118 foram encerrados.
++Para subir em terminais separados na raiz do projeto:
+ 
+-Configuração e referências oficiais: [custom-workos-login.md](../../../backend/docs/custom-workos-login.md). Resultados estruturados: [browser-smoke.json](browser-smoke.json), [proxy-smoke.json](proxy-smoke.json).
++```sh
++PYTHONPATH=backend backend/.venv/bin/python TASK/evidence/f211/preview_gateway.py > /tmp/f211-preview-api.log 2>&1
++```
++
++```sh
++cd frontend
++API_UPSTREAM_URL=http://127.0.0.1:8117 npm run start -- --port 3117 > /tmp/f211-preview-frontend.log 2>&1
++```
++
++Antes dos smokes, aguarde /health/live da API e /login do frontend retornarem 200. Não rode build novamente sem reiniciar a prévia: Wrangler pode manter referência aos chunks antigos.
++
++Dados **somente de demonstração local**: demo@example.com + preview-password; verify@example.com + mesma senha e código 123456; radar@example.com + mesma senha demonstra fallback; reset ?token=preview-only. browser_smoke.mjs usa o Playwright do runtime Codex instalado e Google Chrome em /Applications, caminhos declarados no script; não há e-mail externo.
++
++Reprodução da sonda assinada, em terminais separados:
++
++```sh
++PYTHONPATH=backend PREVIEW_SIGNED_PROXY=1 PREVIEW_API_PORT=8118 PREVIEW_FRONTEND_URL=http://localhost:3118 backend/.venv/bin/python TASK/evidence/f211/preview_gateway.py > /tmp/f211-proxy-api.log 2>&1
++```
++
++```sh
++cd frontend
++API_UPSTREAM_URL=http://127.0.0.1:8118 AUTH_CLIENT_IP_SOURCE=railway AUTH_PROXY_SECRET=test-only-proxy-secret-at-least-32-chars npm run start -- --port 3118 > /tmp/f211-proxy-frontend.log 2>&1
++```
++
++Depois da readiness dos dois servidores, rode proxy_smoke.py uma vez; reinicie a API para zerar limites antes de repetir. Contexto Railway é simulado. Não use esse segredo fictício na infraestrutura.
++
++Screenshots desktop/mobile/320 atualizados e desktop/390 inspecionados: [1280](login-1280.png), [390](login-390.png), [320](login-320.png). Resultados: [browser-smoke.json](browser-smoke.json), [proxy-smoke.json](proxy-smoke.json). Cadastro sem campo de senha, reenvio simulado, token retirado antes do submit e ausente no Referer; credencial inválida permanece alerta e desafio Radar oferece fallback sem sessão.
++
++## Pendências externas precisas
++
++1. **Admin WorkOS** no ambiente do WORKOS_CLIENT_ID para conferir e-mail/senha habilitado, verificação obrigatória, Emails → Configuration → e-mails gerenciados de verificação/reset ligados; Applications → Redirects → Password reset URL = origem pública + /login; callback existente preservado. O app não implementa remetente alternativo para AuthKit.
++2. **Conta de teste e caixa controlada/designada** para provar entrega, cadastro/endereço existente, código e reenvio com o mesmo token pendente, reset e invalidação de sessões antigas. A compatibilidade do código reenviado com o token pendente continua lacuna de contrato, exige teste real. Conta/organização com MFA, IdP/usuário SSO e Radar habilitado conforme política para os métodos avançados. A nova rodada não chamou nenhuma API WorkOS real nem enviou e-mail; GET da rodada anterior só provou leitura/conectividade.
++3. **Infraestrutura**: ENVIRONMENT=production explícito; segredo aleatório ≥32 caracteres igual no frontend/API e configurado nos processos que carregam Settings em produção; AUTH_TRUSTED_PROXY_CIDRS válidos e estritamente delimitados dos peers do frontend; AUTH_CLIENT_IP_SOURCE=railway no frontend; API_UPSTREAM_URL, PUBLIC_APP_URL e Redis corretos. Validar ingress que substitui X-Real-IP, impossibilidade de bypass, peers reais e logs que não gravem ?token=. Start command ASGI, inclusive override Railway, com --no-proxy-headers. Nada configurado externamente nesta rodada.
++4. **Runtime/branch**: checkout frontend Wrangler diverge da main que usa vinext start. Não foi feito rebase, nem alterado Dockerfile/package.json/sites-env/runtime por essa divergência. Reexecutar smoke no artefato/runtime final antes de produção. Não há migração 0028 nem dependência de credenciais WorkOS/Beat para reset; serviços existentes de ingestão continuam com suas exigências próprias.
++
++Outras baixas do fullText h-ks fora do escopo escolhido (por exemplo granularidade IPv6 e UX de recarregar reset) não foram ampliadas nesta correção.
+diff --git a/TASK/evidence/f211/preview_gateway.py b/TASK/evidence/f211/preview_gateway.py
+--- a/TASK/evidence/f211/preview_gateway.py
++++ b/TASK/evidence/f211/preview_gateway.py
+@@ -14,7 +14,7 @@
+ 
+ from app.core.config import Settings
+ from app.core.models import Base
+-from app.identity.auth import AuthenticationRejected, PendingEmailVerification, VerifiedIdentity
++from app.identity.auth import AuthenticationRejected, HostedAuthenticationRequired, PendingEmailVerification, VerifiedIdentity
+ from app.main import create_app
+ 
+ app = create_app(Settings(database_url=os.environ["DATABASE_URL"], environment="development", public_app_url=os.getenv("PREVIEW_FRONTEND_URL", "http://localhost:3117"), workos_api_key=None, workos_client_id=None, auth_proxy_secret=SecretStr("test-only-proxy-secret-at-least-32-chars") if os.getenv("PREVIEW_SIGNED_PROXY") == "1" else None, auth_trusted_proxy_cidrs="127.0.0.1/32" if os.getenv("PREVIEW_SIGNED_PROXY") == "1" else ""))
+@@ -28,6 +28,8 @@
+     def authenticate_password(self, **kwargs):
+         if kwargs["password"] != "preview-password":
+             raise AuthenticationRejected("Use preview-password na demonstração local.")
++        if kwargs["email"] == "radar@example.com":
++            return HostedAuthenticationRequired()
+         if kwargs["email"] == "verify@example.com":
+             return PendingEmailVerification(token="preview-pending", verification_id="email_verification_preview")
+         return VerifiedIdentity(provider="workos", subject="user_preview", email="demo@example.com")
+@@ -49,9 +51,6 @@
+     def confirm_password_reset(self, **kwargs):
+         return "user_preview"
+ 
+-    def revoke_user_sessions(self, **kwargs):
+-        return None
+-
+     def revoke_provider_session(self, **kwargs):
+         return None
+ 
+diff --git a/TASK/evidence/f211/proxy_smoke.py b/TASK/evidence/f211/proxy_smoke.py
+--- a/TASK/evidence/f211/proxy_smoke.py
++++ b/TASK/evidence/f211/proxy_smoke.py
+@@ -17,6 +17,13 @@
+     assert other.status_code == 400
+     missing = client.post("/api/auth/password", json={"email": "missing@example.com", "password": "incorrect"})
+     assert missing.status_code == 503
++    session = client.get("/api/session")
++    health = client.get("/api/health/live")
++    me = client.get("/api/me")
++    assert session.status_code == 200 and session.json() is None
++    assert health.status_code == 200 and health.json() == {"status": "ok"}
++    assert me.status_code == 401  # response reaches the API, not an ingress 503
++    results["non_auth_without_ingress"] = {"session": session.status_code, "health": health.status_code, "me": me.status_code}
+     results.update(client_one={"accepted_attempts": 60, "next_status": first[-1], "retry_after_present": bool(response.headers.get("retry-after"))}, client_two={"status": other.status_code}, forged_xff_and_context="overwritten; cannot rotate the first client's bucket", missing_trusted_ingress=missing.status_code)
+ with httpx.Client(base_url="http://127.0.0.1:8118", timeout=10) as client:
+     forged = client.post("/auth/password", headers={"x-forwarded-for": "203.0.113.66", "x-real-ip": "203.0.113.66", "x-auth-client-ip": "203.0.113.66", "x-auth-ip-timestamp": "1", "x-auth-ip-signature": "forged"}, json={"email": "forged@example.com", "password": "incorrect"})
+diff --git a/TASK/evidence/f211/browser_smoke.mjs b/TASK/evidence/f211/browser_smoke.mjs
+--- a/TASK/evidence/f211/browser_smoke.mjs
++++ b/TASK/evidence/f211/browser_smoke.mjs
+@@ -70,6 +70,24 @@
+   assert.equal(new URL((await fallbackRequest).url()).searchParams.get("return_to"), invitation);
+   evidence.flows.push("hosted fallback from /login preserves validated invitation return_to");
+   await fallbackContext.close();
++  const radarContext = await browser.newContext();
++  const radarPage = await radarContext.newPage();
++  await radarPage.goto("http://localhost:3117/login");
++  await radarPage.getByLabel("E-mail", { exact: true }).fill("radar@example.com");
++  await radarPage.getByLabel("Senha", { exact: true }).fill("incorrect-password");
++  await radarPage.getByRole("button", { name: "Entrar", exact: true }).click();
++  await radarPage.getByRole("alert").waitFor();
++  assert.equal(await radarPage.getByRole("status").count(), 0);
++  await radarPage.getByLabel("Senha", { exact: true }).fill("preview-password");
++  await radarPage.getByRole("button", { name: "Entrar", exact: true }).click();
++  await radarPage.getByRole("status").filter({ hasText: "etapa adicional de segurança" }).waitFor();
++  assert.equal(await radarPage.getByRole("alert").count(), 0);
++  await radarPage.route("**/api/auth/login?*", route => route.abort());
++  const radarRequest = radarPage.waitForRequest(request => request.url().includes("/api/auth/login?"));
++  await radarPage.getByRole("button", { name: "Continuar com SSO ou outro método" }).click();
++  await radarRequest;
++  evidence.flows.push("invalid credential remains alert; Radar fixture shows hosted fallback without session");
++  await radarContext.close();
+   writeFileSync(new URL("browser-smoke.json", import.meta.url), JSON.stringify(evidence, null, 2) + "\n");
+   console.log(JSON.stringify(evidence));
+ } finally { await browser.close(); }
+diff --git a/backend/tests/unit/test_auth_proxy_config.py b/backend/tests/unit/test_auth_proxy_config.py
+--- /dev/null
++++ b/backend/tests/unit/test_auth_proxy_config.py
+@@ -0,0 +1,66 @@
++"""Production must fail before serving requests with incomplete proxy trust."""
++
++import os
++import subprocess
++import sys
++from pathlib import Path
++
++import pytest
++from pydantic import ValidationError
++
++from app.core.config import Settings
++
++DB = "postgresql+psycopg://test:test@localhost/test"
++SECRET = "test-only-proxy-secret-at-least-32-chars"
++
++
++@pytest.mark.parametrize("secret,cidrs,missing", [
++    (None, "", "AUTH_PROXY_SECRET.*AUTH_TRUSTED_PROXY_CIDRS"),
++    (None, "127.0.0.1/32", "AUTH_PROXY_SECRET"),
++    (SECRET, "", "AUTH_TRUSTED_PROXY_CIDRS"),
++    (SECRET, " , ", "AUTH_TRUSTED_PROXY_CIDRS"),
++])
++def test_production_requires_both_proxy_settings_at_startup(secret, cidrs, missing):
++    with pytest.raises(ValidationError, match=missing) as error:
++        Settings(_env_file=None, database_url=DB, environment="production",
++                 auth_proxy_secret=secret, auth_trusted_proxy_cidrs=cidrs)
++    assert SECRET not in str(error.value)
++
++
++@pytest.mark.parametrize("secret,cidrs,invalid", [
++    ("short", "127.0.0.1/32", "AUTH_PROXY_SECRET"),
++    (" " * 32, "127.0.0.1/32", "AUTH_PROXY_SECRET"),
++    (SECRET, "bad-network", "AUTH_TRUSTED_PROXY_CIDRS"),
++    (SECRET, "0.0.0.0/0", "AUTH_TRUSTED_PROXY_CIDRS"),
++    (SECRET, "::/0", "AUTH_TRUSTED_PROXY_CIDRS"),
++    (SECRET, "127.0.0.1/32,bad-network", "AUTH_TRUSTED_PROXY_CIDRS"),
++])
++def test_production_rejects_invalid_proxy_configuration(secret, cidrs, invalid):
++    with pytest.raises(ValidationError, match=invalid) as error:
++        Settings(_env_file=None, database_url=DB, environment="production",
++                 auth_proxy_secret=secret, auth_trusted_proxy_cidrs=cidrs)
++    assert SECRET not in str(error.value)
++
++
++def test_production_accepts_delimited_ipv4_and_ipv6_peers():
++    Settings(_env_file=None, database_url=DB, environment="production",
++             auth_proxy_secret=SECRET, auth_trusted_proxy_cidrs="127.0.0.1/32, ::1/128")
++
++
++def test_development_can_run_without_proxy_configuration():
++    Settings(_env_file=None, database_url=DB, environment="development",
++             auth_proxy_secret=None, auth_trusted_proxy_cidrs="")
++
++
++def test_production_api_import_fails_before_startup_without_proxy_trust(tmp_path):
++    environment = os.environ | {
++        "DATABASE_URL": DB, "ENVIRONMENT": "production",
++        "PYTHONPATH": str(Path(__file__).resolve().parents[2]),
++    }
++    for name in ("AUTH_PROXY_SECRET", "AUTH_TRUSTED_PROXY_CIDRS"):
++        environment.pop(name, None)
++    result = subprocess.run([sys.executable, "-c", "import app.main"],
++                            cwd=tmp_path, env=environment, capture_output=True, text=True, check=False)
++    assert result.returncode == 1
++    assert "Production requires valid AUTH_PROXY_SECRET and AUTH_TRUSTED_PROXY_CIDRS before startup" in result.stderr
++    assert "input_value=" not in result.stderr

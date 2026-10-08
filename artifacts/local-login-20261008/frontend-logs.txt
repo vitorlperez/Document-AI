@@ -1,0 +1,12 @@
+frontend-1  | 
+frontend-1  |   vinext dev  (Vite 8.0.13)
+frontend-1  | 
+frontend-1  | Sites local sign-in: ***
+frontend-1  |   ➜  Local:   http://localhost:3000/
+frontend-1  |   ➜  Network: ***/
+frontend-1  |  GET /login 200 in 3.5s (compile: 1791494832.0s, render: 3.4s)
+frontend-1  |  GET /login 200 in 64ms (compile: 1791494831.9s, render: 51ms)
+frontend-1  |  GET /login 200 in 167ms (compile: 1791494832.0s, render: 59ms)
+frontend-1  |  GET /login 200 in 145ms (compile: 1791494832.0s, render: 42ms)
+frontend-1  |  GET /login 200 in 54ms (compile: 1791494831.9s, render: 32ms)
+frontend-1  |  GET /login 200 in 46ms (compile: 1791494831.9s, render: 25ms)

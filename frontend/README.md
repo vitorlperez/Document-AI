@@ -16,6 +16,8 @@ npm run dev
 
 O desenvolvimento portátil inicia em `http://localhost:5173`. O frontend usa `VITE_API_BASE_URL` ou `NEXT_PUBLIC_API_BASE_URL`; sem uma delas, usa `http://localhost:8000`.
 
+No Docker local, acesse `http://localhost:3000`: a interface e a API usam essa mesma origem. O Compose define `VITE_API_BASE_URL=/api` e `API_UPSTREAM_URL=http://api:8000`; a porta interna 8000 não é publicada. Os callbacks locais usam `http://localhost:3000/api/...`.
+
 Em produção com `VITE_API_BASE_URL=/api`, configure `API_UPSTREAM_URL` somente no runtime do servidor. A imagem de produção (`Dockerfile.production`) inicia `vinext start` (servidor Node, ~150 MB de RAM); o `npm start` local ainda usa Wrangler e converte essa variável em binding privado do Worker. Em ambos os casos ela não é incorporada ao JavaScript enviado ao navegador.
 
 ## Rotas e fluxos implementados

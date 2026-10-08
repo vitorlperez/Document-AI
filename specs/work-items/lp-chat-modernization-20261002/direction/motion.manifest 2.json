@@ -1,0 +1,4637 @@
+{
+  "$schema": "oc-design-dna/motion.manifest.json@v1",
+  "derivedFrom": "source/motion.json",
+  "card": "OVKA-536",
+  "source": {
+    "url": "https://dust.tt/",
+    "capturedAt": "2026-10-03T02:02:16.413Z",
+    "captureMode": "stealth-headless"
+  },
+  "counts": {
+    "keyframes": 70,
+    "keyframesWithBody": 70,
+    "animatedElements": 35,
+    "transitions": 154,
+    "reveals": 50,
+    "staggerGroups": 11,
+    "effectTokens": 7,
+    "frameStrips": 1,
+    "frameStripsProvingMotion": 1
+  },
+  "tokenReferences": [
+    "--motion-fast",
+    "--motion-base",
+    "--motion-slow",
+    "--motion-d3",
+    "--motion-d4",
+    "--motion-d5",
+    "--motion-d6",
+    "--motion-d7",
+    "--motion-d8",
+    "--motion-d9",
+    "--motion-d11",
+    "--motion-d12",
+    "--motion-d13",
+    "--motion-d14",
+    "--motion-d15",
+    "--motion-d16",
+    "--motion-d17",
+    "--motion-d18",
+    "--ease-standard",
+    "--ease-2",
+    "--ease-3",
+    "--ease-4",
+    "--ease-5",
+    "--ease-6",
+    "--ease-7",
+    "--ease-8",
+    "--ease-9",
+    "--glass",
+    "--filter-1",
+    "--filter-2",
+    "--filter-3",
+    "--glow-1",
+    "--glow-2",
+    "--glow-3"
+  ],
+  "keyframes": [
+    {
+      "name": "dotty",
+      "offsets": [
+        "0%",
+        "25%",
+        "50%",
+        "75%",
+        "100%"
+      ],
+      "properties": [
+        "content"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "initialFade",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "color"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "rainbowLoop",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "background-position-x",
+        "background-position-y"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "grow-down",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "fade-in",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "fade-collapse",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "opacity",
+        "max-height"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "move-square",
+      "offsets": [
+        "0%",
+        "12.5%",
+        "25%",
+        "37.5%",
+        "50%",
+        "62.5%",
+        "75%",
+        "87.5%",
+        "100%"
+      ],
+      "properties": [
+        "padding-top",
+        "padding-right",
+        "padding-bottom",
+        "padding-left"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "breathing",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "filter"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "breathing-scale",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "filter",
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "pulse",
+      "offsets": [
+        "50%"
+      ],
+      "properties": [
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "ring-pulse",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "box-shadow"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "ring-pulse-soft",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "box-shadow"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "opacity-pulse",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "shimmer",
+      "offsets": [
+        "0%",
+        "70%, 100%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "loading-dot",
+      "offsets": [
+        "0%, 20%",
+        "40%, 100%"
+      ],
+      "properties": [
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "background-position-spin",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "background-position-x",
+        "background-position-y"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "shiny-text",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "background-position-x",
+        "background-position-y"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "rainbow",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "background-position-x",
+        "background-position-y"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "collapse-down",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "opacity",
+        "height"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "collapse-up",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "height",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "puzzle-spinner-water-cycle",
+      "offsets": [
+        "0%",
+        "6%",
+        "82%",
+        "94%, 100%"
+      ],
+      "properties": [
+        "opacity",
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "puzzle-spinner-wave-back",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "puzzle-spinner-wave-front",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "ssp-spin",
+      "offsets": [
+        "100%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "ssp-dash",
+      "offsets": [
+        "0%",
+        "50%",
+        "100%"
+      ],
+      "properties": [
+        "stroke-dasharray",
+        "stroke-dashoffset"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "sss-morph",
+      "offsets": [
+        "0%, 15%",
+        "33%, 48%",
+        "67%, 82%",
+        "100%"
+      ],
+      "properties": [
+        "d",
+        "animation-timing-function"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "bgblink",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "background-color"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "glint-pass",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "appear",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "opacity",
+        "width"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "cursor-blink",
+      "offsets": [
+        "0%",
+        "90%",
+        "100%"
+      ],
+      "properties": [
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "fadeout",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "reload",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "opacity",
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "shake",
+      "offsets": [
+        "0%, 100%",
+        "20%, 60%",
+        "40%, 80%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "marquee",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "fade-in-up",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "opacity",
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "ping",
+      "offsets": [
+        "75%, 100%"
+      ],
+      "properties": [
+        "opacity",
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "enter",
+      "offsets": [
+        "0%"
+      ],
+      "properties": [
+        "opacity",
+        "transform",
+        "filter"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "exit",
+      "offsets": [
+        "100%"
+      ],
+      "properties": [
+        "opacity",
+        "transform",
+        "filter"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-human-bob",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-status-pulse",
+      "offsets": [
+        "0%",
+        "70%",
+        "100%"
+      ],
+      "properties": [
+        "opacity",
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-emoji-pop",
+      "offsets": [
+        "0%",
+        "60%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-agent-pulse",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-halo",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "opacity",
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-trail-dash",
+      "offsets": [
+        "100%"
+      ],
+      "properties": [
+        "stroke-dashoffset"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-halo-working",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "opacity",
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-spark-rotate",
+      "offsets": [
+        "100%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-pill-pop",
+      "offsets": [
+        "0%",
+        "60%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-caret-blink",
+      "offsets": [
+        "50%"
+      ],
+      "properties": [
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-door-flash",
+      "offsets": [
+        "0%",
+        "30%",
+        "100%"
+      ],
+      "properties": [
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "dust-floor-door-pulse",
+      "offsets": [
+        "0%, 100%",
+        "50%"
+      ],
+      "properties": [
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "swipe-out-left",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "swipe-out-right",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "swipe-out-up",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "swipe-out-down",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "sonner-fade-in",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "opacity",
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "sonner-fade-out",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "opacity",
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "sonner-spin",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-trusted-marquee",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-quote-slide-in-right",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-quote-slide-in-left",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-quote-slide-out-left",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-quote-slide-out-right",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-team-slide-in-right",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-team-slide-in-left",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-team-slide-out-left",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-team-slide-out-right",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-team-img-slide-in-right",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-team-img-slide-in-left",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-team-img-slide-out-left",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    },
+    {
+      "name": "home-team-img-slide-out-right",
+      "offsets": [
+        "0%",
+        "100%"
+      ],
+      "properties": [
+        "transform",
+        "opacity"
+      ],
+      "hasBody": true,
+      "confidence": "observed"
+    }
+  ],
+  "animations": [
+    {
+      "selector": "g#humans > g:nth-of-type(1) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(2) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(3) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(4) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(5) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(6) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(7) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(8) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(9) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(10) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(11) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(12) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(13) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(14) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(15) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(16) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(17) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(18) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(19) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(20) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(21) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 4800,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#humans > g:nth-of-type(22) > g",
+      "keyframe": "dust-floor-human-bob",
+      "durationMs": 3600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#a1 > g:nth-of-type(1)",
+      "keyframe": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#a2 > g:nth-of-type(1)",
+      "keyframe": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#a3 > g:nth-of-type(1)",
+      "keyframe": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#a4 > g:nth-of-type(1)",
+      "keyframe": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#a5 > g:nth-of-type(1)",
+      "keyframe": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#a8 > circle",
+      "keyframe": "dust-floor-halo-working",
+      "durationMs": 3400,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#a8 > g:nth-of-type(1)",
+      "keyframe": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#a6 > g:nth-of-type(1)",
+      "keyframe": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "g#a7 > g:nth-of-type(1)",
+      "keyframe": "dust-floor-agent-pulse",
+      "durationMs": 4600,
+      "delayMs": 0,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card.agent-card > div.chat-card-reactions:nth-of-type(3) > span.react-pill",
+      "keyframe": "dust-floor-pill-pop",
+      "durationMs": 220,
+      "delayMs": 0,
+      "easing": "cubic-bezier(0.34, 1.4, 0.64, 1)",
+      "iterations": "1",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "section.flex.w-full:nth-of-type(1) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2) > div.relative.w-full > div.home-trusted-track.flex",
+      "keyframe": "home-trusted-marquee",
+      "durationMs": 40000,
+      "delayMs": 0,
+      "easing": "linear",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "a.group.flex:nth-of-type(1) > div.flex.flex-1 > div.mb-1.5.flex:nth-of-type(1) > span.relative.flex > span.absolute.inline-flex:nth-of-type(1)",
+      "keyframe": "ping",
+      "durationMs": 1000,
+      "delayMs": 0,
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    },
+    {
+      "selector": "a.group.flex:nth-of-type(2) > div.flex.flex-1 > div.mb-1.5.flex:nth-of-type(1) > span.relative.flex > span.absolute.inline-flex:nth-of-type(1)",
+      "keyframe": "ping",
+      "durationMs": 1000,
+      "delayMs": 0,
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "iterations": "infinite",
+      "fill": "none",
+      "direction": "normal"
+    }
+  ],
+  "transitions": [
+    {
+      "property": "color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "outline-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "text-decoration-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-from",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-via",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-to",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 30,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "all",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 27,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 24,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.22s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 16,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.18s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 16,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 15,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 15,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 15,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "outline-color",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "text-decoration-color",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-from",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-via",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-to",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.18s",
+      "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+      "delay": "0s",
+      "hits": 12,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.08s",
+      "hits": 11,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.08s",
+      "hits": 11,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.08s",
+      "hits": 11,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 9,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 9,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.16s",
+      "hits": 9,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.16s",
+      "hits": 9,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.16s",
+      "hits": 9,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.32s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "filter",
+      "duration": "0.32s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.18s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "x",
+      "duration": "0.26s",
+      "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "width",
+      "duration": "0.26s",
+      "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+      "delay": "0s",
+      "hits": 8,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 6,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 6,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "outline-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "text-decoration-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-from",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-via",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-to",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 5,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.3s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.25s",
+      "easing": "ease",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 4,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.18s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.18s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.24s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.24s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.24s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "outline-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "text-decoration-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-from",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-via",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-to",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 3,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.3s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.3s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.3s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.36s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.36s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.36s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.39s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.39s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.39s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.42s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.42s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.42s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.45s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.45s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.45s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.15s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "width",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 2,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "height",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.2s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.12s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "background-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "border-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "outline-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "text-decoration-color",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "fill",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "stroke",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-from",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-via",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "--tw-gradient-to",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.22s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.22s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.22s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.33s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.33s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.33s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.48s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.48s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.48s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.51s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.51s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.51s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "width",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.3s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.32s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.32s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.32s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+      "delay": "0.4s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+      "delay": "0.4s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.7s",
+      "easing": "cubic-bezier(0.165, 0.84, 0.44, 1)",
+      "delay": "0.4s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "opacity",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.2s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.2s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "letter-spacing",
+      "duration": "0.5s",
+      "easing": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+      "delay": "0.2s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.1s",
+      "easing": "cubic-bezier(0, 0, 0.2, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "transform",
+      "duration": "0.6s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "translate",
+      "duration": "0.6s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "scale",
+      "duration": "0.6s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "property": "rotate",
+      "duration": "0.6s",
+      "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "delay": "0s",
+      "hits": 1,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    }
+  ],
+  "effects": [
+    {
+      "name": "glass",
+      "prop": "backdrop-filter",
+      "value": "blur(8px)",
+      "hits": 2
+    },
+    {
+      "name": "filter-1",
+      "prop": "filter",
+      "value": "grayscale(1)",
+      "hits": 31
+    },
+    {
+      "name": "filter-2",
+      "prop": "filter",
+      "value": "url(\"#room-shadow\")",
+      "hits": 4
+    },
+    {
+      "name": "filter-3",
+      "prop": "filter",
+      "value": "drop-shadow(rgba(17, 20, 24, 0.25) 0px 2px 6px)",
+      "hits": 1
+    },
+    {
+      "name": "glow-1",
+      "prop": "box-shadow",
+      "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0 0 0 / 0.05) 0px 0px 0px 1px, oklch(0.1898 0.0094 255.63 / 0.1216) 0px 20px 25px 0px",
+      "hits": 5
+    },
+    {
+      "name": "glow-2",
+      "prop": "box-shadow",
+      "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(255, 255, 255, 0.08) 0px 0px 1px 0px inset, oklch(0.949 0.003 106.45) 0px 0px 0.5px 0px, oklch(0.206 0.005 67.543 / 0.1) 0px 1px 1.5px 0px",
+      "hits": 4
+    },
+    {
+      "name": "glow-3",
+      "prop": "box-shadow",
+      "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(255, 255, 255, 0.08) 0px 0px 1px 0px inset, oklch(0.949 0.003 106.45) 0px 0px 0.5px 0px, rgba(0, 0, 0, 0.06) 0px 0.5px 1px 0px",
+      "hits": 2
+    }
+  ],
+  "effectsWhere": {
+    "backdropFilter": [
+      {
+        "value": "blur(8px)",
+        "selector": "div.relative.left-1/2 > section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(1) > span.inline-flex.h-7"
+      },
+      {
+        "value": "blur(8px)",
+        "selector": "div#__next > main.z-10.flex > div.max-h-[90vh].overflow-y-auto:nth-of-type(3)"
+      }
+    ],
+    "filter": [
+      {
+        "value": "url(\"#room-shadow\")",
+        "selector": "svg#plan > g:nth-of-type(2)"
+      },
+      {
+        "value": "url(\"#room-shadow\")",
+        "selector": "svg#plan > g:nth-of-type(3)"
+      },
+      {
+        "value": "url(\"#room-shadow\")",
+        "selector": "svg#plan > g:nth-of-type(4)"
+      },
+      {
+        "value": "url(\"#room-shadow\")",
+        "selector": "svg#plan > g:nth-of-type(5)"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a1 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a2 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a3 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a4 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a5 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a6 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "g#a7 > g:nth-of-type(1) > image"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(1) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(1) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(2) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(2) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(3) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(4) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(3) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(5) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(4) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(5) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(6) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(6) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > div.home-trusted-item.flex:nth-of-type(7) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      },
+      {
+        "value": "grayscale(1)",
+        "selector": "div.relative.w-full > div.home-trusted-track.flex > a.home-trusted-item.flex:nth-of-type(7) > div.flex.h-12:nth-of-type(1) > img.h-auto.w-auto"
+      }
+    ]
+  },
+  "reveals": [
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.flex.w-full:nth-of-type(1) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 900,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.97072,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(2) > div.mx-auto.flex > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 900,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.928745,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(2) > div.mx-auto.flex > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 1200,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.98069,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(2) > div.mx-auto.flex > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 1500,
+      "triggerRatio": 0.866,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.919647,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(2) > div.mx-auto.flex > div.home-reveal.home-reveal-photo:nth-of-type(2)",
+      "scrollY": 1500,
+      "triggerRatio": 0.359,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.966362,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(3) > div.mx-auto.w-full > div.home-reveal.home-reveal-up",
+      "scrollY": 1800,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.996618,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 2100,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.92871,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 2400,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.973821,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 2700,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.902866,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.grid.grid-cols-1:nth-of-type(2) > div.relative:nth-of-type(1) > article.home-reveal.home-reveal-up",
+      "scrollY": 2700,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.993844,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.grid.grid-cols-1:nth-of-type(2) > div.relative:nth-of-type(2) > article.home-reveal.home-reveal-up",
+      "scrollY": 2700,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.965633,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.grid.grid-cols-1:nth-of-type(2) > div.relative:nth-of-type(3) > article.home-reveal.home-reveal-up",
+      "scrollY": 3000,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.90291,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.grid.grid-cols-1:nth-of-type(2) > div.relative:nth-of-type(4) > article.home-reveal.home-reveal-up",
+      "scrollY": 3300,
+      "triggerRatio": 0.781,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.96907,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 3600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.993828,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 3600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.96559,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.flex.w-full:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 3900,
+      "triggerRatio": 0.932,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.902823,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.flex.w-full:nth-of-type(1) > figure.home-reveal.home-reveal-up",
+      "scrollY": 4200,
+      "triggerRatio": 0.313,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.959993,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.home-reveal.home-reveal-photo:nth-of-type(2)",
+      "scrollY": 3900,
+      "triggerRatio": 0.629,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.959711,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(6) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 4200,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.990099,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(6) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 4500,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.955967,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(6) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 4800,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.991707,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(6) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 5100,
+      "triggerRatio": 0.072,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.978094,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(1) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(1)",
+      "scrollY": 5100,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.928698,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(1) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(2)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.994471,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(1) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(3)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.987369,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(1) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(4)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.976733,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(2) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(1)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.987369,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(2) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(2)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.976733,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(2) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(3)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.961937,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(2) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(4)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.942192,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(3) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(1)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.961937,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(3) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(2)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.942192,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(3) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(3)",
+      "scrollY": 5400,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.916498,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(3) > ul.m-0.flex > li.home-reveal.home-reveal-right:nth-of-type(4)",
+      "scrollY": 5700,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.991701,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 4800,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.928704,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 5400,
+      "triggerRatio": 0.754,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.973835,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 5400,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.919696,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 5700,
+      "triggerRatio": 0,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.97671,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 6000,
+      "triggerRatio": 0.56,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.909808,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(8) > div.mx-auto.w-full > div.flex.flex-col > div.flex.flex-col > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 6000,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.913188,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(8) > div.mx-auto.w-full > div.flex.flex-col > div.flex.flex-col > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 6600,
+      "triggerRatio": 0.791,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.973847,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.w-full.bg-background:nth-of-type(8) > div.mx-auto.w-full > div.flex.flex-col > div.flex.flex-col > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 6600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.91972,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.mx-auto.w-full > div.flex.flex-col > ul.flex.w-full > li:nth-of-type(1) > div.home-reveal.home-reveal-up",
+      "scrollY": 6000,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.913188,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.mx-auto.w-full > div.flex.flex-col > ul.flex.w-full > li:nth-of-type(2) > div.home-reveal.home-reveal-up",
+      "scrollY": 6600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.973847,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.mx-auto.w-full > div.flex.flex-col > ul.flex.w-full > li:nth-of-type(3) > div.home-reveal.home-reveal-up",
+      "scrollY": 6600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.91972,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(1)",
+      "scrollY": 6600,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.928766,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(2)",
+      "scrollY": 6900,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.97385,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(2) > h1.m-0.max-w-[920px] > em.home-reveal.home-reveal-running",
+      "scrollY": 7500,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0.35,
+      "to": 0.957845,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(3)",
+      "scrollY": 7500,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.990107,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.relative.w-full:nth-of-type(9) > div.mx-auto.flex:nth-of-type(2) > div.home-reveal.home-reveal-up:nth-of-type(4)",
+      "scrollY": 7500,
+      "triggerRatio": 1,
+      "property": "opacity",
+      "from": 0,
+      "to": 0.942206,
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs) — stepped scroll"
+    }
+  ],
+  "stagger": [
+    {
+      "selector": "section.w-full > div.flex.flex-col > section.relative.left-1/2 > div.relative.mx-auto > div.z-10.flex:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "g#humans",
+      "stepMs": 370,
+      "count": 22,
+      "delaysMs": [
+        0,
+        370,
+        740,
+        1110,
+        1480,
+        1850,
+        2220,
+        2590,
+        2960,
+        3330,
+        3700,
+        4070.0000000000005,
+        4440,
+        4810,
+        180,
+        550,
+        920,
+        1290,
+        1660,
+        2029.9999999999998,
+        2400,
+        2770
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(2) > div.mx-auto.flex > div.flex.w-full:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(4) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(5) > div.mx-auto.flex > div.flex.flex-col > div.flex.w-full:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 4,
+      "delaysMs": [
+        0,
+        80,
+        160,
+        240
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(6) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(1) > ul.m-0.flex",
+      "stepMs": 30,
+      "count": 4,
+      "delaysMs": [
+        300,
+        330,
+        360,
+        390
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(2) > ul.m-0.flex",
+      "stepMs": 30,
+      "count": 4,
+      "delaysMs": [
+        360,
+        390,
+        420,
+        450
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2) > div.grid.grid-cols-1:nth-of-type(2) > div.flex.flex-col:nth-of-type(3) > ul.m-0.flex",
+      "stepMs": 30,
+      "count": 4,
+      "delaysMs": [
+        420,
+        450,
+        480,
+        510
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.flex.flex-col > div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(7) > div.mx-auto.flex > div.flex.flex-col:nth-of-type(1)",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    },
+    {
+      "selector": "div.relative.left-1/2 > section.w-full.bg-background:nth-of-type(8) > div.mx-auto.w-full > div.flex.flex-col > div.flex.flex-col",
+      "stepMs": 80,
+      "count": 3,
+      "delaysMs": [
+        0,
+        80,
+        160
+      ],
+      "confidence": "observed",
+      "source": "https://dust.tt/ (harvest-motion.mjs)"
+    }
+  ],
+  "reducedMotion": {
+    "ruleCount": 35,
+    "respected": true
+  },
+  "canvas": {
+    "present": false,
+    "count": 0,
+    "elements": [],
+    "contexts": [
+      "2d",
+      "webgl"
+    ],
+    "libs": [],
+    "confidence": "observed",
+    "source": "https://dust.tt/ (harvest-motion.mjs) — getContext hook installed before page scripts",
+    "note": "no <canvas> on this page"
+  },
+  "jsDriven": {
+    "waapiCallCount": 10,
+    "intersectionObservers": 30
+  },
+  "frameStrips": [
+    {
+      "name": "home-trusted-marquee",
+      "selector": "section.flex.w-full:nth-of-type(1) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2) > div.relative.w-full > div.home-trusted-track.flex",
+      "durationMs": 40000,
+      "frames": [
+        "screenshots/motion/home-trusted-marquee-t000.png",
+        "screenshots/motion/home-trusted-marquee-t025.png",
+        "screenshots/motion/home-trusted-marquee-t050.png",
+        "screenshots/motion/home-trusted-marquee-t075.png",
+        "screenshots/motion/home-trusted-marquee-t100.png"
+      ],
+      "distinctFrames": 2,
+      "proofOfMotion": true
+    }
+  ],
+  "risks": [],
+  "reproducibility": "partial — CSS covers the keyframes and effects below, but this source also drives motion outside CSS (see canvas / jsDriven). Those parts are documented, not reproduced.",
+  "preview": {
+    "fixtures": [
+      {
+        "name": "dotty",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "initialFade",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "rainbowLoop",
+        "classes": [
+          "shimmer"
+        ],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "grow-down",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "fade-in",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "fade-collapse",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "move-square",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "breathing",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "breathing-scale",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "pulse",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "ring-pulse",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "ring-pulse-soft",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "opacity-pulse",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "shimmer",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "loading-dot",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "background-position-spin",
+        "classes": [
+          "shimmer"
+        ],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "shiny-text",
+        "classes": [
+          "shimmer"
+        ],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "rainbow",
+        "classes": [
+          "shimmer"
+        ],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "collapse-down",
+        "classes": [
+          "height"
+        ],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "collapse-up",
+        "classes": [
+          "height"
+        ],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "puzzle-spinner-water-cycle",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "puzzle-spinner-wave-back",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "puzzle-spinner-wave-front",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "ssp-spin",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "ssp-dash",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "sss-morph",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "bgblink",
+        "classes": [
+          "color"
+        ],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "glint-pass",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "appear",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "cursor-blink",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "fadeout",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "reload",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "shake",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "marquee",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "fade-in-up",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "ping",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 1000,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "observed",
+          "selector": "a.group.flex:nth-of-type(1) > div.flex.flex-1 > div.mb-1.5.flex:nth-of-type(1) > span.relative.flex > span.absolute.inline-flex:nth-of-type(1)"
+        }
+      },
+      {
+        "name": "enter",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "exit",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "dust-floor-human-bob",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 4800,
+          "delayMs": 0,
+          "easing": "ease-in-out",
+          "direction": "normal",
+          "confidence": "observed",
+          "selector": "g#humans > g:nth-of-type(1) > g"
+        }
+      },
+      {
+        "name": "dust-floor-status-pulse",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "dust-floor-emoji-pop",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "dust-floor-agent-pulse",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 4600,
+          "delayMs": 0,
+          "easing": "ease-in-out",
+          "direction": "normal",
+          "confidence": "observed",
+          "selector": "g#a1 > g:nth-of-type(1)"
+        }
+      },
+      {
+        "name": "dust-floor-halo",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "dust-floor-trail-dash",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "dust-floor-halo-working",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 3400,
+          "delayMs": 0,
+          "easing": "ease-in-out",
+          "direction": "normal",
+          "confidence": "observed",
+          "selector": "g#a8 > circle"
+        }
+      },
+      {
+        "name": "dust-floor-spark-rotate",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "dust-floor-pill-pop",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 220,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.34, 1.4, 0.64, 1)",
+          "direction": "normal",
+          "confidence": "observed",
+          "selector": "div.dust-floor-cards > div.dust-floor-card-anchor > div.chat-card.agent-card > div.chat-card-reactions:nth-of-type(3) > span.react-pill"
+        }
+      },
+      {
+        "name": "dust-floor-caret-blink",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "dust-floor-door-flash",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "dust-floor-door-pulse",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "swipe-out-left",
+        "classes": [],
+        "variables": {
+          "--swipe-amount": "0px"
+        },
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "swipe-out-right",
+        "classes": [],
+        "variables": {
+          "--swipe-amount": "0px"
+        },
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "swipe-out-up",
+        "classes": [],
+        "variables": {
+          "--swipe-amount": "0px"
+        },
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "swipe-out-down",
+        "classes": [],
+        "variables": {
+          "--swipe-amount": "0px"
+        },
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "sonner-fade-in",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "sonner-fade-out",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "sonner-spin",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-trusted-marquee",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 40000,
+          "delayMs": 0,
+          "easing": "linear",
+          "direction": "normal",
+          "confidence": "observed",
+          "selector": "section.flex.w-full:nth-of-type(1) > div.mx-auto.flex > div.home-reveal.home-reveal-up:nth-of-type(2) > div.relative.w-full > div.home-trusted-track.flex"
+        }
+      },
+      {
+        "name": "home-quote-slide-in-right",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-quote-slide-in-left",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-quote-slide-out-left",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-quote-slide-out-right",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-team-slide-in-right",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-team-slide-in-left",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-team-slide-out-left",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-team-slide-out-right",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-team-img-slide-in-right",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-team-img-slide-in-left",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-team-img-slide-out-left",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      },
+      {
+        "name": "home-team-img-slide-out-right",
+        "classes": [],
+        "variables": {},
+        "confidence": "inferred",
+        "note": "Diagnostic surface and variable defaults; not the original component. Keyframe offsets remain observed and unchanged.",
+        "timing": {
+          "durationMs": 800,
+          "delayMs": 0,
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "direction": "normal",
+          "confidence": "inferred",
+          "note": "CSS definition captured without a running instance; demonstration timing only."
+        }
+      }
+    ],
+    "customPropertyRegistration": {
+      "confidence": "inferred",
+      "properties": []
+    },
+    "iterationCount": "infinite",
+    "fillMode": "both",
+    "confidence": "inferred",
+    "note": "Loop/fill overrides are for inspection. Original iteration/fill values remain in animations. No offsets synthesized."
+  }
+}

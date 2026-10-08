@@ -1,0 +1,123 @@
+FFFFFFFFFFFFF.FF..FFF                                                    [100%]
+=================================== FAILURES ===================================
+___________ test_snapshot_sql_limits_rows_per_document_before_python ___________
+tests/unit/test_inventory_review_regressions.py:57: in test_snapshot_sql_limits_rows_per_document_before_python
+    assert reads and sum(reads) <= SNAPSHOT_MAX_CHUNKS + 1
+E   assert ([41] and 41 <= (6 + 1))
+E    +  where 41 = sum([41])
+_________________ test_snapshot_caps_an_oversized_first_chunk __________________
+tests/unit/test_inventory_review_regressions.py:71: in test_snapshot_caps_an_oversized_first_chunk
+    assert sum(map(len, result.chunks)) <= SNAPSHOT_MAX_CHUNK_CHARS
+E   AssertionError: assert 18000 <= 6000
+E    +  where 18000 = sum(<map object at 0x111cd79a0>)
+E    +    where <map object at 0x111cd79a0> = map(len, ('Software Engineer Software Engineer Software Engineer Software Engineer Software Engineer Software Engineer Software...ngineer Software Engineer Software Engineer Software Engineer Software Engineer Software Engineer Software Engineer ',))
+E    +      where ('Software Engineer Software Engineer Software Engineer Software Engineer Software Engineer Software Engineer Software...ngineer Software Engineer Software Engineer Software Engineer Software Engineer Software Engineer Software Engineer ',) = CatalogFileSnapshot(id=UUID('5095f002-7816-46a3-a966-b15676b91297'), name='Profile.pdf', index_status='indexed', excer...gineer Software Engineer Software Engineer Software Engineer Software Engineer Software Engineer Software Engineer ',)).chunks
+______ test_weak_evidence_is_unknown_even_for_negative_assessment[True-a] ______
+tests/unit/test_inventory_review_regressions.py:88: in test_weak_evidence_is_unknown_even_for_negative_assessment
+    assert refs == [] and result.citations == []
+E   AssertionError: assert ([{'id': '3dd3...Profile.pdf'}] == []
+E     
+E     Left contains 2 more items, first extra item: {'id': '3dd3c3e5-0798-48ba-9191-f83efcc92a52', 'kind': 'file', 'name': 'Indexed.pdf'}
+E     Use -v to get more diff)
+_____ test_weak_evidence_is_unknown_even_for_negative_assessment[True-de] ______
+tests/unit/test_inventory_review_regressions.py:88: in test_weak_evidence_is_unknown_even_for_negative_assessment
+    assert refs == [] and result.citations == []
+E   AssertionError: assert ([{'id': '8e4e...Profile.pdf'}] == []
+E     
+E     Left contains one more item: {'id': '8e4edcf6-da87-4353-a7d6-f886a4ca763f', 'kind': 'file', 'name': 'Profile.pdf'}
+E     Use -v to get more diff)
+_ test_weak_evidence_is_unknown_even_for_negative_assessment[True-Software Engineer] _
+tests/unit/test_inventory_review_regressions.py:88: in test_weak_evidence_is_unknown_even_for_negative_assessment
+    assert refs == [] and result.citations == []
+E   AssertionError: assert ([{'id': '4332...Profile.pdf'}] == []
+E     
+E     Left contains one more item: {'id': '4332540a-c3a2-44c5-8c68-bbce5f357679', 'kind': 'file', 'name': 'Profile.pdf'}
+E     Use -v to get more diff)
+_ test_weak_evidence_is_unknown_even_for_negative_assessment[True-... ... ... ... ... ...] _
+tests/unit/test_inventory_review_regressions.py:88: in test_weak_evidence_is_unknown_even_for_negative_assessment
+    assert refs == [] and result.citations == []
+E   AssertionError: assert ([{'id': 'af83...Profile.pdf'}] == []
+E     
+E     Left contains one more item: {'id': 'af835b97-cc90-4964-90ac-340186247eba', 'kind': 'file', 'name': 'Profile.pdf'}
+E     Use -v to get more diff)
+_ test_weak_evidence_is_unknown_even_for_negative_assessment[True-oversized-token] _
+tests/unit/test_inventory_review_regressions.py:88: in test_weak_evidence_is_unknown_even_for_negative_assessment
+    assert refs == [] and result.citations == []
+E   AssertionError: assert ([{'id': 'b9cb...Profile.pdf'}] == []
+E     
+E     Left contains one more item: {'id': 'b9cb8493-41d6-4bbb-b29d-4149d1f00830', 'kind': 'file', 'name': 'Profile.pdf'}
+E     Use -v to get more diff)
+_____ test_weak_evidence_is_unknown_even_for_negative_assessment[False-a] ______
+tests/unit/test_inventory_review_regressions.py:89: in test_weak_evidence_is_unknown_even_for_negative_assessment
+    assert result.resolved_context["topic_evaluated"] == 0
+E   assert 2 == 0
+_____ test_weak_evidence_is_unknown_even_for_negative_assessment[False-de] _____
+tests/unit/test_inventory_review_regressions.py:89: in test_weak_evidence_is_unknown_even_for_negative_assessment
+    assert result.resolved_context["topic_evaluated"] == 0
+E   assert 1 == 0
+_ test_weak_evidence_is_unknown_even_for_negative_assessment[False-Software Engineer] _
+tests/unit/test_inventory_review_regressions.py:89: in test_weak_evidence_is_unknown_even_for_negative_assessment
+    assert result.resolved_context["topic_evaluated"] == 0
+E   assert 1 == 0
+_ test_weak_evidence_is_unknown_even_for_negative_assessment[False-... ... ... ... ... ...] _
+tests/unit/test_inventory_review_regressions.py:89: in test_weak_evidence_is_unknown_even_for_negative_assessment
+    assert result.resolved_context["topic_evaluated"] == 0
+E   assert 1 == 0
+_ test_weak_evidence_is_unknown_even_for_negative_assessment[False-oversized-token] _
+tests/unit/test_inventory_review_regressions.py:89: in test_weak_evidence_is_unknown_even_for_negative_assessment
+    assert result.resolved_context["topic_evaluated"] == 0
+E   assert 1 == 0
+_____________ test_evidence_normalizes_unicode_case_and_whitespace _____________
+tests/unit/test_inventory_review_regressions.py:99: in test_evidence_normalizes_unicode_case_and_whitespace
+    assert [ref["name"] for ref in refs] == ["Profile.pdf"]
+E   AssertionError: assert [] == ['Profile.pdf']
+E     
+E     Right contains one more item: 'Profile.pdf'
+E     Use -v to get more diff
+______ test_folder_count_discloses_direct_children_and_keeps_scope[False] ______
+tests/unit/test_inventory_review_regressions.py:136: in test_folder_count_discloses_direct_children_and_keeps_scope
+    assert "arquivos diretamente" in result.answer
+E   AssertionError: assert 'arquivos diretamente' in 'São 3 arquivos na seleção do catálogo local autorizado.\nDos 3 arquivos consultados: 2 com conteúdo indexado e 1 sem ...l: 1 arquivo(s) (fontes 2).\n\nNão foi possível avaliar os temas de 1 arquivo(s); isso não indica ausência de um tema.'
+E    +  where 'São 3 arquivos na seleção do catálogo local autorizado.\nDos 3 arquivos consultados: 2 com conteúdo indexado e 1 sem ...l: 1 arquivo(s) (fontes 2).\n\nNão foi possível avaliar os temas de 1 arquivo(s); isso não indica ausência de um tema.' = QuestionResult(answer='São 3 arquivos na seleção do catálogo local autorizado.\nDos 3 arquivos consultados: 2 com cont...ated': False, 'intent': 'inventory_stats', 'decided_by': 'llm', 'target': 'mentioned', 'tools': ['catalog_inventory']}).answer
+______ test_folder_count_discloses_direct_children_and_keeps_scope[True] _______
+tests/unit/test_inventory_review_regressions.py:136: in test_folder_count_discloses_direct_children_and_keeps_scope
+    assert "arquivos diretamente" in result.answer
+E   AssertionError: assert 'arquivos diretamente' in 'São 3 arquivos na seleção do catálogo local autorizado.\nDos 3 arquivos consultados: 2 com conteúdo indexado e 1 sem ...l: 1 arquivo(s) (fontes 2).\n\nNão foi possível avaliar os temas de 1 arquivo(s); isso não indica ausência de um tema.'
+E    +  where 'São 3 arquivos na seleção do catálogo local autorizado.\nDos 3 arquivos consultados: 2 com conteúdo indexado e 1 sem ...l: 1 arquivo(s) (fontes 2).\n\nNão foi possível avaliar os temas de 1 arquivo(s); isso não indica ausência de um tema.' = QuestionResult(answer='São 3 arquivos na seleção do catálogo local autorizado.\nDos 3 arquivos consultados: 2 com cont..., 'intent': 'inventory_stats', 'decided_by': 'llm', 'target': 'previous_answer_files', 'tools': ['catalog_inventory']}).answer
+_______ test_folder_scope_survives_multiple_or_empty_folder_count[False] _______
+tests/unit/test_inventory_review_regressions.py:172: in test_folder_scope_survives_multiple_or_empty_folder_count
+    assert "não inclui subpastas" in first.answer
+E   AssertionError: assert 'não inclui subpastas' in 'São 3 arquivos na seleção do catálogo local autorizado.\nDos 3 arquivos consultados: 2 com conteúdo indexado e 1 sem ...l: 1 arquivo(s) (fontes 2).\n\nNão foi possível avaliar os temas de 1 arquivo(s); isso não indica ausência de um tema.'
+E    +  where 'São 3 arquivos na seleção do catálogo local autorizado.\nDos 3 arquivos consultados: 2 com conteúdo indexado e 1 sem ...l: 1 arquivo(s) (fontes 2).\n\nNão foi possível avaliar os temas de 1 arquivo(s); isso não indica ausência de um tema.' = QuestionResult(answer='São 3 arquivos na seleção do catálogo local autorizado.\nDos 3 arquivos consultados: 2 com cont...ated': False, 'intent': 'inventory_stats', 'decided_by': 'llm', 'target': 'mentioned', 'tools': ['catalog_inventory']}).answer
+_______ test_folder_scope_survives_multiple_or_empty_folder_count[True] ________
+tests/unit/test_inventory_review_regressions.py:172: in test_folder_scope_survives_multiple_or_empty_folder_count
+    assert "não inclui subpastas" in first.answer
+E   AssertionError: assert 'não inclui subpastas' in 'São 0 arquivos na seleção do catálogo local autorizado.\nDos 0 arquivos consultados: 0 com conteúdo indexado e 0 sem conteúdo indexado disponível.'
+E    +  where 'São 0 arquivos na seleção do catálogo local autorizado.\nDos 0 arquivos consultados: 0 com conteúdo indexado e 0 sem conteúdo indexado disponível.' = QuestionResult(answer='São 0 arquivos na seleção do catálogo local autorizado.\nDos 0 arquivos consultados: 0 com cont...ated': False, 'intent': 'inventory_stats', 'decided_by': 'llm', 'target': 'mentioned', 'tools': ['catalog_inventory']}).answer
+____ test_count_with_no_topics_omits_irrelevant_citations_keeps_references _____
+tests/unit/test_inventory_review_regressions.py:186: in test_count_with_no_topics_omits_irrelevant_citations_keeps_references
+    assert result.citations == []
+E   AssertionError: assert [Evidence(doc...ions=()), ...] == []
+E     
+E     Left contains 30 more items, first extra item: Evidence(document_id=UUID('ec0fdf14-3b70-47ef-9c21-bea925fe3353'), document_name='Documento 0.pdf', chunk_id=UUID('ec0...rl='https://drive.example.test/Documento 0.pdf', score=1.0, source_provider='google', chunk_ids=(), chunk_positions=())
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED tests/unit/test_inventory_review_regressions.py::test_snapshot_sql_limits_rows_per_document_before_python
+FAILED tests/unit/test_inventory_review_regressions.py::test_snapshot_caps_an_oversized_first_chunk
+FAILED tests/unit/test_inventory_review_regressions.py::test_weak_evidence_is_unknown_even_for_negative_assessment[True-a]
+FAILED tests/unit/test_inventory_review_regressions.py::test_weak_evidence_is_unknown_even_for_negative_assessment[True-de]
+FAILED tests/unit/test_inventory_review_regressions.py::test_weak_evidence_is_unknown_even_for_negative_assessment[True-Software Engineer]
+FAILED tests/unit/test_inventory_review_regressions.py::test_weak_evidence_is_unknown_even_for_negative_assessment[True-... ... ... ... ... ...]
+FAILED tests/unit/test_inventory_review_regressions.py::test_weak_evidence_is_unknown_even_for_negative_assessment[True-oversized-token]
+FAILED tests/unit/test_inventory_review_regressions.py::test_weak_evidence_is_unknown_even_for_negative_assessment[False-a]
+FAILED tests/unit/test_inventory_review_regressions.py::test_weak_evidence_is_unknown_even_for_negative_assessment[False-de]
+FAILED tests/unit/test_inventory_review_regressions.py::test_weak_evidence_is_unknown_even_for_negative_assessment[False-Software Engineer]
+FAILED tests/unit/test_inventory_review_regressions.py::test_weak_evidence_is_unknown_even_for_negative_assessment[False-... ... ... ... ... ...]
+FAILED tests/unit/test_inventory_review_regressions.py::test_weak_evidence_is_unknown_even_for_negative_assessment[False-oversized-token]
+FAILED tests/unit/test_inventory_review_regressions.py::test_evidence_normalizes_unicode_case_and_whitespace
+FAILED tests/unit/test_inventory_review_regressions.py::test_folder_count_discloses_direct_children_and_keeps_scope[False]
+FAILED tests/unit/test_inventory_review_regressions.py::test_folder_count_discloses_direct_children_and_keeps_scope[True]
+FAILED tests/unit/test_inventory_review_regressions.py::test_folder_scope_survives_multiple_or_empty_folder_count[False]
+FAILED tests/unit/test_inventory_review_regressions.py::test_folder_scope_survives_multiple_or_empty_folder_count[True]
+FAILED tests/unit/test_inventory_review_regressions.py::test_count_with_no_topics_omits_irrelevant_citations_keeps_references
+18 failed, 3 passed in 1.57s

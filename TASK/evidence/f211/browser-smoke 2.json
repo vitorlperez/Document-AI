@@ -1,0 +1,34 @@
+{
+  "environment": "local fixture only; no real authentication or email",
+  "viewports": [
+    {
+      "width": 1280,
+      "viewport": 1280,
+      "content": 1280,
+      "referrerPolicy": "no-referrer",
+      "noSessionError": true
+    },
+    {
+      "width": 390,
+      "viewport": 390,
+      "content": 390,
+      "referrerPolicy": "no-referrer",
+      "noSessionError": true
+    },
+    {
+      "width": 320,
+      "viewport": 320,
+      "content": 320,
+      "referrerPolicy": "no-referrer",
+      "noSessionError": true
+    }
+  ],
+  "flows": [
+    "signup asks email only; ownership-link notice; no authenticated session",
+    "reset token removed from URL before submit; no reset token in Referer; reset success returns to login",
+    "password login creates fixture session and navigates to app onboarding",
+    "verification, authenticated resend and fixture code accepted",
+    "hosted fallback from /login preserves validated invitation return_to",
+    "invalid credential remains alert; Radar fixture shows hosted fallback without session"
+  ]
+}

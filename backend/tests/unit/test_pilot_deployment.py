@@ -13,6 +13,8 @@ def _options_request(monkeypatch: pytest.MonkeyPatch, origin: str):
         Settings(
             database_url="postgresql+psycopg://test:test@localhost/test",
             environment="production",
+            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
+            auth_trusted_proxy_cidrs="127.0.0.1/32",
             public_app_url="https://app.example.com",
         )
     )

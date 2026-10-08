@@ -1,0 +1,59 @@
+{
+  "timestamp": "2026-10-08T21:25:50.539724+00:00",
+  "services": {
+    "postgres": {
+      "id": "1ff70f338675cdf1cd0865d319cba156fce5c79dbc1baeeff90680e4f34354af",
+      "image": "sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b",
+      "startedAt": "2026-10-08T03:16:47.733915841Z",
+      "mounts": [
+        {
+          "type": "volume",
+          "name": "document-ai_postgres_data",
+          "destination": "/var/lib/postgresql/data"
+        }
+      ]
+    },
+    "redis": {
+      "id": "4f12acc8a6f6b96ad5e12cbfebd10a72869737b30e827a981cdf7b3800598526",
+      "image": "sha256:bb186d083732f669da90be8b0f975a37812b15e913465bb14d845db72a4e3e08",
+      "startedAt": "2026-10-08T03:16:47.718257674Z",
+      "mounts": [
+        {
+          "type": "volume",
+          "name": "3f2fc59acd1ca32e693614852ea2e633a5d9812b1d580faaf7bf1874dd8fd9a3",
+          "destination": "/data"
+        }
+      ]
+    },
+    "api": {
+      "id": "2fe59ebf973b78d232438c815187348c2ca064b6defc5086caa19a22bf55c234",
+      "image": "sha256:a3b51bd612ab20efd6a6f1f6b1f70719f610a36d7897b66ee692a7378ca9913d",
+      "startedAt": "2026-10-08T04:24:19.44521768Z",
+      "mounts": []
+    },
+    "frontend": {
+      "id": "e23075166a736c9323aa30b690edd41f819265d06e10c974f404527d351addf7",
+      "image": "sha256:e50690a0b45e74ca32531fb74e5dc86a6ec75462f2de3ef90206fb173c8415e1",
+      "startedAt": "2026-10-08T03:17:01.235749875Z",
+      "mounts": []
+    },
+    "worker": {
+      "id": "50cca3c5a2d20e6813b4b75a5baa2b3d984b68f48f2435e2d5795709aeca2faf",
+      "image": "sha256:a3b51bd612ab20efd6a6f1f6b1f70719f610a36d7897b66ee692a7378ca9913d",
+      "startedAt": "2026-10-08T04:24:19.451684513Z",
+      "mounts": []
+    },
+    "beat": {
+      "id": "c829e23f4923f18553f1fd69c1043ea143db5da185629a150984b82f204501e1",
+      "image": "sha256:a3b51bd612ab20efd6a6f1f6b1f70719f610a36d7897b66ee692a7378ca9913d",
+      "startedAt": "2026-10-08T03:16:55.554362345Z",
+      "mounts": []
+    }
+  },
+  "databaseRevision": "20261001_0027",
+  "databaseCounts": [
+    "users=4",
+    "documents=503",
+    "organizations=4"
+  ]
+}

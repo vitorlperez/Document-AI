@@ -1,0 +1,67 @@
+[
+  {
+    "cmd": "OCR_ENGINE=none backend/.venv/bin/python -m pytest backend/tests/unit/test_identity_auth.py backend/tests/unit/test_workos_sdk_contract.py backend/tests/api/test_auth_and_invitations.py backend/tests/unit/test_auth_proxy_config.py backend/tests/unit/test_auth_log_redaction.py backend/tests/api/test_route_authorization.py backend/tests/api/test_google_integrations.py backend/tests/unit/test_authentication_migration_sql.py backend/tests/unit/test_sync_beat.py backend/tests/unit/test_ingestion_scheduler.py backend/tests/unit/test_health_and_config.py backend/tests/api/test_csrf_origin.py backend/tests/unit/test_pilot_deployment.py backend/tests/unit/test_provider_keyring.py backend/tests/unit/test_jev_intent.py -q --tb=short",
+    "cwd": "/Users/vitorperez/Documents/Document-AI",
+    "output": "........................................................................ [ 40%]\n........................................................................ [ 80%]\n...................................                                      [100%]\n=============================== warnings summary ===============================\nbackend/.venv/lib/python3.12/site-packages/starlette/testclient.py:53\n  /Users/vitorperez/Documents/Document-AI/backend/.venv/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n179 passed, 1 warning in 8.59s\n",
+    "exitCode": 0
+  },
+  {
+    "cmd": "node --test tests/proxy-headers.test.mjs tests/auth-navigation.test.mjs tests/auth-runtime-env.test.mjs tests/session-probe.test.mjs tests/landing-contract.test.mjs",
+    "cwd": "/Users/vitorperez/Documents/Document-AI/frontend",
+    "exitCode": 0,
+    "output": "(node:96838) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:96882) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n✔ hosted fallback preserves the invitation from /login return_to (0.898875ms)\n✔ neither password login nor hosted fallback accepts an external return (0.399375ms)\n(node:96883) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n✔ runtime bridges auth settings as hidden bindings, never secret CLI arguments (62.333375ms)\n(node:96884) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n✔ landing keeps every approved literal and accessible name (1.112292ms)\n✔ landing keeps the onLogin/onSignUp contract and every destination (0.75725ms)\n✔ landing adds no pricing, plans or extra integrations (0.5785ms)\n✔ landing styles stay scoped and self-hosted (3.277667ms)\n✔ decorative story art is optional and hidden from assistive tech (0.144667ms)\n(node:96885) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n✔ forwards cookie mutation origin signals required by the backend gate (16.550334ms)\n✔ does not forward browser-controlled routing or hop-by-hop headers (0.351875ms)\n✔ signs only the explicitly trusted ingress IP and discards forged context (0.992625ms)\n✔ does not trust forwarding headers without an ingress contract (4.79675ms)\n✔ only auth routes require signed IP context; session and API stay available (0.684709ms)\n(node:96886) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n✔ normalizes only the expected anonymous /me response (21.520583ms)\n✔ preserves real session probe failures (1.869167ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 184.039083\n"
+  },
+  {
+    "cmd": "npx tsc --noEmit",
+    "cwd": "/Users/vitorperez/Documents/Document-AI/frontend",
+    "exitCode": 0,
+    "output": "(node:96842) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "cmd": "npx eslint app/product/custom-login.tsx app/product-app.tsx app/api/proxy-headers.mjs app/product/auth-navigation.mjs 'app/api/[...path]/route.ts' app/layout.tsx next.config.ts scripts/sites-env.mjs tests/proxy-headers.test.mjs tests/auth-navigation.test.mjs tests/auth-runtime-env.test.mjs",
+    "cwd": "/Users/vitorperez/Documents/Document-AI/frontend",
+    "exitCode": 0,
+    "output": "(node:96841) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:96922) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "cmd": "backend/.venv/bin/ruff check backend/app/api/auth.py backend/app/identity backend/app/core/config.py backend/app/main.py backend/app/ingestion/tasks.py backend/tests/unit/test_identity_auth.py backend/tests/unit/test_workos_sdk_contract.py backend/tests/api/test_auth_and_invitations.py backend/tests/unit/test_authentication_migration_sql.py backend/tests/unit/test_sync_beat.py backend/tests/unit/test_auth_proxy_config.py backend/tests/api/test_csrf_origin.py backend/tests/unit/test_pilot_deployment.py backend/tests/unit/test_provider_keyring.py backend/tests/unit/test_jev_intent.py",
+    "cwd": "/Users/vitorperez/Documents/Document-AI",
+    "exitCode": 0,
+    "output": "All checks passed!\n"
+  },
+  {
+    "cmd": "cd frontend && VITE_API_BASE_URL=/api npm run build",
+    "exitCode": 0,
+    "output": "Build complete; 5/5 stages completed."
+  },
+  {
+    "cmd": "cd backend && DATABASE_URL=postgresql+psycopg://test:test@localhost/test .venv/bin/python -m alembic heads",
+    "exitCode": 0,
+    "output": "20261001_0027 (head)"
+  },
+  {
+    "cmd": "backend/.venv/bin/python TASK/evidence/f211/proxy_smoke.py",
+    "exitCode": 0,
+    "output": "client_one: 60 accepted credential errors, next 429; client_two 400; missing auth ingress 503; unsigned backend 403; /api/session 200 null, health 200, /api/me 401 without ingress."
+  },
+  {
+    "cmd": "node TASK/evidence/f211/browser_smoke.mjs",
+    "exitCode": 0,
+    "output": "6 fixture flows; 1280/390/320 viewport width equals content width; no-referrer; signup/reset/login/verify/resend/invitation/Radar and credential error preserved."
+  },
+  {
+    "cmd": "graphify update .",
+    "exitCode": 0,
+    "output": "Rebuilt: 7678 nodes, 21752 edges, 512 communities; AST-only."
+  },
+  {
+    "cmd": "git diff --check",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "cmd": "git apply --reverse --check TASK/evidence/f211/final-correction.diff",
+    "exitCode": 0,
+    "output": ""
+  }
+]

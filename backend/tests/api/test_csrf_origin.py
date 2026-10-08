@@ -24,6 +24,8 @@ def test_cookie_mutation_origin_gate(monkeypatch) -> None:
             database_url="postgresql+psycopg://test_user:not-a-secret@localhost:5432/test_db",
             public_app_url="https://app.example.test",
             environment="production",
+            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
+            auth_trusted_proxy_cidrs="127.0.0.1/32",
         )
     )
     _use_empty_database(app)
@@ -42,6 +44,8 @@ def test_cross_site_fetch_metadata_blocks_even_with_allowed_origin(monkeypatch) 
             database_url="postgresql+psycopg://test_user:not-a-secret@localhost:5432/test_db",
             public_app_url="https://app.example.test",
             environment="production",
+            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
+            auth_trusted_proxy_cidrs="127.0.0.1/32",
         )
     )
     _use_empty_database(app)

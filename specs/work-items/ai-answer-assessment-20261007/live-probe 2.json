@@ -1,0 +1,60 @@
+{
+  "synthetic_evidence": true,
+  "live_providers": true,
+  "runs": [
+    {
+      "case": "supported",
+      "assessment": {
+        "version": "answer-assessment-v1",
+        "mode": "shadow",
+        "model": "jev-1.13.0",
+        "outcome": "pass",
+        "reason": "evaluated",
+        "checks": {
+          "grounded": 0.97,
+          "relevant": 0.93,
+          "safe": 0.96
+        },
+        "thresholds": {
+          "grounded": 0.8,
+          "relevant": 0.7,
+          "safe": 0.8
+        },
+        "elapsed_ms": 600.41
+      },
+      "judge": {
+        "grounding": 1.0,
+        "relevance": 1.0,
+        "completeness": 1.0
+      },
+      "judge_seconds": 3.96
+    },
+    {
+      "case": "unsupported",
+      "assessment": {
+        "version": "answer-assessment-v1",
+        "mode": "shadow",
+        "model": "jev-1.13.0",
+        "outcome": "reject",
+        "reason": "evaluated",
+        "checks": {
+          "grounded": 0.02,
+          "relevant": 0.07,
+          "safe": 0.8
+        },
+        "thresholds": {
+          "grounded": 0.8,
+          "relevant": 0.7,
+          "safe": 0.8
+        },
+        "elapsed_ms": 450.12
+      },
+      "judge": {
+        "grounding": 0.0,
+        "relevance": 1.0,
+        "completeness": 0.0
+      },
+      "judge_seconds": 2.928
+    }
+  ]
+}

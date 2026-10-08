@@ -1,0 +1,44 @@
+/* Opt-in interface motion (H4, direction A). Only elements that explicitly carry
+   data-arquivio-motion / data-arquivio-motion-root / .aq-motion-overlay are touched:
+   no :root tokens, no global dialog/[role=dialog]/[data-slot] selectors.
+   Entries are visual-only (opacity + short translate on an inner surface); open state,
+   focus, dismissal and data stay with the existing mechanisms and change immediately. */
+:where([data-arquivio-motion], [data-arquivio-motion-root], .aq-motion-overlay) {
+  --aq-motion-enter: 200ms;
+  --aq-motion-exit: 180ms;
+  --aq-motion-ease-enter: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --aq-motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --aq-motion-offset: 6px;
+  --aq-motion-opacity-start: 0.92;
+}
+
+@keyframes aq-panel-in { from { opacity: var(--aq-motion-opacity-start, 0.92); transform: translateY(var(--aq-motion-offset, 6px)); } }
+@keyframes aq-panel-in-scale { from { opacity: var(--aq-motion-opacity-start, 0.92); transform: translateY(var(--aq-motion-offset, 6px)) scale(0.99); } }
+@keyframes aq-backdrop-in { from { opacity: 0; } }
+@keyframes aq-backdrop-out { to { opacity: 0; } }
+@keyframes aq-backdrop-color-in { from { background-color: transparent; } }
+@keyframes aq-sheet-in { from { opacity: var(--aq-motion-opacity-start, 0.92); transform: translateX(-12px); } }
+@keyframes aq-sheet-out { to { opacity: var(--aq-motion-opacity-start, 0.92); transform: translateX(-12px); } }
+
+/* Native <dialog> (M1, M4): the inner panel enters each time the dialog opens; closing stays immediate. */
+dialog[data-arquivio-motion-root][open] > [data-arquivio-motion="panel"] { animation: aq-panel-in var(--aq-motion-enter, 200ms) var(--aq-motion-ease-enter) both; }
+dialog[data-arquivio-motion-root][open]::backdrop { animation: aq-backdrop-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* Custom overlay (M2): the overlay fades its own colour (never opacity, which would dim the panel text). */
+.aq-motion-overlay { animation: aq-backdrop-color-in var(--aq-motion-enter, 200ms) var(--aq-motion-ease-enter) both; }
+.aq-motion-overlay > [data-arquivio-motion="panel-scale"] { animation: aq-panel-in-scale var(--aq-motion-enter, 200ms) var(--aq-motion-ease-enter) both; }
+
+/* Tour (M3): the card enters with the dialog; step changes animate only its text (interface-motion.ts). */
+dialog[data-arquivio-motion-root][open] [data-arquivio-motion="tour-card"] { animation: aq-panel-in var(--aq-motion-enter, 200ms) var(--aq-motion-ease-enter) both; }
+
+/* Mobile sheet (M5, motionProfile="arquivio" only): Radix Presence keeps the node for the exit animation. */
+[data-arquivio-motion="sheet-panel"][data-state="open"] { animation: aq-sheet-in var(--aq-motion-enter, 200ms) var(--aq-motion-ease-enter) both; }
+[data-arquivio-motion="sheet-panel"][data-state="closed"] { animation: aq-sheet-out var(--aq-motion-exit, 180ms) var(--aq-motion-ease-exit) both; }
+[data-arquivio-motion="sheet-backdrop"][data-state="open"] { animation: aq-backdrop-in var(--aq-motion-enter, 200ms) var(--aq-motion-ease-enter) both; }
+[data-arquivio-motion="sheet-backdrop"][data-state="closed"] { animation: aq-backdrop-out var(--aq-motion-exit, 180ms) var(--aq-motion-ease-exit) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-arquivio-motion], .aq-motion-overlay, .aq-motion-overlay > [data-arquivio-motion],
+  dialog[data-arquivio-motion-root] > [data-arquivio-motion], dialog[data-arquivio-motion-root] [data-arquivio-motion] { animation: none !important; }
+  dialog[data-arquivio-motion-root]::backdrop { animation: none !important; }
+}

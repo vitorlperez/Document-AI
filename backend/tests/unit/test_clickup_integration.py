@@ -482,7 +482,14 @@ def test_clickup_in_production_requires_its_own_distinct_encryption_key() -> Non
     from cryptography.fernet import Fernet
 
     shared = Fernet.generate_key().decode()
-    base = {"database_url": DB, "environment": "production", "clickup_oauth_client_id": "cid"}
+    base = {
+        "_env_file": None,
+        "database_url": DB,
+        "environment": "production",
+        "clickup_oauth_client_id": "cid",
+        "auth_proxy_secret": "test-only-proxy-secret-at-least-32-chars",
+        "auth_trusted_proxy_cidrs": "127.0.0.1/32",
+    }
     with pytest.raises(ValidationError, match="ClickUp requires its own encryption key"):
         Settings(**base)
     with pytest.raises(ValidationError, match="distinct encryption key"):

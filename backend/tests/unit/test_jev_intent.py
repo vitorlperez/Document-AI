@@ -155,7 +155,9 @@ def test_missing_key_in_production_uses_the_llm_classifier_and_logs_an_error(
 ) -> None:
     # The worker and MCP services share these settings without classifying, so startup must not fail.
     settings = Settings(_env_file=None, database_url=DATABASE_URL, environment="production",
-                        public_app_url="https://app.example.test", typesafe_api_key=None)
+                        public_app_url="https://app.example.test", typesafe_api_key=None,
+                        auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
+                        auth_trusted_proxy_cidrs="127.0.0.1/32")
     records: list[logging.LogRecord] = []
     handler = logging.Handler()
     handler.emit = records.append

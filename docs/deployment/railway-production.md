@@ -12,7 +12,7 @@ Antes de criar recursos pagos, escolha a região dos dados, os endereços públi
 2. Adicione `Postgres` e `Redis` pelo menu **New > Database**. Não habilite Public Access/TCP Proxy para eles. Se já houver dados a migrar, planeje um dump e uma janela de corte antes de usar o novo banco.
 3. Crie três serviços a partir deste repositório Git. Configure-os em **Settings > Source/Build/Deploy** desta forma:
 
-   - `api`: Root Directory `/backend`; builder Dockerfile (`Dockerfile`); pre-deploy command `alembic upgrade head`; start command `/bin/sh -c 'exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}'`; healthcheck path `/health/ready` com timeout de 300 s; restart policy **Always**.
+   - `api`: Root Directory `/backend`; builder Dockerfile (`Dockerfile`); pre-deploy command `alembic upgrade head`; start command `/bin/sh -c 'exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --no-proxy-headers'`; healthcheck path `/health/ready` com timeout de 300 s; restart policy **Always**.
    - `worker`: Root Directory `/backend`; builder Dockerfile (`Dockerfile`); start command `celery -A app.ingestion.tasks worker --loglevel=INFO --concurrency=1`; restart policy **Always**; sem pre-deploy command e sem domínio público.
    - `frontend`: Root Directory `/frontend`; builder Dockerfile com `RAILWAY_DOCKERFILE_PATH=Dockerfile.production` em Variables; comando de início padrão da imagem; healthcheck path `/` com timeout de 300 s; restart policy **Always**.
 
@@ -31,6 +31,8 @@ ENVIRONMENT=production
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 REDIS_URL=${{Redis.REDIS_URL}}
 PUBLIC_APP_URL=https://app.seudominio.com
+AUTH_PROXY_SECRET=<segredo aleatório compartilhado com o frontend e processos que carregam Settings>
+AUTH_TRUSTED_PROXY_CIDRS=<CIDRs delimitados dos peers do frontend>
 OPENAI_API_KEY=<segredo>
 TYPESAFE_API_KEY=<segredo; só a API usa, o worker ignora>
 GOOGLE_TOKEN_ENCRYPTION_KEY=<chave Fernet estável>
@@ -67,7 +69,7 @@ INVITATION_FROM_EMAIL=convites@seudominio.com
 
 As URLs de PostgreSQL exportadas pela Railway são aceitas pelo backend, que seleciona o driver `psycopg` instalado. Use a URL privada `DATABASE_URL` do Postgres, nunca `DATABASE_PUBLIC_URL`. As chaves de criptografia precisam continuar iguais às utilizadas para os tokens já salvos; a troca sem migração torna as conexões existentes ilegíveis. Defina os segredos apenas em Railway Variables, nunca em arquivos versionados. Se alguma integração não estiver pronta para produção, omita suas variáveis e deixe sua conexão indisponível até configurá-la.
 
-O worker não recebe domínio público nem variáveis WorkOS/Resend. Comece com limite de memória adequado para extração de documentos e concorrência Celery igual a 1; aumente somente após medir uso de memória e duração dos jobs.
+O worker não recebe domínio público nem variáveis Resend. Reset de senha revoga as sessões WorkOS automaticamente; não há fila/tarefa Beat de autenticação nem exigência de credenciais WorkOS no worker para esse fluxo. Os processos que carregam o mesmo Settings em produção (incluindo worker e MCP) exigem AUTH_PROXY_SECRET e AUTH_TRUSTED_PROXY_CIDRS válidos na inicialização. Comece com limite de memória adequado para extração de documentos e concorrência Celery igual a 1; aumente somente após medir uso de memória e duração dos jobs.
 
 ## 4. Variável e domínio do frontend
 
@@ -76,9 +78,13 @@ Configure antes do primeiro build:
 ```text
 VITE_API_BASE_URL=/api
 API_UPSTREAM_URL=https://api.seudominio.com
+AUTH_CLIENT_IP_SOURCE=railway
+AUTH_PROXY_SECRET=<mesmo segredo configurado na API>
 ```
 
 `VITE_API_BASE_URL=/api` é incorporado ao JavaScript durante o build e exige novo build/deploy quando alterado. `API_UPSTREAM_URL` é lido pelo servidor do frontend em runtime e aponta para a API; nunca coloque segredos em variáveis `VITE_*`. O proxy em `/api` mantém o cookie de sessão no mesmo host do frontend. Isto é especialmente necessário com dois domínios gerados `*.up.railway.app`, que o navegador trata como sites distintos para cookies `SameSite=Lax`. O container escuta a porta `PORT` fornecida pela Railway e o health check usa `/`.
+
+Confira a fronteira de IP e as opções de e-mail em [Login WorkOS](../../backend/docs/custom-workos-login.md). O frontend deve receber tráfego exclusivamente pelo ingress confiável que substitui X-Real-IP; a API exige HMAC e peer permitido. Settings rejeita produção sem segredo de pelo menos 32 caracteres e CIDRs válidos não vazios (sem /0), antes de servir requisições. Somente /api/auth/* exige IP/contexto assinado no proxy; /api/session e demais rotas continuam disponíveis sem esse contexto. A migração experimental 20261008_0028 nunca aplicada externamente foi removida; o head continua 20261001_0027, sem migração adicional para este login. Este checkout diverge da main quanto ao runtime frontend (Wrangler versus vinext start); valide o runtime final antes do deploy, sem assumir que o smoke Wrangler o cobre.
 
 Adicione os endereços públicos ao frontend e à API. Para domínio próprio, crie os registros CNAME e TXT indicados pela Railway e aguarde a emissão TLS. Confirme que `/api/health/ready` no endereço do frontend retorna 200. Não gere domínio público para worker, banco ou Redis. Se configurar `API_UPSTREAM_URL` com o endereço privado da API e a porta correta, a API pode deixar de ter domínio público após os callbacks OAuth serem transferidos para `/api` no frontend.
 
@@ -86,7 +92,7 @@ Adicione os endereços públicos ao frontend e à API. Para domínio próprio, c
 
 Depois de HTTPS funcionar, cadastre os callbacks exatos:
 
-- WorkOS: redirect `https://app.seudominio.com/api/auth/callback`; retorno após logout `https://app.seudominio.com/login`.
+- WorkOS: redirect `https://app.seudominio.com/api/auth/callback`; retorno após logout e Password reset URL `https://app.seudominio.com/login`; e-mail/senha e verificação obrigatória habilitados, e-mails gerenciados de verificação/reset ligados.
 - Google Cloud OAuth: `https://app.seudominio.com/api/data-sources/google/oauth/callback`.
 - Microsoft Entra: `https://app.seudominio.com/api/data-sources/onedrive/oauth/callback` e os tipos de conta/permissões aprovados para OneDrive pessoal e corporativo.
 - Microsoft Entra (SharePoint, mesmo app multi-tenant): `https://app.seudominio.com/api/data-sources/sharepoint/oauth/callback` e a permissão delegada `Sites.Read.All`. O valor deve casar caractere por caractere com `MICROSOFT_SHAREPOINT_REDIRECT_URI`. Veja `docs/integracoes/sharepoint-runbook-consentimento-admin.md`.

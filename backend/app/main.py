@@ -1,5 +1,6 @@
 import logging
 import re
+import secrets
 import time
 from urllib.parse import urlsplit
 from uuid import uuid4
@@ -82,7 +83,9 @@ class CookieOriginMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
         settings = request.app.state.settings
-        if request.method in {"POST", "PUT", "PATCH", "DELETE"} and settings.auth_session_cookie_name in request.cookies:
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"} and (
+            settings.auth_session_cookie_name in request.cookies or request.url.path.startswith("/auth/")
+        ):
             origin = request.headers.get("origin")
             fetch_site = request.headers.get("sec-fetch-site")
             expected = urlsplit(settings.public_app_url)
@@ -99,7 +102,11 @@ class CookieOriginMiddleware(BaseHTTPMiddleware):
             # requires it, including for logout and newly added routes.
             if fetch_site == "cross-site" or (origin and not allowed) or (not origin and settings.environment != "development"):
                 return JSONResponse({"detail": "origin not allowed"}, status_code=403)
-        return await call_next(request)
+        response = await call_next(request)
+        if request.url.path.startswith("/auth/"):
+            response.headers["cache-control"] = "no-store"
+            response.headers["referrer-policy"] = "no-referrer"
+        return response
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -108,6 +115,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Document Intelligence API", version="0.1.0")
     app.state.engine = build_engine(runtime_settings)
     app.state.session_factory = build_session_factory(app.state.engine)
+    app.state.auth_verification_secret = secrets.token_urlsafe(32)
     app.state.settings = runtime_settings
     app.state.rate_limiter = RedisRateLimiter(redis.Redis.from_url(runtime_settings.redis_url, socket_timeout=1, socket_connect_timeout=1))
     app.state.auth_gateway = WorkOSAuthKitGateway(

@@ -7,6 +7,7 @@ import { OrganizationOnboarding, type OnboardingState } from "./organization-onb
 import { DeveloperScreen } from "./product/developer-screen";
 import { LandingPage } from "./landing-page";
 import { Brand } from "./brand";
+import { hostedLoginQuery, safeInvitationReturnTo } from "./product/auth-navigation.mjs";
 import { oauthErrorMessage } from "./provider-labels";
 import { API_BASE, SESSION_PATH, type Screen, type Company, type User, ApiError, api, isUuid, isInvitationToken, messageFor, companyPath } from "./product/types-and-api";
 import { Loading, SignIn, InvitationAcceptance, Onboarding, InvalidCompany } from "./product/auth-screens";
@@ -23,6 +24,14 @@ const PENDING_NOTICE_KEY = "arquivio:pending-notice";
 
 export function ProductApp({ screen }: { screen: Screen }) {
   const router = useRouter(); const pathname = usePathname(); const searchParams = useSearchParams(); const params = useParams<{ companyId?: string; token?: string }>();
+  const [resetToken] = useState(() => pathname === "/login" ? searchParams.get("token") ?? undefined : undefined);
+  const loginReturnTo = safeInvitationReturnTo(screen === "invitation" && isInvitationToken(params.token) ? pathname : searchParams.get("return_to"));
+  useEffect(() => {
+    if (!resetToken) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("token");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search);
+  }, [resetToken]);
   const [onboarding, setOnboarding] = useState<(OnboardingState & { organizationId: string }) | null>(null);
   const [user, setUser] = useState<User | null>(null); const [companies, setCompanies] = useState<Company[]>([]); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState<string | null>(null); const [noticeAction, setNoticeAction] = useState<ToastAction | null>(null); const [error, setError] = useState<string | null>(null);
   const sessionRequest = useRef<AbortController | null>(null);
@@ -45,11 +54,11 @@ export function ProductApp({ screen }: { screen: Screen }) {
         if (controller.signal.aborted) return;
         setOnboarding({ ...progress, organizationId: params.companyId });
       }
-      if (screen === "home" && memberships[0]) router.replace(companyPath(memberships[0].id));
+      if (screen === "home" && memberships[0] && !resetToken) router.replace(companyPath(memberships[0].id));
     } catch (caught) {
       if (!controller.signal.aborted && !(caught instanceof ApiError && caught.status === 401) && !background) setError(messageFor(caught));
     } finally { if (!controller.signal.aborted && !background) setLoading(false); }
-  }, [router, screen, params.companyId]);
+  }, [router, screen, params.companyId, resetToken]);
   useEffect(() => {
     let mounted = true;
     void Promise.resolve().then(() => { if (mounted) void loadSession(); });
@@ -84,11 +93,11 @@ export function ProductApp({ screen }: { screen: Screen }) {
   }, [alertMessage, dismissAlert, error]);
   const company = useMemo(() => companies.find((item) => item.id === params.companyId) ?? null, [companies, params.companyId]);
   const goCompany = (id: string) => { const suffix = pathname.endsWith("/team") ? "/team" : pathname.endsWith("/integrations") ? "/integrations" : pathname.endsWith("/library") ? "/library" : pathname.endsWith("/developer") ? "/developer" : ""; router.push(companyPath(id, suffix)); };
-  const beginLogin = (screenHint: "sign-in" | "sign-up") => { const query = new URLSearchParams({ screen_hint: screenHint }); if (screen === "invitation" && isInvitationToken(params.token)) query.set("return_to", pathname); window.location.assign(`${API_BASE}/auth/login?${query.toString()}`); };
+  const beginLogin = (screenHint: "sign-in" | "sign-up") => { window.location.assign(`${API_BASE}/auth/login?${hostedLoginQuery(screenHint, loginReturnTo)}`); };
   const logout = async () => { try { const { redirect_url } = await api<{ redirect_url: string }>("/auth/logout", { method: "POST" }); setUser(null); setCompanies([]); window.location.replace(redirect_url); } catch (caught) { setError(messageFor(caught)); } };
-  if (loading && screen === "home" && pathname === "/") return <LandingPage onLogin={() => router.push("/login")} onSignUp={() => beginLogin("sign-up")} />;
+  if (loading && screen === "home" && pathname === "/") return <LandingPage onLogin={() => router.push("/login")} onSignUp={() => router.push("/login?mode=sign-up")} />;
   if (loading) return <Loading />;
-  if (!user) return <>{screen === "home" && pathname === "/" ? <LandingPage onLogin={() => router.push("/login")} onSignUp={() => beginLogin("sign-up")} /> : <SignIn onLogin={() => beginLogin("sign-in")} onSignUp={() => beginLogin("sign-up")} />}{error && <div role="alert" className="session-error"><CircleAlert size={20} /><div><p>{error}</p><button onClick={() => { void loadSession(); }}>Tentar novamente</button></div></div>}</>;
+  if (!user || (pathname === "/login" && Boolean(resetToken))) return <>{screen === "home" && pathname === "/" ? <LandingPage onLogin={() => router.push("/login")} onSignUp={() => router.push("/login?mode=sign-up")} /> : <SignIn onLogin={() => beginLogin("sign-in")} passwordReset={searchParams.get("password_reset") === "1"} initialMode={searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in"} resetToken={resetToken} returnTo={loginReturnTo} />}{error && <div role="alert" className="session-error"><CircleAlert size={20} /><div><p>{error}</p><button onClick={() => { void loadSession(); }}>Tentar novamente</button></div></div>}</>;
   if (screen === "invitation") return <InvitationAcceptance token={params.token} onAccepted={(organizationId) => router.replace(companyPath(organizationId))} />;
   if (screen === "home" && companies.length > 0) return <Loading />;
   if (screen === "home") return <Onboarding user={user} onCreated={(created) => { setCompanies((items) => [...items, created]); router.push(companyPath(created.id)); }} />;

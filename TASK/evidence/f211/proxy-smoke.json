@@ -1,0 +1,19 @@
+{
+  "environment": "local only; simulated Railway X-Real-IP overwrite; fake WorkOS gateway",
+  "non_auth_without_ingress": {
+    "session": 200,
+    "health": 200,
+    "me": 401
+  },
+  "client_one": {
+    "accepted_attempts": 60,
+    "next_status": 429,
+    "retry_after_present": true
+  },
+  "client_two": {
+    "status": 400
+  },
+  "forged_xff_and_context": "overwritten; cannot rotate the first client's bucket",
+  "missing_trusted_ingress": 503,
+  "unsigned_direct_backend_request": 403
+}
