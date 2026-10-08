@@ -1,0 +1,16 @@
+{
+  "/login": {
+    "status": 200,
+    "noStore": "no-store",
+    "referrerPolicy": "no-referrer"
+  },
+  "/api/session": {
+    "status": 200,
+    "noStore": "no-store",
+    "body": "null"
+  },
+  "/api/health/live": {
+    "status": 200,
+    "noStore": "no-store"
+  }
+}
