@@ -1,0 +1,142 @@
+[
+  {
+    "path": "backend/app/api/auth.py",
+    "added": 4,
+    "removed": 17
+  },
+  {
+    "path": "backend/app/core/config.py",
+    "added": 19,
+    "removed": 4
+  },
+  {
+    "path": "backend/app/identity/auth.py",
+    "added": 11,
+    "removed": 20
+  },
+  {
+    "path": "backend/app/identity/models.py",
+    "added": 0,
+    "removed": 7
+  },
+  {
+    "path": "backend/app/identity/revocations.py",
+    "added": 0,
+    "removed": 26
+  },
+  {
+    "path": "backend/alembic/versions/20261008_0028_provider_session_revocations.py",
+    "added": 0,
+    "removed": 22
+  },
+  {
+    "path": "backend/app/ingestion/tasks.py",
+    "added": 0,
+    "removed": 23
+  },
+  {
+    "path": "backend/tests/api/test_auth_and_invitations.py",
+    "added": 42,
+    "removed": 69
+  },
+  {
+    "path": "backend/tests/unit/test_identity_auth.py",
+    "added": 0,
+    "removed": 11
+  },
+  {
+    "path": "backend/tests/unit/test_workos_sdk_contract.py",
+    "added": 41,
+    "removed": 1
+  },
+  {
+    "path": "backend/tests/unit/test_sync_beat.py",
+    "added": 0,
+    "removed": 1
+  },
+  {
+    "path": "backend/tests/unit/test_authentication_migration_sql.py",
+    "added": 1,
+    "removed": 1
+  },
+  {
+    "path": "backend/tests/api/test_csrf_origin.py",
+    "added": 4,
+    "removed": 0
+  },
+  {
+    "path": "backend/tests/unit/test_pilot_deployment.py",
+    "added": 2,
+    "removed": 0
+  },
+  {
+    "path": "backend/tests/unit/test_provider_keyring.py",
+    "added": 13,
+    "removed": 0
+  },
+  {
+    "path": "backend/tests/unit/test_jev_intent.py",
+    "added": 3,
+    "removed": 1
+  },
+  {
+    "path": "frontend/app/api/proxy-headers.mjs",
+    "added": 1,
+    "removed": 1
+  },
+  {
+    "path": "frontend/tests/proxy-headers.test.mjs",
+    "added": 15,
+    "removed": 0
+  },
+  {
+    "path": "frontend/app/product/custom-login.tsx",
+    "added": 4,
+    "removed": 5
+  },
+  {
+    "path": "frontend/app/product-app.tsx",
+    "added": 1,
+    "removed": 1
+  },
+  {
+    "path": "backend/docs/custom-workos-login.md",
+    "added": 12,
+    "removed": 18
+  },
+  {
+    "path": "docs/deployment/railway-production.md",
+    "added": 5,
+    "removed": 5
+  },
+  {
+    "path": "TASK/items/F-211.md",
+    "added": 13,
+    "removed": 12
+  },
+  {
+    "path": "TASK/evidence/f211/verification.md",
+    "added": 77,
+    "removed": 33
+  },
+  {
+    "path": "TASK/evidence/f211/preview_gateway.py",
+    "added": 3,
+    "removed": 4
+  },
+  {
+    "path": "TASK/evidence/f211/proxy_smoke.py",
+    "added": 7,
+    "removed": 0
+  },
+  {
+    "path": "TASK/evidence/f211/browser_smoke.mjs",
+    "added": 18,
+    "removed": 0
+  },
+  {
+    "path": "backend/tests/unit/test_auth_proxy_config.py",
+    "added": 66,
+    "removed": 0
+  }
+]

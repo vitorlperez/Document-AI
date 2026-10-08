@@ -11,6 +11,7 @@ from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.access.ratelimit import InMemoryRateLimiter
 from app.audit_usage.models import AuditLog
 from app.core.config import Settings
 from app.core.models import Base
@@ -64,6 +65,7 @@ def auth_api(monkeypatch) -> Generator[tuple[TestClient, sessionmaker[Session], 
     delivery = FakeInvitationDelivery()
     app.state.session_factory = factory
     app.state.auth_gateway = gateway
+    app.state.rate_limiter = InMemoryRateLimiter()
     app.state.invitation_delivery = delivery
     with TestClient(app) as client:
         yield client, factory, gateway, delivery
@@ -383,3 +385,319 @@ def test_company_listing_and_member_management_are_owner_scoped(auth_api) -> Non
     assert wrong_company.status_code == 404
     with factory() as session:
         assert session.scalar(select(AuditLog).where(AuditLog.action == "membership.role_changed")) is not None
+
+
+def password_gateway(monkeypatch, gateway, result):
+    calls = []
+
+    def authenticate(**kwargs):
+        calls.append(kwargs)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    monkeypatch.setattr(gateway, "authenticate_password", authenticate, raising=False)
+    monkeypatch.setattr(gateway, "register_password", authenticate, raising=False)
+    monkeypatch.setattr(gateway, "verify_email", authenticate, raising=False)
+    return calls
+
+
+@pytest.mark.parametrize("path", ["/auth/password"])
+def test_custom_login_creates_opaque_session_and_preserves_invitation(auth_api, monkeypatch, path):
+    client, factory, gateway, _ = auth_api
+    calls = password_gateway(monkeypatch, gateway, VerifiedIdentity(provider="workos", subject="user_custom", email="custom@example.com", provider_session_id="session_custom"))
+    invitation = "/invitations/" + "a" * 43
+    response = client.post(path, json={"email": "custom@example.com", "password": "long-password", "return_to": invitation})
+    assert response.status_code == 200
+    assert response.json() == {"status": "authenticated", "redirect_url": "http://app.example.test" + invitation}
+    assert response.headers["cache-control"] == "no-store"
+    assert "HttpOnly" in response.headers["set-cookie"]
+    assert calls[0]["password"] == "long-password"
+    raw = client.cookies.get("document_intelligence_session")
+    assert client.get("/me").json()["email"] == "custom@example.com"
+    with factory() as session:
+        stored = session.scalar(select(UserSession))
+        assert stored.secret_hash == sha256(raw.encode()).hexdigest()
+        assert stored.provider_session_id == "session_custom"
+        assert stored.secret_hash != raw
+
+
+def test_custom_login_never_returns_provider_token_or_creates_unverified_user(auth_api, monkeypatch):
+    from app.identity.auth import PendingEmailVerification
+    client, factory, gateway, _ = auth_api
+    password_gateway(monkeypatch, gateway, PendingEmailVerification(token="provider-pending-secret"))
+    response = client.post("/auth/password", json={"email": "pending@example.com", "password": "long-password"})
+    assert response.json() == {"status": "email_verification_required"}
+    assert "provider-pending-secret" not in response.text
+    assert "HttpOnly" in response.headers["set-cookie"]
+    assert client.cookies.get("document_intelligence_session") is None
+    with factory() as session:
+        assert session.scalar(select(func.count()).select_from(User)) == 0
+    password_gateway(monkeypatch, gateway, VerifiedIdentity(provider="workos", subject="user_verified", email="pending@example.com"))
+    completed = client.post("/auth/verify-email", json={"code": "123456"})
+    assert completed.json()["status"] == "authenticated"
+    assert client.cookies.get("document_intelligence_pending_verification") is None
+
+
+def test_verification_rejects_missing_pending_cookie(auth_api, monkeypatch):
+    client, _, gateway, _ = auth_api
+    calls = password_gateway(monkeypatch, gateway, None)
+    assert client.post("/auth/verify-email", json={"code": "123456"}).status_code == 400
+    assert calls == []
+
+
+def test_custom_login_keeps_advanced_challenges_on_hosted_authkit(auth_api, monkeypatch):
+    from app.identity.auth import HostedAuthenticationRequired
+    client, factory, gateway, _ = auth_api
+    password_gateway(monkeypatch, gateway, HostedAuthenticationRequired())
+    response = client.post("/auth/password", json={"email": "mfa@example.com", "password": "long-password"})
+    assert response.json() == {"status": "hosted_authentication_required"}
+    with factory() as session:
+        assert session.scalar(select(func.count()).select_from(UserSession)) == 0
+
+
+@pytest.mark.parametrize("error,expected", [(AuthenticationUnavailable("private provider data"), 503)])
+def test_custom_login_masks_provider_outage(auth_api, monkeypatch, error, expected):
+    client, _, gateway, _ = auth_api
+    password_gateway(monkeypatch, gateway, error)
+    response = client.post("/auth/password", json={"email": "person@example.com", "password": "long-password"})
+    assert response.status_code == expected
+    assert "private provider data" not in response.text
+
+
+def test_custom_login_checks_origin_before_creating_anonymous_session(auth_api, monkeypatch):
+    client, _, gateway, _ = auth_api
+    calls = password_gateway(monkeypatch, gateway, None)
+    response = client.post("/auth/password", headers={"Origin": "https://attacker.test"}, json={"email": "person@example.com", "password": "long-password"})
+    assert response.status_code == 403
+    assert calls == []
+    client.app.state.settings.environment = "production"
+    assert client.post("/auth/password", json={"email": "person@example.com", "password": "long-password"}).status_code == 403
+
+
+def test_custom_login_rate_limits_by_email_before_calling_workos(auth_api, monkeypatch):
+    from app.identity.auth import AuthenticationRejected
+    client, _, gateway, _ = auth_api
+    calls = password_gateway(monkeypatch, gateway, AuthenticationRejected("invalid credentials"))
+    for _ in range(10):
+        assert client.post("/auth/password", json={"email": "person@example.com", "password": "long-password"}).status_code == 400
+    limited = client.post("/auth/password", json={"email": "person@example.com", "password": "long-password"})
+    assert limited.status_code == 429
+    assert int(limited.headers["retry-after"]) > 0
+    assert len(calls) == 10
+
+
+def test_custom_login_rejects_external_return_url(auth_api, monkeypatch):
+    client, _, gateway, _ = auth_api
+    password_gateway(monkeypatch, gateway, VerifiedIdentity(provider="workos", subject="user_safe", email="safe@example.com"))
+    response = client.post("/auth/password", json={"email": "safe@example.com", "password": "long-password", "return_to": "https://attacker.test"})
+    assert response.json()["redirect_url"] == "http://app.example.test"
+
+
+def test_password_reset_revokes_all_local_sessions_without_provider_retry_or_login_block(auth_api, monkeypatch):
+    client, factory, gateway, _ = auth_api
+    subject = "user_reset"
+    old_secrets = [callback(client, gateway, code=f"reset-{i}", email="person@example.com", subject=subject) for i in range(4)]
+    unrelated_secret = callback(client, gateway, code="unrelated", email="other@example.com", subject="user_other")
+    with factory.begin() as session:
+        rows = list(session.scalars(select(UserSession).join(AuthIdentity, AuthIdentity.user_id == UserSession.user_id).where(AuthIdentity.provider_subject == subject)))
+        rows[0].expires_at = datetime.now(UTC) - timedelta(hours=1)
+        rows[1].revoked_at = datetime.now(UTC) - timedelta(hours=2)
+        previously_revoked = rows[1].revoked_at.replace(tzinfo=None)
+    monkeypatch.setattr(gateway, "confirm_password_reset", lambda **kwargs: subject, raising=False)
+    def redundant_provider_call(**kwargs):
+        pytest.fail("WorkOS reset already revokes provider sessions; no separate revocation call")
+    monkeypatch.setattr(gateway, "revoke_user_sessions", redundant_provider_call, raising=False)
+    client.cookies.clear()
+    client.cookies.set("document_intelligence_session", old_secrets[2], domain="testserver.local")
+    response = client.post("/auth/password-reset/confirm", json={"token": "reset-token", "password": "new-long-password"})
+    assert response.status_code == 200
+    assert response.json() == {"status": "password_reset"}
+    assert client.cookies.get("document_intelligence_session") is None
+    with factory() as session:
+        rows = list(session.scalars(select(UserSession).join(AuthIdentity, AuthIdentity.user_id == UserSession.user_id).where(AuthIdentity.provider_subject == subject)))
+        assert len(rows) == 4
+        assert all(row.revoked_at is not None for row in rows)
+        assert any(row.revoked_at.replace(tzinfo=None) == previously_revoked for row in rows)
+    for secret in old_secrets:
+        client.cookies.clear()
+        client.cookies.set("document_intelligence_session", secret)
+        assert client.get("/me").status_code == 401
+    client.cookies.clear()
+    client.cookies.set("document_intelligence_session", unrelated_secret)
+    assert client.get("/me").status_code == 200
+    client.cookies.clear()
+    password_gateway(monkeypatch, gateway, VerifiedIdentity(provider="workos", subject=subject, email="person@example.com"))
+    assert client.post("/auth/password", json={"email": "person@example.com", "password": "new-long-password"}).status_code == 200
+    assert client.get("/me").status_code == 200
+    fresh_hosted = callback(client, gateway, code="after-reset", email="person@example.com", subject=subject)
+    assert fresh_hosted not in old_secrets
+    assert client.get("/me").status_code == 200
+
+
+def test_password_reset_request_returns_only_generic_status(auth_api, monkeypatch):
+    client, _, gateway, _ = auth_api
+    monkeypatch.setattr(gateway, "request_password_reset", lambda **kwargs: None, raising=False)
+    assert client.post("/auth/password-reset", json={"email": "unknown@example.com"}).json() == {"status": "sent"}
+
+
+def test_auth_validation_errors_do_not_echo_submitted_secrets(auth_api):
+    client, _, _, _ = auth_api
+    response = client.post("/auth/password-reset/confirm", json={"token": {"secret": "sensitive-reset-token"}, "password": "sensitive-password"})
+    assert response.status_code == 422
+    assert response.json() == {"detail": "Confira os dados informados e tente novamente."}
+    assert "sensitive" not in response.text
+    assert response.headers["cache-control"] == "no-store"
+
+
+def _signed_proxy_headers(ip, *, path="/auth/password", timestamp=None):
+    import hmac
+    import time
+    secret = "test-only-proxy-secret-at-least-32-chars"
+    timestamp = str(int(time.time()) if timestamp is None else timestamp)
+    signature = hmac.new(secret.encode(), f"{timestamp}\nPOST\n{path}\n{ip}".encode(), "sha256").hexdigest()
+    return {"x-auth-client-ip": ip, "x-auth-ip-timestamp": timestamp, "x-auth-ip-signature": signature}
+
+
+def _configure_signed_proxy(client):
+    from pydantic import SecretStr
+    client.app.state.settings.auth_proxy_secret = SecretStr("test-only-proxy-secret-at-least-32-chars")
+    client.app.state.settings.auth_trusted_proxy_cidrs = "127.0.0.1/32"
+
+
+def test_two_clients_behind_proxy_have_separate_ip_buckets_and_workos_context(auth_api, monkeypatch):
+    from app.identity.auth import AuthenticationRejected
+    client, _, gateway, _ = auth_api
+    _configure_signed_proxy(client)
+    calls = password_gateway(monkeypatch, gateway, AuthenticationRejected("invalid"))
+    with TestClient(client.app, client=("127.0.0.1", 12345)) as proxy:
+        for i in range(60):
+            response = proxy.post("/auth/password", headers=_signed_proxy_headers("198.51.100.10"), json={"email": f"person{i}@example.com", "password": "test"})
+            assert response.status_code == 400
+        assert proxy.post("/auth/password", headers=_signed_proxy_headers("198.51.100.10"), json={"email": "blocked@example.com", "password": "test"}).status_code == 429
+        assert proxy.post("/auth/password", headers=_signed_proxy_headers("198.51.100.20"), json={"email": "other@example.com", "password": "test"}).status_code == 400
+    assert calls[0]["ip_address"] == "198.51.100.10"
+    assert calls[-1]["ip_address"] == "198.51.100.20"
+
+
+@pytest.mark.parametrize("attack", ["untrusted_peer", "forged_signature", "expired", "wrong_path", "invalid_ip"])
+def test_proxy_context_forgery_is_rejected_before_workos(auth_api, monkeypatch, attack):
+    client, _, gateway, _ = auth_api
+    _configure_signed_proxy(client)
+    calls = password_gateway(monkeypatch, gateway, None)
+    headers = _signed_proxy_headers("198.51.100.10")
+    peer = "127.0.0.1"
+    if attack == "untrusted_peer": peer = "203.0.113.10"
+    if attack == "forged_signature": headers["x-auth-ip-signature"] = "0" * 64
+    if attack == "expired": headers = _signed_proxy_headers("198.51.100.10", timestamp=1)
+    if attack == "wrong_path": headers = _signed_proxy_headers("198.51.100.10", path="/auth/register")
+    if attack == "invalid_ip": headers = _signed_proxy_headers("198.51.100.10, 203.0.113.10")
+    with TestClient(client.app, client=(peer, 12345)) as proxy:
+        response = proxy.post("/auth/password", headers=headers, json={"email": "person@example.com", "password": "test"})
+    assert response.status_code == 403
+    assert calls == []
+
+
+def test_direct_client_cannot_change_ip_bucket_with_forwarded_headers(auth_api, monkeypatch):
+    from app.identity.auth import AuthenticationRejected
+    client, _, gateway, _ = auth_api
+    calls = password_gateway(monkeypatch, gateway, AuthenticationRejected("invalid"))
+    with TestClient(client.app, client=("198.51.100.10", 12345)) as direct:
+        response = direct.post("/auth/password", headers={"x-forwarded-for": "203.0.113.66", "x-real-ip": "203.0.113.66", **_signed_proxy_headers("203.0.113.66")}, json={"email": "person@example.com", "password": "test"})
+    assert response.status_code == 400
+    assert calls[0]["ip_address"] == "198.51.100.10"
+
+
+def test_verification_is_limited_by_pending_token_across_client_ips(auth_api, monkeypatch):
+    from app.identity.auth import AuthenticationRejected
+    client, _, gateway, _ = auth_api
+    _configure_signed_proxy(client)
+    calls = password_gateway(monkeypatch, gateway, AuthenticationRejected("invalid code"))
+    path = "/auth/verify-email"
+    with TestClient(client.app, client=("127.0.0.1", 12345)) as proxy:
+        proxy.cookies.set("document_intelligence_pending_verification", "opaque-pending-token")
+        for i in range(5):
+            assert proxy.post(path, headers=_signed_proxy_headers(f"198.51.100.{i+1}", path=path), json={"code": "123456"}).status_code == 400
+        assert proxy.post(path, headers=_signed_proxy_headers("198.51.100.20", path=path), json={"code": "123456"}).status_code == 429
+    assert len(calls) == 5
+    assert all("opaque-pending-token" not in key[0] for key in client.app.state.rate_limiter._counts)
+
+
+def test_registration_never_sets_an_attacker_password_or_creates_session(auth_api, monkeypatch):
+    client, factory, gateway, _ = auth_api
+    calls = []
+    monkeypatch.setattr(gateway, "register_account", lambda **kw: calls.append(kw), raising=False)
+    response = client.post("/auth/register", json={"email": "victim@example.com", "password": "attacker-known-password"})
+    assert response.json() == {"status": "registration_pending"}
+    assert "password" not in calls[0]
+    with factory() as session:
+        assert session.scalar(select(func.count()).select_from(UserSession)) == 0
+
+
+def test_password_reset_without_local_identity_needs_no_provider_revocation(auth_api, monkeypatch):
+    client, factory, gateway, _ = auth_api
+    monkeypatch.setattr(gateway, "confirm_password_reset", lambda **kw: "user_not_local", raising=False)
+    monkeypatch.setattr(gateway, "revoke_user_sessions", lambda **kw: pytest.fail("redundant provider revocation"), raising=False)
+    response = client.post("/auth/password-reset/confirm", json={"token": "reset-token", "password": "new-long-password"})
+    assert response.status_code == 200
+    assert response.json() == {"status": "password_reset"}
+    with factory() as session:
+        assert session.scalar(select(func.count()).select_from(UserSession)) == 0
+
+
+def test_resend_is_bound_to_authenticated_pending_context_and_throttled(auth_api, monkeypatch):
+    from app.identity.auth import PendingEmailVerification
+    client, _, gateway, _ = auth_api
+    password_gateway(monkeypatch, gateway, PendingEmailVerification(token="pending-secret", verification_id="email_verification_123"))
+    calls = []
+    monkeypatch.setattr(gateway, "resend_verification", lambda **kw: calls.append(kw), raising=False)
+    client.post("/auth/password", json={"email": "person@example.com", "password": "test"})
+    context = client.cookies.get("document_intelligence_verification_context")
+    assert context
+    response = client.post("/auth/verify-email/resend")
+    assert response.json() == {"status": "sent"}
+    assert calls == [{"verification_id": "email_verification_123"}]
+    assert client.post("/auth/verify-email/resend").status_code == 429
+    client.cookies.clear()
+    client.cookies.set("document_intelligence_pending_verification", "different-token")
+    client.cookies.set("document_intelligence_verification_context", context)
+    assert client.post("/auth/verify-email/resend").status_code == 400
+    assert len(calls) == 1
+
+
+def test_provider_rate_limit_returns_retry_after(auth_api, monkeypatch):
+    from app.identity.auth import AuthenticationRateLimited
+    client, _, gateway, _ = auth_api
+    calls = password_gateway(monkeypatch, gateway, AuthenticationRateLimited("private"))
+    response = client.post("/auth/password", json={"email": "person@example.com", "password": "test"})
+    assert response.status_code == 429
+    assert response.headers["retry-after"] == "60"
+    assert "private" not in response.text
+    assert len(calls) == 1
+
+
+
+def test_registration_invitation_survives_reset_and_hosted_fallback(auth_api, monkeypatch):
+    client, _, gateway, _ = auth_api
+    invitation = "/invitations/" + "b" * 43
+    monkeypatch.setattr(gateway, "register_account", lambda **kw: None, raising=False)
+    monkeypatch.setattr(gateway, "confirm_password_reset", lambda **kw: "user_invited", raising=False)
+    registered = client.post("/auth/register", json={"email": "invited@example.com", "return_to": invitation})
+    assert registered.json() == {"status": "registration_pending"}
+    reset = client.post("/auth/password-reset/confirm", json={"token": "test-reset", "password": "long-password"})
+    assert reset.json()["return_to"] == invitation
+    hosted = client.get("/auth/login", params={"return_to": reset.json()["return_to"]}, follow_redirects=False)
+    assert hosted.status_code == 302
+    gateway.identities["invited-after-reset"] = VerifiedIdentity(provider="workos", subject="user_invited", email="invited@example.com")
+    state = parse_qs(urlparse(hosted.headers["location"]).query)["state"][0]
+    completed = client.get("/auth/callback", params={"code": "invited-after-reset", "state": state}, follow_redirects=False)
+    assert completed.headers["location"] == "http://app.example.test" + invitation
+
+
+def test_production_custom_login_requires_trust_configuration(auth_api, monkeypatch):
+    client, _, gateway, _ = auth_api
+    client.app.state.settings.environment = "production"
+    calls = password_gateway(monkeypatch, gateway, None)
+    response = client.post("/auth/password", headers={"origin": "http://app.example.test"}, json={"email": "person@example.com", "password": "test"})
+    assert response.status_code == 503
+    assert calls == []

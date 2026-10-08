@@ -1,0 +1,47 @@
+[
+  {
+    "cmd": "graphify query \"login local Docker frontend API WorkOS password auth customizada\"",
+    "exitCode": 0
+  },
+  {
+    "cmd": "docker compose build api frontend",
+    "exitCode": 0
+  },
+  {
+    "cmd": "docker compose up -d --no-deps --force-recreate --wait --wait-timeout 60 api frontend",
+    "exitCode": 0
+  },
+  {
+    "cmd": "node --test frontend/tests/auth-navigation.test.mjs frontend/tests/auth-runtime-env.test.mjs",
+    "exitCode": 0,
+    "counts": "3 passed, 0 failed"
+  },
+  {
+    "cmd": "cd backend && .venv/bin/python -m pytest tests/unit/test_workos_sdk_contract.py tests/unit/test_auth_proxy_config.py -q",
+    "exitCode": 0,
+    "counts": "34 passed (venv SDK 10.3.0)"
+  },
+  {
+    "cmd": "docker run --rm --network none ... pytest original SDK/proxy suites against rebuilt image",
+    "exitCode": 1,
+    "counts": "21 failed, 13 passed; original fixture uses removed private WorkOSClient._client in SDK 10.5"
+  },
+  {
+    "cmd": "docker run --rm --network none ... pytest /evidence/test_sdk_image.py /tests/unit/test_auth_proxy_config.py",
+    "exitCode": 0,
+    "counts": "34 passed (image SDK 10.5.0; original assertions, public http_client fixture; no real credentials/network)"
+  },
+  {
+    "cmd": "node artifacts/local-login-20261008/browser-smoke.mjs",
+    "exitCode": 0,
+    "counts": "3/3 viewports passed, no real authentication/email"
+  },
+  {
+    "cmd": "python3 artifacts/local-login-20261008/verify-stack.py",
+    "exitCode": 0
+  },
+  {
+    "cmd": "graphify update .",
+    "exitCode": 0
+  }
+]

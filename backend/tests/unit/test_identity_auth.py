@@ -145,3 +145,114 @@ def test_workos_session_id_reads_only_a_well_formed_session_claim() -> None:
     assert workos_session_id(f"header.{payload}.signature") == "session_01HXYZ"
     assert workos_session_id("header.invalid.signature") is None
     assert workos_session_id(None) is None
+
+
+@pytest.mark.parametrize("operation", ["authenticate_password"])
+def test_password_gateway_uses_workos_sdk_and_verified_subject(monkeypatch, operation):
+    from types import SimpleNamespace
+    gateway = WorkOSAuthKitGateway(api_key="test", client_id="client_test", redirect_uri="http://callback.test")
+    calls = []
+    response = SimpleNamespace(user=SimpleNamespace(id="user_123", email="person@example.test", email_verified=True), access_token=None)
+    resource = SimpleNamespace(
+        create_user=lambda **kwargs: calls.append(kwargs),
+        authenticate_with_password=lambda **kwargs: response,
+    )
+    monkeypatch.setattr(gateway, "_client", lambda: SimpleNamespace(user_management=resource))
+    identity = getattr(gateway, operation)(email="Person@example.test", password="test-password", ip_address="127.0.0.1", user_agent="test")
+    assert identity.subject == "user_123"
+
+
+
+@pytest.mark.parametrize("code,expected", [("email_verification_required", "PendingEmailVerification"), ("mfa_challenge", "HostedAuthenticationRequired"), ("sso_required", "HostedAuthenticationRequired")])
+def test_password_gateway_handles_provider_challenges(monkeypatch, code, expected):
+    from types import SimpleNamespace
+
+    from workos._errors import AuthorizationError
+    gateway = WorkOSAuthKitGateway(api_key="test", client_id="client_test", redirect_uri="http://callback.test")
+    def authenticate(**kwargs):
+        raise AuthorizationError(response_json={"code": code, "pending_authentication_token": "secret"})
+    monkeypatch.setattr(gateway, "_client", lambda: SimpleNamespace(user_management=SimpleNamespace(authenticate_with_password=authenticate)))
+    result = gateway.authenticate_password(email="person@example.test", password="test-password", ip_address=None, user_agent=None)
+    assert type(result).__name__ == expected
+
+
+def test_password_gateway_rejects_unverified_identity(monkeypatch):
+    from types import SimpleNamespace
+    gateway = WorkOSAuthKitGateway(api_key="test", client_id="client_test", redirect_uri="http://callback.test")
+    response = SimpleNamespace(user=SimpleNamespace(id="user_123", email="person@example.test", email_verified=False))
+    monkeypatch.setattr(gateway, "_client", lambda: SimpleNamespace(user_management=SimpleNamespace(authenticate_with_password=lambda **kwargs: response)))
+    with pytest.raises(AuthenticationUnavailable):
+        gateway.authenticate_password(email="person@example.test", password="test-password", ip_address=None, user_agent=None)
+
+
+def test_password_gateway_does_not_leak_sdk_errors(monkeypatch):
+    from types import SimpleNamespace
+
+    from workos._errors import BadRequestError
+
+    from app.identity.auth import AuthenticationRejected
+    gateway = WorkOSAuthKitGateway(api_key="test", client_id="client_test", redirect_uri="http://callback.test")
+    def authenticate(**kwargs):
+        raise BadRequestError(response_json={"message": "secret provider details", "password": "test-password"})
+    monkeypatch.setattr(gateway, "_client", lambda: SimpleNamespace(user_management=SimpleNamespace(authenticate_with_password=authenticate)))
+    with pytest.raises(AuthenticationRejected) as error:
+        gateway.authenticate_password(email="person@example.test", password="test-password", ip_address=None, user_agent=None)
+    assert "secret" not in str(error.value)
+    assert "test-password" not in str(error.value)
+
+
+def test_registration_stores_no_password_and_requests_ownership_link(monkeypatch):
+    from types import SimpleNamespace
+    gateway = WorkOSAuthKitGateway(api_key="test", client_id="client", redirect_uri="http://callback.test")
+    calls = []
+    resource = SimpleNamespace(list_users=lambda **kw: SimpleNamespace(data=[]), create_user=lambda **kw: calls.append(("create", kw)), reset_password=lambda **kw: calls.append(("reset", kw)))
+    monkeypatch.setattr(gateway, "_client", lambda: SimpleNamespace(user_management=resource))
+    gateway.register_account(email=" Person@Example.Test ", ip_address="198.51.100.10", user_agent="test")
+    assert calls == [("create", {"email": "person@example.test", "ip_address": "198.51.100.10", "user_agent": "test"}), ("reset", {"email": "person@example.test"})]
+
+
+def test_existing_registration_returns_same_result_without_overwriting_credentials(monkeypatch):
+    from types import SimpleNamespace
+    gateway = WorkOSAuthKitGateway(api_key="test", client_id="client", redirect_uri="http://callback.test")
+    calls = []
+    resource = SimpleNamespace(list_users=lambda **kw: SimpleNamespace(data=[SimpleNamespace(id="existing")]), create_user=lambda **kw: pytest.fail("must not recreate"), reset_password=lambda **kw: calls.append(kw))
+    monkeypatch.setattr(gateway, "_client", lambda: SimpleNamespace(user_management=resource))
+    assert gateway.register_account(email="existing@example.test", ip_address=None, user_agent=None) is None
+    assert calls == [{"email": "existing@example.test"}]
+
+
+@pytest.mark.parametrize("operation,kwargs", [
+    ("authenticate_password", {"email": "person@example.test", "password": "test", "ip_address": None, "user_agent": None}),
+    ("verify_email", {"token": "secret", "code": "123456", "ip_address": None, "user_agent": None}),
+    ("register_account", {"email": "person@example.test", "ip_address": None, "user_agent": None}),
+    ("request_password_reset", {"email": "person@example.test"}),
+    ("confirm_password_reset", {"token": "secret", "password": "test-password"}),
+])
+def test_workos_429_is_rate_limited_without_provider_details(monkeypatch, operation, kwargs):
+    from types import SimpleNamespace
+
+    from workos._errors import RateLimitExceededError
+
+    from app.identity.auth import AuthenticationRateLimited
+    gateway = WorkOSAuthKitGateway(api_key="test", client_id="client", redirect_uri="http://callback.test")
+    def limited(*args, **kw):
+        raise RateLimitExceededError(response_json={"message": "private provider secret"})
+    resource = SimpleNamespace(authenticate_with_password=limited, authenticate_with_email_verification=limited, list_users=limited, reset_password=limited, confirm_password_reset=limited)
+    monkeypatch.setattr(gateway, "_client", lambda: SimpleNamespace(user_management=resource))
+    with pytest.raises(AuthenticationRateLimited) as error:
+        getattr(gateway, operation)(**kwargs)
+    assert "private" not in str(error.value)
+
+
+def test_workos_retry_after_is_preserved(monkeypatch):
+    from types import SimpleNamespace
+
+    from workos._errors import RateLimitExceededError
+
+    from app.identity.auth import AuthenticationRateLimited
+    gateway = WorkOSAuthKitGateway(api_key="test", client_id="client", redirect_uri="http://callback.test")
+    def limited(**kw): raise RateLimitExceededError(response_json={}, retry_after=120)
+    monkeypatch.setattr(gateway, "_client", lambda: SimpleNamespace(user_management=SimpleNamespace(authenticate_with_password=limited)))
+    with pytest.raises(AuthenticationRateLimited) as error:
+        gateway.authenticate_password(email="person@example.test", password="test", ip_address=None, user_agent=None)
+    assert error.value.retry_after == 120

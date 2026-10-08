@@ -2,15 +2,12 @@
 
 import { ChevronRight, CircleAlert, Plus } from "lucide-react";
 import { FormEvent, useState } from "react";
-import Link from "next/link";
 import { Brand } from "../brand";
 import { type Role, type Company, type User, ApiError, api, isInvitationToken, messageFor } from "./types-and-api";
 import { LoadingIndicator } from "./shared-ui";
 
 export function Loading() { return <main className="auth-page"><div className="text-center"><Brand /><LoadingIndicator label="Preparando seu espaço de conhecimento…" className="mt-3 justify-center text-sm text-muted-foreground" /></div></main>; }
-export function SignIn({ onLogin, onSignUp }: { onLogin: () => void; onSignUp: () => void }) {
-  return <main className="auth-page"><section className="auth-card"><Link href="/" className="auth-brand"><Brand /></Link><p className="mt-12 text-xs font-semibold uppercase tracking-widest text-primary">Bom ter você por aqui</p><h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">Sua equipe sabe.<br />Encontre a resposta.</h1><p className="mt-4 leading-7 text-muted-foreground">Entre para consultar seus documentos e conferir a fonte de cada resposta.</p><div className="mt-8 space-y-3"><button onClick={onLogin} className="w-full rounded-md bg-primary px-4 py-3 font-semibold text-white hover:bg-forest-hover">Entrar na minha conta</button><button onClick={onSignUp} className="w-full rounded-md border border-line bg-white px-4 py-3 font-semibold text-ink hover:bg-paper">Criar uma conta</button></div><p className="mt-7 text-center text-xs leading-5 text-muted-foreground">Os originais permanecem nas fontes conectadas.</p></section></main>;
-}
+export { SignIn } from "./custom-login";
 export function InvitationAcceptance({ token, onAccepted }: { token: string | undefined; onAccepted: (organizationId: string) => void }) {
   const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
   if (!isInvitationToken(token)) return <main className="auth-page"><section className="max-w-md text-center"><CircleAlert className="mx-auto text-amber-300" size={34} /><h1 className="mt-4 text-2xl font-semibold">Convite indisponível</h1><p className="mt-3 text-muted-foreground">Este link não é válido. Peça um novo convite à pessoa responsável pela organização.</p></section></main>;

@@ -1,0 +1,122 @@
+api-1  | INFO:     Started server process [1]
+api-1  | INFO:     Waiting for application startup.
+api-1  | INFO:     Application startup complete.
+api-1  | INFO:     Uvicorn running on *** (Press CTRL+C to quit)
+api-1  | {"elapsed_ms":6.08,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"bb5cc348-4135-4a4e-88b5-32650a54bff6","status":200}
+api-1  | INFO:     127.0.0.1:38524 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":8.08,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"dd819c13-0745-4d7b-bb4f-13b4ff3fc585","status":200}
+api-1  | INFO:     127.0.0.1:38540 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":18.82,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"7084c246-bdbf-42fb-bcd8-eb68e0b4629f","status":200}
+api-1  | INFO:     127.0.0.1:36912 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | INFO:     127.0.0.1:36914 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":3.55,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"6f6bf3d1-9a08-49ec-9c52-149a8cbf3176","status":200}
+api-1  | {"elapsed_ms":10.17,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"003db57c-f521-4f75-a627-efb4134f048a","status":200}
+api-1  | INFO:     127.0.0.1:35888 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.76,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"c26367cd-5aca-46bf-b909-bf99c8f5e773","status":200}
+api-1  | INFO:     127.0.0.1:35896 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":10.19,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"5a3d50b4-8e22-4e66-813e-1a3e282821ee","status":200}
+api-1  | INFO:     127.0.0.1:44598 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":4.49,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/me","provider_call_count":0,"request_id":"ad524961-ffed-4fc7-af39-858597f97771","status":200}
+api-1  | INFO:     192.168.65.1:63064 - "OPTIONS /me HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":83.93,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/me","provider_call_count":0,"request_id":"9493215f-c057-468d-bc0e-94c5d5189085","status":401}
+api-1  | INFO:     192.168.65.1:63064 - "GET /me HTTP/1.1" 401 Unauthorized
+api-1  | {"elapsed_ms":0.93,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"01d8cdec-ffa4-422f-af04-af295c9354cb","status":200}
+api-1  | INFO:     127.0.0.1:44612 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":4.0,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"4254aa87-c31e-4ada-9331-fd7aecc1ff62","status":200}
+api-1  | INFO:     127.0.0.1:46062 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":2.02,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"be5b2ac3-0ee4-4d2d-bbb5-7a4985c5f034","status":200}
+api-1  | INFO:     127.0.0.1:46070 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":7.91,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"efbeef07-9b4e-4541-a61d-332c8ea551fb","status":200}
+api-1  | INFO:     127.0.0.1:60224 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":2.64,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"a1193fde-a090-466b-a4cf-ab508186105e","status":200}
+api-1  | INFO:     127.0.0.1:38956 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":1.88,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"26753589-8db7-48b9-8ae5-a8a52ae31a75","status":200}
+api-1  | INFO:     127.0.0.1:38966 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":1.59,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"57810d63-fb0c-416d-8cc7-779f98d7e177","status":200}
+api-1  | INFO:     127.0.0.1:42094 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":4.53,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"9256cf9f-0289-4c24-81e6-b91c1541a89f","status":200}
+api-1  | INFO:     127.0.0.1:42100 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":18.96,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/me","provider_call_count":0,"request_id":"f1be460e-d191-43f8-b2bb-ca8ed5cf3b02","status":401}
+api-1  | INFO:     192.168.65.1:40462 - "GET /me HTTP/1.1" 401 Unauthorized
+api-1  | {"elapsed_ms":1.28,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"8f817039-aeaa-4623-837a-0c5729466fc6","status":200}
+api-1  | INFO:     127.0.0.1:36090 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":89.4,"event":"readiness_check","level":"INFO","logger":"document_intelligence.readiness","message":"database readiness complete","result":"ready"}
+api-1  | {"elapsed_ms":91.7,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/ready","provider_call_count":0,"request_id":"5933cc49-cb8c-4f13-908d-57229ed72913","status":200}
+api-1  | INFO:     192.168.65.1:40462 - "GET /health/ready HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":7.9,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/auth/password","provider_call_count":0,"request_id":"21a50b04-add0-4195-a23b-661ece8e9260","status":422}
+api-1  | INFO:     192.168.65.1:40462 - "POST /auth/password HTTP/1.1" 422 Unprocessable Entity
+api-1  | {"elapsed_ms":0.62,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"8998639d-9343-4242-92b6-e38a508e99bf","status":200}
+api-1  | INFO:     127.0.0.1:36092 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.77,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"00af3bdf-6a90-4a15-859f-f5f5224073ec","status":200}
+api-1  | INFO:     127.0.0.1:59492 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":2.22,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/auth/password","provider_call_count":0,"request_id":"c6faa78f-efe8-46c0-a9a4-b48aa36a34b4","status":422}
+api-1  | INFO:     192.168.65.1:60609 - "POST /auth/password HTTP/1.1" 422 Unprocessable Entity
+api-1  | {"elapsed_ms":2.42,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"fed99021-88d5-45dc-9aa7-c5f034030c41","status":200}
+api-1  | INFO:     127.0.0.1:59502 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":4.77,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/me","provider_call_count":0,"request_id":"285ac0d4-2892-458b-924e-fd8d207f9279","status":401}
+api-1  | INFO:     192.168.65.1:24805 - "GET /me HTTP/1.1" 401 Unauthorized
+api-1  | {"elapsed_ms":8.71,"event":"readiness_check","level":"INFO","logger":"document_intelligence.readiness","message":"database readiness complete","result":"ready"}
+api-1  | {"elapsed_ms":9.86,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/ready","provider_call_count":0,"request_id":"a06ee144-f0b8-41fc-adaf-caab427663f9","status":200}
+api-1  | INFO:     192.168.65.1:24805 - "GET /health/ready HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":2.38,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/auth/password","provider_call_count":0,"request_id":"7556a445-c90a-40ce-a803-534f6378d92c","status":422}
+api-1  | INFO:     192.168.65.1:24805 - "POST /auth/password HTTP/1.1" 422 Unprocessable Entity
+api-1  | {"elapsed_ms":1.34,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"84aa6125-bdf8-476a-a22f-8414d84a7b08","status":200}
+api-1  | INFO:     127.0.0.1:58826 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":1.03,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/me","provider_call_count":0,"request_id":"e0642e13-1730-4542-b9a2-447335721839","status":401}
+api-1  | INFO:     192.168.65.1:26071 - "GET /me HTTP/1.1" 401 Unauthorized
+api-1  | {"elapsed_ms":1.2,"event":"readiness_check","level":"INFO","logger":"document_intelligence.readiness","message":"database readiness complete","result":"ready"}
+api-1  | {"elapsed_ms":2.53,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/ready","provider_call_count":0,"request_id":"4f0e14c0-b4c7-40e9-bd01-7f4979f6da6f","status":200}
+api-1  | INFO:     192.168.65.1:26071 - "GET /health/ready HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":1.09,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/auth/password","provider_call_count":0,"request_id":"765550e7-4f38-4529-a481-fe432384b1a3","status":422}
+api-1  | INFO:     192.168.65.1:26071 - "POST /auth/password HTTP/1.1" 422 Unprocessable Entity
+api-1  | {"elapsed_ms":0.9,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/me","provider_call_count":0,"request_id":"54e78fc3-c4de-4e84-bfea-c5bfe9d6160d","status":401}
+api-1  | INFO:     192.168.65.1:61555 - "GET /me HTTP/1.1" 401 Unauthorized
+api-1  | {"elapsed_ms":1.5,"event":"readiness_check","level":"INFO","logger":"document_intelligence.readiness","message":"database readiness complete","result":"ready"}
+api-1  | {"elapsed_ms":2.76,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/ready","provider_call_count":0,"request_id":"dd447ef6-ea2c-471f-894e-b758d34efc7a","status":200}
+api-1  | INFO:     192.168.65.1:61555 - "GET /health/ready HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":1.46,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/auth/password","provider_call_count":0,"request_id":"47ccfe34-aaa4-4c5e-9435-1356c901e15b","status":422}
+api-1  | INFO:     192.168.65.1:61555 - "POST /auth/password HTTP/1.1" 422 Unprocessable Entity
+api-1  | {"elapsed_ms":0.73,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"46cefdf5-9717-4cfd-9f23-822d8a7122ce","status":200}
+api-1  | INFO:     127.0.0.1:58842 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":2.74,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"6eb6b7af-3161-4fc1-8cab-d4d0c4a80e01","status":200}
+api-1  | INFO:     127.0.0.1:43236 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.91,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"87efe17e-5f99-4b61-ab0b-3b064109249f","status":200}
+api-1  | INFO:     127.0.0.1:43250 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.59,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"28db406a-c34e-4838-9b4e-92d90fb60e76","status":200}
+api-1  | INFO:     127.0.0.1:56712 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":2.44,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"1825fc49-af4e-4ea3-b32a-d9007cd1d96a","status":200}
+api-1  | INFO:     127.0.0.1:56722 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.73,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"8eaceee6-a9f8-42af-90f6-5d2db60ad443","status":200}
+api-1  | INFO:     127.0.0.1:32854 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.72,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"146af636-d43e-4782-9f7a-f58bde7e41d9","status":200}
+api-1  | INFO:     127.0.0.1:56856 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":3.98,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"d320297a-4f82-43cf-bacc-bec2f549dac0","status":200}
+api-1  | INFO:     127.0.0.1:56858 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":7.8,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"d0da3c45-b99a-443a-885f-29310bc706f8","status":200}
+api-1  | INFO:     127.0.0.1:47336 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":7.38,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"722e29ff-ab08-47d2-9aad-fae9d4bb61a5","status":200}
+api-1  | INFO:     127.0.0.1:47352 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":11.01,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"21838baa-aa98-4e14-b358-57e6b186d42f","status":200}
+api-1  | INFO:     127.0.0.1:52146 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.73,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"116bee9b-cd84-4b58-9fa5-bd55dd32d305","status":200}
+api-1  | INFO:     127.0.0.1:52156 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.79,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"886bc0d8-80dd-4464-b5e3-655d3d5aa9cf","status":200}
+api-1  | INFO:     127.0.0.1:43610 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.61,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"2df24b1a-0f3e-4809-8c18-55d69ceeff02","status":200}
+api-1  | INFO:     127.0.0.1:43618 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.66,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"ffdeb1e0-1b4f-4968-9a51-43810bb0fb0c","status":200}
+api-1  | INFO:     127.0.0.1:45706 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":22.49,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"79c69344-67be-46d0-b9f6-c8e467bf0480","status":200}
+api-1  | INFO:     127.0.0.1:45714 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":2.14,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"4552fb64-a089-4948-ba1c-4570c00fe137","status":200}
+api-1  | INFO:     127.0.0.1:52736 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":4.29,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"dbae52fa-8b3a-4454-87e8-dd7ced45d4e2","status":200}
+api-1  | INFO:     127.0.0.1:52750 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.89,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"e30952b5-ddfd-4051-98c4-f19aa858802a","status":200}
+api-1  | INFO:     127.0.0.1:38210 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":2.81,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"ed0df8c7-f2a9-412e-b86c-2bce5c2ba4d5","status":200}
+api-1  | INFO:     127.0.0.1:38218 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.83,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"a4d40d1e-b355-4158-8f05-2a2f51dc4c4a","status":200}
+api-1  | INFO:     127.0.0.1:33844 - "GET /health/live HTTP/1.1" 200 OK
+api-1  | {"elapsed_ms":0.83,"event":"request_complete","level":"INFO","logger":"document_intelligence.request","message":"request complete","path":"/health/live","provider_call_count":0,"request_id":"8a11413d-9a86-44c2-9d0f-de1aaf2d5a8e","status":200}
+api-1  | INFO:     127.0.0.1:41798 - "GET /health/live HTTP/1.1" 200 OK

@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-10-08T21:30:53.765131+00:00",
+  "services": {
+    "api": {
+      "errorLines": 0,
+      "requestCompleteCount": 61,
+      "providerCallCountSum": 0,
+      "requests": [
+        [
+          "/auth/password",
+          422
+        ],
+        [
+          "/health/live",
+          200
+        ],
+        [
+          "/health/ready",
+          200
+        ],
+        [
+          "/me",
+          200
+        ],
+        [
+          "/me",
+          401
+        ]
+      ]
+    },
+    "frontend": {
+      "errorLines": 0,
+      "requestCompleteCount": 0,
+      "providerCallCountSum": 0,
+      "requests": []
+    }
+  }
+}

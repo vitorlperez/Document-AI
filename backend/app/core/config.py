@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Runtime configuration with no permissive production defaults."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     database_url: PostgresDsn
 
@@ -47,6 +47,42 @@ class Settings(BaseSettings):
     auth_session_cookie_name: str = "document_intelligence_session"
     auth_login_state_cookie_name: str = "document_intelligence_login_state"
     auth_session_ttl_hours: int = 168
+    auth_proxy_secret: SecretStr | None = None
+    auth_trusted_proxy_cidrs: str = ""
+
+    @field_validator("auth_proxy_secret")
+    @classmethod
+    def validate_auth_proxy_secret(cls, value):
+        if value is not None and len(value.get_secret_value().strip()) < 32:
+            raise ValueError("AUTH_PROXY_SECRET must contain at least 32 characters")
+        return value
+
+    @field_validator("auth_trusted_proxy_cidrs")
+    @classmethod
+    def validate_auth_proxy_cidrs(cls, value):
+        from ipaddress import ip_network
+        for item in value.split(","):
+            if item.strip():
+                try:
+                    network = ip_network(item.strip())
+                except ValueError:
+                    raise ValueError("AUTH_TRUSTED_PROXY_CIDRS must contain valid CIDRs") from None
+                if network.prefixlen == 0:
+                    raise ValueError("AUTH_TRUSTED_PROXY_CIDRS must trust only frontend peers, never /0")
+        return value
+
+    @model_validator(mode="after")
+    def validate_production_auth_proxy(self):
+        if self.environment.strip().lower() == "production":
+            missing = []
+            if not self.auth_proxy_secret:
+                missing.append("AUTH_PROXY_SECRET")
+            if not any(item.strip() for item in self.auth_trusted_proxy_cidrs.split(",")):
+                missing.append("AUTH_TRUSTED_PROXY_CIDRS")
+            if missing:
+                raise ValueError(f"Production requires valid {' and '.join(missing)} before startup")
+        return self
+
     workos_api_key: SecretStr | None = None
     workos_client_id: str | None = None
     workos_redirect_uri: str | None = None

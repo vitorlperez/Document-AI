@@ -31,10 +31,12 @@ def test_no_usable_key_means_not_configured() -> None:
 def test_notion_keys_are_own_first_and_google_only_as_legacy_fallback() -> None:
     google, notion = key(), key()
     with_fallback = Settings(
+        _env_file=None,
         database_url=DB, google_token_encryption_key=google, notion_token_encryption_key=notion
     )
     assert with_fallback.cipher_keys("notion") == [notion, google]
     no_fallback = Settings(
+        _env_file=None,
         database_url=DB,
         google_token_encryption_key=google,
         notion_token_encryption_key=notion,
@@ -48,19 +50,26 @@ def test_production_rejects_a_key_reused_across_providers() -> None:
     shared = key()
     with pytest.raises(ValidationError):
         Settings(
+            _env_file=None,
             database_url=DB,
             environment="production",
+            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
+            auth_trusted_proxy_cidrs="127.0.0.1/32",
             google_token_encryption_key=shared,
             notion_token_encryption_key=shared,
         )
     with pytest.raises(ValidationError):
         Settings(
+            _env_file=None,
             database_url=DB,
             environment="production",
+            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
+            auth_trusted_proxy_cidrs="127.0.0.1/32",
             google_token_encryption_key=shared,
             microsoft_token_encryption_key=shared,
         )
     Settings(
+        _env_file=None,
         database_url=DB,
         environment="development",
         google_token_encryption_key=shared,
@@ -71,8 +80,11 @@ def test_production_rejects_a_key_reused_across_providers() -> None:
 def test_production_notion_requires_own_key_even_during_legacy_window():
     with pytest.raises(ValidationError):
         Settings(
+            _env_file=None,
             database_url=DB,
             environment="production",
+            auth_proxy_secret="test-only-proxy-secret-at-least-32-chars",
+            auth_trusted_proxy_cidrs="127.0.0.1/32",
             notion_oauth_client_id="enabled",
             google_token_encryption_key=key(),
             notion_token_encryption_legacy_fallback=True,
@@ -81,6 +93,7 @@ def test_production_notion_requires_own_key_even_during_legacy_window():
 
 def test_disabled_legacy_fallback_does_not_encrypt_with_google_key():
     settings = Settings(
+        _env_file=None,
         database_url=DB,
         google_token_encryption_key=key(),
         notion_token_encryption_legacy_fallback=False,

@@ -1,0 +1,97 @@
+{
+  "checks": [
+    {
+      "path": "/",
+      "status": 200
+    },
+    {
+      "path": "/login",
+      "status": 200
+    },
+    {
+      "path": "/api/health/live",
+      "status": 200
+    },
+    {
+      "path": "/api/health/ready",
+      "status": 200
+    },
+    {
+      "path": "/api/session",
+      "status": 200
+    },
+    {
+      "path": "/api/me",
+      "status": 401
+    },
+    {
+      "path": "/api/auth/callback?code=local-smoke&state=invalid",
+      "status": 401
+    },
+    {
+      "path": "/api/auth/login",
+      "status": 302,
+      "redirectUri": "http://localhost:3000/api/auth/callback",
+      "loginStateCookiePreserved": true
+    }
+  ],
+  "safeLocalConfig": {
+    "NOTION_OAUTH_REDIRECT_URI": "http://localhost:3000/api/data-sources/notion/oauth/callback",
+    "PUBLIC_APP_URL": "http://localhost:3000",
+    "MICROSOFT_SHAREPOINT_REDIRECT_URI": "http://localhost:3000/api/data-sources/sharepoint/oauth/callback",
+    "GOOGLE_OAUTH_REDIRECT_URI": "http://localhost:3000/api/data-sources/google/oauth/callback",
+    "WORKOS_REDIRECT_URI": "http://localhost:3000/api/auth/callback",
+    "MICROSOFT_OAUTH_REDIRECT_URI": "http://localhost:3000/api/data-sources/onedrive/oauth/callback",
+    "CLICKUP_OAUTH_REDIRECT_URI": "http://localhost:3000/api/data-sources/clickup/oauth/callback"
+  },
+  "credentialsPreserved": true,
+  "apiPortInternal": true,
+  "unchangedServices": [
+    "postgres",
+    "redis",
+    "worker",
+    "beat"
+  ],
+  "services": {
+    "postgres": {
+      "id": "1ff70f338675cdf1cd0865d319cba156fce5c79dbc1baeeff90680e4f34354af",
+      "startedAt": "2026-10-08T03:16:47.733915841Z",
+      "mounts": [
+        {
+          "name": "document-ai_postgres_data",
+          "destination": "/var/lib/postgresql/data"
+        }
+      ]
+    },
+    "redis": {
+      "id": "4f12acc8a6f6b96ad5e12cbfebd10a72869737b30e827a981cdf7b3800598526",
+      "startedAt": "2026-10-08T03:16:47.718257674Z",
+      "mounts": [
+        {
+          "name": "3f2fc59acd1ca32e693614852ea2e633a5d9812b1d580faaf7bf1874dd8fd9a3",
+          "destination": "/data"
+        }
+      ]
+    },
+    "worker": {
+      "id": "50cca3c5a2d20e6813b4b75a5baa2b3d984b68f48f2435e2d5795709aeca2faf",
+      "startedAt": "2026-10-08T04:24:19.451684513Z",
+      "mounts": []
+    },
+    "beat": {
+      "id": "c829e23f4923f18553f1fd69c1043ea143db5da185629a150984b82f204501e1",
+      "startedAt": "2026-10-08T03:16:55.554362345Z",
+      "mounts": []
+    },
+    "api": {
+      "id": "cdb71172cac9172c777f88514d9bd84847614124706a0e60c9bfa3dc9cdfed39",
+      "startedAt": "2026-10-08T21:37:29.307050465Z",
+      "mounts": []
+    },
+    "frontend": {
+      "id": "920d84a575c4597d883779dba44dd8d96bad3cb27f4ed838c0c70328477eee22",
+      "startedAt": "2026-10-08T21:38:38.681264136Z",
+      "mounts": []
+    }
+  }
+}

@@ -50,29 +50,29 @@ services:
       EVIDENCE_CONTEXT_CHARS: ${EVIDENCE_CONTEXT_CHARS:-64000}
       GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
       GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
-      GOOGLE_OAUTH_REDIRECT_URI: ${GOOGLE_OAUTH_REDIRECT_URI:-http://localhost:8000/data-sources/google/oauth/callback}
+      GOOGLE_OAUTH_REDIRECT_URI: ${GOOGLE_OAUTH_REDIRECT_URI:-http://localhost:3000/api/data-sources/google/oauth/callback}
       GOOGLE_TOKEN_ENCRYPTION_KEY: ${GOOGLE_TOKEN_ENCRYPTION_KEY:-}
       MICROSOFT_OAUTH_CLIENT_ID: ${MICROSOFT_OAUTH_CLIENT_ID:-}
       MICROSOFT_OAUTH_CLIENT_SECRET: ${MICROSOFT_OAUTH_CLIENT_SECRET:-}
-      MICROSOFT_OAUTH_REDIRECT_URI: ${MICROSOFT_OAUTH_REDIRECT_URI:-http://localhost:8000/data-sources/onedrive/oauth/callback}
-      MICROSOFT_SHAREPOINT_REDIRECT_URI: ${MICROSOFT_SHAREPOINT_REDIRECT_URI:-http://localhost:8000/data-sources/sharepoint/oauth/callback}
+      MICROSOFT_OAUTH_REDIRECT_URI: ${MICROSOFT_OAUTH_REDIRECT_URI:-http://localhost:3000/api/data-sources/onedrive/oauth/callback}
+      MICROSOFT_SHAREPOINT_REDIRECT_URI: ${MICROSOFT_SHAREPOINT_REDIRECT_URI:-http://localhost:3000/api/data-sources/sharepoint/oauth/callback}
       SHAREPOINT_DOWNLOAD_WORKERS: ${SHAREPOINT_DOWNLOAD_WORKERS:-2}
       MAX_FILE_BYTES: ${MAX_FILE_BYTES:-104857600}
       SHAREPOINT_CATALOG_MAX_SITES: ${SHAREPOINT_CATALOG_MAX_SITES:-200}
       MICROSOFT_TOKEN_ENCRYPTION_KEY: ${MICROSOFT_TOKEN_ENCRYPTION_KEY:-}
       NOTION_OAUTH_CLIENT_ID: ${NOTION_OAUTH_CLIENT_ID:-}
       NOTION_OAUTH_CLIENT_SECRET: ${NOTION_OAUTH_CLIENT_SECRET:-}
-      NOTION_OAUTH_REDIRECT_URI: ${NOTION_OAUTH_REDIRECT_URI:-http://localhost:8000/data-sources/notion/oauth/callback}
+      NOTION_OAUTH_REDIRECT_URI: ${NOTION_OAUTH_REDIRECT_URI:-http://localhost:3000/api/data-sources/notion/oauth/callback}
       NOTION_TOKEN_ENCRYPTION_KEY: ${NOTION_TOKEN_ENCRYPTION_KEY:-}
       NOTION_TOKEN_ENCRYPTION_LEGACY_FALLBACK: ${NOTION_TOKEN_ENCRYPTION_LEGACY_FALLBACK:-true}
       CLICKUP_OAUTH_CLIENT_ID: ${CLICKUP_OAUTH_CLIENT_ID:-}
       CLICKUP_OAUTH_CLIENT_SECRET: ${CLICKUP_OAUTH_CLIENT_SECRET:-}
-      CLICKUP_OAUTH_REDIRECT_URI: ${CLICKUP_OAUTH_REDIRECT_URI:-http://localhost:8000/data-sources/clickup/oauth/callback}
+      CLICKUP_OAUTH_REDIRECT_URI: ${CLICKUP_OAUTH_REDIRECT_URI:-http://localhost:3000/api/data-sources/clickup/oauth/callback}
       CLICKUP_TOKEN_ENCRYPTION_KEY: ${CLICKUP_TOKEN_ENCRYPTION_KEY:-}
       CLICKUP_INCLUDE_CLOSED_TASKS: ${CLICKUP_INCLUDE_CLOSED_TASKS:-false}
       WORKOS_API_KEY: ${WORKOS_API_KEY:-}
       WORKOS_CLIENT_ID: ${WORKOS_CLIENT_ID:-}
-      WORKOS_REDIRECT_URI: ${WORKOS_REDIRECT_URI:-}
+      WORKOS_REDIRECT_URI: ${WORKOS_REDIRECT_URI:-http://localhost:3000/api/auth/callback}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       INVITATION_FROM_EMAIL: ${INVITATION_FROM_EMAIL:-}
       OCR_ENGINE: ${OCR_ENGINE:-none}
@@ -89,8 +89,6 @@ services:
   api:
     <<: *backend
     environment: *backend_environment
-    ports:
-      - "8000:8000"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -169,6 +167,10 @@ services:
   frontend:
     image: arquivio-frontend:local
     build: ./frontend
+    environment:
+      VITE_API_BASE_URL: /api
+      NEXT_PUBLIC_API_BASE_URL: /api
+      API_UPSTREAM_URL: http://api:8000
     ports:
       - "3000:3000"
     depends_on:

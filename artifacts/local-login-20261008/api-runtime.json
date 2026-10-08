@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-10-08T21:30:09.041389+00:00",
+  "passwordEndpoint": true,
+  "workosSDKVersion": "10.5.0",
+  "environment": "development",
+  "publicAppURL": "http://localhost:3000",
+  "callback": "http://localhost:8000/auth/callback",
+  "workosAPIKeyPresent": true,
+  "workosClientIDPresent": true,
+  "workosEnvironment": "Staging"
+}

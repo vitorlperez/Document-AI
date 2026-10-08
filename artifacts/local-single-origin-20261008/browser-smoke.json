@@ -1,0 +1,94 @@
+{
+  "timestamp": "2026-10-08T21:38:53.790Z",
+  "target": "http://localhost:3000/login",
+  "backend": "http://localhost:3000/api",
+  "mode": "same-origin",
+  "realAuthenticationAttempted": false,
+  "emailsRequested": false,
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900,
+      "url": "http://localhost:3000/login",
+      "httpStatus": 200,
+      "viewport": 1440,
+      "content": 1440,
+      "sessionResponses": [
+        200
+      ],
+      "blockedExternal": [],
+      "pageErrors": [],
+      "probes": {
+        "readiness": {
+          "status": 200,
+          "body": {
+            "status": "ready"
+          }
+        },
+        "passwordInvalidBody": {
+          "status": 422,
+          "detail": "Confira os dados informados e tente novamente."
+        }
+      },
+      "signupForm": "email only; not submitted",
+      "recoveryForm": "present; not submitted",
+      "screenshot": "login-1440.png"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "url": "http://localhost:3000/login",
+      "httpStatus": 200,
+      "viewport": 390,
+      "content": 390,
+      "sessionResponses": [
+        200
+      ],
+      "blockedExternal": [],
+      "pageErrors": [],
+      "probes": {
+        "readiness": {
+          "status": 200,
+          "body": {
+            "status": "ready"
+          }
+        },
+        "passwordInvalidBody": {
+          "status": 422,
+          "detail": "Confira os dados informados e tente novamente."
+        }
+      },
+      "signupForm": "email only; not submitted",
+      "recoveryForm": "present; not submitted",
+      "screenshot": "login-390.png"
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "url": "http://localhost:3000/login",
+      "httpStatus": 200,
+      "viewport": 320,
+      "content": 320,
+      "sessionResponses": [
+        200
+      ],
+      "blockedExternal": [],
+      "pageErrors": [],
+      "probes": {
+        "readiness": {
+          "status": 200,
+          "body": {
+            "status": "ready"
+          }
+        },
+        "passwordInvalidBody": {
+          "status": 422,
+          "detail": "Confira os dados informados e tente novamente."
+        }
+      },
+      "signupForm": "email only; not submitted",
+      "recoveryForm": "present; not submitted",
+      "screenshot": "login-320.png"
+    }
+  ]
+}
