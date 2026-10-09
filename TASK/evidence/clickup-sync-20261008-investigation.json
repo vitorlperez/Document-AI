@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-08 America/Sao_Paulo",
+  "result": "confirmed_root_cause",
+  "root_cause": "API and Worker have different CLICKUP_TOKEN_ENCRYPTION_KEY values. The same saved ClickUp credential decrypts on API but fails on Worker before ClickUp requests.",
+  "runtime_evidence": {
+    "API": {
+      "deployment": "f8311dd2-0bed-4154-8245-2d8b0887444d",
+      "settings_valid": true,
+      "clickup_client_id_present": true,
+      "clickup_client_secret_present": true,
+      "clickup_key_present": true,
+      "sources": [
+        {
+          "id": "6f0d087f-eab7-4a49-bec5-9a420dfb8505",
+          "status": "connected",
+          "has_credentials": true,
+          "last_synced_at": null,
+          "decrypts": true,
+          "access_token_present": true
+        }
+      ],
+      "jobs": [
+        {
+          "id": "d5ad65af-4420-4277-8e95-92a906e283f8",
+          "status": "failed",
+          "error_code": "sync_failed",
+          "created_at": "2026-10-09 02:12:51.780383+00:00",
+          "started_at": "2026-10-09 02:14:02.019710+00:00",
+          "completed_at": "2026-10-09 02:14:02.071692+00:00",
+          "manual_run_id": "77ad10c0-31fb-4626-87d8-3f789f60d137",
+          "workspace_folder_id": "b07f2b51-81d8-43d2-abed-dd98c5ddeaaa",
+          "source_id": "6f0d087f-eab7-4a49-bec5-9a420dfb8505",
+          "ready_documents": "0",
+          "failed_documents": "0"
+        },
+        {
+          "id": "a3cfbdf5-0e6c-4549-925d-ef89f6b517e2",
+          "status": "failed",
+          "error_code": "sync_failed",
+          "created_at": "2026-10-09 02:10:39.826000+00:00",
+          "started_at": "2026-10-09 02:11:50.075762+00:00",
+          "completed_at": "2026-10-09 02:11:50.134628+00:00",
+          "manual_run_id": null,
+          "workspace_folder_id": "b07f2b51-81d8-43d2-abed-dd98c5ddeaaa",
+          "source_id": "6f0d087f-eab7-4a49-bec5-9a420dfb8505",
+          "ready_documents": "0",
+          "failed_documents": "0"
+        }
+      ]
+    },
+    "Worker": {
+      "deployment": "67b3c265-f0c4-4c1f-b7a0-b4dc53e5ee10",
+      "settings_valid": true,
+      "clickup_client_id_present": false,
+      "clickup_client_secret_present": false,
+      "clickup_key_present": true,
+      "sources": [
+        {
+          "id": "6f0d087f-eab7-4a49-bec5-9a420dfb8505",
+          "status": "connected",
+          "has_credentials": true,
+          "last_synced_at": null,
+          "decrypts": false,
+          "error_class": "GoogleOAuthInvalid",
+          "error": "credential unavailable"
+        }
+      ],
+      "jobs": [
+        {
+          "id": "d5ad65af-4420-4277-8e95-92a906e283f8",
+          "status": "failed",
+          "error_code": "sync_failed",
+          "created_at": "2026-10-09 02:12:51.780383+00:00",
+          "started_at": "2026-10-09 02:14:02.019710+00:00",
+          "completed_at": "2026-10-09 02:14:02.071692+00:00",
+          "manual_run_id": "77ad10c0-31fb-4626-87d8-3f789f60d137",
+          "workspace_folder_id": "b07f2b51-81d8-43d2-abed-dd98c5ddeaaa",
+          "source_id": "6f0d087f-eab7-4a49-bec5-9a420dfb8505",
+          "ready_documents": "0",
+          "failed_documents": "0"
+        },
+        {
+          "id": "a3cfbdf5-0e6c-4549-925d-ef89f6b517e2",
+          "status": "failed",
+          "error_code": "sync_failed",
+          "created_at": "2026-10-09 02:10:39.826000+00:00",
+          "started_at": "2026-10-09 02:11:50.075762+00:00",
+          "completed_at": "2026-10-09 02:11:50.134628+00:00",
+          "manual_run_id": null,
+          "workspace_folder_id": "b07f2b51-81d8-43d2-abed-dd98c5ddeaaa",
+          "source_id": "6f0d087f-eab7-4a49-bec5-9a420dfb8505",
+          "ready_documents": "0",
+          "failed_documents": "0"
+        }
+      ]
+    }
+  },
+  "verification": {
+    "assertions_passed": 4,
+    "assertions_failed": 0,
+    "remote_API_exit": 0,
+    "remote_Worker_exit": 0,
+    "temporary_ssh_key_revoked_and_local_files_removed": true
+  },
+  "production_changes": "None: read-only investigation; no variables, deployments, jobs or customer data altered.",
+  "recommended_correction": "Preserve API key; use the same value on Worker; perform controlled Worker-only redeploy; verify decryption before retrying sync.",
+  "skills": "inline [oc-builder, oc-blackbox, oc-stamp]"
+}
