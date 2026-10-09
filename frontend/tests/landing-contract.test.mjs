@@ -62,7 +62,13 @@ test("landing keeps the onLogin/onSignUp contract and every destination", () => 
   for (const href of ["#landing-main", "#produto", "#integracoes", "#como-funciona", "#perguntas", "/privacidade", "/termos"]) assert.ok(source.includes(`href="${href}"`), `missing href ${href}`);
   for (const id of ["landing-main", "produto", "integracoes", "como-funciona", "perguntas"]) assert.ok(source.includes(`id="${id}"`), `missing id ${id}`);
   assert.match(source, /aria-pressed=\{activeCase === index\}/);
-  assert.match(source, /aria-live="polite"/);
+  assert.match(source, /aria-live=\{running \? "off" : "polite"\}/);
+  assert.match(source, /DEMO_ROTATE_MS = 6000/);
+  assert.match(source, /prefers-reduced-motion: reduce/);
+  assert.match(source, /visibilitychange/);
+  assert.match(source, /window\.clearTimeout\(timer\)/);
+  assert.match(source, /removeEventListener\("visibilitychange"/);
+  assert.match(css, /\.landing-demo-progress[^}]*6000ms/);
   assert.equal((source.match(/<ProductPreview \/>/g) ?? []).length, 1, "a single ProductPreview");
 });
 

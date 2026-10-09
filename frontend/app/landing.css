@@ -100,6 +100,9 @@
 .landing-preview-heading h2 em::before { content: " "; }
 .landing-demo-options { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .landing-demo-options button { min-height: 44px; padding: 10px 16px; border: 1px solid var(--lp-border-strong); border-radius: var(--lp-radius-sm); background: var(--lp-surface); color: var(--lp-fg); font-size: 14px; font-weight: 500; line-height: 1.2; transition: background-color var(--lp-fast) var(--lp-ease), border-color var(--lp-fast) var(--lp-ease), color var(--lp-fast) var(--lp-ease); }
+.landing-demo-options button { position: relative; overflow: hidden; }
+.landing-demo-progress { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: rgb(255 255 255 / 0.65); transform-origin: left; animation: lp-demo-progress 6000ms linear both; pointer-events: none; }
+@keyframes lp-demo-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .landing-demo-options button:hover { border-color: var(--lp-accent); color: var(--lp-accent); }
 .landing-demo-options button[aria-pressed="true"] { border-color: var(--lp-accent); background: var(--lp-accent-solid); color: #fff; }
 

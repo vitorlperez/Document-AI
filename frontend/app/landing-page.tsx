@@ -45,17 +45,54 @@ const demoCases = [
   },
 ];
 
+/** Time each demo case stays on screen before the automatic advance. */
+const DEMO_ROTATE_MS = 6000;
+
 function ProductPreview() {
   const [activeCase, setActiveCase] = useState(0);
+  const [reducedMotion, setReducedMotion] = useState(true);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const demo = demoCases[activeCase];
+  const running = !reducedMotion && !hovered && !focused && !hidden;
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReducedMotion(query.matches);
+    const syncVisibility = () => setHidden(document.visibilityState === "hidden");
+    sync();
+    syncVisibility();
+    query.addEventListener("change", sync);
+    document.addEventListener("visibilitychange", syncVisibility);
+    return () => {
+      query.removeEventListener("change", sync);
+      document.removeEventListener("visibilitychange", syncVisibility);
+    };
+  }, []);
+
+  // Re-armed on every case change and every resume, so a click or a pause always restarts a full interval.
+  useEffect(() => {
+    if (!running) return;
+    const timer = window.setTimeout(() => setActiveCase((current) => (current + 1) % demoCases.length), DEMO_ROTATE_MS);
+    return () => window.clearTimeout(timer);
+  }, [running, activeCase]);
+
   return (
-    <figure className="landing-preview" aria-labelledby="landing-preview-caption">
+    <figure
+      className="landing-preview"
+      aria-labelledby="landing-preview-caption"
+      onPointerEnter={(event) => { if (event.pointerType === "mouse") setHovered(true); }}
+      onPointerLeave={(event) => { if (event.pointerType === "mouse") setHovered(false); }}
+      onFocus={(event) => { if (event.target.matches(":focus-visible")) setFocused(true); }}
+      onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false); }}
+    >
       <div className="landing-preview-heading">
         <p className="landing-eyebrow">VEJA A EXPERIÊNCIA</p>
         <h2>Converse com seus documentos.<br /><em>Confira a origem.</em></h2>
       </div>
       <div className="landing-demo-options" role="group" aria-label="Escolha um exemplo da demonstração">
-        {demoCases.map((item, index) => <button key={item.label} type="button" aria-pressed={activeCase === index} onClick={() => setActiveCase(index)}>{item.label}</button>)}
+        {demoCases.map((item, index) => <button key={item.label} type="button" aria-pressed={activeCase === index} onClick={() => setActiveCase(index)}>{item.label}{activeCase === index && running && <span className="landing-demo-progress" aria-hidden="true" />}</button>)}
       </div>
 
       <div className="landing-app-shell">
@@ -68,7 +105,7 @@ function ProductPreview() {
         <div className="landing-app-workspace">
           <section className="landing-app-chat" aria-label="Exemplo de conversa com documentos">
             <div className="landing-app-toolbar" aria-hidden="true"><span><Plus size={13} />Nova conversa</span><PanelRightClose size={16} /></div>
-            <div className="landing-app-thread" aria-live="polite" key={activeCase}>
+            <div className="landing-app-thread" aria-live={running ? "off" : "polite"} key={activeCase}>
               <div className="landing-user-message">
                 <small>{demo.scope}</small>
                 <p>{demo.question}{demo.mentions && <span className="landing-mention-line">{demo.mentions}</span>}</p>
