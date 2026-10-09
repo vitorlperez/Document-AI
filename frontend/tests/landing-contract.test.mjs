@@ -64,6 +64,7 @@ test("landing keeps the onLogin/onSignUp contract and every destination", () => 
   assert.match(source, /aria-pressed=\{activeCase === index\}/);
   assert.match(source, /aria-live=\{running \? "off" : "polite"\}/);
   assert.match(source, /DEMO_ROTATE_MS = 6000/);
+  assert.doesNotMatch(source, /onPointerEnter|onPointerLeave|setHovered|setFocused/, "rotation must not pause on hover or focus");
   assert.match(source, /prefers-reduced-motion: reduce/);
   assert.match(source, /visibilitychange/);
   assert.match(source, /window\.clearTimeout\(timer\)/);

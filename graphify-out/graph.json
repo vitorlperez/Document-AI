@@ -17879,7 +17879,7 @@
       "file_type": "code",
       "norm_label": "splittoplevel()",
       "source_file": "frontend/tests/landing-contract.test.mjs",
-      "source_location": "L73"
+      "source_location": "L80"
     },
     {
       "id": "backend_app_access_ratelimit_redisratelimiter_init",
@@ -49007,7 +49007,7 @@
       "file_type": "code",
       "norm_label": "landingpage()",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L167"
+      "source_location": "L198"
     },
     {
       "id": "frontend_app_landing_page_productpreview",
@@ -49019,7 +49019,7 @@
       "file_type": "code",
       "norm_label": "productpreview()",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L48"
+      "source_location": "L51"
     },
     {
       "id": "frontend_app_landing_page_useoptionalimage",
@@ -49031,7 +49031,7 @@
       "file_type": "code",
       "norm_label": "useoptionalimage()",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L155"
+      "source_location": "L186"
     },
     {
       "id": "frontend_app_landing_page_usesectionreveal",
@@ -49043,7 +49043,7 @@
       "file_type": "code",
       "norm_label": "usesectionreveal()",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L136"
+      "source_location": "L167"
     },
     {
       "id": "frontend_app_legal_layout_legallayout",
@@ -100720,7 +100720,7 @@
       "file_type": "code",
       "norm_label": "questions",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L125"
+      "source_location": "L156"
     },
     {
       "id": "frontend_app_legal_layout",
@@ -102507,6 +102507,18 @@
       "type": "external"
     },
     {
+      "id": "glob",
+      "label": "glob",
+      "_origin": "semantic",
+      "community": 408,
+      "community_name": "json",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "glob",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "json",
       "label": "json",
       "_origin": "semantic",
@@ -103007,17 +103019,6 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "frontend_app_product_layout",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "glob",
-      "label": "glob",
-      "community": 408,
-      "community_name": "json",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "glob",
       "source_file": "",
       "type": "external"
     }
@@ -162276,7 +162277,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L169",
+      "source_location": "L200",
       "weight": 1.0
     },
     {
@@ -162288,7 +162289,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L170",
+      "source_location": "L201",
       "weight": 1.0
     },
     {
@@ -162300,7 +162301,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L175",
+      "source_location": "L206",
       "weight": 1.0
     },
     {
@@ -162312,7 +162313,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L177",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -162324,7 +162325,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L191",
+      "source_location": "L222",
       "weight": 1.0
     },
     {
@@ -162336,7 +162337,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L201",
+      "source_location": "L232",
       "weight": 1.0
     },
     {
@@ -162348,7 +162349,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L100",
+      "source_location": "L131",
       "weight": 1.0
     },
     {
@@ -162360,7 +162361,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L63",
+      "source_location": "L94",
       "weight": 1.0
     },
     {
@@ -172356,7 +172357,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/tests/landing-contract.test.mjs",
-      "source_location": "L73",
+      "source_location": "L80",
       "weight": 1.0
     },
     {
@@ -295421,17 +295422,6 @@
     },
     {
       "source": "frontend_app_landing_page",
-      "target": "frontend_app_landing_page_questions",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L125",
-      "weight": 1.0
-    },
-    {
-      "source": "frontend_app_landing_page",
       "target": "frontend_app_landing_page_landingpageprops",
       "relation": "contains",
       "_origin": "ast",
@@ -295443,29 +295433,18 @@
     },
     {
       "source": "frontend_app_landing_page",
+      "target": "frontend_app_landing_page_questions",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/app/landing-page.tsx",
+      "source_location": "L156",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_app_landing_page",
       "target": "frontend_app_landing_page_usesectionreveal",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L136",
-      "weight": 1.0
-    },
-    {
-      "source": "frontend_app_landing_page",
-      "target": "frontend_app_landing_page_useoptionalimage",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L155",
-      "weight": 1.0
-    },
-    {
-      "source": "frontend_app_landing_page",
-      "target": "frontend_app_landing_page_landingpage",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -295487,13 +295466,35 @@
     },
     {
       "source": "frontend_app_landing_page",
+      "target": "frontend_app_landing_page_useoptionalimage",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/app/landing-page.tsx",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_app_landing_page",
+      "target": "frontend_app_landing_page_landingpage",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/app/landing-page.tsx",
+      "source_location": "L198",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_app_landing_page",
       "target": "frontend_app_landing_page_productpreview",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/app/landing-page.tsx",
-      "source_location": "L48",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -380642,5 +380643,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "25864631c33ccbb0a0c0ac52eb683537964016a4"
+  "built_at_commit": "a3e7f641dc46e60eb40c86c9948c062e9a156b73"
 }

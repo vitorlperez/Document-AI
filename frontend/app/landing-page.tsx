@@ -51,11 +51,9 @@ const DEMO_ROTATE_MS = 6000;
 function ProductPreview() {
   const [activeCase, setActiveCase] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(true);
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(false);
   const demo = demoCases[activeCase];
-  const running = !reducedMotion && !hovered && !focused && !hidden;
+  const running = !reducedMotion && !hidden;
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -71,7 +69,7 @@ function ProductPreview() {
     };
   }, []);
 
-  // Re-armed on every case change and every resume, so a click or a pause always restarts a full interval.
+  // Re-armed on every case change and every resume (tab visibility / reduced motion), so a click always restarts a full interval.
   useEffect(() => {
     if (!running) return;
     const timer = window.setTimeout(() => setActiveCase((current) => (current + 1) % demoCases.length), DEMO_ROTATE_MS);
@@ -82,10 +80,6 @@ function ProductPreview() {
     <figure
       className="landing-preview"
       aria-labelledby="landing-preview-caption"
-      onPointerEnter={(event) => { if (event.pointerType === "mouse") setHovered(true); }}
-      onPointerLeave={(event) => { if (event.pointerType === "mouse") setHovered(false); }}
-      onFocus={(event) => { if (event.target.matches(":focus-visible")) setFocused(true); }}
-      onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false); }}
     >
       <div className="landing-preview-heading">
         <p className="landing-eyebrow">VEJA A EXPERIÊNCIA</p>

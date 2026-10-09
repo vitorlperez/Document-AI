@@ -606,9 +606,9 @@
     "semantic_hash": "4e31dade4749ba890710908cfaadc40c"
   },
   "frontend/app/landing-page.tsx": {
-    "mtime": 1791585560.55022,
-    "seen": 1791585835.2244349,
-    "ast_hash": "8d5beb4df2f217a24c78ce5f3062dd15",
+    "mtime": 1791587194.4952066,
+    "seen": 1791587282.5600152,
+    "ast_hash": "ace98d6f15406313ff1ae478d98d6ee4",
     "semantic_hash": ""
   },
   "frontend/app/layout.tsx": {
@@ -4800,9 +4800,9 @@
     "semantic_hash": ""
   },
   "frontend/tests/landing-contract.test.mjs": {
-    "mtime": 1791585560.5508664,
-    "seen": 1791585835.224493,
-    "ast_hash": "75a850bb813c246f169442af9ef524d3",
+    "mtime": 1791587194.4953718,
+    "seen": 1791587282.560077,
+    "ast_hash": "774cc177b8066f793f6261297dd4dc70",
     "semantic_hash": ""
   },
   "specs/skills/vercel-react-best-practices/UPSTREAM.json": {
