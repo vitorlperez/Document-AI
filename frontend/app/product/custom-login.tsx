@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, FileText, LockKeyhole, Quote
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { Brand } from "../brand";
+import { ThemeToggle } from "../theme-toggle";
 import { safeInvitationReturnTo } from "./auth-navigation.mjs";
 import { ApiError, api, messageFor } from "./types-and-api";
 import "../custom-login.css";
@@ -82,7 +83,7 @@ export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo,
       </div>
       <p className="login-story-footer"><ShieldCheck size={17} /> Os originais permanecem nas fontes conectadas.</p>
     </aside>
-    <section className="login-form-side"><Link href="/" className="login-mobile-brand"><Brand /></Link><div className="login-form-container">
+    <section className="login-form-side"><ThemeToggle className="theme-toggle-floating" /><Link href="/" className="login-mobile-brand"><Brand /></Link><div className="login-form-container">
       <p className="login-eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p className="login-description">{copy.description}</p>
       <form onSubmit={(event) => { void submit(event); }} className="login-form" aria-busy={busy}>
         {mode !== "reset" && mode !== "verify" && <div className="login-field"><label htmlFor="login-email">E-mail</label><input id="login-email" type="email" autoComplete="email" name="email" required maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@empresa.com" disabled={busy} /></div>}

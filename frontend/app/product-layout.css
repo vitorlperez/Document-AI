@@ -19,7 +19,7 @@
 .product-page-heading {
   padding: 10px var(--page-panel-space);
   gap: 10px;
-  background: #eff1e9;
+  background: var(--heading-bg);
 }
 .product-page-heading h1, .product-app .page-surface h1 {
   margin-top: 0;
@@ -57,8 +57,8 @@
 .product-app .product-header-end > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .product-app .primary-tabs { display: flex; align-items: center; justify-content: center; gap: 2px; min-width: 0; }
 .product-app .primary-tab { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 600; color: var(--muted-foreground); text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; }
-.product-app .primary-tab:hover { background: var(--color-sage, #f1f4ef); color: var(--foreground, #17211d); }
-.product-app .primary-tab[aria-current="page"] { color: var(--primary); background: var(--color-sage, #f1f4ef); border-bottom-color: var(--primary); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.product-app .primary-tab:hover { background: var(--color-sage); color: var(--foreground); }
+.product-app .primary-tab[aria-current="page"] { color: var(--primary); background: var(--color-sage); border-bottom-color: var(--primary); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .product-app .primary-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .product-app .primary-tab-label { display: none; }
 @media (min-width: 1280px) { .product-app .primary-tab-label { display: inline; } .product-app .primary-tab { padding: 0 12px; } }

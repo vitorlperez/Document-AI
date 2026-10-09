@@ -58,7 +58,7 @@ function McpSettings({ organizationId }: { organizationId: string }) {
     } catch (caught) { setError(messageFor(caught)); } finally { setBusy(false); }
   }
   const examples = info?.configured ? mcpClientExamples(info.resource_url) : null;
-  return <section className="mt-6 rounded-lg border border-line-soft bg-white p-4 sm:p-6" aria-labelledby="mcp-title" aria-busy={loading || busy}>
+  return <section className="mt-6 rounded-lg border border-line-soft bg-panel p-4 sm:p-6" aria-labelledby="mcp-title" aria-busy={loading || busy}>
     <div className="flex items-center gap-3"><Plug size={22} className="text-primary" aria-hidden="true" /><h2 id="mcp-title" className="text-xl font-semibold">MCP</h2></div>
     <p className="mt-2 text-sm text-muted-foreground">Conecte seus clientes de IA aos documentos da organização pelo Model Context Protocol. O servidor oferece acesso somente de leitura.</p>
     {error && <div role="alert" className="mt-4 text-sm text-rose-700"><p>{error}</p>{!info && <button type="button" onClick={() => void load()} className="min-h-11 underline">Tentar novamente</button>}</div>}

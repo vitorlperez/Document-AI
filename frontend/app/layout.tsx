@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./theme-toggle.css";
+import { ThemeProvider } from "./theme-provider";
 export const metadata: Metadata = {
   referrer: "no-referrer",
   title: "Arquivio — O conhecimento da sua equipe, com fontes",
@@ -12,4 +14,4 @@ export const metadata: Metadata = {
     type: "website",
   },
 };
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="pt-BR"><body>{children}</body></html>; }
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="pt-BR" suppressHydrationWarning><body><ThemeProvider>{children}</ThemeProvider></body></html>; }

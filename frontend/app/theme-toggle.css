@@ -1,0 +1,8 @@
+.theme-toggle { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--muted-foreground); }
+.theme-toggle-option { display: inline-grid; place-items: center; min-width: 32px; min-height: 32px; border-radius: 999px; color: inherit; cursor: pointer; }
+.theme-toggle-option:hover { background: var(--sage); color: var(--ink); }
+.theme-toggle-option[aria-checked="true"] { background: var(--primary); color: var(--primary-foreground); }
+.theme-toggle-option:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.product-app .theme-toggle-option, .auth-page .theme-toggle-option { min-height: 32px; }
+.theme-toggle-floating { position: fixed; z-index: 40; top: 12px; right: 12px; }
+@media (max-width: 767px) { .login-form-side .theme-toggle-floating { top: 16px; right: 16px; } }

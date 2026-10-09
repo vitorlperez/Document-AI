@@ -4,6 +4,7 @@ import { Code2, FolderOpen, HardDrive, HelpCircle, LogOut, Menu, Plus, ShieldChe
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Brand } from "./brand";
+import { ThemeToggle } from "./theme-toggle";
 import { SyncBanner, useSyncStatus } from "./sync-status";
 import { ToolsSidebar, type ToolSelection } from "./tools-sidebar";
 import { type Company, type LibraryNode, type LibraryPage, type User, api, companyPath, roleLabel } from "./product/types-and-api";
@@ -104,7 +105,7 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
           <SyncBanner tools={sync.tools} className="mobile-drawer-sync" />
         </div>
         <div className="mobile-drawer-foot">
-          <div className="mobile-drawer-user"><span title={user.email}>{user.email}</span><small>{roleLabel(company.role)}</small></div>
+          <ThemeToggle className="mobile-drawer-theme" /><div className="mobile-drawer-user"><span title={user.email}>{user.email}</span><small>{roleLabel(company.role)}</small></div>
           {user.is_platform_staff && <button type="button" onClick={() => go("/staff")}><ShieldCheck size={18} aria-hidden="true" />Suporte</button>}
           <button type="button" onClick={() => { setOpen(false); onLogout(); }}><LogOut size={18} aria-hidden="true" />Sair</button>
         </div>

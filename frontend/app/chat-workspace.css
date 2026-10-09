@@ -3,7 +3,7 @@
 .library-panels { grid-template-columns: minmax(0, 1fr); }
 .library-panels [hidden], .workspace-panels [hidden] { display: none; }
 .library-space-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
-.library-space-error { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0.5rem; padding: 0.75rem; border: 1px solid rgb(253 164 175); border-radius: 0.5rem; background: rgb(255 241 242 / 0.8); color: rgb(159 18 57); font-size: 0.75rem; line-height: 1.35; }
+.library-space-error { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--danger-border); border-radius: 0.5rem; background: var(--danger-bg); color: var(--danger-fg); font-size: 0.75rem; line-height: 1.35; }
 /* Reading width: log and composer share one centered column. */
 .chat-workspace { --chat-column: 46rem; }
 .chat-workspace .conversation-composer { padding: 10px 24px 12px; }
@@ -18,7 +18,7 @@
 }
 @media (min-width: 768px) {
   .library-panels { grid-template-columns: 240px minmax(0, 1fr); }
-  .library-panels > aside:first-child { border-right: 1px solid #dedfd5; border-bottom: 0; }
+  .library-panels > aside:first-child { border-right: 1px solid var(--line); border-bottom: 0; }
 }
 @media (max-width: 767px) {
   .chat-workspace .workspace-panels { display: flex; flex-direction: column; }
@@ -101,8 +101,8 @@
 @media (prefers-reduced-motion: reduce) { .answer-cite { transition: none; } }
 @media (max-width: 639px) { .answer-lead { font-size: 0.8125rem; } }
 
-.library-sync-dialog { width: min(800px, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); margin: auto; padding: 0; border: 1px solid #dedfd5; border-radius: 12px; color: #182d26; background: #fafaf7; box-shadow: 0 24px 80px #12282040; overflow-y: auto; overscroll-behavior: contain; }
-.library-sync-dialog::backdrop { background: rgb(18 40 32 / 45%); }
+.library-sync-dialog { width: min(800px, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); margin: auto; padding: 0; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--panel); box-shadow: 0 24px 80px var(--shadow-ink); overflow-y: auto; overscroll-behavior: contain; }
+.library-sync-dialog::backdrop { background: var(--scrim); }
 @media (min-width: 768px) {
   .workspace-shell > .workspace-frame:has(.library-panels) { overflow: hidden; }
   .workspace-shell > .workspace-frame > .library-panels { min-height: 0; flex: 1 1 0%; }

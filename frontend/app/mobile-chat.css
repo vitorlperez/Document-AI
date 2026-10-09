@@ -17,7 +17,7 @@
 .mobile-header-new {
   display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
   min-height: 44px; padding: 0 12px; border-radius: 10px;
-  border: 1px solid var(--color-line); background: #fff; color: var(--color-ink);
+  border: 1px solid var(--color-line); background: var(--panel); color: var(--color-ink);
   font-size: 13px; font-weight: 600;
 }
 .mobile-header-new:active { transform: scale(0.97); }
@@ -32,8 +32,8 @@
 }
 .mobile-drawer-head { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; padding: calc(6px + env(safe-area-inset-top)) 8px 6px max(16px, env(safe-area-inset-left)); border-bottom: 1px solid var(--color-line); }
 .mobile-drawer-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 16px; }
-.mobile-drawer-field { display: grid; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted-foreground, #5d6b64); }
-.mobile-drawer-field select { min-height: 44px; width: 100%; padding: 0 12px; border: 1px solid var(--color-line); border-radius: 10px; background: #fff; color: var(--color-ink); font-size: 16px; font-weight: 600; text-transform: none; letter-spacing: 0; }
+.mobile-drawer-field { display: grid; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted-foreground); }
+.mobile-drawer-field select { min-height: 44px; width: 100%; padding: 0 12px; border: 1px solid var(--color-line); border-radius: 10px; background: var(--panel); color: var(--color-ink); font-size: 16px; font-weight: 600; text-transform: none; letter-spacing: 0; }
 .mobile-drawer-nav { display: grid; gap: 2px; }
 .mobile-drawer-nav button, .mobile-drawer-foot button {
   display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 12px;
@@ -48,7 +48,7 @@
 .mobile-drawer-foot { flex-shrink: 0; display: grid; gap: 2px; padding: 8px 12px 12px; border-top: 1px solid var(--color-line); }
 .mobile-drawer-user { display: grid; padding: 4px 12px 8px; }
 .mobile-drawer-user span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
-.mobile-drawer-user small { font-size: 12px; color: var(--color-muted-foreground, #5d6b64); }
+.mobile-drawer-user small { font-size: 12px; color: var(--color-muted-foreground); }
 .mobile-drawer-sync { margin: 0; }
 
 @media (max-width: 767px) {

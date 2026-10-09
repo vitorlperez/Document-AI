@@ -5,6 +5,7 @@ import { CircleAlert, CircleCheck, Code2, FolderOpen, HardDrive, LogOut, ShieldC
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { Brand } from "../brand";
+import { ThemeToggle } from "../theme-toggle";
 import { MobileShellHeader, useIsMobileShell, useVisualViewportHeight } from "../mobile-nav";
 import { type Company, type User, roleLabel, companyPath } from "./types-and-api";
 
@@ -13,7 +14,7 @@ export type ToastAction = { label: string; href: string };
 export function NotificationToast({ message, tone, onDismiss, action }: { message: string; tone: "notice" | "error"; onDismiss: () => void; action?: ToastAction | null }) {
   const error = tone === "error";
   return <div className="pointer-events-none fixed inset-x-4 top-20 z-[70] flex justify-end sm:inset-x-6" aria-live="polite">
-    <div role={error ? "alert" : "status"} className={`pointer-events-auto w-full max-w-md overflow-hidden rounded-lg border bg-white shadow-xl ${error ? "border-rose-200" : "border-emerald-200"}`}>
+    <div role={error ? "alert" : "status"} className={`pointer-events-auto w-full max-w-md overflow-hidden rounded-lg border bg-panel shadow-xl ${error ? "border-rose-200" : "border-emerald-200"}`}>
       <div className="flex items-start gap-3 px-4 py-3.5">{error ? <CircleAlert className="mt-0.5 shrink-0 text-rose-600" size={18} aria-hidden="true" /> : <CircleCheck className="mt-0.5 shrink-0 text-emerald-600" size={18} aria-hidden="true" />}<p className={`min-w-0 flex-1 text-sm leading-5 ${error ? "text-rose-900" : "text-emerald-900"}`}>{message}{action && <> <Link href={action.href} onClick={onDismiss} className="font-semibold underline">{action.label}</Link></>}</p><button onClick={onDismiss} className="-mr-1 -mt-1 rounded-lg p-1.5 text-muted-foreground hover:bg-sage hover:text-ink" aria-label="Fechar aviso"><X size={16} /></button></div>
       {!error && <div key={message} className="h-1 origin-left animate-[toast-progress_6000ms_linear_forwards] bg-emerald-500" />}
     </div>
@@ -39,7 +40,7 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
       <div className="product-header-inner mx-auto max-w-7xl px-4 py-4">
         <div className="product-header-start">
         <button onClick={() => go()} className="product-brand-button" aria-label="Arquivio, ir para a conversa"><Brand compact /></button>
-        <span aria-label={`Organização ativa: ${company.name}`} title={company.name} className="organization-name max-w-36 truncate rounded-full border border-line bg-white px-3 py-2 text-sm font-semibold min-[1100px]:max-w-52">{company.name}</span>
+        <span aria-label={`Organização ativa: ${company.name}`} title={company.name} className="organization-name max-w-36 truncate rounded-full border border-line bg-panel px-3 py-2 text-sm font-semibold min-[1100px]:max-w-52">{company.name}</span>
         <span className="hidden rounded-full bg-sage px-2.5 py-1 text-xs font-semibold capitalize text-muted-foreground min-[1440px]:inline">{roleLabel(company.role)}</span>
         </div>
         <nav data-tour="navigation" aria-label="Navegação principal" className="primary-tabs">
@@ -48,7 +49,7 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
         <div className="product-header-end">
           <span className="hidden text-sm text-muted-foreground min-[1100px]:block">{user.email}</span>
           {user.is_platform_staff && <button onClick={() => onNavigate("/staff")} className="rounded-lg border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-700"><ShieldCheck className="mr-1 inline" size={14} />Suporte</button>}
-          <button onClick={onLogout} aria-label="Sair da conta" title="Sair" className="rounded-lg p-2 text-muted-foreground hover:bg-sage"><LogOut size={18} /></button>
+          <ThemeToggle /><button onClick={onLogout} aria-label="Sair da conta" title="Sair" className="rounded-lg p-2 text-muted-foreground hover:bg-sage"><LogOut size={18} /></button>
         </div>
       </div>
     </header>}

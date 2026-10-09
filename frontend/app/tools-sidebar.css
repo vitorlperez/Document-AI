@@ -12,12 +12,12 @@
 .ts-items { padding: 0 0.5rem 1rem; }
 .tools-sidebar[data-collapsed="true"] .ts-items { padding-inline: 0; justify-items: center; }
 .ts-row { display: flex; align-items: center; gap: 0.625rem; width: 100%; padding: 0.375rem 0.625rem; border-radius: 0.5rem; text-align: left; font-size: 0.875rem; color: var(--color-ink); cursor: pointer; transition: background-color 150ms ease-out; }
-.ts-row:hover:not(:disabled) { background: rgb(255 255 255 / 0.8); }
+.ts-row:hover:not(:disabled) { background: color-mix(in srgb, var(--panel) 80%, transparent); }
 .ts-row:disabled, .ts-icon:disabled { cursor: default; }
 .ts-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
 .ts-logo { display: grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 0.5rem; background: var(--color-sage-selected); color: var(--color-primary); }
 .ts-icon { position: relative; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 0.5rem; cursor: pointer; transition: background-color 150ms ease-out; }
-.ts-icon:hover:not(:disabled) { background: rgb(255 255 255 / 0.8); }
+.ts-icon:hover:not(:disabled) { background: color-mix(in srgb, var(--panel) 80%, transparent); }
 .ts-dot { position: absolute; right: 2px; top: 2px; display: grid; place-items: center; border-radius: 999px; background: var(--color-sage); }
 .ts-foot { display: grid; place-items: center; padding: 0.25rem 0 1rem; }
 .ts-empty { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.5rem 1rem; font-size: 0.8125rem; line-height: 1.4; color: var(--color-muted-foreground); }
@@ -78,7 +78,7 @@
 @media (min-width: 768px) {
   .library-panels { transition: grid-template-columns 200ms cubic-bezier(0.33, 1, 0.68, 1); }
   .library-panels.library-collapsed { grid-template-columns: 60px minmax(0, 1fr); }
-  .library-panels > aside:first-child { border-right: 1px solid #dedfd5; border-bottom: 0; overflow-x: hidden; }
+  .library-panels > aside:first-child { border-right: 1px solid var(--line); border-bottom: 0; overflow-x: hidden; }
   .library-panels .library-tool-list { max-height: none; }
   .library-sidebar-toggle { display: grid; }
   .library-sidebar-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.25rem; }

@@ -5,7 +5,7 @@ import { type LibraryNode } from "./types-and-api";
 
 /** "Nova conversa" lives only in the chat top bar (the mobile shell has its own in the header). */
 export function NewConversationButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
-  return <button data-tour="new-conversation" type="button" onClick={onClick} disabled={disabled} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-xs font-medium text-ink hover:bg-sage focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"><Plus size={15} aria-hidden="true" />Nova conversa</button>;
+  return <button data-tour="new-conversation" type="button" onClick={onClick} disabled={disabled} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-line bg-panel px-3 text-xs font-medium text-ink hover:bg-sage focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"><Plus size={15} aria-hidden="true" />Nova conversa</button>;
 }
 
 export function LoadingIndicator({ label, className = "" }: { label: string; className?: string }) {
@@ -13,7 +13,7 @@ export function LoadingIndicator({ label, className = "" }: { label: string; cla
 }
 
 export function Pagination({ value, loading, onChange }: { value: { page: number; pages: number; total: number }; loading: boolean; onChange: (page: number) => void }) {
-  return <nav aria-label="Paginação da biblioteca" className="mt-4 flex items-center justify-between gap-3 border-t border-line px-2 py-3 text-xs text-muted-foreground"><span>Página {value.page} de {value.pages} · {value.total} {value.total === 1 ? "item" : "itens"}</span><div className="flex gap-1"><button disabled={loading || value.page <= 1} onClick={() => onChange(value.page - 1)} aria-label="Página anterior" className="rounded-lg border border-line bg-white px-2.5 py-2 disabled:opacity-40">←</button><button disabled={loading || value.page >= value.pages} onClick={() => onChange(value.page + 1)} aria-label="Próxima página" className="rounded-lg border border-line bg-white px-2.5 py-2 disabled:opacity-40">→</button></div></nav>;
+  return <nav aria-label="Paginação da biblioteca" className="mt-4 flex items-center justify-between gap-3 border-t border-line px-2 py-3 text-xs text-muted-foreground"><span>Página {value.page} de {value.pages} · {value.total} {value.total === 1 ? "item" : "itens"}</span><div className="flex gap-1"><button disabled={loading || value.page <= 1} onClick={() => onChange(value.page - 1)} aria-label="Página anterior" className="rounded-lg border border-line bg-panel px-2.5 py-2 disabled:opacity-40">←</button><button disabled={loading || value.page >= value.pages} onClick={() => onChange(value.page + 1)} aria-label="Próxima página" className="rounded-lg border border-line bg-panel px-2.5 py-2 disabled:opacity-40">→</button></div></nav>;
 }
 
 export function LibrarySidebarHeader({ canManage, onConnect, onRefresh, collapsed = false, onToggle }: { canManage: boolean; onConnect: () => void; onRefresh: () => void; collapsed?: boolean; onToggle?: () => void }) {
@@ -22,5 +22,5 @@ export function LibrarySidebarHeader({ canManage, onConnect, onRefresh, collapse
 }
 
 export function LibraryBreadcrumbs({ path, onOpenPath }: { path: LibraryNode[]; onOpenPath: (nodes: LibraryNode[]) => void }) {
-  return <nav className="flex flex-wrap items-center gap-1 px-3 pb-3 text-xs" aria-label="Caminho das fontes"><button onClick={() => onOpenPath([])} className={`rounded-md px-2 py-1.5 ${path.length === 0 ? "bg-white font-semibold text-ink shadow-sm" : "text-primary hover:bg-sage"}`}>Biblioteca</button>{path.map((node, index) => <span key={node.id} className="flex items-center"><ChevronRight size={13} className="text-muted-foreground" /><button onClick={() => onOpenPath(path.slice(0, index + 1))} className={`max-w-24 truncate rounded-md px-1.5 py-1.5 ${index === path.length - 1 ? "bg-white font-semibold text-ink shadow-sm" : "text-primary hover:bg-sage"}`}>{node.name}</button></span>)}</nav>;
+  return <nav className="flex flex-wrap items-center gap-1 px-3 pb-3 text-xs" aria-label="Caminho das fontes"><button onClick={() => onOpenPath([])} className={`rounded-md px-2 py-1.5 ${path.length === 0 ? "bg-panel font-semibold text-ink shadow-sm" : "text-primary hover:bg-sage"}`}>Biblioteca</button>{path.map((node, index) => <span key={node.id} className="flex items-center"><ChevronRight size={13} className="text-muted-foreground" /><button onClick={() => onOpenPath(path.slice(0, index + 1))} className={`max-w-24 truncate rounded-md px-1.5 py-1.5 ${index === path.length - 1 ? "bg-panel font-semibold text-ink shadow-sm" : "text-primary hover:bg-sage"}`}>{node.name}</button></span>)}</nav>;
 }

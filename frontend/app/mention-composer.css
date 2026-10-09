@@ -1,15 +1,15 @@
 .mention-composer { position: relative; }
 .mention-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 6px 8px; }
-.mention-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; min-height: 44px; padding: 0 0 0 9px; border-radius: 5px; background: var(--sage, #eef3ea); color: var(--ink, #243b35); font-size: 12px; }
+.mention-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; min-height: 44px; padding: 0 0 0 9px; border-radius: 5px; background: var(--sage); color: var(--ink); font-size: 12px; }
 .mention-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mention-chip button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 4px; cursor: pointer; }
-.mention-chip button:hover { background: rgb(21 45 36 / .1); }
+.mention-chip button:hover { background: color-mix(in srgb, var(--ink) 12%, transparent); }
 .mention-chip button:focus-visible, .mention-options button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.mention-options { position: absolute; bottom: calc(100% + 10px); left: 0; z-index: 20; width: min(420px, calc(100vw - 40px)); max-height: 260px; overflow: auto; padding: 6px; border: 1px solid var(--line, #dedfd5); border-radius: 8px; background: white; box-shadow: 0 12px 30px rgb(21 45 36 / .12); }
+.mention-options { position: absolute; bottom: calc(100% + 10px); left: 0; z-index: 20; width: min(420px, calc(100vw - 40px)); max-height: 260px; overflow: auto; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 12px 30px var(--shadow-ink); }
 .mention-options button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px; border-radius: 5px; text-align: left; cursor: pointer; }
-.mention-options button:hover, .mention-options button[aria-selected="true"] { background: var(--sage, #eef3ea); }
+.mention-options button:hover, .mention-options button[aria-selected="true"] { background: var(--sage); }
 .mention-options button span { min-width: 0; }
 .mention-options strong, .mention-options small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mention-options strong { font-size: 13px; font-weight: 600; }
-.mention-options small, .mention-options p { color: var(--muted-foreground, #69746e); font-size: 11px; }
+.mention-options small, .mention-options p { color: var(--muted-foreground); font-size: 11px; }
 .mention-options p { padding: 10px; }

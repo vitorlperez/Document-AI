@@ -2,12 +2,13 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Brand } from "./brand";
 import "./legal.css";
+import { ThemeToggle } from "./theme-toggle";
 
 export function LegalLayout({ title, children }: { title: string; children: ReactNode }) {
   return <div className="legal-page">
     <header className="legal-header legal-shell">
       <Link href="/" aria-label="Arquivio, página inicial"><Brand /></Link>
-      <nav aria-label="Páginas legais"><Link href="/privacidade">Privacidade</Link><Link href="/termos">Termos de uso</Link></nav>
+      <ThemeToggle /><nav aria-label="Páginas legais"><Link href="/privacidade">Privacidade</Link><Link href="/termos">Termos de uso</Link></nav>
     </header>
     <main className="legal-main legal-shell" id="conteudo">
       <p className="legal-eyebrow">Arquivio · Informações legais</p>
