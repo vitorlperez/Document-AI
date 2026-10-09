@@ -10,6 +10,8 @@ import { Brand } from "./brand";
 import { hostedLoginQuery, safeInvitationReturnTo } from "./product/auth-navigation.mjs";
 import { oauthErrorMessage } from "./provider-labels";
 import { API_BASE, SESSION_PATH, type Screen, type Company, type User, ApiError, api, isUuid, isInvitationToken, messageFor, companyPath } from "./product/types-and-api";
+import { OrganizationPicker } from "./product/org-picker";
+import { writeActiveOrganizationId } from "./product/active-organization";
 import { Loading, SignIn, InvitationAcceptance, Onboarding, InvalidCompany } from "./product/auth-screens";
 import { NotificationToast, Shell, type ToastAction } from "./product/shell";
 import { CompanyDashboard } from "./product/chat-workspace";
@@ -54,7 +56,7 @@ export function ProductApp({ screen }: { screen: Screen }) {
         if (controller.signal.aborted) return;
         setOnboarding({ ...progress, organizationId: params.companyId });
       }
-      if (screen === "home" && memberships[0] && !resetToken) router.replace(companyPath(memberships[0].id));
+      if (screen === "home" && memberships.length === 1 && !resetToken) router.replace(companyPath(memberships[0].id));
     } catch (caught) {
       if (!controller.signal.aborted && !(caught instanceof ApiError && caught.status === 401) && !background) setError(messageFor(caught));
     } finally { if (!controller.signal.aborted && !background) setLoading(false); }
@@ -92,14 +94,17 @@ export function ProductApp({ screen }: { screen: Screen }) {
     return () => window.clearTimeout(timeout);
   }, [alertMessage, dismissAlert, error]);
   const company = useMemo(() => companies.find((item) => item.id === params.companyId) ?? null, [companies, params.companyId]);
-  const goCompany = (id: string) => { const suffix = pathname.endsWith("/team") ? "/team" : pathname.endsWith("/integrations") ? "/integrations" : pathname.endsWith("/library") ? "/library" : pathname.endsWith("/developer") ? "/developer" : ""; router.push(companyPath(id, suffix)); };
+  const goCompany = (id: string) => { writeActiveOrganizationId(id); const suffix = pathname.endsWith("/team") ? "/team" : pathname.endsWith("/integrations") ? "/integrations" : pathname.endsWith("/library") ? "/library" : pathname.endsWith("/developer") ? "/developer" : ""; router.push(companyPath(id, suffix)); };
   const beginLogin = (screenHint: "sign-in" | "sign-up") => { window.location.assign(`${API_BASE}/auth/login?${hostedLoginQuery(screenHint, loginReturnTo)}`); };
   const logout = async () => { try { const { redirect_url } = await api<{ redirect_url: string }>("/auth/logout", { method: "POST" }); setUser(null); setCompanies([]); window.location.replace(redirect_url); } catch (caught) { setError(messageFor(caught)); } };
+  // Persist the active organization whenever one is resolved (deep link, picker or switcher).
+  useEffect(() => { if (company) writeActiveOrganizationId(company.id); }, [company]);
   if (loading && screen === "home" && pathname === "/") return <LandingPage onLogin={() => router.push("/login")} onSignUp={() => router.push("/login?mode=sign-up")} />;
   if (loading) return <Loading />;
   if (!user || (pathname === "/login" && Boolean(resetToken))) return <>{screen === "home" && pathname === "/" ? <LandingPage onLogin={() => router.push("/login")} onSignUp={() => router.push("/login?mode=sign-up")} /> : <SignIn onLogin={() => beginLogin("sign-in")} passwordReset={searchParams.get("password_reset") === "1"} initialMode={searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in"} resetToken={resetToken} returnTo={loginReturnTo} />}{error && <div role="alert" className="session-error"><CircleAlert size={20} /><div><p>{error}</p><button onClick={() => { void loadSession(); }}>Tentar novamente</button></div></div>}</>;
   if (screen === "invitation") return <InvitationAcceptance token={params.token} onAccepted={(organizationId) => router.replace(companyPath(organizationId))} />;
-  if (screen === "home" && companies.length > 0) return <Loading />;
+  if (screen === "home" && companies.length === 1) return <Loading />;
+  if (screen === "home" && companies.length > 1) return <OrganizationPicker user={user} companies={companies} onChoose={goCompany} onLogout={() => { void logout(); }} />;
   if (screen === "home") return <Onboarding user={user} onCreated={(created) => { setCompanies((items) => [...items, created]); router.push(companyPath(created.id)); }} />;
   if (screen === "staff") return <StaffCenter user={user} onBack={() => router.push(companies[0] ? companyPath(companies[0].id) : "/")} />;
   if (!isUuid(params.companyId) || !company) return <InvalidCompany companies={companies} onChoose={goCompany} />;
