@@ -9,8 +9,8 @@ Decisões e limites: `specs/adr/ADR-0019-clickup-connector.md`.
 3. Copie **Client ID** e **Client Secret**.
 4. Gere a chave de cifra do provider (terminal seguro):
    `python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'`
-5. Defina em **API e worker** (mesmos valores nos dois serviços): `CLICKUP_OAUTH_CLIENT_ID`, `CLICKUP_OAUTH_CLIENT_SECRET`, `CLICKUP_OAUTH_REDIRECT_URI`, `CLICKUP_TOKEN_ENCRYPTION_KEY`. Opcional: `CLICKUP_INCLUDE_CLOSED_TASKS=true`.
-6. Redeploy de API e worker. Sem essas variáveis, o botão "Conectar" do ClickUp devolve "integration unavailable" (503) e nada mais muda.
+5. Na **API**, defina `CLICKUP_OAUTH_CLIENT_ID`, `CLICKUP_OAUTH_CLIENT_SECRET`, `CLICKUP_OAUTH_REDIRECT_URI` e `CLICKUP_TOKEN_ENCRYPTION_KEY`. No **worker**, a chave `CLICKUP_TOKEN_ENCRYPTION_KEY` deve ser exatamente a mesma da API. Opcional: `CLICKUP_INCLUDE_CLOSED_TASKS=true`. O sync lê o access token salvo; client ID, secret e redirect URI são exigidos por `authorization_url`/`exchange_code` na API, não pelo caminho de descoberta/indexação do worker. [Autenticação ClickUp](https://developer.clickup.com/docs/authentication).
+6. Na ativação inicial, publique os serviços que receberam configuração. Sem as variáveis OAuth na API, o botão "Conectar" devolve "integration unavailable" (503). Para corrigir somente uma chave divergente no worker de uma conexão existente, preserve a chave da API, aplique-a no worker sem deploy automático e faça redeploy controlado somente do worker; valide Settings, banco, Redis, Celery e a descriptografia antes de repetir o sync. Não gere outra chave nem reconecte o usuário para corrigir essa divergência.
 
 ## 2. Cota de documentos (decidir antes do piloto)
 
@@ -45,3 +45,11 @@ Critério para subir: depois da primeira sincronização, `embedding_tokens` do 
 | Sincronização lenta/pausando | teto de 100 req/min; o `RemoteHttp` espera `Retry-After` e retoma |
 | Tarefas apagadas no ClickUp continuam citáveis | uma Lista devolve 403/404 em toda sincronização (o sistema não declara remoção de tarefas enquanto alguma lista está ilegível); corrija o acesso do usuário conector à Lista ou tire-a da seleção |
 | Fonte vira "Reconectar" | token revogado (401); reconectar com a mesma conta |
+
+## 5. Chave divergente entre API e worker
+
+Se a API abre a conexão salva e o worker falha com `credential unavailable` antes de consultar o ClickUp, compare as chaves somente em memória e registre apenas igualdade booleana. Preserve a chave que abre a conexão na API; altere somente `CLICKUP_TOKEN_ENCRYPTION_KEY` no worker. Nunca passe o valor em argumentos CLI, logs ou arquivos.
+
+Antes do redeploy, confira filas e tarefas ativas/reservadas/agendadas. Depois do startup, comprove no container novo a descriptografia da mesma fonte. Repita no máximo um sync normal do espaço solicitado, usando o fluxo existente com bloqueio/unique index e histórico novo; não reutilize ou apague os jobs falhados, não force rebuild e não dispare o scheduler. Se aparecer outra falha, registre a causa antes de ampliar mudanças.
+
+Caso de produção de 08/10/2026: [evidência sanitizada](../../TASK/evidence/clickup-sync-20261008-investigation.json). Os watch paths atuais de Railway cobrem `/backend/**` ou `/frontend/**`, além de `/railway.json` e `/railway.toml`; alterações somente em docs/TASK não devem redeployar serviços. Confirme o estado remoto após o push.

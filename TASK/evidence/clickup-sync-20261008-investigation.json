@@ -1,6 +1,6 @@
 {
   "date": "2026-10-08 America/Sao_Paulo",
-  "result": "confirmed_root_cause",
+  "result": "corrected_and_real_sync_ready",
   "root_cause": "API and Worker have different CLICKUP_TOKEN_ENCRYPTION_KEY values. The same saved ClickUp credential decrypts on API but fails on Worker before ClickUp requests.",
   "runtime_evidence": {
     "API": {
@@ -102,7 +102,640 @@
     "remote_Worker_exit": 0,
     "temporary_ssh_key_revoked_and_local_files_removed": true
   },
-  "production_changes": "None: read-only investigation; no variables, deployments, jobs or customer data altered.",
   "recommended_correction": "Preserve API key; use the same value on Worker; perform controlled Worker-only redeploy; verify decryption before retrying sync.",
-  "skills": "inline [oc-builder, oc-blackbox, oc-stamp]"
+  "skills": "inline [oc-builder, oc-blackbox, oc-stamp]",
+  "initial_investigation_production_changes": "None: read-only investigation; no variables, deployments, jobs or customer data altered.",
+  "production_changes": "Worker CLICKUP_TOKEN_ENCRYPTION_KEY aligned to existing API value; controlled Worker-only redeploy; one normal sync of the originally requested space. Docs/evidence only in repository.",
+  "remediation": {
+    "before": {
+      "Frontend": {
+        "watch_paths": [
+          "/frontend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "18cbbdd1-9996-4d0b-af4b-3ef375fbc483",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      "API": {
+        "watch_paths": [
+          "/backend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "f8311dd2-0bed-4154-8245-2d8b0887444d",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      "Worker": {
+        "watch_paths": [
+          "/backend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "67b3c265-f0c4-4c1f-b7a0-b4dc53e5ee10",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      "Beat": {
+        "watch_paths": [
+          "/backend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "59db34fa-e2bf-4bb4-b2f9-213eddf10e4e",
+            "status": "SUCCESS"
+          }
+        ]
+      }
+    },
+    "keys_equal_before": false,
+    "worker_before": {
+      "exit_code": 0,
+      "result": {
+        "deployment": "67b3c265-f0c4-4c1f-b7a0-b4dc53e5ee10",
+        "settings_valid": true,
+        "production": true,
+        "oauth_client_id_present": false,
+        "oauth_client_secret_present": false,
+        "oauth_redirect_present": false,
+        "active_document_limit": 1500,
+        "db_select1": true,
+        "source_connected": true,
+        "same_source_decrypts": false,
+        "decrypt_error_class": "GoogleOAuthInvalid",
+        "original_jobs": [
+          {
+            "id": "a3cfbdf5-0e6c-4549-925d-ef89f6b517e2",
+            "workspace_folder_id": "b07f2b51-81d8-43d2-abed-dd98c5ddeaaa",
+            "status": "failed",
+            "error_code": "sync_failed",
+            "manual_run_id": null,
+            "created_at": "2026-10-09 02:10:39.826000+00:00",
+            "started_at": "2026-10-09 02:11:50.075762+00:00",
+            "completed_at": "2026-10-09 02:11:50.134628+00:00"
+          },
+          {
+            "id": "d5ad65af-4420-4277-8e95-92a906e283f8",
+            "workspace_folder_id": "b07f2b51-81d8-43d2-abed-dd98c5ddeaaa",
+            "status": "failed",
+            "error_code": "sync_failed",
+            "manual_run_id": "77ad10c0-31fb-4626-87d8-3f789f60d137",
+            "created_at": "2026-10-09 02:12:51.780383+00:00",
+            "started_at": "2026-10-09 02:14:02.019710+00:00",
+            "completed_at": "2026-10-09 02:14:02.071692+00:00"
+          }
+        ],
+        "target_source_active_jobs": 0,
+        "target_folder_documents_by_status": {},
+        "target_source_folders": 1,
+        "selection_count": 1,
+        "original_user_active_member": true,
+        "redis_ping": true,
+        "default_queue_depth": 0,
+        "celery_workers": 1,
+        "celery_pong": true,
+        "celery_active_count": 0,
+        "celery_reserved_count": 0,
+        "celery_scheduled_count": 0,
+        "reconcile_registered": true
+      }
+    },
+    "api_before": {
+      "exit_code": 0,
+      "result": {
+        "deployment": "f8311dd2-0bed-4154-8245-2d8b0887444d",
+        "settings_valid": true,
+        "production": true,
+        "oauth_client_id_present": true,
+        "oauth_client_secret_present": true,
+        "oauth_redirect_present": true,
+        "active_document_limit": 1500,
+        "db_select1": true,
+        "source_connected": true,
+        "same_source_decrypts": true,
+        "original_jobs": [
+          {
+            "id": "a3cfbdf5-0e6c-4549-925d-ef89f6b517e2",
+            "workspace_folder_id": "b07f2b51-81d8-43d2-abed-dd98c5ddeaaa",
+            "status": "failed",
+            "error_code": "sync_failed",
+            "manual_run_id": null,
+            "created_at": "2026-10-09 02:10:39.826000+00:00",
+            "started_at": "2026-10-09 02:11:50.075762+00:00",
+            "completed_at": "2026-10-09 02:11:50.134628+00:00"
+          },
+          {
+            "id": "d5ad65af-4420-4277-8e95-92a906e283f8",
+            "workspace_folder_id": "b07f2b51-81d8-43d2-abed-dd98c5ddeaaa",
+            "status": "failed",
+            "error_code": "sync_failed",
+            "manual_run_id": "77ad10c0-31fb-4626-87d8-3f789f60d137",
+            "created_at": "2026-10-09 02:12:51.780383+00:00",
+            "started_at": "2026-10-09 02:14:02.019710+00:00",
+            "completed_at": "2026-10-09 02:14:02.071692+00:00"
+          }
+        ],
+        "target_source_active_jobs": 0,
+        "target_folder_documents_by_status": {},
+        "target_source_folders": 1,
+        "selection_count": 1,
+        "original_user_active_member": true,
+        "redis_ping": true,
+        "default_queue_depth": 0,
+        "celery_workers": 1,
+        "celery_pong": true,
+        "celery_active_count": 0,
+        "celery_reserved_count": 0,
+        "celery_scheduled_count": 0,
+        "reconcile_registered": true
+      }
+    },
+    "configuration": {
+      "keys_equal_after": true,
+      "API_key_preserved": true,
+      "changed_variable_names": {
+        "Frontend": [],
+        "API": [],
+        "Worker": [
+          "CLICKUP_TOKEN_ENCRYPTION_KEY"
+        ],
+        "Beat": [],
+        "Postgres": [],
+        "Redis": []
+      },
+      "skip_deploys": true
+    },
+    "after_redeploy": {
+      "Frontend": {
+        "watch_paths": [
+          "/frontend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "18cbbdd1-9996-4d0b-af4b-3ef375fbc483",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      "API": {
+        "watch_paths": [
+          "/backend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "f8311dd2-0bed-4154-8245-2d8b0887444d",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      "Worker": {
+        "watch_paths": [
+          "/backend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "0a095beb-5015-4299-a6df-fd56b5c6aca1",
+            "status": "BUILDING"
+          },
+          {
+            "id": "67b3c265-f0c4-4c1f-b7a0-b4dc53e5ee10",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      "Beat": {
+        "watch_paths": [
+          "/backend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "59db34fa-e2bf-4bb4-b2f9-213eddf10e4e",
+            "status": "SUCCESS"
+          }
+        ]
+      }
+    },
+    "worker_after": {
+      "exit_code": 0,
+      "result": {
+        "deployment": "0a095beb-5015-4299-a6df-fd56b5c6aca1",
+        "settings_valid": true,
+        "production": true,
+        "oauth_client_id_present": false,
+        "oauth_client_secret_present": false,
+        "oauth_redirect_present": false,
+        "active_document_limit": 1500,
+        "db_select1": true,
+        "source_connected": true,
+        "same_source_decrypts": true,
+        "original_jobs": [
+          {
+            "id": "a3cfbdf5-0e6c-4549-925d-ef89f6b517e2",
+            "workspace_folder_id": "b07f2b51-81d8-43d2-abed-dd98c5ddeaaa",
+            "status": "failed",
+            "error_code": "sync_failed",
+            "manual_run_id": null,
+            "created_at": "2026-10-09 02:10:39.826000+00:00",
+            "started_at": "2026-10-09 02:11:50.075762+00:00",
+            "completed_at": "2026-10-09 02:11:50.134628+00:00"
+          },
+          {
+            "id": "d5ad65af-4420-4277-8e95-92a906e283f8",
+            "workspace_folder_id": "b07f2b51-81d8-43d2-abed-dd98c5ddeaaa",
+            "status": "failed",
+            "error_code": "sync_failed",
+            "manual_run_id": "77ad10c0-31fb-4626-87d8-3f789f60d137",
+            "created_at": "2026-10-09 02:12:51.780383+00:00",
+            "started_at": "2026-10-09 02:14:02.019710+00:00",
+            "completed_at": "2026-10-09 02:14:02.071692+00:00"
+          }
+        ],
+        "target_source_active_jobs": 0,
+        "target_folder_documents_by_status": {},
+        "target_source_folders": 1,
+        "selection_count": 1,
+        "original_user_active_member": true,
+        "redis_ping": true,
+        "default_queue_depth": 0,
+        "celery_workers": 1,
+        "celery_pong": true,
+        "celery_active_count": 0,
+        "celery_reserved_count": 0,
+        "celery_scheduled_count": 0,
+        "reconcile_registered": true
+      }
+    },
+    "retry": {
+      "exit_code": 0,
+      "result": {
+        "job_id": "ae102419-e625-44b1-a94e-f37b7154c452",
+        "run_id": "ef47d94e-985f-4038-8324-25c63b83b830",
+        "task_id": "b4b58821-b20d-4a77-9159-c425edd9fc9c",
+        "normal_incremental": true,
+        "new_jobs": 1,
+        "dispatches": 1,
+        "same_transaction_duplicate_reuses_job": true,
+        "original_failed_jobs_retained": true,
+        "scope_same_source_and_organization": true,
+        "preexisting_documents": 0,
+        "no_email_call": true
+      }
+    },
+    "job_observation_1": {
+      "exit_code": 0,
+      "result": {
+        "jobs": [
+          {
+            "id": "ae102419-e625-44b1-a94e-f37b7154c452",
+            "status": "ready",
+            "error_code": null,
+            "created_at": "2026-10-09 02:25:43.817087+00:00",
+            "started_at": "2026-10-09 02:25:51.387269+00:00",
+            "completed_at": "2026-10-09 02:25:51.430833+00:00",
+            "manual_run_id": "ef47d94e-985f-4038-8324-25c63b83b830"
+          },
+          {
+            "id": "d5ad65af-4420-4277-8e95-92a906e283f8",
+            "status": "failed",
+            "error_code": "sync_failed",
+            "created_at": "2026-10-09 02:12:51.780383+00:00",
+            "started_at": "2026-10-09 02:14:02.019710+00:00",
+            "completed_at": "2026-10-09 02:14:02.071692+00:00",
+            "manual_run_id": "77ad10c0-31fb-4626-87d8-3f789f60d137"
+          },
+          {
+            "id": "a3cfbdf5-0e6c-4549-925d-ef89f6b517e2",
+            "status": "failed",
+            "error_code": "sync_failed",
+            "created_at": "2026-10-09 02:10:39.826000+00:00",
+            "started_at": "2026-10-09 02:11:50.075762+00:00",
+            "completed_at": "2026-10-09 02:11:50.134628+00:00",
+            "manual_run_id": null
+          }
+        ],
+        "run_status": "ready",
+        "progress": {
+          "status": "ready",
+          "stage": "done",
+          "total": 12,
+          "processed": 12,
+          "failed": 0,
+          "skipped": 0,
+          "docs_ready": 12,
+          "error_code": null,
+          "mode": "incremental"
+        },
+        "documents_by_status": {
+          "indexed": 12
+        },
+        "indexed_with_vectors": 12,
+        "document_error_counts": {},
+        "new_jobs_since_original": 1,
+        "original_jobs_still_failed": true,
+        "original_run_still_failed": true,
+        "source_connected": true,
+        "last_synced_set": true,
+        "default_queue_depth": 0
+      }
+    },
+    "proxy_callback": {
+      "exit_code": 1,
+      "error_output_present": true,
+      "safe_output": null
+    },
+    "final_variable_check": {
+      "keys_equal": true,
+      "API_preserved": true,
+      "other_services_preserved": true,
+      "changed_variable_names": {
+        "Frontend": [],
+        "API": [],
+        "Worker": [
+          "CLICKUP_TOKEN_ENCRYPTION_KEY"
+        ],
+        "Beat": [],
+        "Postgres": [],
+        "Redis": []
+      }
+    },
+    "final_deployments": {
+      "Frontend": {
+        "watch_paths": [
+          "/frontend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "18cbbdd1-9996-4d0b-af4b-3ef375fbc483",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      "API": {
+        "watch_paths": [
+          "/backend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "f8311dd2-0bed-4154-8245-2d8b0887444d",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      "Worker": {
+        "watch_paths": [
+          "/backend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "0a095beb-5015-4299-a6df-fd56b5c6aca1",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      "Beat": {
+        "watch_paths": [
+          "/backend/**",
+          "/railway.json",
+          "/railway.toml"
+        ],
+        "active": [
+          {
+            "id": "59db34fa-e2bf-4bb4-b2f9-213eddf10e4e",
+            "status": "SUCCESS"
+          }
+        ]
+      }
+    },
+    "proxy_callback_diagnostic": {
+      "exit_code": 0,
+      "result": {
+        "error_class": "AssertionError",
+        "checks_so_far": {
+          "settings_valid": true,
+          "callback_exact": true,
+          "proxy_headers_disabled": true,
+          "frontend_dns_exactly_trusted": true,
+          "trusted_peer_count": 2,
+          "http": {
+            "readiness": 200,
+            "session": 200,
+            "callback": 401,
+            "old_callback": 404,
+            "login": 200,
+            "public_empty_password": 422
+          }
+        }
+      }
+    },
+    "proxy_callback_final": {
+      "exit_code": 0,
+      "result": {
+        "settings_valid": true,
+        "callback_exact": true,
+        "proxy_headers_disabled": true,
+        "frontend_dns_exactly_trusted": true,
+        "trusted_peer_count": 2,
+        "http": {
+          "readiness": 200,
+          "session": 200,
+          "callback": 401,
+          "old_callback": 404,
+          "login": 200,
+          "public_empty_password": 400,
+          "public_forged_empty_password": 400,
+          "direct_api_forged": 403
+        },
+        "http_assertions_passed": 8,
+        "no_email_or_oauth_exchange": true
+      }
+    },
+    "worker_deployment": {
+      "id": "0a095beb-5015-4299-a6df-fd56b5c6aca1",
+      "status": "SUCCESS",
+      "code_commit": "2112c8aec84a2aede800a36879f02f27984e0daa",
+      "from_source": false,
+      "only_worker": true
+    },
+    "startup_logs": {
+      "log_records": 35,
+      "worker_ready_count": 1,
+      "settings_failure_count": 0,
+      "traceback_count": 0,
+      "credential_unavailable_count": 0,
+      "reconcile_received_count": 0,
+      "reconcile_succeeded_count": 0,
+      "reconcile_retry_count": 0,
+      "http_clickup_status_counts": {},
+      "exception_class_counts": {}
+    },
+    "sync_logs": {
+      "log_records": 48,
+      "worker_ready_count": 1,
+      "settings_failure_count": 0,
+      "traceback_count": 0,
+      "credential_unavailable_count": 0,
+      "reconcile_received_count": 1,
+      "reconcile_succeeded_count": 1,
+      "reconcile_retry_count": 0,
+      "http_clickup_status_counts": {
+        "200": 8
+      },
+      "exception_class_counts": {}
+    },
+    "database_deployments": {
+      "Postgres": {
+        "deployment": "7b69431c-bd48-4f6f-8dbf-3c64ea93ae42",
+        "preserved": true,
+        "status": "SUCCESS"
+      },
+      "Redis": {
+        "deployment": "13ff0f63-47e2-47af-a741-7ceafb10f8b7",
+        "preserved": true,
+        "status": "SUCCESS"
+      }
+    },
+    "oauth_requirement": {
+      "worker_parameters_added": false,
+      "missing_client_id_secret_redirect_do_not_block_real_sync": true,
+      "verified_real_sync_without_parameters": true,
+      "code_locations": [
+        "backend/app/integrations/clickup.py:73 (_configured, called only by authorization_url/exchange_code)",
+        "backend/app/integrations/clickup.py:171 (_request uses saved access token)",
+        "backend/app/integrations/registry.py:117 (ClickUpProviderAdapter)",
+        "backend/app/ingestion/tasks.py:295 (provider and saved credentials)"
+      ],
+      "official_reference": "https://developer.clickup.com/docs/authentication"
+    },
+    "observation": {
+      "bounded": true,
+      "new_job_db_observations": 1,
+      "terminal_status": "ready",
+      "new_normal_attempts": 1,
+      "automatic_retries": 0,
+      "raw_logs_persisted": false,
+      "personal_document_content_persisted": false
+    },
+    "diagnostic_adjustment": {
+      "first_proxy_probe_exit": 1,
+      "cause": "Test email under .invalid rejected by EmailStr with HTTP 422 before password validation; diagnostic fixture corrected to example.com, empty password retained. No app/config change.",
+      "sanitized_diagnostic_record": "proxy_callback_diagnostic",
+      "final_http_assertions_passed": 8
+    },
+    "scope": {
+      "API_key_changed": false,
+      "user_reconnected": false,
+      "credentials_rotated": false,
+      "other_sources_dispatched": false,
+      "email_sent": false,
+      "documents_deleted": 0,
+      "security_code_changed": false,
+      "application_code_changed": false,
+      "scheduler_dispatched": false,
+      "key_or_token_in_argv_logs_files": false,
+      "temporary_ssh_private_key_memory_only": true
+    },
+    "pending": [
+      "ClickUp app OAuth allowlist was not inspected/changed; no new authorization flow required. Existing connection succeeded in real sync.",
+      "Existing private-network trust assumption and lack of frontend Railway healthcheck remain documented; no new security code or deployment.",
+      "MCP service not deployed and Beat DATABASE_URL absent as before; no changes needed for this sync."
+    ],
+    "commands": [
+      {
+        "cmd": "graphify query \"ClickUp sync worker configuration deployment Railway encryption key\"",
+        "exitCode": 0
+      },
+      {
+        "cmd": "Railway GraphQL read-only service/watch-path/variables snapshots; values captured only in process memory",
+        "exitCode": 0
+      },
+      {
+        "cmd": "Railway SSH in-memory key via Paramiko: API/Worker preflight.py (read-only DB, Settings, Redis, Celery, same-source decryption)",
+        "exitCode": 0
+      },
+      {
+        "cmd": "Railway GraphQL variableCollectionUpsert: Worker CLICKUP_TOKEN_ENCRYPTION_KEY only; replace=false; skipDeploys=true; value only in memory/HTTPS body",
+        "exitCode": 0
+      },
+      {
+        "cmd": "railway deployment redeploy --service Worker --yes --json (official CLI 5.64.1, existing deployment)",
+        "exitCode": 0
+      },
+      {
+        "cmd": "Railway SSH Worker: preflight.py after startup",
+        "exitCode": 0
+      },
+      {
+        "cmd": "Railway SSH Worker: retry.py using existing request_run, same-transaction duplicate reuse check and exactly one Celery dispatch",
+        "exitCode": 0
+      },
+      {
+        "cmd": "Railway SSH Worker: monitor.py bounded, one read-only observation to terminal",
+        "exitCode": 0
+      },
+      {
+        "cmd": "railway logs --service Worker --lines 250 --json 0a095beb-5015-4299-a6df-fd56b5c6aca1 (capture only in memory; persist counts)",
+        "exitCode": 0
+      },
+      {
+        "cmd": "Railway SSH API: proxy.py initial .invalid fixture",
+        "exitCode": 1
+      },
+      {
+        "cmd": "Railway SSH API: proxy.py corrected fixture, 8/8 HTTP assertions",
+        "exitCode": 0
+      },
+      {
+        "cmd": "Railway GraphQL final variables/deployment/DB deployment verification",
+        "exitCode": 0
+      },
+      {
+        "cmd": "python3 diagnostic evidence verification: 25/25 assertions; python3 -m json.tool; git diff --check",
+        "exitCode": 0
+      },
+      {
+        "cmd": "In-memory scan of three changed artifacts against actual configured secret values",
+        "exitCode": 0
+      },
+      {
+        "cmd": "Railway GraphQL sshPublicKeyDelete and sshPublicKeys absence verification; private key never written to disk",
+        "exitCode": 0
+      }
+    ],
+    "observed_utc": "2026-10-09T02:28:30.142095+00:00",
+    "skills": "inline [oc-builder, oc-stamp]",
+    "verification": {
+      "assertions_passed": 25,
+      "assertions_failed": 0,
+      "secret_value_scan_passed": true,
+      "temporary_ssh_key_revoked_and_absence_verified": true,
+      "temporary_ssh_private_key_ever_written_to_disk": false
+    }
+  }
 }
