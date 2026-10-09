@@ -37,7 +37,7 @@
       "tcp_proxy_count": 0,
       "active": [
         {
-          "id": "0774aa91-4b74-4afb-8f3e-718c316a7ddb",
+          "id": "67b3c265-f0c4-4c1f-b7a0-b4dc53e5ee10",
           "status": "SUCCESS",
           "commit": "2112c8aec84a2aede800a36879f02f27984e0daa"
         }
@@ -71,7 +71,7 @@
     },
     "login": {
       "status": 200,
-      "verification": "hydrated anonymous Chromium at 1280px and 390px; see anonymous_browser"
+      "verification": "fresh hydrated anonymous Chromium at 1280/390px"
     },
     "password_empty_public": {
       "status": 400,
@@ -85,8 +85,8 @@
       "status": 403
     }
   },
-  "observed_at_utc": "2026-10-09T01:48:50.997489+00:00",
-  "scope": "independent verification after h-l7; no new deployment or secret rotation",
+  "observed_at_utc": "2026-10-09T02:01:44.111047+00:00",
+  "scope": "pane-502 controlled Worker-only redeploy and docs publication; no secret rotation",
   "anonymous_browser": {
     "anonymous": true,
     "submittedForms": false,
@@ -125,13 +125,6 @@
     "source_runtime": "railway",
     "secret_runtime_minimum_32": true
   },
-  "private_ingress_bypass": {
-    "private_frontend_status": 400,
-    "empty_password_rejected": true,
-    "spoofed_ip_bucket_before": 0,
-    "spoofed_ip_bucket_after": 1,
-    "oauth_or_email": false
-  },
   "settings_runtime": {
     "API": {
       "valid": true,
@@ -140,14 +133,42 @@
       "effective_uvicorn_proxy_headers": false
     },
     "Worker": {
-      "valid": false,
-      "process_exit": 1,
-      "missing": [
-        "AUTH_PROXY_SECRET",
-        "AUTH_TRUSTED_PROXY_CIDRS"
-      ],
-      "recent_log_occurrences": 9,
-      "configured_variables_prepared": true
+      "valid": true,
+      "process_exit": 0,
+      "production": true,
+      "proof": {
+        "settings_valid": true,
+        "production": true,
+        "database_config_present": true,
+        "redis_config_present": true,
+        "workos_config_present": true,
+        "workos_redirect_present": false,
+        "hmac_present_minimum32": true,
+        "cidrs_host_only": true,
+        "cidr_count": 2,
+        "deployment_id": "67b3c265-f0c4-4c1f-b7a0-b4dc53e5ee10",
+        "database_select1": true,
+        "diagnostic_job_absent": true,
+        "redis_ping": true,
+        "celery_ping_count": 1,
+        "celery_ping_healthy": true,
+        "tasks_registered": true,
+        "active_count": 0,
+        "reserved_count": 0,
+        "diagnostic_task_id": "90d832f6-23f1-424c-9780-39f18247ffa5",
+        "diagnostic_job_id": "d827d67b-47a1-4836-a1c4-ffe1b2f1acfb",
+        "safe_task": "reconcile with DB-proven nonexistent UUID; claim rowcount 0 exits before providers; no schedule/purge"
+      },
+      "logs": {
+        "logs_exit": 0,
+        "diagnostic_task_id": "90d832f6-23f1-424c-9780-39f18247ffa5",
+        "task_received": true,
+        "task_succeeded": true,
+        "task_failed": false,
+        "settings_contract_errors": 0,
+        "traceback_count": 0,
+        "worker_ready_count": 1
+      }
     },
     "Beat": {
       "direct_settings_valid": false,
@@ -163,14 +184,85 @@
   },
   "repository_publish": {
     "main_repo_triggers_enabled": true,
-    "watch_paths": [],
-    "target": "docs/f212-production-verification",
-    "main_push_deferred_to_prevent_frontend_ip_change": true
+    "watch_paths": {
+      "Frontend": [
+        "/frontend/**",
+        "/railway.json",
+        "/railway.toml"
+      ],
+      "API": [
+        "/backend/**",
+        "/railway.json",
+        "/railway.toml"
+      ],
+      "Worker": [
+        "/backend/**",
+        "/railway.json",
+        "/railway.toml"
+      ],
+      "Beat": [
+        "/backend/**",
+        "/railway.json",
+        "/railway.toml"
+      ]
+    },
+    "target": "main",
+    "main_push_deferred_to_prevent_frontend_ip_change": false,
+    "remote_push_verification": "pending final publication check"
   },
   "diagnostic_cleanup": {
     "temporary_http_listener_restored": true,
     "loopback_inspector_closed_verified": true,
     "temporary_ssh_key_revoked": true,
     "temporary_private_key_removed": true
+  },
+  "history_h_l8": {
+    "observed_at_utc": "2026-10-09T01:48:50.997489+00:00",
+    "worker_before": {
+      "valid": false,
+      "process_exit": 1,
+      "missing": [
+        "AUTH_PROXY_SECRET",
+        "AUTH_TRUSTED_PROXY_CIDRS"
+      ],
+      "recent_log_occurrences": 9,
+      "configured_variables_prepared": true
+    },
+    "private_ingress_observation": {
+      "private_frontend_status": 400,
+      "empty_password_rejected": true,
+      "spoofed_ip_bucket_before": 0,
+      "spoofed_ip_bucket_after": 1,
+      "oauth_or_email": false
+    }
+  },
+  "trust_boundary_assessment": {
+    "external_bypass_demonstrated": false,
+    "private_test_caller": "explicitly trusted API container in same Railway environment",
+    "same_hmac_configured_api_worker_beat": true,
+    "new_risk_demonstrated": false,
+    "limitation": "private frontend signs supplied X-Real-IP; HMAC does not constrain already privileged trusted services",
+    "unproved_future_risks": [
+      "untrusted private service",
+      "externally controllable SSRF",
+      "internal compromise"
+    ],
+    "proportional_remediation": "restrict environment and secret access; review private ingress/isolation before adding untrusted components",
+    "new_security_code_deployed": false
+  },
+  "controlled_intervention": {
+    "service": "Worker",
+    "previous_deployment": "0774aa91-4b74-4afb-8f3e-718c316a7ddb",
+    "candidate_deployment": "67b3c265-f0c4-4c1f-b7a0-b4dc53e5ee10",
+    "before_active_tasks": 0,
+    "before_reserved_tasks": 0,
+    "prepared_settings_valid": true,
+    "config_changed": false,
+    "secret_rotated": false,
+    "rollback_available_checked": true,
+    "rollback_executed": false,
+    "rollback_reason": "not required; candidate SUCCESS and runtime/task proofs passed",
+    "data_mutations": "diagnostic reconcile candidate UUID absent; claim affected zero rows, session rollback; no customer data changed",
+    "security_code_changed": false
   }
 }
