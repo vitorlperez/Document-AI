@@ -701,3 +701,83 @@ def test_production_custom_login_requires_trust_configuration(auth_api, monkeypa
     response = client.post("/auth/password", headers={"origin": "http://app.example.test"}, json={"email": "person@example.com", "password": "test"})
     assert response.status_code == 503
     assert calls == []
+
+
+class ResendRejectingDelivery:
+    """Real ResendInvitationDelivery with the Resend HTTP call rejected like the sandbox sender does."""
+
+    def __init__(self, monkeypatch) -> None:
+        from resend.request import Request
+
+        from app.organizations.delivery import ResendInvitationDelivery
+
+        self.real = ResendInvitationDelivery(api_key="re_test_not_a_secret", from_email="Acme <onboarding@resend.dev>")
+        monkeypatch.setattr(Request, "make_request", self._reject)
+
+    @staticmethod
+    def _reject(request, url):
+        self = request
+        self._response_status_code = 403
+        self._response_headers = {}
+        return {
+            "statusCode": 403,
+            "name": "validation_error",
+            "message": "You can only send testing emails to your own email address.",
+        }
+
+    def send(self, *, recipient: str, invitation_url: str) -> None:
+        self.real.send(recipient=recipient, invitation_url=invitation_url)
+
+
+def test_delivery_provider_rejection_returns_503_and_leaves_no_invitation(auth_api, monkeypatch) -> None:
+    client, factory, gateway, _ = auth_api
+    client.app.state.invitation_delivery = ResendRejectingDelivery(monkeypatch)
+    callback(client, gateway, code="owner-login", email="owner@example.test", subject="owner")
+    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+
+    response = client.post(
+        f"/organizations/{organization_id}/members/invitations",
+        json={"email": "invitee@acme.co", "role": "member"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "invitation unavailable"}
+    with factory() as session:
+        assert session.scalar(select(func.count()).select_from(MembershipInvitation)) == 0
+
+
+def test_owner_role_invitation_is_rejected_as_validation_error(auth_api) -> None:
+    client, _, gateway, delivery = auth_api
+    callback(client, gateway, code="owner-login", email="owner@example.test", subject="owner")
+    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+
+    response = client.post(
+        f"/organizations/{organization_id}/members/invitations",
+        json={"email": "invitee@acme.co", "role": "owner"},
+    )
+
+    assert response.status_code == 422
+    assert delivery.messages == []
+
+
+def test_delivery_transport_failure_returns_503(auth_api, monkeypatch) -> None:
+    import requests
+    from resend.request import Request
+
+    from app.organizations.delivery import ResendInvitationDelivery
+
+    def refuse(request, url):
+        raise requests.ConnectionError("dns failure")
+
+    client, _, gateway, _ = auth_api
+    monkeypatch.setattr(Request, "make_request", refuse)
+    client.app.state.invitation_delivery = ResendInvitationDelivery(api_key="re_test_not_a_secret", from_email="a@b.co")
+    callback(client, gateway, code="owner-login", email="owner@example.test", subject="owner")
+    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+
+    response = client.post(
+        f"/organizations/{organization_id}/members/invitations",
+        json={"email": "invitee@acme.co", "role": "member"},
+    )
+
+    assert response.status_code == 503

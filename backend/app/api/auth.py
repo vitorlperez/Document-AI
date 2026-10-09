@@ -85,7 +85,7 @@ class OrganizationCreateInput(BaseModel):
 
 class InvitationCreateInput(BaseModel):
     email: EmailStr
-    role: MembershipRole
+    role: Literal[MembershipRole.ADMIN, MembershipRole.MEMBER]
 
 
 class MembershipRoleUpdateInput(BaseModel):
