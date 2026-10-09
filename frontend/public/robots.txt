@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /product
+Disallow: /staff
+
+Sitemap: https://www.arquivio.com.br/sitemap.xml

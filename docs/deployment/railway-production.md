@@ -88,6 +88,23 @@ Confira a fronteira de IP e as opções de e-mail em [Login WorkOS](../../backen
 
 Adicione os endereços públicos ao frontend e à API. Para domínio próprio, crie os registros CNAME e TXT indicados pela Railway e aguarde a emissão TLS. Confirme que `/api/health/ready` no endereço do frontend retorna 200. Não gere domínio público para worker, banco ou Redis. Se configurar `API_UPSTREAM_URL` com o endereço privado da API e a porta correta, a API pode deixar de ter domínio público após os callbacks OAuth serem transferidos para `/api` no frontend.
 
+## Domínio arquivio.com.br (HostGator DNS)
+
+Topologia: frontend em `https://www.arquivio.com.br` (origem canônica única = `PUBLIC_APP_URL`; `CookieOriginMiddleware` e CORS aceitam só essa origem), a raiz `arquivio.com.br` redireciona 301 para o `www` (redirecionamento do cPanel, pois a HostGator não aceita CNAME na raiz) e a API continua privada via `API_UPSTREAM_URL` (sem `api.` público). Registros `*.mail.arquivio.com.br` e `_dmarc` (Resend) não são alterados.
+
+Troca de envs após o DNS responder (Frontend e API/Worker, nessa ordem; `PUBLIC_APP_URL` e redirect URIs em API+Frontend+Worker):
+
+```text
+PUBLIC_APP_URL=https://www.arquivio.com.br
+WORKOS_REDIRECT_URI=https://www.arquivio.com.br/api/auth/callback
+GOOGLE_OAUTH_REDIRECT_URI=https://www.arquivio.com.br/api/data-sources/google/oauth/callback
+MICROSOFT_OAUTH_REDIRECT_URI=https://www.arquivio.com.br/api/data-sources/onedrive/oauth/callback
+NOTION_OAUTH_REDIRECT_URI=https://www.arquivio.com.br/api/data-sources/notion/oauth/callback
+CLICKUP_OAUTH_REDIRECT_URI=https://www.arquivio.com.br/api/data-sources/clickup/oauth/callback
+```
+
+Cadastre os mesmos callbacks (e o logout/reset URL `https://www.arquivio.com.br/login`) em WorkOS, Google, Microsoft, Notion e ClickUp antes de trocar as envs, mantendo os antigos até validar.
+
 ## 5. Atualizar os provedores externos
 
 Depois de HTTPS funcionar, cadastre os callbacks exatos:
