@@ -1,0 +1,176 @@
+{
+  "configuration": {
+    "same_secret_all_four": true,
+    "secret_minimum_32": true,
+    "production_all_four": true,
+    "frontend_ip_source": "railway",
+    "cidrs_same_python_services": true,
+    "uvicorn_proxy_headers_config": "false",
+    "callback_exact": true,
+    "beat_database_configured": false
+  },
+  "deployments": {
+    "Frontend": {
+      "healthcheck_path": null,
+      "tcp_proxy_count": 0,
+      "active": [
+        {
+          "id": "18cbbdd1-9996-4d0b-af4b-3ef375fbc483",
+          "status": "SUCCESS",
+          "commit": "2112c8aec84a2aede800a36879f02f27984e0daa"
+        }
+      ]
+    },
+    "API": {
+      "healthcheck_path": "/health/ready",
+      "tcp_proxy_count": 0,
+      "active": [
+        {
+          "id": "f8311dd2-0bed-4154-8245-2d8b0887444d",
+          "status": "SUCCESS",
+          "commit": "2112c8aec84a2aede800a36879f02f27984e0daa"
+        }
+      ]
+    },
+    "Worker": {
+      "healthcheck_path": null,
+      "tcp_proxy_count": 0,
+      "active": [
+        {
+          "id": "0774aa91-4b74-4afb-8f3e-718c316a7ddb",
+          "status": "SUCCESS",
+          "commit": "2112c8aec84a2aede800a36879f02f27984e0daa"
+        }
+      ]
+    },
+    "Beat": {
+      "healthcheck_path": null,
+      "tcp_proxy_count": 0,
+      "active": [
+        {
+          "id": "59db34fa-e2bf-4bb4-b2f9-213eddf10e4e",
+          "status": "SUCCESS",
+          "commit": "2112c8aec84a2aede800a36879f02f27984e0daa"
+        }
+      ]
+    }
+  },
+  "http": {
+    "readiness": {
+      "status": 200
+    },
+    "session": {
+      "status": 200
+    },
+    "callback": {
+      "status": 401,
+      "api_detail": "authentication required"
+    },
+    "old_callback": {
+      "status": 404
+    },
+    "login": {
+      "status": 200,
+      "verification": "hydrated anonymous Chromium at 1280px and 390px; see anonymous_browser"
+    },
+    "password_empty_public": {
+      "status": 400,
+      "stops_before_workos": true
+    },
+    "password_empty_public_forged": {
+      "status": 400,
+      "stops_before_workos": true
+    },
+    "direct_api_forged": {
+      "status": 403
+    }
+  },
+  "observed_at_utc": "2026-10-09T01:48:50.997489+00:00",
+  "scope": "independent verification after h-l7; no new deployment or secret rotation",
+  "anonymous_browser": {
+    "anonymous": true,
+    "submittedForms": false,
+    "viewports": [
+      {
+        "width": 1280,
+        "status": 200,
+        "email": true,
+        "password": true,
+        "sso": true,
+        "alerts": 0,
+        "horizontalOverflow": false,
+        "referrerHeader": "no-referrer",
+        "referrerMeta": "no-referrer",
+        "pageErrors": 0
+      },
+      {
+        "width": 390,
+        "status": 200,
+        "email": true,
+        "password": true,
+        "sso": true,
+        "alerts": 0,
+        "horizontalOverflow": false,
+        "referrerHeader": "no-referrer",
+        "referrerMeta": "no-referrer",
+        "pageErrors": 0
+      }
+    ]
+  },
+  "network_peers": {
+    "frontend_private_dns_count": 2,
+    "dns_hosts_exactly_trusted": true,
+    "actual_tcp_source_trusted": true,
+    "upstream_readiness": 200,
+    "source_runtime": "railway",
+    "secret_runtime_minimum_32": true
+  },
+  "private_ingress_bypass": {
+    "private_frontend_status": 400,
+    "empty_password_rejected": true,
+    "spoofed_ip_bucket_before": 0,
+    "spoofed_ip_bucket_after": 1,
+    "oauth_or_email": false
+  },
+  "settings_runtime": {
+    "API": {
+      "valid": true,
+      "production": true,
+      "schema_head": "20261001_0027",
+      "effective_uvicorn_proxy_headers": false
+    },
+    "Worker": {
+      "valid": false,
+      "process_exit": 1,
+      "missing": [
+        "AUTH_PROXY_SECRET",
+        "AUTH_TRUSTED_PROXY_CIDRS"
+      ],
+      "recent_log_occurrences": 9,
+      "configured_variables_prepared": true
+    },
+    "Beat": {
+      "direct_settings_valid": false,
+      "missing": [
+        "DATABASE_URL"
+      ],
+      "scheduler_import_does_not_construct_settings": true,
+      "proxy_variables_prepared": true
+    },
+    "MCP": {
+      "deployed_service_exists": false
+    }
+  },
+  "repository_publish": {
+    "main_repo_triggers_enabled": true,
+    "watch_paths": [],
+    "target": "docs/f212-production-verification",
+    "main_push_deferred_to_prevent_frontend_ip_change": true
+  },
+  "diagnostic_cleanup": {
+    "temporary_http_listener_restored": true,
+    "loopback_inspector_closed_verified": true,
+    "temporary_ssh_key_revoked": true,
+    "temporary_private_key_removed": true
+  }
+}
