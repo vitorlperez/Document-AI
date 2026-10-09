@@ -85,7 +85,7 @@
       "status": 403
     }
   },
-  "observed_at_utc": "2026-10-09T02:01:44.111047+00:00",
+  "observed_at_utc": "2026-10-09T02:02:56.706114+00:00",
   "scope": "pane-502 controlled Worker-only redeploy and docs publication; no secret rotation",
   "anonymous_browser": {
     "anonymous": true,
@@ -118,19 +118,24 @@
     ]
   },
   "network_peers": {
-    "frontend_private_dns_count": 2,
-    "dns_hosts_exactly_trusted": true,
-    "actual_tcp_source_trusted": true,
-    "upstream_readiness": 200,
-    "source_runtime": "railway",
-    "secret_runtime_minimum_32": true
+    "readiness": 200,
+    "frontend_dns_count": 2,
+    "dns_exactly_trusted": true,
+    "actual_tcp_source_trusted": true
   },
   "settings_runtime": {
     "API": {
       "valid": true,
       "production": true,
       "schema_head": "20261001_0027",
-      "effective_uvicorn_proxy_headers": false
+      "effective_uvicorn_proxy_headers": false,
+      "post_worker_intervention": {
+        "frontend_dns_count": 2,
+        "frontend_dns_exactly_trusted": true,
+        "settings_valid": true,
+        "callback_exact": true,
+        "proxy_headers_disabled": true
+      }
     },
     "Worker": {
       "valid": true,
@@ -208,13 +213,46 @@
     },
     "target": "main",
     "main_push_deferred_to_prevent_frontend_ip_change": false,
-    "remote_push_verification": "pending final publication check"
+    "remote_push_verification": "d3352c523714341454203d8890b0c1d01fb70c45 reachable origin/main; all four deployments SKIPPED for docs commit; active IDs unchanged",
+    "verified_docs_commit": "d3352c523714341454203d8890b0c1d01fb70c45",
+    "docs_ancestor_commits": [
+      "ed0aaf6",
+      "6469c85"
+    ],
+    "skipped_deployments": {
+      "Frontend": {
+        "id": "a4da204f-a330-4353-8bb5-901a18886a3f",
+        "status": "SKIPPED",
+        "commit": "d3352c523714341454203d8890b0c1d01fb70c45",
+        "reason": null
+      },
+      "API": {
+        "id": "4dae38cc-c458-479c-8be5-f928eec18d0d",
+        "status": "SKIPPED",
+        "commit": "d3352c523714341454203d8890b0c1d01fb70c45",
+        "reason": null
+      },
+      "Worker": {
+        "id": "4a66e9af-6f06-437f-a92d-fb03fa45fbb7",
+        "status": "SKIPPED",
+        "commit": "d3352c523714341454203d8890b0c1d01fb70c45",
+        "reason": null
+      },
+      "Beat": {
+        "id": "830ac675-5de0-4ae2-812d-877b001b2566",
+        "status": "SKIPPED",
+        "commit": "d3352c523714341454203d8890b0c1d01fb70c45",
+        "reason": null
+      }
+    }
   },
   "diagnostic_cleanup": {
     "temporary_http_listener_restored": true,
     "loopback_inspector_closed_verified": true,
     "temporary_ssh_key_revoked": true,
-    "temporary_private_key_removed": true
+    "temporary_private_key_removed": true,
+    "temporary_registered_key_absent": true,
+    "new_listener_or_inspector_opened": false
   },
   "history_h_l8": {
     "observed_at_utc": "2026-10-09T01:48:50.997489+00:00",
