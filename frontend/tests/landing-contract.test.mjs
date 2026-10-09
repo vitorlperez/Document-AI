@@ -29,7 +29,7 @@ const literals = [
   "02 / DELIMITE", "Escolha onde buscar.", "Consulte todo o conteúdo indexado ou restrinja a pergunta a uma ferramenta ou pasta específica.",
   "03 / CONFIRA", "Volte aos documentos.", "Veja as fontes apresentadas com a resposta e abra os originais para verificar o contexto completo.",
   "COMO FUNCIONA", "Seus arquivos continuam onde estão.", "As respostas ficam mais perto.",
-  "Conecte as fontes", "Escolha materiais compartilháveis no Google Drive, OneDrive, Notion ou SharePoint. As conexões são de leitura e preservam os originais.",
+  "Conecte as fontes", "Escolha materiais compartilháveis no Google Drive, OneDrive, Notion, SharePoint ou ClickUp. As conexões são de leitura e preservam os originais.",
   "Aguarde a sincronização", "O Arquivio processa o conteúdo selecionado em segundo plano. A consulta considera o que já foi sincronizado e indexado.",
   "Pergunte com contexto", "Defina o escopo, faça sua pergunta e confira os documentos que sustentam a resposta.",
   "Todos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais compartilháveis com a equipe.",
