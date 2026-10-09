@@ -377,7 +377,7 @@
   .landing-page [data-reveal], .landing-page [data-reveal] :is(li, article) { opacity: 1 !important; transform: none !important; }
 }
 
-.dark .landing-page {
+.landing-page:is(.dark *) {
   --lp-bg: #0c1411;
   --lp-fg: #e6eee9;
   --lp-fg-muted: #a3b5ac;
@@ -394,5 +394,5 @@
   --lp-focus: #f0b45a;
   --lp-shadow-shell: 0 1px 2px #00000040, 0 24px 60px -28px #000000a0;
 }
-.dark .landing-closing .landing-button { border-color: #fff; background: #fff; color: #14392f; }
-.dark .landing-closing .landing-button:hover, .dark .landing-page ::selection { color: #142b25; }
+.landing-closing .landing-button:is(.dark *) { border-color: #fff; background: #fff; color: #14392f; }
+.landing-closing .landing-button:is(.dark *):hover, .landing-page:is(.dark *) ::selection { color: #142b25; }
