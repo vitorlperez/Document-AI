@@ -726,6 +726,18 @@
       {
         "cmd": "Railway GraphQL sshPublicKeyDelete and sshPublicKeys absence verification; private key never written to disk",
         "exitCode": 0
+      },
+      {
+        "cmd": "git commit -- pathspec for the three docs/evidence paths; git push origin HEAD:main",
+        "exitCode": 0
+      },
+      {
+        "cmd": "Fresh Railway API + deployment list: 4/4 active preserved and 4/4 docs SKIPPED; git ls-remote main==HEAD",
+        "exitCode": 0
+      },
+      {
+        "cmd": "Railway sshPublicKeys query: zero pane504 temporary keys remaining",
+        "exitCode": 0
       }
     ],
     "observed_utc": "2026-10-09T02:28:30.142095+00:00",
@@ -736,6 +748,63 @@
       "secret_value_scan_passed": true,
       "temporary_ssh_key_revoked_and_absence_verified": true,
       "temporary_ssh_private_key_ever_written_to_disk": false
+    },
+    "publication": {
+      "remote_main_equals_HEAD": true,
+      "commit": "4410dfac15048501feb5e5d3544533d5fb6039b2",
+      "services": {
+        "Frontend": {
+          "active_deployment": "18cbbdd1-9996-4d0b-af4b-3ef375fbc483",
+          "active_preserved": true,
+          "active_status": "SUCCESS",
+          "docs_deployment": "8b776a1d-1146-4f28-ac2a-021441a60c84",
+          "docs_status": "SKIPPED",
+          "watch_paths": [
+            "/frontend/**",
+            "/railway.json",
+            "/railway.toml"
+          ]
+        },
+        "API": {
+          "active_deployment": "f8311dd2-0bed-4154-8245-2d8b0887444d",
+          "active_preserved": true,
+          "active_status": "SUCCESS",
+          "docs_deployment": "17b30961-e10a-4ef6-9795-90e03428327b",
+          "docs_status": "SKIPPED",
+          "watch_paths": [
+            "/backend/**",
+            "/railway.json",
+            "/railway.toml"
+          ]
+        },
+        "Worker": {
+          "active_deployment": "0a095beb-5015-4299-a6df-fd56b5c6aca1",
+          "active_preserved": true,
+          "active_status": "SUCCESS",
+          "docs_deployment": "2d029a64-0f77-4046-ae1c-23272150de42",
+          "docs_status": "SKIPPED",
+          "watch_paths": [
+            "/backend/**",
+            "/railway.json",
+            "/railway.toml"
+          ]
+        },
+        "Beat": {
+          "active_deployment": "59db34fa-e2bf-4bb4-b2f9-213eddf10e4e",
+          "active_preserved": true,
+          "active_status": "SUCCESS",
+          "docs_deployment": "50439aaf-fa99-4d3f-abe7-5eef2c0725f8",
+          "docs_status": "SKIPPED",
+          "watch_paths": [
+            "/backend/**",
+            "/railway.json",
+            "/railway.toml"
+          ]
+        }
+      },
+      "observed_utc": "2026-10-09T02:29:31.626586+00:00",
+      "includes_investigation_commit": "a1a50692821833db625816780d4d633b06d1e404",
+      "followup_note": "This publication proof is committed as docs; its own remote/skip verification is reported in final handoff to avoid recursive evidence commits."
     }
   }
 }
