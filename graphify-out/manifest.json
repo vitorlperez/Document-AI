@@ -606,9 +606,9 @@
     "semantic_hash": "4e31dade4749ba890710908cfaadc40c"
   },
   "frontend/app/landing-page.tsx": {
-    "mtime": 1791551042.2694955,
-    "seen": 1791551422.0461388,
-    "ast_hash": "dcc04334b70efb94cfd1fbe1c2d88a78",
+    "mtime": 1791557663.1794233,
+    "seen": 1791557766.526461,
+    "ast_hash": "ec3db7010e24b05d1bd00d91e72ccfda",
     "semantic_hash": ""
   },
   "frontend/app/layout.tsx": {

@@ -174,7 +174,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
         <a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, início"><Brand /></a>
         <nav className="landing-desktop-nav" aria-label="Navegação principal"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a></nav>
         <div className="landing-header-actions"><ThemeToggle /><button className="landing-login" onClick={onLogin}>Entrar</button><button className="landing-button landing-button-small" onClick={onSignUp}>Criar conta <ArrowUpRight size={16} /></button></div>
-        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={23} /></summary><nav aria-label="Navegação móvel"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a><button onClick={onLogin}>Entrar</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></nav></details>
+        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={23} /></summary><nav aria-label="Navegação móvel"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a><div className="landing-mobile-theme"><span>Aparência</span><ThemeToggle /></div><button onClick={onLogin}>Entrar</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></nav></details>
       </header>
 
       <main id="landing-main">

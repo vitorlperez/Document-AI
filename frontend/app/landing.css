@@ -302,6 +302,7 @@
   .landing-mobile-menu[open] nav { animation: lp-menu-in var(--lp-disclosure) var(--lp-ease) both; }
   .landing-mobile-menu nav :is(a, button) { min-height: 44px; display: flex; align-items: center; padding: 10px 12px; border: 0; border-radius: var(--lp-radius-sm); background: transparent; color: var(--lp-fg); text-align: left; font-size: 15px; font-weight: 500; }
   .landing-mobile-menu nav :is(a, button):hover { background: var(--lp-surface-muted); }
+  .landing-mobile-theme { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 6px 12px; color: var(--lp-fg); font-size: 15px; font-weight: 500; }
   .landing-mobile-menu nav .landing-mobile-signup { justify-content: center; margin-top: 6px; background: var(--lp-accent-solid); color: #fff; font-weight: 600; }
   .landing-mobile-menu nav .landing-mobile-signup:hover { background: var(--lp-accent-hover); }
 }
