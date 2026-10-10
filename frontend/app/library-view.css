@@ -73,3 +73,6 @@
 .dark .library-card[data-kind="slides"] { --kind: #f5c17a; --kind-bg: #3a2a10; }
 .dark .library-card[data-kind="image"] { --kind: #c4b5fd; --kind-bg: #2d2150; }
 .dark .library-card-badge[data-indexed] { background: #123a2b; color: #a7f3d0; }
+.dark .library-card { border-color: var(--card-edge); background: var(--surface-raised); }
+.dark .library-card:hover, .dark .library-card:focus-within { border-color: color-mix(in srgb, var(--color-primary) 45%, var(--card-edge)); }
+.dark .library-card-spin { background: var(--surface-raised); }
