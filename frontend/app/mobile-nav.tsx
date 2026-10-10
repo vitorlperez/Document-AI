@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Brand } from "./brand";
 import { ThemeToggle } from "./theme-toggle";
+import { NotificationBell } from "./product/notification-bell";
 import { SyncBanner, useSyncStatus } from "./sync-status";
 import { ToolsSidebar, type ToolSelection } from "./tools-sidebar";
 import { type Company, type LibraryNode, type LibraryPage, type User, api, companyPath, roleLabel } from "./product/types-and-api";
@@ -83,6 +84,7 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
       <button ref={menuButtonRef} type="button" data-tour="navigation" className="mobile-header-button" onClick={() => setOpen(true)} aria-label="Abrir menu" aria-expanded={open} aria-controls="mobile-drawer" aria-haspopup="dialog"><Menu size={22} aria-hidden="true" /></button>
       <div className="mobile-header-title"><span>{company.name}</span></div>
       <button type="button" data-tour="new-conversation" className="mobile-header-new" onClick={newConversation}><Plus size={16} aria-hidden="true" />Nova conversa</button>
+      <NotificationBell key={company.id} company={company} />
     </header>
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent side="left" showCloseButton={false} motionProfile="arquivio" id="mobile-drawer" className="mobile-drawer" aria-describedby="mobile-drawer-description" onCloseAutoFocus={(event) => { event.preventDefault(); menuButtonRef.current?.focus({ preventScroll: true }); }}>
