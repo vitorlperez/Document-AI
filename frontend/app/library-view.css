@@ -81,3 +81,10 @@
 .library-panels > main { padding-bottom: 0; }
 .library-foot { position: sticky; bottom: 0; z-index: 1; display: flex; flex-shrink: 0; align-items: center; justify-content: center; min-height: 2.5rem; padding: 0.375rem 1rem; margin-top: 0.5rem; border-top: 1px solid var(--color-line); background: var(--panel); text-align: center; font-size: 0.875rem; color: var(--color-muted-foreground); }
 .library-foot p { margin: 0; }
+
+/* Dark: header controls and search share the raised surface and edge of the folder/file cards. */
+.dark .library-head > button, .dark .library-count, .dark .library-seg, .dark #library-search { border: 1px solid var(--card-edge); background: var(--surface-raised); }
+.dark .library-head > button:disabled { opacity: 0.4; }
+.dark .library-head > button:not(:disabled):hover, .dark .library-head > button:focus-visible, .dark #library-search:hover { border-color: color-mix(in srgb, var(--color-primary) 45%, var(--card-edge)); background: var(--surface-raised); }
+.dark .library-seg button[aria-checked="true"] { background: var(--color-sage-selected); box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 45%, var(--card-edge)); }
+.dark .library-seg button:not([aria-checked="true"]):hover { background: color-mix(in srgb, var(--color-primary) 12%, var(--surface-raised)); }
