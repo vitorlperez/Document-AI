@@ -75,6 +75,9 @@
   --focus-ring: #1c6052;
   --shadow-ink: #243b3540;
   --scrim: rgb(18 40 32 / 0.45);
+  --surface-raised: #ffffff;
+  --card-edge: #eceee7;
+  --dialog-edge: #dedfd5;
 }
 
 .dark {
@@ -119,6 +122,9 @@
   --line: #2a3a34;
   --line-soft: #202d28;
   --panel: #141f1b;
+  --surface-raised: #1b2b25;
+  --card-edge: #3a5047;
+  --dialog-edge: #3a5047;
   --header-bg: #0e1613;
   --heading-bg: #1a2823;
   --evidence-bg: #121c18;
@@ -172,6 +178,9 @@
   --color-line-soft: var(--line-soft);
   --color-forest-hover: var(--primary-hover);
   --color-panel: var(--panel);
+  --color-raised: var(--surface-raised);
+  --color-card-edge: var(--card-edge);
+  --color-dialog-edge: var(--dialog-edge);
   --color-brand: var(--brand);
   --color-background: var(--background);
   --color-foreground: var(--foreground);

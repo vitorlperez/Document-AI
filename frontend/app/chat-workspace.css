@@ -101,7 +101,7 @@
 @media (prefers-reduced-motion: reduce) { .answer-cite { transition: none; } }
 @media (max-width: 639px) { .answer-lead { font-size: 0.8125rem; } }
 
-.library-sync-dialog { width: min(800px, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); margin: auto; padding: 0; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--panel); box-shadow: 0 24px 80px var(--shadow-ink); overflow-y: auto; overscroll-behavior: contain; }
+.library-sync-dialog { width: min(800px, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); margin: auto; padding: 0; border: 1px solid var(--dialog-edge); border-radius: 12px; color: var(--ink); background: var(--surface-raised); box-shadow: 0 24px 80px var(--shadow-ink); overflow-y: auto; overscroll-behavior: contain; }
 .library-sync-dialog::backdrop { background: var(--scrim); }
 @media (min-width: 768px) {
   .workspace-shell > .workspace-frame:has(.library-panels) { overflow: hidden; }
