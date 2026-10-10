@@ -126,9 +126,9 @@
     "semantic_hash": "00c9133b23d561f315cac33160558216"
   },
   "backend/app/api/ingestion.py": {
-    "mtime": 1791495814.9496684,
-    "seen": 1791495846.618155,
-    "ast_hash": "28e14b7c5c08dab8ef670d9eb76d0894",
+    "mtime": 1791641720.9436264,
+    "seen": 1791641753.575686,
+    "ast_hash": "6238f9912e0923a02ba30da91e62ef1a",
     "semantic_hash": ""
   },
   "backend/app/api/integrations.py": {
@@ -2154,9 +2154,9 @@
     "semantic_hash": ""
   },
   "backend/tests/api/test_chat_composer_context_api.py": {
-    "mtime": 1790710298.5542364,
-    "seen": 1791495846.618251,
-    "ast_hash": "487feb94b8955922281f27861383d550",
+    "mtime": 1791641720.9440298,
+    "seen": 1791641753.5757482,
+    "ast_hash": "222904a60aa8e68b09f77aee11b43920",
     "semantic_hash": ""
   },
   "specs/work-items/chat-composer-context.md": {
