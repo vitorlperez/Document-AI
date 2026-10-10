@@ -112,7 +112,7 @@ class ClickUpProviderAdapter:
     capabilities = ProviderCapabilities(
         supports_oauth=True,
         supports_hierarchical_scopes=True,
-        supports_incremental_sync=False,
+        supports_incremental_sync=True,
     )
 
     def __init__(self, settings: Settings):
@@ -138,6 +138,9 @@ class ClickUpProviderAdapter:
             force_full=force_full,
             progress_callback=progress_callback,
         )
+
+    def encrypt_delta_link(self, value: str) -> str:
+        return self._provider.encrypt_delta_link(value)
 
     def folders(self, *, encrypted_credentials):
         return self._provider.folders(encrypted_credentials=encrypted_credentials)

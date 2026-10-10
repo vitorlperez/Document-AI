@@ -35,6 +35,10 @@ Critério para subir: depois da primeira sincronização, `embedding_tokens` do 
 - [ ] Revogar o app no ClickUp (Settings → Apps) e sincronizar: a fonte vira "Reconectar" sem 500 e sem perder o que já foi indexado.
 - [ ] Anotar o tempo da primeira sincronização e o uso (100 req/min no plano Business ou inferior).
 
+## 3b. Resync incremental
+
+Depois do primeiro sync, cada rodada só busca tarefas alteradas desde o último checkpoint (ADR-0019 D8). Exclusões, arquivamentos e tarefas fechadas só somem do índice na rodada completa, no máximo 24 h depois. Para forçar já: "Reprocessar tudo" na biblioteca (rodada `full`). Checkpoint corrompido ou ausente cai sozinho numa rodada completa; nenhuma ação manual.
+
 ## 4. Diagnóstico
 
 | Sintoma | Causa provável |

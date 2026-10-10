@@ -1,7 +1,8 @@
 """ClickUp OAuth and API adapter: tasks and Docs as read-only knowledge (ADR-0019)."""
 
+import json
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlencode
 from uuid import UUID
 
@@ -34,6 +35,13 @@ _DOC_PARENT_PREFIX = {4: SPACE_PREFIX, 5: FOLDER_PREFIX, 6: LIST_PREFIX, 7: WORK
 # Custom-field types whose value is plain text/number; drop_down and labels resolve option names.
 _SIMPLE_FIELD_TYPES = {"short_text", "text", "number", "currency", "url", "email", "phone", "emoji"}
 MAX_CUSTOM_FIELD_CHARS = 500
+# Incremental sync (ADR-0019 D8): tasks are fetched with date_updated_gt = checkpoint - margin.
+# The margin absorbs clock skew between us and ClickUp and edits made while a run was reading.
+INCREMENTAL_CLOCK_MARGIN = timedelta(minutes=5)
+# The task API cannot list what disappeared (deleted, archived, closed, moved out of scope), so a
+# complete walk reconciles removals at least this often; runs in between only fetch the delta.
+FULL_RECONCILE_INTERVAL = timedelta(hours=24)
+CURSOR_VERSION = 1
 
 
 class ClickUpRemoteUnauthorized(SourceRemoteUnauthorized):
@@ -126,20 +134,26 @@ class ClickUpOAuthClient:
             "GET", f"/api/v2/folder/{folder_id}/list", credentials=credentials,
             params={"archived": "false"}), "lists")
 
-    def list_tasks(self, *, credentials: OAuthCredentials, list_id: str, include_closed: bool) -> list[dict]:
+    def list_tasks(self, *, credentials: OAuthCredentials, list_id: str, include_closed: bool,
+                   date_updated_gt: int | None = None) -> list[dict]:
         tasks: list[dict] = []
         page = 0
         while True:
-            data = self._request(
-                "GET", f"/api/v2/list/{list_id}/task", credentials=credentials,
-                params={"page": str(page), "archived": "false", "subtasks": "true",
-                        "include_closed": str(include_closed).lower(),
-                        "include_markdown_description": "true"})
+            params = {"page": str(page), "archived": "false", "subtasks": "true",
+                      "include_closed": str(include_closed).lower(),
+                      "include_markdown_description": "true"}
+            if date_updated_gt is not None:  # Unix milliseconds
+                params["date_updated_gt"] = str(date_updated_gt)
+            data = self._request("GET", f"/api/v2/list/{list_id}/task", credentials=credentials, params=params)
             batch = self._items(data, "tasks")
             tasks.extend(batch)
             if data.get("last_page", True) is not False or not batch:
                 return tasks
             page += 1
+
+    def task(self, *, credentials: OAuthCredentials, task_id: str) -> dict:
+        data = self._request("GET", f"/api/v2/task/{task_id}", credentials=credentials)
+        return data if isinstance(data, dict) else {}
 
     def workspace_docs(self, *, credentials: OAuthCredentials, workspace_id: str) -> list[dict]:
         docs: list[dict] = []
@@ -324,10 +338,48 @@ class ClickUpDocumentProvider:
                     pending.append(parent)
         return [containers[id] for id in sorted(keep)]
 
+    def encrypt_delta_link(self, value: str) -> str:
+        return self.cipher.encrypt_cursor(value)
+
+    def _checkpoint(self, selections) -> tuple[datetime, datetime] | None:
+        """(since, last complete walk) shared by every selection, or None when a full walk is needed.
+
+        A missing, undecryptable, malformed or future-dated cursor on ANY selection means a
+        full walk: the cursor of a selection added later must not hide its older tasks.
+        """
+        now = datetime.now(UTC)
+        since: list[datetime] = []
+        full_at: list[datetime] = []
+        for selection in selections:
+            token = getattr(selection, "encrypted_delta_link", None)
+            if not token:
+                return None
+            try:
+                data = json.loads(self.cipher.decrypt_cursor(token))
+                if data["v"] != CURSOR_VERSION:
+                    return None
+                moments = _utc_ms(data["since"]), _utc_ms(data["full_at"])
+            except Exception:  # noqa: BLE001 - any unreadable cursor degrades to a full walk
+                return None
+            if None in moments or moments[0] > now or moments[1] > now:
+                return None
+            since.append(moments[0])
+            full_at.append(moments[1])
+        return (min(since), min(full_at)) if since else None
+
     def discover(self, *, encrypted_credentials: str | None, selections, known_documents=None,
                  force_file_ids: set[str] | None = None, force_full: bool = False,
                  progress_callback=None) -> DiscoveryResult:
+        started = datetime.now(UTC)  # taken before reading, so edits made during the run are re-read next time
         credentials = self.cipher.decrypt(encrypted_credentials or "")
+        checkpoint = None if force_full or not known_documents else self._checkpoint(selections)
+        # A task the last run failed to index (or that was asked to be rebuilt) would not be in a delta:
+        # walk everything so it is retried.
+        retrying = any(item.startswith(TASK_PREFIX) for item in force_file_ids or ())
+        incremental = (checkpoint is not None and not retrying
+                       and started - checkpoint[1] < FULL_RECONCILE_INTERVAL)
+        task_floor = int((checkpoint[0] - INCREMENTAL_CLOCK_MARGIN).timestamp() * 1000) if incremental else None
+        parent_names: dict[str, str] = {}
         containers = self._containers = self._catalog(credentials).containers
         selected = self._selected(containers, selections)
         known = known_documents or {}
@@ -367,19 +419,23 @@ class ClickUpDocumentProvider:
 
         for list_id in lists:
             try:
-                tasks = self.client.list_tasks(credentials=credentials, list_id=list_id.removeprefix(LIST_PREFIX),
-                                               include_closed=self.include_closed_tasks)
+                tasks = self.client.list_tasks(
+                    credentials=credentials, list_id=list_id.removeprefix(LIST_PREFIX),
+                    include_closed=self.include_closed_tasks,
+                    **({"date_updated_gt": task_floor} if incremental else {}))
             except SourceItemUnavailable:
                 tasks_unreadable = True
                 tasks = []
             by_id = {str(task["id"]): task for task in tasks if task.get("id")}
+            if incremental:  # a delta may hold a subtask without its parent: keep "Subtarefa de" stable
+                self._resolve_parents(credentials, by_id, parent_names)
             path = self._path(containers, list_id)
             for task_id, task in by_id.items():
                 external_id = TASK_PREFIX + task_id
                 modified = _utc_ms(task.get("date_updated"))
                 collect(external_id, str(task.get("name") or "Tarefa sem título"),
                         str(task.get("url") or f"https://app.clickup.com/t/{task_id}"), modified, list_id,
-                        None if unchanged(external_id, modified) else _task_text(task, path, by_id))
+                        None if unchanged(external_id, modified) else _task_text(task, path, by_id | parent_names))
             done += 1
             if progress_callback:
                 progress_callback(done, total)
@@ -417,15 +473,36 @@ class ClickUpDocumentProvider:
             if progress_callback:
                 progress_callback(done, total)
 
+        # A delta of tasks proves nothing about absent ones: only Docs (always listed in full) can
+        # be removed on an incremental run; tasks wait for the next complete walk.
         removable = {item for item in set(known) - seen
-                     if not (item.startswith(TASK_PREFIX) and tasks_unreadable)
+                     if not (item.startswith(TASK_PREFIX) and (tasks_unreadable or incremental))
                      and not (item.startswith(DOC_PREFIX) and docs_unreadable)}
+        # The checkpoint only advances over a fully readable run; otherwise the old one stays.
+        cursor = None
+        if not (tasks_unreadable or docs_unreadable):
+            full_at = checkpoint[1] if incremental else started
+            cursor = json.dumps({"v": CURSOR_VERSION, "since": int(started.timestamp() * 1000),
+                                 "full_at": int(full_at.timestamp() * 1000)})
         return DiscoveryResult(
             documents=sorted(changed, key=lambda item: item.external_file_id),
             removed_file_ids=tuple(sorted(removable)),
             full_snapshot=(not known or force_full) and not (tasks_unreadable or docs_unreadable),
-            catalog_documents=sorted(catalog.values(), key=lambda item: item.external_file_id),
+            catalog_documents=(None if incremental else
+                               sorted(catalog.values(), key=lambda item: item.external_file_id)),
+            delta_links=({selection.id: cursor for selection in selections}
+                         if cursor is not None and all(hasattr(item, "id") for item in selections) else None),
         )
+
+    def _resolve_parents(self, credentials, by_id: dict[str, dict], names: dict[str, dict]) -> None:
+        for task in list(by_id.values()):
+            parent = str(task.get("parent") or "")
+            if not parent or parent in by_id or parent in names:
+                continue
+            try:
+                names[parent] = self.client.task(credentials=credentials, task_id=parent)
+            except SourceItemUnavailable:
+                names[parent] = {}
 
     @staticmethod
     def _doc_parent(doc: dict, workspace_id: str, containers: dict[str, RemoteFolder]) -> str:

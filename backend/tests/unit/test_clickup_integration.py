@@ -51,6 +51,14 @@ class Cipher:
     def decrypt(self, value: str) -> OAuthCredentials:
         return CREDENTIALS
 
+    def encrypt_cursor(self, value: str) -> str:
+        return "enc:" + value
+
+    def decrypt_cursor(self, value: str) -> str:
+        if not value.startswith("enc:"):
+            raise ValueError("corrupt")
+        return value.removeprefix("enc:")
+
 
 class FakeClient:
     """One workspace: Space > (Folder > List A) and a folderless List B, plus two Docs."""
@@ -58,6 +66,7 @@ class FakeClient:
     def __init__(self, *, docs_error: type[Exception] | None = None) -> None:
         self.task_reads: list[tuple[str, bool]] = []
         self.page_reads: list[str] = []
+        self.task_filters: list[int | None] = []
         self.docs_error = docs_error
         self.tasks = {
             "A": [{"id": "t1", "name": "Contrato Acme", "url": "https://app.clickup.com/t/t1",
@@ -82,9 +91,11 @@ class FakeClient:
     def folderless_lists(self, *, credentials, space_id):
         return [{"id": "B", "name": "Backlog"}]
 
-    def list_tasks(self, *, credentials, list_id, include_closed):
+    def list_tasks(self, *, credentials, list_id, include_closed, date_updated_gt=None):
         self.task_reads.append((list_id, include_closed))
-        return self.tasks[list_id]
+        self.task_filters.append(date_updated_gt)
+        return [task for task in self.tasks[list_id]
+                if date_updated_gt is None or int(task["date_updated"]) > date_updated_gt]
 
     def workspace_docs(self, *, credentials, workspace_id):
         if self.docs_error:
@@ -473,7 +484,7 @@ def test_clickup_registry_adapter_is_wired_with_its_own_key_and_capabilities() -
                         clickup_token_encryption_key=Fernet.generate_key().decode())
     adapter = IntegrationRegistry(settings).get("clickup")
     assert adapter.key == "clickup"
-    assert adapter.capabilities.supports_oauth and not adapter.capabilities.supports_incremental_sync
+    assert adapter.capabilities.supports_oauth and adapter.capabilities.supports_incremental_sync
     assert adapter._provider.include_closed_tasks is False
     assert settings.cipher_keys("clickup") == [settings.clickup_token_encryption_key.get_secret_value()]
 
@@ -647,3 +658,120 @@ def test_clickup_sync_persists_documents_projects_the_hierarchy_and_prunes_delet
     assert _states(session, folder)["clickup:task:t2"] == "removed"
     assert "clickup:task:t2" not in {node.external_id for node in session.scalars(select(LibraryNode))}
     assert _states(session, folder)["clickup:task:t1"] == "indexed"
+
+
+# --- incremental resync (ADR-0019 D8) ---------------------------------------------------------
+
+class CursorSelection(Selection):
+    def __init__(self, cursor: str | None, kind: str = "all_accessible", external_folder_id: str = "") -> None:
+        super().__init__(kind, external_folder_id)
+        self.id, self.encrypted_delta_link = uuid4(), cursor
+
+
+def _cursor(*, since: datetime, full_at: datetime | None = None) -> str:
+    import json
+    return "enc:" + json.dumps({"v": 1, "since": int(since.timestamp() * 1000),
+                                "full_at": int((full_at or since).timestamp() * 1000)})
+
+
+ALL_KNOWN = {"clickup:task:t1": (EDITED, "indexed"), "clickup:task:t2": (EDITED, "indexed"),
+             "clickup:task:t3": (EDITED, "indexed"), "clickup:doc:d1": (EDITED, "indexed"),
+             "clickup:doc:d2": (EDITED, "indexed")}
+
+
+def test_clickup_first_sync_walks_everything_and_returns_a_checkpoint_for_every_selection() -> None:
+    selections = [CursorSelection(None), CursorSelection(None, "folder", "clickup:space:s1")]
+    client, result = discover(selections=selections)
+    assert client.task_filters == [None, None]
+    assert set(result.delta_links) == {item.id for item in selections}
+    assert len(set(result.delta_links.values())) == 1 and result.delta_links[selections[0].id]
+
+
+def test_clickup_incremental_asks_only_for_tasks_changed_since_the_checkpoint_with_a_clock_margin() -> None:
+    now = datetime.now(UTC)
+    since = now - timedelta(hours=1)
+    tasks_edit = int((now - timedelta(minutes=30)).timestamp() * 1000)
+    client = FakeClient()
+    client.tasks["A"][0]["date_updated"] = str(tasks_edit)
+    known = {**ALL_KNOWN, "clickup:task:t1": (EDITED, "indexed")}
+    client, result = discover(client, [CursorSelection(_cursor(since=since, full_at=since))], known_documents=known)
+    assert client.task_filters == [int((since - timedelta(minutes=5)).timestamp() * 1000)] * 2
+    # Only the task edited after the checkpoint is returned; the old ones are never listed by the server.
+    assert ids(result.documents) == ["clickup:task:t1"]
+    assert result.full_snapshot is False and result.catalog_documents is None
+
+
+def test_clickup_incremental_does_not_reread_or_remove_unchanged_content() -> None:
+    since = datetime.now(UTC) - timedelta(hours=1)
+    known = {**ALL_KNOWN, "clickup:task:elsewhere": (EDITED, "indexed")}
+    client, result = discover(selections=[CursorSelection(_cursor(since=since))], known_documents=known)
+    assert result.documents == [] and client.page_reads == []
+    # Absence from a task delta proves nothing: no task removals on an incremental run...
+    assert result.removed_file_ids == ()
+
+
+def test_clickup_incremental_still_removes_docs_because_docs_are_listed_in_full() -> None:
+    since = datetime.now(UTC) - timedelta(hours=1)
+    known = {**ALL_KNOWN, "clickup:doc:gone": (EDITED, "indexed")}
+    _, result = discover(selections=[CursorSelection(_cursor(since=since))], known_documents=known)
+    assert result.removed_file_ids == ("clickup:doc:gone",)
+
+
+def test_clickup_incremental_keeps_the_parent_name_of_a_subtask_whose_parent_did_not_change() -> None:
+    since = datetime.now(UTC) - timedelta(hours=1)
+    fresh = str(int(datetime.now(UTC).timestamp() * 1000))
+
+    class Subtask(FakeClient):
+        def __init__(self):
+            super().__init__()
+            self.tasks["A"] = [{"id": "t2", "name": "Revisar minuta", "date_updated": fresh, "parent": "t1"}]
+            self.parent_reads = []
+
+        def task(self, *, credentials, task_id):
+            self.parent_reads.append(task_id)
+            return {"id": task_id, "name": "Contrato Acme"}
+
+    client, result = discover(Subtask(), [CursorSelection(_cursor(since=since))], known_documents=ALL_KNOWN)
+    assert "Subtarefa de: Contrato Acme" in next(item for item in result.documents if item.external_file_id.endswith("t2")).text
+    assert client.parent_reads == ["t1"]
+
+
+def test_clickup_stale_checkpoint_forces_a_complete_walk_that_reconciles_removals() -> None:
+    now = datetime.now(UTC)
+    selection = CursorSelection(_cursor(since=now - timedelta(minutes=10), full_at=now - timedelta(hours=25)))
+    known = {**ALL_KNOWN, "clickup:task:gone": (EDITED, "indexed")}
+    client, result = discover(selections=[selection], known_documents=known)
+    assert client.task_filters == [None, None]
+    assert result.removed_file_ids == ("clickup:task:gone",)
+    assert result.documents == [] and "clickup:task:t1" in ids(result.catalog_documents)
+    import json
+    assert json.loads(result.delta_links[selection.id].removeprefix("enc:"))["full_at"] > int(
+        (now - timedelta(minutes=1)).timestamp() * 1000)
+
+
+@pytest.mark.parametrize("cursor", [None, "garbage", "enc:not-json", "enc:{\"v\": 9}"])
+def test_clickup_missing_or_corrupt_checkpoint_falls_back_to_a_complete_walk(cursor) -> None:
+    selections = [CursorSelection(_cursor(since=datetime.now(UTC) - timedelta(hours=1))), CursorSelection(cursor)]
+    client, _ = discover(selections=selections, known_documents=ALL_KNOWN)
+    assert client.task_filters == [None, None]
+
+
+def test_clickup_future_checkpoint_is_distrusted() -> None:
+    selection = CursorSelection(_cursor(since=datetime.now(UTC) + timedelta(days=1)))
+    client, _ = discover(selections=[selection], known_documents=ALL_KNOWN)
+    assert client.task_filters == [None, None]
+
+
+def test_clickup_forced_full_and_retrying_tasks_ignore_the_checkpoint() -> None:
+    selection = CursorSelection(_cursor(since=datetime.now(UTC) - timedelta(hours=1)))
+    client, _ = discover(selections=[selection], known_documents=ALL_KNOWN, force_full=True)
+    assert client.task_filters == [None, None]
+    client, result = discover(selections=[selection], known_documents=ALL_KNOWN,
+                              force_file_ids={"clickup:task:t1"})
+    assert client.task_filters == [None, None] and "clickup:task:t1" in ids(result.documents)
+
+
+def test_clickup_unreadable_area_does_not_advance_the_checkpoint() -> None:
+    selection = CursorSelection(_cursor(since=datetime.now(UTC) - timedelta(hours=1)))
+    _, result = discover(FakeClient(docs_error=SourceItemUnavailable), [selection], known_documents=ALL_KNOWN)
+    assert result.delta_links is None
