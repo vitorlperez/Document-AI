@@ -76,3 +76,8 @@
 .dark .library-card { border-color: var(--card-edge); background: var(--surface-raised); }
 .dark .library-card:hover, .dark .library-card:focus-within { border-color: color-mix(in srgb, var(--color-primary) 45%, var(--card-edge)); }
 .dark .library-card-spin { background: var(--surface-raised); }
+
+/* Panel fills the available height; the status line is a footer pinned to the panel's bottom edge (sticky, so it never covers items). */
+.library-panels > main { padding-bottom: 0; }
+.library-foot { position: sticky; bottom: 0; z-index: 1; display: flex; flex-shrink: 0; align-items: center; justify-content: center; min-height: 2.5rem; padding: 0.375rem 1rem; margin-top: 0.5rem; border-top: 1px solid var(--color-line); background: var(--panel); text-align: center; font-size: 0.875rem; color: var(--color-muted-foreground); }
+.library-foot p { margin: 0; }
