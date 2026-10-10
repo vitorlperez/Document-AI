@@ -65,6 +65,30 @@ of two or more letters. Unicode, case and whitespace normalization checks file-l
 it does not establish semantic entailment. Counts without assessed themes omit content citations
 through the final citation stage while retaining catalog references for subsequent turns.
 
+## Deliverable intents (compare, table, draft)
+
+Three intents read evidence per file with `retrieve_evidence` and share the normal synthesis, so they keep the
+untrusted-source fence and the cited-answer verification; each one adds only a block of instructions
+(`INTENT_GUIDANCE` in `questions.py`).
+
+- `compare_files`: needs two or more files (`@` mentions or files from the previous answer, up to 6), otherwise
+  the relevance-search fallback runs. Each file is retrieved separately; the synthesis writes "Igual / Mudou /
+  Só em A / Só em B" citing both sides. The catalog sent to the model carries each document's `modified_at`, and
+  the agent appends the most recent file deterministically from that date.
+- `extract_table`: one retrieval per file (up to 10; a folder or the library is one retrieval). The answer is one
+  Markdown table with a `[n]` marker in every cell and `—` for what the sources do not state. The UI renders it
+  and offers "Baixar CSV" (markers kept in cells; formula-like cells are neutralized).
+- `draft_document`: status report, ata, FAQ, executive summary or proposal draft from the evidence. Missing
+  information is written as `**[Lacuna: …]**` and listed under "Lacunas"; nothing is invented.
+- When synthesis cannot be verified, all three fall back to cited excerpts grouped per file (never an empty answer).
+
+## Exporting an answer
+
+`GET /organizations/{org}/conversations/{conversation}/messages/{message}/export?format=md|docx|pdf` renders the
+stored assistant message (member of the organization, owner of the conversation) with its numbered sources and
+links (`knowledge/export.py`, python-docx and fpdf2). The answer actions "Copiar com fontes" and "Exportar" in
+`frontend/app/answer-actions.tsx` use it. PDFs use the built-in Latin-1 font: characters outside it become `?`.
+
 ## Moving to LangChain / LangGraph
 
 The stages already have the shape of a graph, so a later migration does not need a redesign. Each stage
