@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import {
   ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight,
-  FileText, Folder, Menu, MousePointer2, PanelRightClose, Plus, Search, Send, ShieldCheck, Sparkles,
+  ExternalLink, FileText, Folder, FolderOpen, List, Menu, MousePointer2, PanelRightClose, Pause, Play, Plus, Send, ShieldCheck, Sparkles,
 } from "lucide-react";
 import "./landing.css";
 import { Brand } from "./brand";
@@ -15,69 +15,79 @@ type LandingPageProps = { onLogin: () => void; onSignUp: () => void };
 /** Optional decorative art for the Rotina section, delivered separately; the layout never depends on it. */
 const STORY_ART_SRC = "/landing/document-context.webp";
 
-type DemoCase = {
-  label: string; scope: string; question: string; mentions: string;
+type AnswerSegments = [string, boolean][];
+type Turn = {
+  question: string;
   /** Answer as [text, bold] segments so the streaming effect can reveal it word by word. */
-  answer: [string, boolean][];
+  answer: AnswerSegments;
   providers: ProviderLogoName[];
   sources: [string, string][];
-  extra: number;
+  /** ms from the start of the run. */
+  at: { typeStart: number; typeEnd: number; send: number; streamStart: number; streamEnd: number; sources: number };
 };
 
-const demoCases: DemoCase[] = [
-  {
-    label: "Resposta com fontes",
-    scope: "Todas as ferramentas",
-    question: "O que ficou definido para a primeira entrega?",
-    mentions: "",
-    answer: [["A primeira entrega inclui o ", false], ["diagnóstico de marca", true], [" e a ", false], ["proposta de posicionamento", true], [".", false]],
-    providers: ["google", "onedrive", "notion", "clickup"],
-    sources: [["Escopo do projeto.pdf", "Google Drive"], ["Reunião de alinhamento", "Notion"], ["Cronograma de entregas", "OneDrive"]],
-    extra: 2,
-  },
-  {
-    label: "Com menção @",
-    scope: "Google Drive",
-    question: "Quais são os prazos previstos neste documento?",
-    mentions: "Arquivo: Escopo do projeto.pdf",
-    answer: [["O documento prevê o ", false], ["diagnóstico de marca", true], [" na primeira etapa e a ", false], ["proposta de posicionamento", true], [" na etapa seguinte.", false]],
-    providers: ["google"],
-    sources: [["Escopo do projeto.pdf", "Google Drive"]],
-    extra: 0,
-  },
-  {
-    label: "Sem evidência suficiente",
-    scope: "Notion",
-    question: "Qual foi o orçamento aprovado para mídia?",
-    mentions: "",
-    answer: [["Não encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia.", false]],
-    providers: ["notion"],
-    sources: [],
-    extra: 0,
-  },
-];
+const DEMO_SCOPE = "Todas as ferramentas";
+const CITED_FILE = "Escopo do projeto.pdf";
+const CITED_EXCERPT = "Prazos: o diagnóstico de marca será entregue em 14 de março e a proposta de posicionamento em 28 de março.";
 
 /**
- * One demo case = one scripted run of the real flow, in ms from the start of the case:
- * type the question → send → search the sources → stream the answer → reveal sources → click the first one.
- * The rotation between cases is this same clock, so the case buttons and the animation never disagree.
+ * One continuous story, one clock (ms): ask → sourced answer → follow-up that reuses the context →
+ * cursor opens Biblioteca → picks the cited file → the cited passage is highlighted → fade → loop.
  */
-const DEMO_ROTATE_MS = 7500;
-const T_TYPE_START = 500;
-const T_TYPE_END = 2100;
-const T_SEND = 2500;
-const T_STREAM_START = 3700;
-const T_STREAM_END = 5500;
-const T_SOURCES = 5600;
-const T_CLICK = 6500;
+const turns: Turn[] = [
+  {
+    question: "O que ficou definido para a primeira entrega?",
+    answer: [["A primeira entrega inclui o ", false], ["diagnóstico de marca", true], [" e a ", false], ["proposta de posicionamento", true], [".", false]],
+    providers: ["google", "onedrive", "notion", "clickup"],
+    sources: [[CITED_FILE, "Google Drive"], ["Reunião de alinhamento", "Notion"], ["Cronograma de entregas", "OneDrive"]],
+    at: { typeStart: 500, typeEnd: 2100, send: 2400, streamStart: 3600, streamEnd: 5400, sources: 5600 },
+  },
+  {
+    question: "E qual o prazo disso?",
+    answer: [["O ", false], ["diagnóstico de marca", true], [" está previsto para ", false], ["14 de março", true], [" e a ", false], ["proposta de posicionamento", true], [" para ", false], ["28 de março", true], [", conforme o escopo e o cronograma.", false]],
+    providers: ["google", "onedrive"],
+    sources: [[CITED_FILE, "Google Drive"], ["Cronograma de entregas", "OneDrive"]],
+    at: { typeStart: 7900, typeEnd: 9000, send: 9400, streamStart: 10400, streamEnd: 12400, sources: 12600 },
+  },
+];
+const T_CURSOR_TAB = 13800;
+const T_TAB_CLICK = 14800;
+const T_SCENE_LIBRARY = 15200;
+const T_CURSOR_ROW = 17400;
+const T_ROW_CLICK = 18500;
+const T_VIEWER = 18800;
+const T_HIGHLIGHT = 20400;
+const T_CURSOR_HIDE = 19800;
+const T_FADE_OUT = 27400;
+const DEMO_LOOP_MS = 28400;
+const T_FADE_IN = 450;
+/** Server render, hydration and reduced motion all show this frame: the finished conversation. */
+const T_STATIC = 13600;
 const DEMO_TICK_MS = 50;
 
-const progress = (t: number, from: number, to: number) => Math.min(1, Math.max(0, (t - from) / (to - from)));
+const LIBRARY_ROWS: { name: string; provider: ProviderLogoName; label: string; kind: string }[] = [
+  { name: "Briefing de campanha", provider: "clickup", label: "ClickUp", kind: "Documento" },
+  { name: "Cronograma de entregas", provider: "onedrive", label: "OneDrive", kind: "DOCX" },
+  { name: CITED_FILE, provider: "google", label: "Google Drive", kind: "PDF" },
+  { name: "Reunião de alinhamento", provider: "notion", label: "Notion", kind: "Página" },
+  { name: "Identidade visual.pdf", provider: "google", label: "Google Drive", kind: "PDF" },
+  { name: "Atas de março", provider: "notion", label: "Notion", kind: "Página" },
+];
+const CITED_ROW = LIBRARY_ROWS.findIndex((row) => row.name === CITED_FILE);
+const LIBRARY_TOOLS: { provider: ProviderLogoName; label: string }[] = [
+  { provider: "google", label: "Google Drive" }, { provider: "onedrive", label: "OneDrive" },
+  { provider: "notion", label: "Notion" }, { provider: "clickup", label: "ClickUp" },
+];
 
-function AnswerWords({ segments, shown }: { segments: [string, boolean][]; shown: number }) {
+const progress = (t: number, from: number, to: number) => Math.min(1, Math.max(0, (t - from) / (to - from)));
+const segmentWords = (text: string) => text.split(/(?<=\s)/);
+const countWords = (segments: AnswerSegments) => segments.reduce((total, [text]) => total + segmentWords(text).length, 0);
+const answerPlain = (segments: AnswerSegments) => segments.map(([text]) => text).join("");
+
+function AnswerWords({ segments, shown }: { segments: AnswerSegments; shown: number }) {
   let index = 0;
   return <>{segments.map(([text, bold], segment) => {
-    const words = text.split(/(?<=\s)/).map((word) => {
+    const words = segmentWords(text).map((word) => {
       const pending = index++ >= shown;
       return <span key={index} className={pending ? "landing-word-pending" : undefined}>{word}</span>;
     });
@@ -85,20 +95,26 @@ function AnswerWords({ segments, shown }: { segments: [string, boolean][]; shown
   })}</>;
 }
 
-const countWords = (segments: [string, boolean][]) => segments.reduce((total, [text]) => total + text.split(/(?<=\s)/).length, 0);
+type CursorTarget = "park" | "tab" | "row";
 
 function ProductPreview() {
   const figureRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const tabRef = useRef<HTMLSpanElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(false);
-  const [activeCase, setActiveCase] = useState(0);
-  // Server render and reduced motion both show the finished state: no shift, nothing to hydrate into.
-  const [elapsed, setElapsed] = useState(DEMO_ROTATE_MS);
+  const [elapsed, setElapsed] = useState(T_STATIC);
   const [reducedMotion, setReducedMotion] = useState(true);
   const [hidden, setHidden] = useState(false);
   const [inView, setInView] = useState(false);
-  const demo = demoCases[activeCase];
-  const running = !reducedMotion && !hidden && inView;
-  const t = reducedMotion ? DEMO_ROTATE_MS : elapsed;
+  const [userPaused, setUserPaused] = useState(false);
+  const [scrollMax, setScrollMax] = useState(0);
+  const [layoutTick, setLayoutTick] = useState(0);
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const running = !reducedMotion && !hidden && inView && !userPaused;
+  const t = reducedMotion ? T_STATIC : elapsed;
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -118,7 +134,7 @@ function ProductPreview() {
     };
   }, []);
 
-  // Single clock: ticks only while visible, on screen and motion is allowed; pausing keeps the position so resuming continues.
+  // Single clock: ticks only while visible, on screen, not paused and motion is allowed; pausing keeps the position so resuming continues.
   useEffect(() => {
     if (!running) return;
     if (!startedRef.current) { startedRef.current = true; setElapsed(0); }
@@ -127,27 +143,46 @@ function ProductPreview() {
       const now = performance.now();
       const delta = now - last;
       last = now;
-      setElapsed((current) => current + delta);
+      setElapsed((current) => (current + delta >= DEMO_LOOP_MS ? 0 : current + delta));
     }, DEMO_TICK_MS);
     return () => window.clearInterval(timer);
   }, [running]);
 
-  useEffect(() => {
-    if (running && elapsed >= DEMO_ROTATE_MS) { setActiveCase((current) => (current + 1) % demoCases.length); setElapsed(0); }
-  }, [running, elapsed]);
+  // The stage has a fixed box; these measurements only move things inside it (scroll offset, cursor target), so nothing shifts the page.
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || !("ResizeObserver" in window)) return;
+    const observer = new ResizeObserver(() => setLayoutTick((tick) => tick + 1));
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, []);
 
-  const selectCase = (index: number) => { setActiveCase(index); setElapsed(0); };
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    const inner = innerRef.current;
+    if (viewport && inner) setScrollMax(Math.max(0, inner.offsetHeight - viewport.clientHeight));
+  }, [layoutTick]);
 
-  const typedLength = Math.round(progress(t, T_TYPE_START, T_TYPE_END) * demo.question.length);
-  const typing = t >= T_TYPE_START && t < T_SEND;
-  const sent = t >= T_SEND;
-  const searching = sent && t < T_STREAM_START;
-  const totalWords = countWords(demo.answer);
-  const shownWords = Math.floor(progress(t, T_STREAM_START, T_STREAM_END) * totalWords + (t >= T_STREAM_END ? 1 : 0));
-  const showSources = t >= T_SOURCES;
-  const clicking = t >= T_CLICK;
-  const activeProvider = searching ? Math.floor((t - T_SEND) / 280) % demo.providers.length : -1;
-  const answerText = demo.answer.map(([text]) => text).join("");
+  const target: CursorTarget = t >= T_CURSOR_ROW ? "row" : t >= T_CURSOR_TAB ? "tab" : "park";
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const box = stage.getBoundingClientRect();
+    const element = target === "tab" ? tabRef.current : target === "row" ? rowRef.current : null;
+    if (!element) { setCursorPos({ x: box.width * 0.72, y: box.height * 0.86 }); return; }
+    const rect = element.getBoundingClientRect();
+    setCursorPos({ x: rect.left - box.left + rect.width * (target === "tab" ? 0.5 : 0.42), y: rect.top - box.top + rect.height * 0.55 });
+  }, [target, layoutTick]);
+
+  const scene = t >= T_SCENE_LIBRARY ? "library" : "chat";
+  const fading = !reducedMotion && (t < T_FADE_IN || t >= T_FADE_OUT);
+  const resetting = !reducedMotion && t < T_FADE_IN + 150;
+  const turnIndexTyping = turns.findIndex((turn) => t >= turn.at.typeStart && t < turn.at.send);
+  const typingTurn = turnIndexTyping >= 0 ? turns[turnIndexTyping] : null;
+  const typedLength = typingTurn ? Math.round(progress(t, typingTurn.at.typeStart, typingTurn.at.typeEnd) * typingTurn.question.length) : 0;
+  const scrolled = t >= turns[1].at.send;
+  const tabActive = t >= T_TAB_CLICK + 200;
+  const viewerOpen = t >= T_VIEWER;
 
   return (
     <figure
@@ -159,97 +194,123 @@ function ProductPreview() {
         <p className="landing-eyebrow">VEJA A EXPERIÊNCIA</p>
         <h2>Converse com seus documentos.<br /><em>Confira a origem.</em></h2>
       </div>
-      <div className="landing-demo-options" role="group" aria-label="Escolha um exemplo da demonstração">
-        {demoCases.map((item, index) => <button key={item.label} type="button" aria-pressed={activeCase === index} onClick={() => selectCase(index)}>{item.label}{activeCase === index && !reducedMotion && <span className="landing-demo-progress" aria-hidden="true" style={{ transform: `scaleX(${Math.min(1, t / DEMO_ROTATE_MS)})` }} />}</button>)}
+      <div className="landing-demo-steps">
+        <ol aria-hidden="true">
+          <li className={scene === "chat" ? "is-current" : undefined}><span>1</span>Pergunte e receba fontes</li>
+          <li className={scene === "library" ? "is-current" : undefined}><span>2</span>Confira na Biblioteca</li>
+        </ol>
+        <button type="button" className={`landing-demo-pause${reducedMotion ? " is-off" : ""}`} aria-pressed={userPaused} disabled={reducedMotion} tabIndex={reducedMotion ? -1 : undefined} onClick={() => setUserPaused((value) => !value)}>
+          {userPaused ? <Play size={14} aria-hidden="true" /> : <Pause size={14} aria-hidden="true" />}{userPaused ? "Retomar demonstração" : "Pausar demonstração"}
+        </button>
+        {!reducedMotion && <span className="landing-demo-progress" aria-hidden="true" style={{ transform: `scaleX(${Math.min(1, t / DEMO_LOOP_MS)})` }} />}
       </div>
 
       <div className="landing-app-shell">
-        <div className="landing-app-bar">
+        <div className="landing-app-bar" aria-hidden="true">
           <Brand compact />
-          <span className="landing-app-company">Estúdio Aurora <ChevronDown size={12} aria-hidden="true" /></span>
+          <span className="landing-app-company">Estúdio Aurora <ChevronDown size={12} /></span>
+          <span className="landing-app-tabs">
+            <span className={`landing-app-tab${tabActive ? "" : " is-active"}`}><Sparkles size={14} />Consultas</span>
+            <span ref={tabRef} className={`landing-app-tab${tabActive ? " is-active" : ""}${t >= T_TAB_CLICK && t < T_TAB_CLICK + 400 ? " is-pressed" : ""}`}><FolderOpen size={14} />Biblioteca</span>
+          </span>
           <span className="landing-preview-label">Prévia ilustrativa</span>
         </div>
 
-        <div className="landing-app-workspace">
-          <section className="landing-app-chat" aria-label="Exemplo de conversa com documentos">
-            <div className="landing-app-toolbar" aria-hidden="true"><span><Plus size={13} />Nova conversa</span><PanelRightClose size={16} /></div>
-            {/* The staged run is decoration: assistive tech reads the finished conversation below instead. */}
-            <div className="landing-sr-only" aria-live={running ? "off" : "polite"} key={`sr-${activeCase}`}>
-              <p>Pergunta ({demo.scope}): {demo.question}{demo.mentions && ` ${demo.mentions}.`}</p>
-              <p>Resposta do Arquivio: {answerText}</p>
-              {demo.sources.length > 0 && <div aria-label="Documentos utilizados" role="group">
-                <p>Documentos utilizados:</p>
-                <ol>{demo.sources.map(([name, provider]) => <li key={name}>{name}, {provider}</li>)}</ol>
-              </div>}
-            </div>
-            <div className="landing-app-thread" aria-hidden="true">
-              {/* Every case is laid out in the same cell, so the block always keeps the height of the tallest one: switching cases never shifts the page. */}
-              {demoCases.map((c, caseIndex) => {
-                const on = caseIndex === activeCase;
-                const on_sent = on ? sent : true;
-                const on_searching = on && searching;
-                const on_showSources = on && showSources;
-                const on_clicking = on && clicking;
-                const on_activeProvider = on ? activeProvider : -1;
-                return <div key={c.label} className={`landing-thread-case${on ? " is-active" : ""}`}>
-              <div className={`landing-user-message${on_sent ? "" : " landing-stage-pending"}`}>
-                <small>{c.scope}</small>
-                <p>{c.question}{c.mentions && <span className="landing-mention-line">{c.mentions}</span>}</p>
-              </div>
-              <article className="landing-answer">
-                <div className={`landing-answer-author${on_sent ? "" : " landing-stage-pending"}`}><span><Sparkles size={15} /></span><div><strong>Arquivio</strong><small>{c.scope}</small></div></div>
-                <div className={`landing-search-status${on_sent ? "" : " landing-stage-pending"}${on_searching ? " is-searching" : ""}`}>
-                  <span className="landing-search-logos">{c.providers.map((provider, index) => <span key={provider} className={index === on_activeProvider ? "is-active" : undefined}><ProviderLogo provider={provider} size={16} /></span>)}</span>
-                  <span>{on_searching ? "Buscando nas fontes…" : "Busca concluída"}</span>
+        {/* The staged run is decoration: assistive tech reads the finished story below instead. */}
+        <div className="landing-sr-only" role="group" aria-label="Descrição da demonstração">
+          <p>Pergunta ({DEMO_SCOPE}): {turns[0].question}</p>
+          <p>Resposta do Arquivio: {answerPlain(turns[0].answer)}</p>
+          <div aria-label="Documentos utilizados" role="group">
+            <p>Documentos utilizados:</p>
+            <ol>{turns[0].sources.map(([name, provider]) => <li key={name}>{name}, {provider}</li>)}</ol>
+          </div>
+          <p>Pergunta de acompanhamento: {turns[1].question}</p>
+          <p>Resposta do Arquivio: {answerPlain(turns[1].answer)}</p>
+          <p>Em seguida, a Biblioteca lista arquivos do Google Drive, OneDrive, Notion e ClickUp. Ao abrir {CITED_FILE}, o trecho citado na resposta aparece destacado: {CITED_EXCERPT}</p>
+        </div>
+
+        <div ref={stageRef} className={`landing-demo-stage${fading ? " is-fading" : ""}`} aria-hidden="true">
+          <div className={`landing-demo-content${resetting ? " is-resetting" : ""}`}>
+            <section className={`landing-scene landing-scene-chat${scene === "chat" ? " is-on" : ""}`}>
+              <div className="landing-app-toolbar"><span><Plus size={13} />Nova conversa</span><PanelRightClose size={16} /></div>
+              <div className="landing-thread-viewport" ref={viewportRef}>
+                <div className="landing-app-thread" ref={innerRef} style={{ transform: `translateY(${scrolled ? -scrollMax : 0}px)` }}>
+                  {turns.map((turn, turnIndex) => {
+                    const sent = t >= turn.at.send;
+                    const searching = sent && t < turn.at.streamStart;
+                    const totalWords = countWords(turn.answer);
+                    const shownWords = Math.floor(progress(t, turn.at.streamStart, turn.at.streamEnd) * totalWords + (t >= turn.at.streamEnd ? 1 : 0));
+                    const activeProvider = searching ? Math.floor((t - turn.at.send) / 280) % turn.providers.length : -1;
+                    return <div key={turn.question} className="landing-turn">
+                      <div className={`landing-user-message${sent ? "" : " landing-stage-pending"}`}>
+                        {turnIndex === 0 && <small>{DEMO_SCOPE}</small>}
+                        <p>{turn.question}</p>
+                      </div>
+                      <article className="landing-answer">
+                        <div className={`landing-answer-author${sent ? "" : " landing-stage-pending"}`}><span><Sparkles size={15} /></span><div><strong>Arquivio</strong><small>{DEMO_SCOPE}</small></div></div>
+                        <div className={`landing-search-status${sent ? "" : " landing-stage-pending"}${searching ? " is-searching" : ""}`}>
+                          <span className="landing-search-logos">{turn.providers.map((provider, index) => <span key={provider} className={index === activeProvider ? "is-active" : undefined}><ProviderLogo provider={provider} size={16} /></span>)}</span>
+                          <span>{searching ? "Buscando nas fontes…" : "Busca concluída"}</span>
+                        </div>
+                        <p><AnswerWords segments={turn.answer} shown={shownWords} /></p>
+                        <div className={`landing-answer-sources${t >= turn.at.sources ? " is-shown" : ""}`}>
+                          <strong>Documentos utilizados</strong>
+                          {turn.sources.map(([name, provider], index) => <div key={name} style={{ animationDelay: `${index * 140}ms` }}><span>{index + 1}.</span><FileText size={14} /><b>{name}</b><small>{provider}</small></div>)}
+                        </div>
+                      </article>
+                    </div>;
+                  })}
                 </div>
-                <p><AnswerWords segments={c.answer} shown={on ? shownWords : countWords(c.answer)} /></p>
-                {c.sources.length > 0 && <div className={`landing-answer-sources${on_showSources ? " is-shown" : ""}`}>
-                  <strong>Documentos utilizados</strong>
-                  {c.sources.map(([name, provider], index) => <div key={name} className={index === 0 && on_clicking ? "is-clicked" : undefined} style={{ animationDelay: `${index * 140}ms` }}><span>{index + 1}.</span><FileText size={14} /><b>{name}</b><small>{provider}</small>{index === 0 && <MousePointer2 className={`landing-demo-cursor${on_clicking ? " is-clicking" : ""}`} size={18} />}</div>)}
-                  {c.extra > 0 && <p className="landing-sources-more">Ver mais {c.extra} documentos <ChevronDown size={13} aria-hidden="true" /></p>}
-                </div>}
-              </article>
-                </div>;
-              })}
-            </div>
-            <div className="landing-composer" aria-hidden="true">
-              <span className="landing-composer-input">
-                <span className={typing ? "landing-stage-pending" : undefined}>O que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta</span>
-                {typing && <span className="landing-composer-typed">{demo.question.slice(0, typedLength)}<i className="landing-caret" />{demo.mentions && typedLength >= demo.question.length && <b className="landing-composer-chip">@ Escopo do projeto.pdf</b>}</span>}
-              </span>
-              <span className="landing-composer-actions">
-                <span className="landing-scope-trigger"><span>{demo.scope}</span><ChevronDown size={12} /></span>
-                <span className="landing-composer-send"><small>{typing ? `${typedLength}/1000` : "0/1000"}</small><span className="landing-send"><Send size={13} />Enviar</span></span>
-              </span>
-            </div>
-            <p className="landing-composer-hint">Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.</p>
-          </section>
+              </div>
+              <div className="landing-composer">
+                <span className="landing-composer-input">
+                  <span className={typingTurn ? "landing-stage-pending" : undefined}>O que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta</span>
+                  {typingTurn && <span className="landing-composer-typed">{typingTurn.question.slice(0, typedLength)}<i className="landing-caret" /></span>}
+                </span>
+                <span className="landing-composer-actions">
+                  <span className="landing-scope-trigger"><span>{DEMO_SCOPE}</span><ChevronDown size={12} /></span>
+                  <span className="landing-composer-send"><small>{typingTurn ? `${typedLength}/1000` : "0/1000"}</small><span className="landing-send"><Send size={13} />Enviar</span></span>
+                </span>
+              </div>
+              <p className="landing-composer-hint">Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.</p>
+            </section>
 
-          <aside className="landing-app-sources" aria-label="Biblioteca ilustrativa">
-            <div className="landing-panel-title"><strong>Biblioteca</strong><span>Arquivos sincronizados</span></div>
-            <div className="landing-app-breadcrumb">Biblioteca</div>
-            <div className="landing-source-list">
-              <div className="landing-source-row"><ProviderLogo provider="google" size={20} /> <span>Google Drive</span><ChevronRight size={13} /></div>
-              <div className="landing-folder-row"><Folder size={14} aria-hidden="true" /><span>Projeto Aurora</span></div>
-              <div className="landing-source-row"><ProviderLogo provider="notion" size={20} /> <span>Notion</span><ChevronRight size={13} /></div>
-              <div className="landing-source-row"><ProviderLogo provider="onedrive" size={20} /> <span>OneDrive</span><ChevronRight size={13} /></div>
-              <div className="landing-source-row"><ProviderLogo provider="sharepoint" size={20} /> <span>SharePoint</span><ChevronRight size={13} /></div>
-              <div className="landing-source-row"><ProviderLogo provider="clickup" size={20} /> <span>ClickUp</span><ChevronRight size={13} /></div>
-            </div>
-            <p className="landing-scope-note"><ShieldCheck size={14} />A conversa usa somente as ferramentas e menções selecionadas na mensagem.</p>
-          </aside>
+            <section className={`landing-scene landing-scene-library${scene === "library" ? " is-on" : ""}`}>
+              <aside className="landing-lib-tools">
+                <div className="landing-panel-title"><strong>Biblioteca</strong><span>Arquivos sincronizados</span></div>
+                <div className="landing-lib-tool is-selected"><Folder size={16} /><span>Todas as fontes</span></div>
+                {LIBRARY_TOOLS.map((tool) => <div key={tool.provider} className="landing-lib-tool"><ProviderLogo provider={tool.provider} size={18} /><span>{tool.label}</span><i className="landing-lib-dot" /></div>)}
+              </aside>
+              <div className="landing-lib-main">
+                <div className="landing-lib-head">
+                  <div><strong>Arquivos</strong><span className="landing-lib-crumb">Biblioteca <ChevronRight size={12} /> Projeto Aurora</span></div>
+                  <span className="landing-lib-seg"><List size={14} />Lista</span>
+                </div>
+                <div className="landing-lib-list">
+                  {LIBRARY_ROWS.map((row, index) => (
+                    <div key={row.name} ref={index === CITED_ROW ? rowRef : undefined} style={{ animationDelay: `${index * 90}ms` }} className={`landing-lib-row${index === CITED_ROW && t >= T_ROW_CLICK ? " is-clicked" : ""}`}>
+                      <FileText size={16} /><b>{row.name}</b><span className="landing-lib-provider"><ProviderLogo provider={row.provider} size={16} /><span>{row.label}</span></span><small>{row.kind}</small><em>Indexado</em>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <aside className={`landing-viewer${viewerOpen ? " is-open" : ""}`}>
+                <div className="landing-viewer-head"><FileText size={16} /><b>{CITED_FILE}</b><span className="landing-lib-provider"><ProviderLogo provider="google" size={16} /><span>Google Drive</span></span><ExternalLink size={14} /></div>
+                <div className="landing-viewer-body">
+                  <h4>Escopo do projeto — Estúdio Aurora</h4>
+                  <span className="landing-viewer-bar" style={{ width: "92%" }} /><span className="landing-viewer-bar" style={{ width: "78%" }} />
+                  <p className="landing-viewer-kicker">Trecho citado na resposta · página 2</p>
+                  <p className={`landing-cited${t >= T_HIGHLIGHT ? " is-lit" : ""}`}><mark>{CITED_EXCERPT}</mark></p>
+                  <span className="landing-viewer-bar" style={{ width: "86%" }} /><span className="landing-viewer-bar" style={{ width: "64%" }} />
+                </div>
+              </aside>
+            </section>
 
-          <aside className="landing-app-search" aria-label="Busca de arquivos ilustrativa">
-            <div className="landing-search-copy">
-              <strong>Buscar arquivos</strong>
-              <p>Encontre arquivos e pastas pelo nome em todas as fontes conectadas.</p>
-            </div>
-            <div className="landing-search-controls"><span className="landing-search-field">Nome de arquivo ou pasta</span><span className="landing-search-button"><Search size={14} /></span></div>
-            <small>A busca consulta somente nomes; o conteúdo permanece no escopo da conversa.</small>
-          </aside>
+            <MousePointer2 className={`landing-demo-cursor${t >= T_CURSOR_TAB && t < T_CURSOR_HIDE ? " is-visible" : ""}${(t >= T_TAB_CLICK && t < T_TAB_CLICK + 300) || (t >= T_ROW_CLICK && t < T_ROW_CLICK + 300) ? " is-clicking" : ""}`} size={24} style={{ transform: `translate(${cursorPos.x}px, ${cursorPos.y}px)` }} />
+          </div>
         </div>
       </div>
-      <figcaption id="landing-preview-caption">Prévia da área de consultas do Arquivio. <span>Exemplos fictícios.</span></figcaption>
+      <figcaption id="landing-preview-caption">Prévia das áreas de consultas e Biblioteca do Arquivio. <span>Exemplos fictícios.</span></figcaption>
     </figure>
   );
 }
