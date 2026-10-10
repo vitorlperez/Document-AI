@@ -46,6 +46,14 @@ logs/
 tmp/
 output/
 
+# Local scratch and QA capture folders (root level)
+/scratch-*/
+/screenshots-*/
+
+# Finder duplicate copies ("name 2.ext", "name 3.ext") and duplicate dirs
+* [2-9]
+* [2-9].*
+
 # Local agent and tool metadata
 .codex/.DS_Store
 
