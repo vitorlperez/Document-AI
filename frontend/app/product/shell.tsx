@@ -49,7 +49,7 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
           {tabs.map((tab) => { const Icon = tab.icon; const active = tab.suffix === "" ? chatScreen : (pathname ?? "").replace(/\/$/, "").endsWith(tab.suffix); return <a key={tab.label} href={companyPath(company.id, tab.suffix)} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return; event.preventDefault(); go(tab.suffix); }} aria-current={active ? "page" : undefined} aria-label={tab.label} title={tab.label} className="primary-tab"><Icon size={17} aria-hidden="true" /><span className="primary-tab-label">{tab.label}</span></a>; })}
         </nav>
         <div className="product-header-end">
-          <span className="hidden text-sm text-muted-foreground min-[1100px]:block">{user.email}</span>
+          <span className="hidden text-sm text-muted-foreground min-[1600px]:block">{user.email}</span>
           {user.is_platform_staff && <button onClick={() => onNavigate("/staff")} className="rounded-lg border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-700"><ShieldCheck className="mr-1 inline" size={14} />Suporte</button>}
           <NotificationBell key={company.id} company={company} /><ThemeToggle /><button onClick={onLogout} aria-label="Sair da conta" title="Sair" className="rounded-lg p-2 text-muted-foreground hover:bg-sage"><LogOut size={18} /></button>
         </div>
