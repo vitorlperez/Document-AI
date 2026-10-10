@@ -6,15 +6,17 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { type OnboardingState } from "../organization-onboarding";
 import { ConversationTour } from "../conversation-tour";
 import { AnswerMarkdown } from "../answer-markdown";
+import { REVEAL_MAX_MS, useAnswerReveal } from "../answer-reveal";
+import { SourceReadingStatus } from "../source-reading";
 import { QuestionScopePicker, contextReady, toolLabel, providerKey } from "../question-scope";
 import { SyncIndicator, useSyncStatus } from "../sync-status";
 import { ToolsSidebar, useToolsSidebarCollapsed } from "../tools-sidebar";
 import { MentionComposer, type MentionCandidate } from "../mention-composer";
 import { mentionSummary } from "../mention-label";
 import { type Company, type LibraryNode, type LibraryPage, type LibraryContext, type LibrarySync, type SavedQuery, type Evidence, type Answer, type ConversationMessage as BaseConversationMessage, type PersistedConversationMessage as BasePersistedConversationMessage, api, messageFor, useLatestRequest, answerText, citationSourceKey, compactCitations, libraryPath } from "./types-and-api";
-import { LoadingIndicator, NewConversationButton } from "./shared-ui";
+import { NewConversationButton } from "./shared-ui";
 
-type ConversationMessage = BaseConversationMessage & { feedback?: "up" | "down"; persisted?: boolean };
+type ConversationMessage = BaseConversationMessage & { feedback?: "up" | "down"; persisted?: boolean; fresh?: boolean };
 type PersistedConversationMessage = Omit<BasePersistedConversationMessage, "context"> & {
   context: (NonNullable<BasePersistedConversationMessage["context"]> & { feedback?: { vote: "up" | "down" } }) | null;
 };
@@ -26,7 +28,7 @@ function restoredMessages(messages: PersistedConversationMessage[]): Conversatio
     if (message.role === "user") previousProviders = providers;
     const contextName = providers.length > 0 ? providers.map(toolLabel).join(", ") : "Todas as ferramentas";
     return message.role === "assistant"
-      ? { id: message.id, role: "assistant", content: message.content, contextName, persisted: true, feedback: message.context?.feedback?.vote, answer: message.response ? { ...message.response, citations: compactCitations(message.response.citations ?? []) } : undefined }
+      ? { id: message.id, role: "assistant", content: message.content, contextName, providers, persisted: true, feedback: message.context?.feedback?.vote, answer: message.response ? { ...message.response, citations: compactCitations(message.response.citations ?? []) } : undefined }
       : { id: message.id, role: "user", content: message.content, contextName, providers, mentions: message.context?.mentions, allTools: providers.length === 0 };
   });
 }
@@ -77,6 +79,9 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
   const [restoringConversation, setRestoringConversation] = useState(true);
   const [asking, setAsking] = useState(false);
   const conversationEpoch = useRef(0);
+  const askSequence = useRef(0);
+  const revealWaiters = useRef(new Map<string, () => void>());
+  const followTranscript = useRef(true);
   const canManage = company.role !== "member";
   const mentionsOutsideSelection = mentions.filter((item) => !allTools && !queryProviders.includes(providerKey(item.source_provider)));
   const syncInProgress = syncs.some((item) => item.status === "queued" || item.status === "syncing");
@@ -156,12 +161,27 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
     const timer = window.setInterval(() => { loadOperations("none"); loadLibrary(); }, 5000);
     return () => window.clearInterval(timer);
   }, [loadOperations, loadLibrary, syncs]);
-  useEffect(() => { const transcript = transcriptRef.current; if (transcript) transcript.scrollTop = transcript.scrollHeight; }, [messages]);
+  useEffect(() => { const transcript = transcriptRef.current; if (transcript) { followTranscript.current = true; transcript.scrollTop = transcript.scrollHeight; } }, [messages]);
+  // While an answer is being revealed the list does not change, so the transcript follows the text unless the reader scrolled up.
+  const followReveal = useCallback(() => { const transcript = transcriptRef.current; if (transcript && followTranscript.current) transcript.scrollTop = transcript.scrollHeight; }, []);
+  const revealFinished = useCallback((id: string) => { revealWaiters.current.get(id)?.(); }, []);
   async function saveQuestion(message: ConversationMessage) {
     if (!message.contextId || saving) return;
     setSaving(true);
     try { await api<SavedQuery>(`/workspace-folders/${message.contextId}/saved-queries?organization_id=${company.id}`, { method: "POST", body: JSON.stringify({ name: message.content.slice(0, 160), query: message.content, filters: {} }) }); setNotice("Pergunta salva nesta pasta."); }
     catch (caught) { setError(messageFor(caught)); } finally { setSaving(false); }
+  }
+  async function restoreTranscript(savedConversationId: string, pendingId: string, requestEpoch: number, sequence: number) {
+    await new Promise<void>((resolve) => {
+      const timer = window.setTimeout(resolve, REVEAL_MAX_MS + 1500);
+      revealWaiters.current.set(pendingId, () => { window.clearTimeout(timer); resolve(); });
+    });
+    revealWaiters.current.delete(pendingId);
+    if (conversationEpoch.current !== requestEpoch || askSequence.current !== sequence) return;
+    try {
+      const saved = await api<{ messages: PersistedConversationMessage[] }>(`/organizations/${company.id}/conversations/${savedConversationId}`);
+      if (conversationEpoch.current === requestEpoch && askSequence.current === sequence) setMessages(restoredMessages(saved.messages));
+    } catch { /* Keep the delivered answer; feedback becomes available on successful restore. */ }
   }
   async function ask(event: FormEvent) {
     event.preventDefault();
@@ -169,6 +189,7 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
     if (asking || !canAsk || !submittedQuestion) return;
     const requestId = crypto.randomUUID();
     const requestEpoch = conversationEpoch.current;
+    const sequence = ++askSequence.current;
     const pendingId = `${requestId}:assistant`;
     const selectedProviders = allTools ? [...new Set(contexts.filter((item) => item.query_status === "ready" || item.query_status === "no_compatible_embeddings").map((item) => providerKey(item.source_provider)))] : [...queryProviders];
     const selectedMentions = [...mentions];
@@ -190,15 +211,11 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
         setConversationId(result.conversation_id);
         window.sessionStorage.setItem(`arquivio:conversation:${company.id}`, result.conversation_id);
       }
-      setMessages((items) => items.map((item) => item.id === pendingId ? { ...item, pending: false, answer } : item));
-      // Refresh the canonical transcript: never attach a vote to a temporary request UUID.
-      if (result.conversation_id) {
-        try {
-          const saved = await api<{ messages: PersistedConversationMessage[] }>(`/organizations/${company.id}/conversations/${result.conversation_id}`);
-          if (conversationEpoch.current === requestEpoch) setMessages(restoredMessages(saved.messages));
-        } catch { /* Keep the delivered answer; feedback becomes available on successful restore. */ }
-      }
-    } catch (caught) {
+      setMessages((items) => items.map((item) => item.id === pendingId ? { ...item, pending: false, fresh: true, answer } : item));
+      // Refresh the canonical transcript once the answer finished appearing: never attach a vote to a temporary request UUID,
+      // and never swap the list under a reveal in progress. A newer question or conversation supersedes this refresh.
+      if (result.conversation_id) void restoreTranscript(result.conversation_id, pendingId, requestEpoch, sequence);
+        } catch (caught) {
       if (conversationEpoch.current !== requestEpoch) return;
       const error = messageFor(caught);
       setMessages((items) => items.map((item) => item.id === pendingId ? { ...item, pending: false, error } : item));
@@ -211,7 +228,7 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
       <ToolsSidebar orgId={company.id} canManage={canManage} collapsed={toolsCollapsed} onToggle={toggleTools} tools={syncStatus.tools} loading={syncStatus.loading} libraryRoots={roots} onAdd={onConnect} onSelectTool={(tool) => router.push(libraryPath(company.id, tool.libraryNodeId))} />
       <main id="consultas" className="conversation-panel relative flex min-h-[560px] min-w-0 flex-col bg-panel">
         <div className="chat-topbar flex shrink-0 items-center justify-end gap-1 border-b border-line-soft bg-panel px-3 py-1.5 sm:px-5"><SyncIndicator tools={syncStatus.tools} /><button type="button" onClick={onShowTour} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:bg-sage" aria-label="Rever tour do app"><HelpCircle size={16} aria-hidden="true" /><span className="hidden sm:inline">Conhecer o app</span></button><NewConversationButton onClick={startNewConversation} disabled={asking} /></div>
-        <div ref={transcriptRef} role="log" aria-label="Conversa com seus documentos" aria-live="polite" className="flex-1 overflow-y-auto px-5 py-6 sm:px-7">{messages.length > 0 ? <div className="mx-auto max-w-3xl space-y-5">{messages.map((message) => message.role === "user" ? <div key={message.id} className="ml-auto max-w-[85%]"><p className="mb-1 text-right text-xs font-medium text-muted-foreground">{message.contextName}</p><div className="conversation-question px-4 py-3 text-sm leading-6">{message.content}{Boolean(message.mentions?.length) && <span className="mt-2 block text-xs">{mentionSummary(message.mentions ?? [])}</span>}</div>{message.contextId && <button disabled={saving} onClick={() => { void saveQuestion(message); }} className="mt-1.5 block ml-auto text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-40">Salvar pergunta</button>}</div> : <article key={message.id} className="conversation-answer"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-sage-selected text-primary"><Sparkles size={15} /></span><div><p className="text-sm font-semibold text-ink">Arquivio</p><p className="text-xs text-muted-foreground">{message.contextName}</p></div></div>{message.pending ? <div className="mt-4 rounded-md bg-paper px-3 py-2.5"><LoadingIndicator label="A IA está analisando as evidências e preparando a resposta…" className="text-sm text-muted-foreground" /></div> : message.error ? <div className="mt-4 text-sm leading-6 text-rose-700"><p>Não foi possível concluir esta pergunta: {message.error}</p><button type="button" className="mt-2 min-h-11 underline" onClick={() => { setQuestion(message.content); setMentions(message.mentions ?? []); setAllTools(message.allTools ?? true); setQueryProviders(message.providers ?? []); composerRef.current?.focus(); }}>Repetir com este contexto</button></div> : message.answer ? <><AssistantAnswer messageId={message.id} answer={message.answer} />
+        <div ref={transcriptRef} onScroll={(event) => { const el = event.currentTarget; followTranscript.current = el.scrollHeight - el.scrollTop - el.clientHeight < 96; }} role="log" aria-label="Conversa com seus documentos" aria-live="polite" className="flex-1 overflow-y-auto px-5 py-6 sm:px-7">{messages.length > 0 ? <div className="mx-auto max-w-3xl space-y-5">{messages.map((message) => message.role === "user" ? <div key={message.id} className="ml-auto max-w-[85%]"><p className="mb-1 text-right text-xs font-medium text-muted-foreground">{message.contextName}</p><div className="conversation-question px-4 py-3 text-sm leading-6">{message.content}{Boolean(message.mentions?.length) && <span className="mt-2 block text-xs">{mentionSummary(message.mentions ?? [])}</span>}</div>{message.contextId && <button disabled={saving} onClick={() => { void saveQuestion(message); }} className="mt-1.5 block ml-auto text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-40">Salvar pergunta</button>}</div> : <article key={message.id} className="conversation-answer"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-sage-selected text-primary"><Sparkles size={15} /></span><div><p className="text-sm font-semibold text-ink">Arquivio</p><p className="text-xs text-muted-foreground">{message.contextName}</p></div></div>{(message.pending || (!message.error && message.answer && (message.fresh || Boolean(message.providers?.length)))) && <SourceReadingStatus providers={message.providers} reading={Boolean(message.pending)} />}{message.pending ? null : message.error ? <div className="mt-4 text-sm leading-6 text-rose-700"><p>Não foi possível concluir esta pergunta: {message.error}</p><button type="button" className="mt-2 min-h-11 underline" onClick={() => { setQuestion(message.content); setMentions(message.mentions ?? []); setAllTools(message.allTools ?? true); setQueryProviders(message.providers ?? []); composerRef.current?.focus(); }}>Repetir com este contexto</button></div> : message.answer ? <><AssistantAnswer messageId={message.id} answer={message.answer} animate={Boolean(message.fresh)} onProgress={followReveal} onRevealed={() => revealFinished(message.id)} />
         {message.persisted && conversationId && <AnswerFeedback organizationId={company.id} conversationId={conversationId} messageId={message.id} initialVote={message.feedback} />}</> : null}</article>)}</div> : <div className="mx-auto flex h-full max-w-md flex-col items-center justify-center py-16 text-center"><span className="grid size-12 place-items-center rounded-lg bg-sage text-primary"><Sparkles size={22} /></span><h2 className="mt-4 text-lg font-semibold text-ink">O que você quer descobrir?</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Pergunte sobre conteúdo indexado. Se quiser restringir a pergunta, escolha ferramentas abaixo ou mencione arquivos e pastas com @ ou /.</p>{canAsk && <div className="mt-6 flex flex-wrap justify-center gap-2">{["Quais são os principais prazos?", "O que foi definido sobre as entregas?", "Quais são as responsabilidades da equipe?"].map((prompt) => <button key={prompt} onClick={() => { setQuestion(prompt); setMentions([]); composerRef.current?.focus(); }} className="rounded-md border border-line px-3 py-2 text-xs text-muted-foreground hover:border-primary hover:bg-sage">{prompt}</button>)}</div>}</div>}</div>
         <form data-tour="composer" onSubmit={(event) => { void ask(event); }} className="conversation-composer shrink-0 bg-panel p-4 sm:px-7 sm:py-5">
           <div className="rounded-lg border border-line bg-panel p-2 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-sage-selected">
@@ -253,8 +270,10 @@ function AnswerFeedback({ organizationId, conversationId, messageId, initialVote
   </div>;
 }
 
-function AssistantAnswer({ messageId, answer }: { messageId: string; answer: Answer }) {
+function AssistantAnswer({ messageId, answer, animate, onProgress, onRevealed }: { messageId: string; answer: Answer; animate: boolean; onProgress: () => void; onRevealed: () => void }) {
   const [expanded, setExpanded] = useState(false);
+  const fullText = answerText(answer);
+  const reveal = useAnswerReveal(fullText, animate, { onProgress, onDone: onRevealed });
   const sourceId = (number: number) => `source-${messageId}-${number}`;
   const openSource = (number: number) => {
     setExpanded((open) => open || number > 3);
@@ -266,10 +285,15 @@ function AssistantAnswer({ messageId, answer }: { messageId: string; answer: Ans
       row.focus({ preventScroll: true });
     });
   };
+  const settle = animate ? " answer-settle" : "";
   return <>
-    <AnswerMarkdown text={answerText(answer)} fileNames={answer.citations.map((citation) => citation.document_name)} onCite={answer.citations.length > 0 ? openSource : undefined} />
-    {Boolean(answer.coverage?.pending_folders) && <p className="mt-2 text-xs text-amber-800">Resposta baseada no que já foi sincronizado{answer.coverage!.total_folders > 0 ? ` — ${answer.coverage!.pending_folders} de ${Math.max(answer.coverage!.total_folders, answer.coverage!.pending_folders)} ${Math.max(answer.coverage!.total_folders, answer.coverage!.pending_folders) === 1 ? "pasta ainda está sincronizando" : "pastas ainda estão sincronizando"}` : ""}.</p>}
-    {answer.citations.length > 0 && <SourceDocuments items={answer.citations} expanded={expanded} setExpanded={setExpanded} rowId={sourceId} />}
+    {/* While the text is still arriving, assistive tech gets the whole answer once instead of every word. */}
+    {!reveal.done && <p className="sr-only">{fullText}</p>}
+    <div className={reveal.done ? undefined : "answer-revealing"} aria-hidden={reveal.done ? undefined : true} inert={!reveal.done}>
+      <AnswerMarkdown text={reveal.text} fileNames={answer.citations.map((citation) => citation.document_name)} onCite={answer.citations.length > 0 ? openSource : undefined} />
+    </div>
+    {reveal.done && Boolean(answer.coverage?.pending_folders) && <p className={`mt-2 text-xs text-amber-800${settle}`}>Resposta baseada no que já foi sincronizado{answer.coverage!.total_folders > 0 ? ` — ${answer.coverage!.pending_folders} de ${Math.max(answer.coverage!.total_folders, answer.coverage!.pending_folders)} ${Math.max(answer.coverage!.total_folders, answer.coverage!.pending_folders) === 1 ? "pasta ainda está sincronizando" : "pastas ainda estão sincronizando"}` : ""}.</p>}
+    {reveal.done && answer.citations.length > 0 && <div className={animate ? "answer-settle" : undefined}><SourceDocuments items={answer.citations} expanded={expanded} setExpanded={setExpanded} rowId={sourceId} /></div>}
   </>;
 }
 

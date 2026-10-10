@@ -136,3 +136,15 @@
   .library-back-list { display: grid !important; place-items: center; }
   .library-back-desktop { display: none !important; }
 }
+
+/* Live answer: text arrives word by word behind a subtle caret; sources and notes settle in once it is complete. */
+.answer-revealing .answer-body > :is(p, h3, h4):last-child::after,
+.answer-revealing .answer-body > :is(ul, ol):last-child > li:last-child::after { content: ""; display: inline-block; width: 1.5px; height: 1em; margin-left: 2px; vertical-align: text-bottom; background: var(--color-primary); animation: answer-caret 900ms steps(1) infinite; }
+.answer-settle { animation: answer-settle-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes answer-caret { 50% { opacity: 0; } }
+@keyframes answer-settle-in { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .answer-revealing .answer-body > :is(p, h3, h4):last-child::after,
+  .answer-revealing .answer-body > :is(ul, ol):last-child > li:last-child::after { animation: none; }
+  .answer-settle { animation: none; }
+}
