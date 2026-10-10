@@ -31,6 +31,7 @@ from app.api.overview import router as overview_router
 from app.api.platform import router as platform_router
 from app.api.public_v1 import router as public_v1_router
 from app.api.saved_queries import router as saved_queries_router
+from app.api.notifications import router as notifications_router
 from app.api.usage import router as usage_router
 from app.core.config import Settings, get_settings
 from app.core.database import build_engine, build_session_factory
@@ -175,6 +176,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(platform_router, dependencies=authenticated)
     app.include_router(integrations_router, dependencies=authenticated)
     app.include_router(saved_queries_router, dependencies=authenticated)
+    app.include_router(notifications_router, dependencies=authenticated)
     app.include_router(usage_router, dependencies=authenticated)
     app.include_router(insights_router, dependencies=authenticated)
     app.include_router(ingestion_router, dependencies=authenticated)

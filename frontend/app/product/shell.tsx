@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { Brand } from "../brand";
 import { ThemeToggle } from "../theme-toggle";
+import { NotificationBell } from "./notification-bell";
 import { MobileShellHeader, useIsMobileShell, useVisualViewportHeight } from "../mobile-nav";
 import { type Company, type User, roleLabel, companyPath } from "./types-and-api";
 
@@ -50,7 +51,7 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
         <div className="product-header-end">
           <span className="hidden text-sm text-muted-foreground min-[1100px]:block">{user.email}</span>
           {user.is_platform_staff && <button onClick={() => onNavigate("/staff")} className="rounded-lg border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-700"><ShieldCheck className="mr-1 inline" size={14} />Suporte</button>}
-          <ThemeToggle /><button onClick={onLogout} aria-label="Sair da conta" title="Sair" className="rounded-lg p-2 text-muted-foreground hover:bg-sage"><LogOut size={18} /></button>
+          <NotificationBell key={company.id} company={company} /><ThemeToggle /><button onClick={onLogout} aria-label="Sair da conta" title="Sair" className="rounded-lg p-2 text-muted-foreground hover:bg-sage"><LogOut size={18} /></button>
         </div>
       </div>
     </header>}

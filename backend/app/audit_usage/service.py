@@ -31,6 +31,11 @@ class SavedQueryService:
         self.session.add(saved); self.session.flush(); return saved
     def update(self, *, scope: OrganizationScope, user_id: UUID, saved_query_id: UUID, name: str) -> SavedQuery:
         saved = self._own(scope=scope, user_id=user_id, saved_query_id=saved_query_id); saved.name=name; self.session.flush(); return saved
+    def set_followed(self, *, scope: OrganizationScope, user_id: UUID, saved_query_id: UUID, followed: bool) -> SavedQuery:
+        saved = self._own(scope=scope, user_id=user_id, saved_query_id=saved_query_id)
+        saved.followed = followed
+        if not followed: saved.last_answer = None; saved.last_checked_at = None
+        self.session.flush(); return saved
     def delete(self, *, scope: OrganizationScope, user_id: UUID, saved_query_id: UUID) -> None:
         self.session.delete(self._own(scope=scope, user_id=user_id, saved_query_id=saved_query_id)); self.session.flush()
     def _own(self, *, scope: OrganizationScope, user_id: UUID, saved_query_id: UUID) -> SavedQuery:

@@ -9,6 +9,7 @@ from app.identity.models import User  # noqa: F401
 from app.ingestion.models import ProcessingJob  # noqa: F401
 from app.knowledge.models import Document, DocumentChunk  # noqa: F401
 from app.library.models import LibraryNode  # noqa: F401
+from app.notifications.models import Notification, NotificationPreference  # noqa: F401
 from app.organizations.models import Membership, Organization  # noqa: F401
 from app.workspaces.models import WorkspaceFolder  # noqa: F401
 

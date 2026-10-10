@@ -60,6 +60,18 @@ def rename_saved_query(saved_query_id: UUID, organization_id: UUID, payload: Sav
     return _serialize(saved)
 
 
+class SavedQueryFollowInput(BaseModel):
+    followed: bool
+
+
+@router.put("/saved-queries/{saved_query_id}/follow")
+def follow_saved_query(saved_query_id: UUID, organization_id: UUID, payload: SavedQueryFollowInput, user: User = Depends(current_user), session: Session = Depends(database_session)) -> dict[str, object]:
+    """Follow = re-ask after syncs that change the folder, notifying only when the answer changes."""
+    try: saved = SavedQueryService(session).set_followed(scope=OrganizationScope(organization_id), user_id=user.id, saved_query_id=saved_query_id, followed=payload.followed)
+    except GoogleAccessDenied as error: raise HTTPException(status_code=403, detail="not allowed") from error
+    return _serialize(saved)
+
+
 @router.delete("/saved-queries/{saved_query_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_saved_query(saved_query_id: UUID, organization_id: UUID, user: User = Depends(current_user), session: Session = Depends(database_session)) -> None:
     try: SavedQueryService(session).delete(scope=OrganizationScope(organization_id), user_id=user.id, saved_query_id=saved_query_id)
@@ -67,4 +79,4 @@ def delete_saved_query(saved_query_id: UUID, organization_id: UUID, user: User =
 
 
 def _serialize(saved) -> dict[str, object]:
-    return {"id": str(saved.id), "workspace_folder_id": str(saved.workspace_folder_id), "name": saved.name, "query": saved.query, "filters": saved.filters}
+    return {"id": str(saved.id), "workspace_folder_id": str(saved.workspace_folder_id), "name": saved.name, "query": saved.query, "filters": saved.filters, "followed": saved.followed}

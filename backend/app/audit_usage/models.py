@@ -1,7 +1,18 @@
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import JSON, Date, ForeignKey, Integer, String, UniqueConstraint, Uuid
+import sqlalchemy as sa
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+    Uuid,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, CreatedAtMixin, UUIDPrimaryKeyMixin
@@ -30,6 +41,10 @@ class SavedQuery(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     query: Mapped[str] = mapped_column(String(1000), nullable=False)
     filters: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False, default=dict)
+    # "Living question": re-asked after a sync that changed documents; notifies only when the answer changes.
+    followed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa.false())
+    last_answer: Mapped[dict[str, object] | None] = mapped_column(JSON)
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class UsageRecord(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):

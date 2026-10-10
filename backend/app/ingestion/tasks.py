@@ -9,6 +9,7 @@ from time import monotonic
 from uuid import UUID
 
 from celery import Celery
+from celery.schedules import crontab
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -62,6 +63,10 @@ def beat_schedule(interval_minutes: int) -> dict[str, dict[str, object]]:
         "purge-extraction-cache": {
             "task": "document_intelligence.ingestion.purge_extraction_cache",
             "schedule": timedelta(days=1),
+        },
+        "weekly-what-changed-digest": {
+            "task": "document_intelligence.ingestion.weekly_digest",
+            "schedule": crontab(day_of_week=1, hour=8, minute=0),
         },
     }
 
@@ -230,6 +235,48 @@ def purge_extraction_cache_task() -> int:
         removed = purge_cache(session)
         session.commit()
         return removed
+
+
+def _semantic_provider(settings: Settings) -> OpenAIQuestionProvider | None:
+    key = settings.openai_api_key.get_secret_value() if settings.openai_api_key else None
+    return OpenAIQuestionProvider(key) if key else None
+
+
+def refresh_followed_after_sync(session: Session, settings: Settings, workspace_folder_id: UUID) -> None:
+    """Re-ask followed saved queries of a synced folder; never allowed to fail the sync."""
+    try:
+        provider = _semantic_provider(settings)
+        if provider is None:
+            return
+        from app.notifications.followed import refresh_followed_queries
+        from app.organizations.delivery import email_delivery_from_settings
+
+        refresh_followed_queries(
+            session, workspace_folder_id=workspace_folder_id, provider=provider,
+            email=email_delivery_from_settings(settings), app_url=settings.public_app_url,
+        )
+        session.commit()
+    except Exception:
+        # Notifications are best effort after a completed sync; the sync itself must stay successful.
+        logger.exception("followed query refresh failed")
+        session.rollback()
+
+
+@celery_app.task(name="document_intelligence.ingestion.weekly_digest")
+def weekly_digest_task() -> dict[str, int]:
+    """Monday "what changed" digest per organization; silent when nothing changed."""
+    settings = get_settings()
+    provider = _semantic_provider(settings)
+    if provider is None:
+        return {"organizations": 0, "notified": 0}
+    from app.notifications.digest import send_weekly_digests
+    from app.organizations.delivery import email_delivery_from_settings
+
+    session_factory = build_session_factory(build_engine(settings))
+    with session_factory() as session:
+        return send_weekly_digests(
+            session, provider=provider, email=email_delivery_from_settings(settings), app_url=settings.public_app_url,
+        )
 
 
 @celery_app.task(
@@ -564,6 +611,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 source.encrypted_credentials = updated_credentials
             source.last_synced_at = completed_job.completed_at
             session.commit()
+            refresh_followed_after_sync(session, settings, job.workspace_folder_id)
             logger.info(
                 "workspace reconciliation complete",
                 extra={
