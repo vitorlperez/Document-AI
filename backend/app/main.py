@@ -21,6 +21,7 @@ from app.api.auth import router as auth_router
 from app.api.conversations import router as conversations_router
 from app.api.health import router as health_router
 from app.api.ingestion import router as ingestion_router
+from app.api.insights import router as insights_router
 from app.api.integrations import router as integrations_router
 from app.api.library import router as library_router
 from app.api.mcp_admin import router as mcp_admin_router
@@ -174,6 +175,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(integrations_router, dependencies=authenticated)
     app.include_router(saved_queries_router, dependencies=authenticated)
     app.include_router(usage_router, dependencies=authenticated)
+    app.include_router(insights_router, dependencies=authenticated)
     app.include_router(ingestion_router, dependencies=authenticated)
     app.include_router(library_router, dependencies=authenticated)
     app.include_router(answer_feedback_router, dependencies=authenticated)
