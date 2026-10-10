@@ -201,6 +201,7 @@ def test_questions_api_returns_cited_answer_and_denies_cross_tenant(search_api) 
     assert supported.json()["citations"] == [
         {
             "document_id": supported.json()["citations"][0]["document_id"],
+            "chunk_id": supported.json()["citations"][0]["chunk_id"],
             "document_name": "Campaign Briefing.pdf",
             "excerpt": "The campaign launches in September.",
             "page_number": None,

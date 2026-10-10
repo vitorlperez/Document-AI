@@ -42,6 +42,7 @@ def serialize_question_result(
     for item in result.citations:
         citation = {
             "document_id": str(item.document_id),
+            "chunk_id": str(item.chunk_id),
             "document_name": safe_label(item.document_name),
             "excerpt": short_citation_excerpt(strip_invisible(item.excerpt)),
             "page_number": item.page_number,

@@ -57,3 +57,16 @@ def test_library_overview_scoped_by_provider_and_member_only(corpus):  # noqa: F
     assert client.get(f'/organizations/{org}/library/overview', params={'providers': ['clickup']}).json()[
         'suggested_questions'] == []
     assert client.get(f'/organizations/{uuid4()}/library/overview').status_code in {403, 404}
+
+
+def test_citation_evidence_returns_chunk_for_member_and_hides_foreign(corpus):  # noqa: F811 - imported pytest fixture
+    client, _, _, org, _, _ = corpus
+    citation = ask(client, org, scope='organization').json()['citations'][0]
+    assert citation['chunk_id']
+    url = f"/organizations/{org}/documents/{citation['document_id']}/evidence"
+    body = client.get(url, params={'chunk_id': citation['chunk_id']}).json()
+    assert body['document_name'] == citation['document_name'] and body['text']
+    assert body['source_url'] == citation['source_url']
+    assert client.get(url, params={'chunk_id': str(uuid4())}).status_code == 404
+    other = f"/organizations/{uuid4()}/documents/{citation['document_id']}/evidence"
+    assert client.get(other, params={'chunk_id': citation['chunk_id']}).status_code == 404
