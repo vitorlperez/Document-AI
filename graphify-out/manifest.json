@@ -2148,9 +2148,9 @@
     "semantic_hash": ""
   },
   "frontend/app/mention-composer.tsx": {
-    "mtime": 1791551003.605437,
-    "seen": 1791551422.046143,
-    "ast_hash": "4a9dc24927273e047326dfb3ddbdbb2f",
+    "mtime": 1791675666.2242923,
+    "seen": 1791676324.197047,
+    "ast_hash": "052e58e04dfe389174450a3e04b243e5",
     "semantic_hash": ""
   },
   "TASK/items/F-201.md": {
@@ -7125,6 +7125,18 @@
     "mtime": 1791673324.915393,
     "seen": 1791674302.48051,
     "ast_hash": "3cba181e363060f95585e699dbb46934",
+    "semantic_hash": ""
+  },
+  "frontend/app/composer-keys.ts": {
+    "mtime": 1791675666.187458,
+    "seen": 1791676324.197043,
+    "ast_hash": "df9dda4d207842b3b04660471d5c08ff",
+    "semantic_hash": ""
+  },
+  "frontend/tests/composer-keys.test.mjs": {
+    "mtime": 1791675666.189624,
+    "seen": 1791676324.1971,
+    "ast_hash": "f24561b05f0c030c049c4aaea436bb83",
     "semantic_hash": ""
   }
 }
