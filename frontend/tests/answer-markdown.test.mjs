@@ -4,7 +4,8 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { AnswerMarkdown } from "../app/answer-markdown.tsx";
+import { AnswerMarkdown, tableToCsv } from "../app/answer-markdown.tsx";
+import { answerWithSources } from "../app/answer-blocks.ts";
 
 const render = (text, fileNames = [], onCite = () => {}) => renderToStaticMarkup(createElement(AnswerMarkdown, { text, fileNames, onCite }));
 
@@ -84,4 +85,17 @@ test("css: compact answer density", async () => {
   const css = readFileSync(new URL("../app/chat-workspace.css", import.meta.url), "utf8");
   assert.match(css, /\.answer-body\s*\{[^}]*font-size:\s*0\.8125rem[^}]*line-height:\s*1\.45/);
   assert.match(css, /\.answer-file-card-body\[hidden\]\s*\{\s*display:\s*none/);
+});
+
+test("tables offer a CSV download that keeps citation markers, quotes cells and neutralizes formulas", () => {
+  const html = render("| Arquivo | Prazo |\n| --- | --- |\n| A.pdf | 30 dias [1] |", ["A.pdf"]);
+  assert.match(html, /class="answer-table-csv"/);
+  assert.equal(tableToCsv(["Arquivo", "Prazo"], [["A.pdf", "30 dias [1]"], ["B, Inc", "=SUM(A1)"], ["C", 'diz "ok"']]),
+    'Arquivo,Prazo\r\nA.pdf,30 dias [1]\r\n"B, Inc",\'=SUM(A1)\r\nC,"diz ""ok"""');
+});
+
+test("copy with sources appends the numbered source list", () => {
+  assert.equal(answerWithSources("Resposta [1]", []), "Resposta [1]");
+  assert.equal(answerWithSources("Resposta [1]", [{ document_name: "A.pdf", source_url: "https://x.test/a" }, { document_name: "B.pdf", source_url: null }]),
+    "Resposta [1]\n\nFontes:\n1. A.pdf — https://x.test/a\n2. B.pdf\n");
 });

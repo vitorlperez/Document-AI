@@ -1,5 +1,5 @@
 import { Component, Fragment, useId, useState, type ReactNode } from "react";
-import { ChevronDown, FileText, ListChecks } from "lucide-react";
+import { ChevronDown, Download, FileText, ListChecks } from "lucide-react";
 import { CITATION_MARKER, citationNumbers, parseAnswerBlocks, plainParagraphs, type Block, type ListItem } from "./answer-blocks";
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -36,6 +36,23 @@ function ListItems({ items, context, keyPrefix, chips }: { items: ListItem[]; co
   </li>)}</>;
 }
 
+const csvCell = (value: string) => {
+  // A leading =, +, -, @ would run as a formula when the CSV is opened in a spreadsheet.
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return /[",\n\r;]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+};
+
+/** Table as CSV with the [n] citation markers kept in each cell; UTF-8 BOM so spreadsheets read accents. */
+export function tableToCsv(header: string[], rows: string[][]): string {
+  return [header, ...rows].map((row) => row.map((cell) => csvCell(cell.replace(/\*\*/g, "").trim())).join(",")).join("\r\n");
+}
+
+function downloadCsv(header: string[], rows: string[][]) {
+  const url = URL.createObjectURL(new Blob(["\ufeff", tableToCsv(header, rows)], { type: "text/csv;charset=utf-8" }));
+  Object.assign(document.createElement("a"), { href: url, download: "tabela.csv" }).click();
+  URL.revokeObjectURL(url);
+}
+
 function BlockView({ block, context, blockKey, lead, chips = true, defaultOpen = true }: { block: Block; context: InlineContext; blockKey: string; lead?: boolean; chips?: boolean; defaultOpen?: boolean }): ReactNode {
   const inline = (text: string, suffix = "") => renderInline(text, context, `${blockKey}${suffix}`, chips);
   switch (block.kind) {
@@ -60,12 +77,15 @@ function BlockView({ block, context, blockKey, lead, chips = true, defaultOpen =
           : inline(field.value, `v${i}`)}</dd>
       </div>)}</dl>;
     case "table":
-      return <div className="answer-table-wrap" tabIndex={0} role="region" aria-label="Tabela da resposta">
-        <table className="answer-table">
-          <thead><tr>{block.header.map((cell, i) => <th key={i} scope="col">{inline(cell, `h${i}`)}</th>)}</tr></thead>
-          <tbody>{block.rows.map((row, r) => <tr key={r}>{row.map((cell, c) => <td key={c}>{inline(cell, `-${r}-${c}`)}</td>)}</tr>)}</tbody>
-        </table>
-      </div>;
+      return <>
+        <div className="answer-table-wrap" tabIndex={0} role="region" aria-label="Tabela da resposta">
+          <table className="answer-table">
+            <thead><tr>{block.header.map((cell, i) => <th key={i} scope="col">{inline(cell, `h${i}`)}</th>)}</tr></thead>
+            <tbody>{block.rows.map((row, r) => <tr key={r}>{row.map((cell, c) => <td key={c}>{inline(cell, `-${r}-${c}`)}</td>)}</tr>)}</tbody>
+          </table>
+        </div>
+        <button type="button" className="answer-table-csv" onClick={() => downloadCsv(block.header, block.rows)}><Download size={13} aria-hidden="true" />Baixar CSV</button>
+      </>;
     case "highlight":
       return <div className="answer-highlight">{block.children.map((child, i) => <BlockView key={i} block={child} context={context} blockKey={`${blockKey}-${i}`} chips={chips} />)}</div>;
     case "file":

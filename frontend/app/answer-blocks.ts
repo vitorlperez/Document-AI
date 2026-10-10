@@ -255,3 +255,9 @@ export function parseAnswerBlocks(source: string, options: ParseOptions = {}): B
 export function plainParagraphs(source: string): Block[] {
   return source.split(/\n{2,}/).map((text) => text.trim()).filter(Boolean).map((text) => ({ kind: "paragraph" as const, text: text.replace(/\n/g, " ") }));
 }
+
+/** Answer text followed by its numbered sources, so the citation markers stay verifiable once pasted elsewhere. */
+export function answerWithSources(text: string, sources: { document_name: string; source_url: string | null }[]): string {
+  if (!sources.length) return text;
+  return `${text.trim()}\n\nFontes:\n${sources.map((source, i) => `${i + 1}. ${source.document_name}${source.source_url ? ` — ${source.source_url}` : ""}`).join("\n")}\n`;
+}
