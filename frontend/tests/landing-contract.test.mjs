@@ -128,7 +128,9 @@ test("landing motion is progressive, token-driven and reduced-motion safe", () =
   for (const line of css.split("\n")) if (/\{ opacity: 0;/.test(line) && /\.landing-(?:integrations|story|process|faq|closing)/.test(line)) assert.match(line, /\.is-pending/, "no unconditional hidden content");
   assert.match(css, /@media \(prefers-reduced-motion: no-preference\) \{\s*\.landing-hero > \*/, "hero entry only with motion allowed");
   assert.match(css, /@media \(hover: hover\) \{/, "hover lifts only on hover devices");
-  assert.match(source, /target\.classList\.add\("is-revealed"\)|entry\.target\.classList\.add\("is-revealed"\)/);
+  assert.match(source, /entry\.target\.classList\.add\("is-revealed"\)/);
+  assert.match(source, /entry\.target\.classList\.remove\("is-revealed"\)/, "reveal replays after the section leaves the viewport");
+  assert.doesNotMatch(source, /unobserve/, "observers stay attached so the reveal can repeat");
   assert.match(source, /getBoundingClientRect\(\)\.top > window\.innerHeight/, "above-the-fold content is never hidden");
   assert.doesNotMatch(css, /transition:[^;}]*\b(?:width|height|top|left|margin)\b/, "no layout-property transitions");
 });

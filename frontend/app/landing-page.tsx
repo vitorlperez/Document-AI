@@ -332,15 +332,20 @@ function useSectionReveal(root: RefObject<HTMLDivElement | null>) {
     if (!page || !("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const targets = Array.from(page.querySelectorAll<HTMLElement>("[data-reveal]")).filter((el) => el.getBoundingClientRect().top > window.innerHeight);
     if (targets.length === 0) return;
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) if (entry.isIntersecting || entry.boundingClientRect.top < 0) { entry.target.classList.add("is-revealed"); observer.unobserve(entry.target); }
+    // Repeats on every entry: the reveal observer adds .is-revealed; a second observer with no margin and threshold 0
+    // removes it only once the section is fully outside the viewport (hysteresis against flicker at the edge).
+    const reveal = new IntersectionObserver((entries) => {
+      for (const entry of entries) if (entry.isIntersecting) entry.target.classList.add("is-revealed");
     }, { threshold: 0.1, rootMargin: "0px 0px -6% 0px" });
-    for (const el of targets) { el.classList.add("is-pending"); observer.observe(el); }
-    // Reduced motion switched on mid-page: reveal everything still pending, once, without animating.
+    const reset = new IntersectionObserver((entries) => {
+      for (const entry of entries) if (!entry.isIntersecting) entry.target.classList.remove("is-revealed");
+    }, { threshold: 0 });
+    for (const el of targets) { el.classList.add("is-pending"); reveal.observe(el); reset.observe(el); }
+    // Reduced motion switched on mid-page: reveal everything and stop observing, without animating.
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onReducedChange = (event: MediaQueryListEvent) => { if (!event.matches) return; observer.disconnect(); for (const el of targets) el.classList.add("is-revealed"); };
+    const onReducedChange = (event: MediaQueryListEvent) => { if (!event.matches) return; reveal.disconnect(); reset.disconnect(); for (const el of targets) el.classList.add("is-revealed"); };
     reduced.addEventListener("change", onReducedChange);
-    return () => { reduced.removeEventListener("change", onReducedChange); observer.disconnect(); for (const el of targets) el.classList.remove("is-pending", "is-revealed"); };
+    return () => { reduced.removeEventListener("change", onReducedChange); reveal.disconnect(); reset.disconnect(); for (const el of targets) el.classList.remove("is-pending", "is-revealed"); };
   }, [root]);
 }
 
