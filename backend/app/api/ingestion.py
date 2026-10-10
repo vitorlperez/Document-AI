@@ -53,6 +53,9 @@ class QuestionMention(BaseModel):
     name: str | None = Field(default=None, max_length=300)
 
 
+SELECTABLE_PROVIDERS = frozenset({"google_drive", "notion", "onedrive", "clickup"})
+
+
 class QuestionInput(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     scope: Literal["folder", "provider", "organization", "selection"] = "folder"
@@ -68,10 +71,10 @@ class QuestionInput(BaseModel):
         if self.scope != "provider" and self.provider is not None:
             raise ValueError("provider is only valid for provider scope")
         if self.scope == "selection":
-            if not self.providers or len(self.providers) > 3:
+            if not self.providers or len(self.providers) > len(SELECTABLE_PROVIDERS):
                 raise ValueError("selection requires one or more providers")
             normalized = ["google_drive" if item == "google" else item for item in self.providers]
-            if any(item not in {"google_drive", "notion", "onedrive", "clickup"} for item in normalized):
+            if any(item not in SELECTABLE_PROVIDERS for item in normalized):
                 raise ValueError("provider is invalid")
             if len(set(normalized)) != len(normalized):
                 raise ValueError("providers must be distinct")

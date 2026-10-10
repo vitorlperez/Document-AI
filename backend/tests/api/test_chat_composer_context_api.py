@@ -77,9 +77,20 @@ def test_selection_unions_tools_and_filters_file_and_folder_mentions(selection_n
     assert {item.source_provider for item in provider.answers[-1]} == {"google_drive", "notion"}
 
 
+def test_selection_accepts_every_supported_tool_at_once(selection_nodes):
+    client, _, organization_id, _, provider = selection_nodes
+    every_tool = ["google_drive", "notion", "onedrive", "clickup"]
+    response = selection(client, organization_id, every_tool)
+    assert response.status_code == 200
+    assert response.json()["resolved_context"]["providers"] == every_tool
+    assert {item.source_provider for item in provider.answers[-1]} == {"google_drive", "notion"}
+
+
 @pytest.mark.parametrize("invalid", [
     {"providers": []},
     {"providers": ["google", "google_drive"]},
+    {"providers": ["notion", "notion"]},
+    {"providers": ["google_drive", "notion", "onedrive", "clickup", "unknown"]},
     {"providers": ["unknown"]},
     {"providers": ["notion"], "provider": "notion"},
     {"providers": ["notion"], "mentions": [{"kind": "file", "node_id": "invalid"}]},
