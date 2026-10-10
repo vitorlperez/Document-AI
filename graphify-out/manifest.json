@@ -4494,9 +4494,9 @@
     "semantic_hash": ""
   },
   "frontend/app/mobile-nav.tsx": {
-    "mtime": 1791671843.8633842,
-    "seen": 1791672083.67962,
-    "ast_hash": "d74c96e34c63446456774086602edb0b",
+    "mtime": 1791673320.7665122,
+    "seen": 1791674302.4804401,
+    "ast_hash": "52d6d92f54e76a5569b33bfd612fe26d",
     "semantic_hash": ""
   },
   "frontend/app/modal-dismiss.tsx": {
@@ -4512,9 +4512,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/chat-workspace.tsx": {
-    "mtime": 1791672100.4727926,
-    "seen": 1791672131.977469,
-    "ast_hash": "d119822d0b49bda14b15fb05a4a9bf73",
+    "mtime": 1791673320.7660983,
+    "seen": 1791674302.4804459,
+    "ast_hash": "e2c29fcc9a8550771a86866a460ec8c6",
     "semantic_hash": ""
   },
   "frontend/app/product/integrations-screen.tsx": {
@@ -7119,6 +7119,12 @@
     "mtime": 1790949638.235261,
     "seen": 1791673102.979198,
     "ast_hash": "19610e1803eeb0f048f6fb27d16ffe03",
+    "semantic_hash": ""
+  },
+  "frontend/tests/m49-wiring.test.mjs": {
+    "mtime": 1791673324.915393,
+    "seen": 1791674302.48051,
+    "ast_hash": "3cba181e363060f95585e699dbb46934",
     "semantic_hash": ""
   }
 }
