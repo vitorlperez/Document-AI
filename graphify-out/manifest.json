@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1791512360.6083984,
-    "seen": 1791551422.0453389,
+    "mtime": 1791635187.4473557,
+    "seen": 1791636001.8826802,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -4536,9 +4536,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/chat-workspace.tsx": {
-    "mtime": 1791551003.6089318,
-    "seen": 1791551422.046154,
-    "ast_hash": "ec19aad2208ce7c8aeb354908e382079",
+    "mtime": 1791635870.662411,
+    "seen": 1791636001.8828878,
+    "ast_hash": "2b5def7f72b8d7bb6b93fe9eef3f11dc",
     "semantic_hash": ""
   },
   "frontend/app/product/integrations-screen.tsx": {
@@ -8379,6 +8379,30 @@
     "mtime": 1791605516.5995708,
     "seen": 1791605542.247941,
     "ast_hash": "4f69130058b75f396850acef0382e995",
+    "semantic_hash": ""
+  },
+  "frontend/app/answer-reveal-logic.ts": {
+    "mtime": 1791635788.195348,
+    "seen": 1791636001.882873,
+    "ast_hash": "5adb0fda4a9a98a8b85ed68b451bd2a2",
+    "semantic_hash": ""
+  },
+  "frontend/app/answer-reveal.tsx": {
+    "mtime": 1791635857.2857213,
+    "seen": 1791636001.882873,
+    "ast_hash": "7e6da89e205908e1ef0babccc09d8428",
+    "semantic_hash": ""
+  },
+  "frontend/app/source-reading.tsx": {
+    "mtime": 1791635962.8969262,
+    "seen": 1791636001.882895,
+    "ast_hash": "cd54b43928c71b84a72ef62c678482f4",
+    "semantic_hash": ""
+  },
+  "frontend/tests/answer-reveal-logic.test.mjs": {
+    "mtime": 1791635800.5575628,
+    "seen": 1791636001.882934,
+    "ast_hash": "99f193d91c65f6910259cc2c9ab8203e",
     "semantic_hash": ""
   }
 }
