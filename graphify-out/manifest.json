@@ -4524,9 +4524,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/integrations-screen.tsx": {
-    "mtime": 1791643116.8373516,
-    "seen": 1791643140.932884,
-    "ast_hash": "b3685727cbb3bbea98b010d9d6c360aa",
+    "mtime": 1791643471.1458116,
+    "seen": 1791643997.945127,
+    "ast_hash": "f2cc3ab9eabfeb0f30b5a41f598aac64",
     "semantic_hash": ""
   },
   "frontend/app/product/library-screen.tsx": {
@@ -6692,6 +6692,66 @@
   "artifacts/dark-surfaces/before-library-tool-light.png": {
     "mtime": 1791642977.165508,
     "seen": 1791643140.933465,
+    "ast_hash": "20c57be7ece967fee19e35f3fdae5c12",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/after-integrations-dark.png": {
+    "mtime": 1791643947.5541968,
+    "seen": 1791643997.945467,
+    "ast_hash": "c57b95fa1d0b4be2757ccedfa32b54d1",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/after-integrations-light.png": {
+    "mtime": 1791643958.5275862,
+    "seen": 1791643997.945467,
+    "ast_hash": "db467420d35d252b4e90aaf5e7891a60",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/after-integrations-modal-dark.png": {
+    "mtime": 1791643955.7257633,
+    "seen": 1791643997.945468,
+    "ast_hash": "259b4e6e7ecddd44d5eb4239f57f682c",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/after-integrations-modal-light.png": {
+    "mtime": 1791643966.6908526,
+    "seen": 1791643997.945468,
+    "ast_hash": "9b55b467ebb6519bcf5143c3b6678660",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/after-library-dark.png": {
+    "mtime": 1791643950.267675,
+    "seen": 1791643997.945469,
+    "ast_hash": "c82f34e360137418bcdadefa627b95be",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/after-library-light.png": {
+    "mtime": 1791643961.2414138,
+    "seen": 1791643997.945469,
+    "ast_hash": "9478ec5ebe6cc6213d0245a24ce4a90a",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/after-library-panel-dark.png": {
+    "mtime": 1791643952.9462352,
+    "seen": 1791643997.9454699,
+    "ast_hash": "ed93ca1bbaf7d411028773b96baf7257",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/after-library-panel-light.png": {
+    "mtime": 1791643963.8904254,
+    "seen": 1791643997.9454699,
+    "ast_hash": "8eadebb8c94102aa869d5f9014a70f5b",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/after-library-tool-dark.png": {
+    "mtime": 1791643951.956476,
+    "seen": 1791643997.9454699,
+    "ast_hash": "9c1be8ab24ad4f8de1d5cd501bdadb17",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/after-library-tool-light.png": {
+    "mtime": 1791643962.8986573,
+    "seen": 1791643997.945471,
     "ast_hash": "20c57be7ece967fee19e35f3fdae5c12",
     "semantic_hash": ""
   }
