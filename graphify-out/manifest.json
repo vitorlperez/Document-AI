@@ -4530,9 +4530,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/library-screen.tsx": {
-    "mtime": 1791643116.837634,
-    "seen": 1791643140.932885,
-    "ast_hash": "9604c87fc19e6014548dfa743b7a1c3c",
+    "mtime": 1791664061.3612776,
+    "seen": 1791664072.510607,
+    "ast_hash": "88b130b3530dc17aca33a4ba2058deb2",
     "semantic_hash": ""
   },
   "frontend/app/product/shared-ui.tsx": {
@@ -6503,12 +6503,6 @@
     "ast_hash": "7afae630e2feee1f5f6c313fd46ff135",
     "semantic_hash": ""
   },
-  "backend/tests/unit/test_clickup_integration 2.py": {
-    "mtime": 1791415716.0,
-    "seen": 1791551422.045922,
-    "ast_hash": "a71aa0271f31965aa8244bea99419d87",
-    "semantic_hash": ""
-  },
   "frontend/app/product/active-organization.ts": {
     "mtime": 1791551343.0414712,
     "seen": 1791551422.04615,
@@ -6831,6 +6825,120 @@
     "mtime": 1791644199.3369658,
     "seen": 1791647979.685941,
     "ast_hash": "84f966e70b51820e67d33617bd478f69",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/shots.cjs": {
+    "mtime": 1791663088.32417,
+    "seen": 1791664072.510452,
+    "ast_hash": "a63d075d0632ca802d85e9eb233b59f8",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/after-desktop-grid-dark-many.png": {
+    "mtime": 1791664013.1521723,
+    "seen": 1791664072.5108879,
+    "ast_hash": "a3cd4707c587d3295bbaf00484d0e0d8",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/after-desktop-grid-light-many.png": {
+    "mtime": 1791664009.7682862,
+    "seen": 1791664072.5108879,
+    "ast_hash": "5a0b1e6f6033c7701a140e8ccb76dca7",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/after-desktop-list-dark-many.png": {
+    "mtime": 1791664006.368769,
+    "seen": 1791664072.510889,
+    "ast_hash": "50b17fce1a5041931b0a36b72537f9e1",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/after-desktop-list-light-many.png": {
+    "mtime": 1791664002.9522817,
+    "seen": 1791664072.510889,
+    "ast_hash": "c061492ea10da70335bd4364b9c29db4",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/after-header-dark.png": {
+    "mtime": 1791664054.8942547,
+    "seen": 1791664072.510889,
+    "ast_hash": "c7f04a3483956f02f09b29f396182542",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/after-header-light.png": {
+    "mtime": 1791664054.9149957,
+    "seen": 1791664072.51089,
+    "ast_hash": "660aec2f5ef3eefb129f66c7f345c7b9",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/after-mobile-grid-dark-many.png": {
+    "mtime": 1791664026.6112633,
+    "seen": 1791664072.51089,
+    "ast_hash": "1530667d8e6f0529e1529111c3f5750b",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/after-mobile-grid-light-many.png": {
+    "mtime": 1791664023.2453063,
+    "seen": 1791664072.510891,
+    "ast_hash": "4df5aafccf5fefc0dcedd514f3882088",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/after-mobile-list-dark-many.png": {
+    "mtime": 1791664019.8671105,
+    "seen": 1791664072.510891,
+    "ast_hash": "b0849289ccbbd1b33a0757e002fb44b7",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/after-mobile-list-light-many.png": {
+    "mtime": 1791664016.5266411,
+    "seen": 1791664072.510891,
+    "ast_hash": "d7e9b78070d5886376cc42fdd736aa29",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/before-desktop-grid-dark-many.png": {
+    "mtime": 1791663153.9138744,
+    "seen": 1791664072.510892,
+    "ast_hash": "9ae9d4a288c0489f1983004b6c155a05",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/before-desktop-grid-light-many.png": {
+    "mtime": 1791663150.5630043,
+    "seen": 1791664072.510892,
+    "ast_hash": "3eb6255998435f12a8aa7e74f65f4a5b",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/before-desktop-list-dark-many.png": {
+    "mtime": 1791663147.1763961,
+    "seen": 1791664072.510892,
+    "ast_hash": "11c6136a2f7cf4a6458a7ee4905102fb",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/before-desktop-list-light-many.png": {
+    "mtime": 1791663143.79865,
+    "seen": 1791664072.510893,
+    "ast_hash": "5abee6485d011e8f1c7b3cd6a7374c19",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/before-mobile-grid-dark-many.png": {
+    "mtime": 1791663167.5966058,
+    "seen": 1791664072.510893,
+    "ast_hash": "f9dacdde1d889c41b2543b0df9273248",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/before-mobile-grid-light-many.png": {
+    "mtime": 1791663164.2230444,
+    "seen": 1791664072.510893,
+    "ast_hash": "662e1314344bf23b23c2957a3e0bed43",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/before-mobile-list-dark-many.png": {
+    "mtime": 1791663160.8040943,
+    "seen": 1791664072.510894,
+    "ast_hash": "65f8584f4cf5bebd6bc32fa10cd90d29",
+    "semantic_hash": ""
+  },
+  "artifacts/library-height/before-mobile-list-light-many.png": {
+    "mtime": 1791663157.3973348,
+    "seen": 1791664072.510894,
+    "ast_hash": "f4ada4e7c8a036cbef29a2f5cfa0c0bf",
     "semantic_hash": ""
   }
 }
