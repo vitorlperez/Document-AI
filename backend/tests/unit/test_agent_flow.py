@@ -764,3 +764,119 @@ def test_agent_service_from_settings_preserves_limits_and_models():
     service = agent_service_from_settings(None, None, settings)
     assert service.limits.max_seconds == 7
     assert service.models.planner_model == "m1"
+
+
+def _two_file_library(session: Session):
+    """Two versions of a proposal; v2 modified later than v1."""
+    from datetime import UTC, datetime
+
+    organization, user, workspace = context(session)
+    root = LibraryNode(
+        organization_id=organization.id, source_id=workspace.source_id, parent_id=None,
+        external_id="source-root", kind="source", name="Google Drive",
+    )
+    session.add(root)
+    session.flush()
+    nodes, documents = [], []
+    for name, text, day in (
+        ("Proposta v1.pdf", "O prazo de entrega é de 30 dias e o preço é R$ 10.000.", 1),
+        ("Proposta v2.pdf", "O prazo de entrega é de 45 dias e o preço é R$ 10.000.", 20),
+    ):
+        written = chunk(session, organization, workspace, name=name, text=text, embedding=[0.0, 1.0])
+        document = session.get(Document, written.document_id)
+        document.modified_at = datetime(2026, 1, day, tzinfo=UTC)
+        node = LibraryNode(
+            organization_id=organization.id, source_id=workspace.source_id, parent_id=root.id,
+            external_id=document.external_file_id, kind="file", name=name,
+        )
+        session.add(node)
+        documents.append(document)
+        nodes.append(node)
+    session.commit()
+    return OrganizationScope(organization.id), user, nodes, documents
+
+
+def test_compare_files_reads_each_file_and_names_the_most_recent(semantic_session: Session) -> None:  # noqa: F811
+    scope, user, nodes, _documents = _two_file_library(semantic_session)
+    question = "Compare as duas propostas"
+    provider = IntentProvider(
+        intent=_intent("compare_files", tool="retrieve_evidence"), vectors={question: [0.0, 1.0]},
+        synthesis=GeneratedAnswer("## Mudou\nPrazo de 30 dias [1] contra 45 dias [2].", [1, 2]),
+    )
+
+    result, _tools, _refs = _run(
+        semantic_session, provider, scope, user, question, mentions=[("file", node.id) for node in nodes],
+    )
+
+    [synthesis] = provider.synthesis_calls
+    assert synthesis["intent"] == "compare_files"
+    assert {item.document_name for item in synthesis["sources"]} == {"Proposta v1.pdf", "Proposta v2.pdf"}
+    assert {item["name"] for item in synthesis["catalog"]} == {"Proposta v1.pdf", "Proposta v2.pdf"}
+    assert all(item["modified_at"].startswith("2026-01") for item in synthesis["catalog"])
+    assert "Mais recente pela data de modificação: Proposta v2.pdf (2026-01-20)" in result.answer
+    assert {item.document_name for item in result.citations} == {"Proposta v1.pdf", "Proposta v2.pdf"}
+    assert result.resolved_context["intent"] == "compare_files"
+
+
+def test_compare_files_with_a_single_file_falls_back_to_a_relevance_search(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    scope, user, nodes, _documents = _two_file_library(semantic_session)
+    provider = IntentProvider(intent=_intent("compare_files", tool="retrieve_evidence"), vectors={"Compare": [0.0, 1.0]})
+
+    result, _tools, _refs = _run(
+        semantic_session, provider, scope, user, "Compare", mentions=[("file", nodes[0].id)],
+    )
+
+    assert result.resolved_context["fallback"] == "plan_rejected"
+
+
+def test_compare_files_with_unverifiable_synthesis_lists_cited_excerpts_per_file(
+    semantic_session: Session,  # noqa: F811
+) -> None:
+    scope, user, nodes, _documents = _two_file_library(semantic_session)
+    provider = IntentProvider(
+        intent=_intent("compare_files", tool="retrieve_evidence"),
+        synthesis=GeneratedAnswer("Sem fonte.", []),
+    )
+
+    result, _tools, _refs = _run(
+        semantic_session, provider, scope, user, "Compare as propostas",
+        mentions=[("file", node.id) for node in nodes],
+    )
+
+    assert "Não consegui montar a comparação" in result.answer
+    assert "Proposta v1.pdf" in result.answer and "[1]" in result.answer
+    assert len(result.citations) == 2
+
+
+@pytest.mark.parametrize("intent", ["extract_table", "draft_document"])
+def test_table_and_draft_intents_synthesize_from_per_file_evidence(
+    semantic_session: Session, intent: str,  # noqa: F811
+) -> None:
+    scope, user, nodes, _documents = _two_file_library(semantic_session)
+    table = "| Arquivo | Prazo |\n| --- | --- |\n| Proposta v1.pdf | 30 dias [1] |\n| Proposta v2.pdf | 45 dias [2] |"
+    provider = IntentProvider(
+        intent=_intent(intent, tool="retrieve_evidence"), synthesis=GeneratedAnswer(table, [1, 2]),
+    )
+
+    result, _tools, _refs = _run(
+        semantic_session, provider, scope, user, "Monte a tabela de prazos",
+        mentions=[("file", node.id) for node in nodes],
+    )
+
+    [synthesis] = provider.synthesis_calls
+    assert synthesis["intent"] == intent
+    assert result.answer.startswith("| Arquivo | Prazo |")
+    assert {item.document_name for item in result.citations} == {"Proposta v1.pdf", "Proposta v2.pdf"}
+    assert result.resolved_context["intent"] == intent
+
+
+def test_parse_intent_accepts_the_deliverable_intents_and_keeps_their_standalone_query() -> None:
+    for name in ("compare_files", "extract_table", "draft_document"):
+        decision = parse_intent(
+            {**_intent(name, "library", tool="retrieve_evidence"), "standalone_query": " prazos do cliente X "},
+            listed_files=0,
+        )
+        assert decision.intent == name and decision.tool == "retrieve_evidence"
+        assert decision.standalone_query == "prazos do cliente X"

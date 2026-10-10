@@ -26,7 +26,7 @@ import time
 import httpx
 
 from app.core.logging import log_agent_phase, provider_call_count
-from app.knowledge.intent import INTENTS, TARGETS
+from app.knowledge.intent import INTENTS, STANDALONE_INTENTS, TARGETS
 from app.knowledge.questions import _REQUEST_DEADLINE, AIProviderUnavailable
 
 logger = logging.getLogger(__name__)
@@ -59,6 +59,12 @@ INTENT_CRITERIA = {
     "restructure_previous": "rewrite the previous assistant answer: reorganize, restructure, shorten, "
     "expand, put in topics or tables, translate ('estruture melhor', 'deixa mais curto', 'organiza em "
     "tópicos').",
+    "compare_files": "compare two or more files or versions of a document: what is equal, what changed "
+    "('compare a proposta v1 com a v2', 'o que mudou entre esses contratos?').",
+    "extract_table": "extract a table of deadlines, renewals, fines, amounts or responsible people, one row "
+    "per file or item ('monte uma tabela com prazos e multas dos contratos').",
+    "draft_document": "write a NEW deliverable from the documents: status report, meeting minutes (ata), FAQ, "
+    "executive summary or proposal draft; not a rewrite of the previous answer.",
     "conversation": "greetings, thanks or small talk that needs no document.",
 }
 _TARGET_GUIDE = (
@@ -113,7 +119,7 @@ class JevIntentClassifier:
             query = file_name_query(question)
             tool = "search_library" if query else "list_folder_inventory"
         standalone = retrieval = ""
-        if intent in {"ask_content", "select_files_by_topic"} and history and _noul(answers, "needs_history") >= NOUL_THRESHOLD:
+        if intent in STANDALONE_INTENTS and history and _noul(answers, "needs_history") >= NOUL_THRESHOLD:
             standalone, retrieval = referenced_question(question, history), contextual_query(question, history)
         return {
             "intent": intent, "target": target, "ordinals": ordinals if target == "previous_ordinals" else [],

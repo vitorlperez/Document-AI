@@ -368,6 +368,33 @@ CONTENT_SYNTHESIS_GUIDANCE = (
     "with today's date: report it as recorded in the document. Cite every factual item."
 )
 
+# Extra instructions per deliverable intent; appended after the general format guidance so they win.
+INTENT_GUIDANCE = {
+    "compare_files": (
+        " The user wants a comparison of the files named in the sources. Organize the answer under the "
+        "headings '## Igual', '## Mudou', '## Só em <file A>' / '## Só em <file B>' (use each file's name), "
+        "covering deadline, price, scope and responsible people when the sources state them. Cite BOTH sides "
+        "of every difference with their markers, for example 'prazo de 30 dias [1] contra 45 dias [3]'. "
+        "The catalog lists each file's modified_at: say which file is the most recent from it, never from "
+        "the file name. A topic found in only one file is 'só em' that file only when the other file's "
+        "sources do not cover it; otherwise say it was not found in the available excerpts."
+    ),
+    "extract_table": (
+        " The user wants a table. Answer with ONE Markdown table (header row, separator row, one row per "
+        "file or item) whose first column is the file name, followed by the requested columns (for "
+        "example prazo, renovação, multa, responsável). Put a citation marker [N] inside EVERY cell that "
+        "states a fact. Write '—' for a cell the sources do not state; never invent or infer a value. "
+        "After the table add at most two short sentences on gaps or discrepancies. No other sections."
+    ),
+    "draft_document": (
+        " The user wants a new deliverable (status report, meeting minutes, FAQ, executive summary or "
+        "proposal draft) written from the sources. Pick the structure of the requested type, with '## ' "
+        "section headings. Every factual statement carries its [N] marker. Where the sources do not "
+        "provide required information, write a line '**[Lacuna: what is missing]**' instead of inventing "
+        "it, and finish with a short '## Lacunas' list of everything missing. Do not add a Fontes block."
+    ),
+}
+
 CONTENT_ANSWER_FORMAT_GUIDANCE = (
     " Write only the requested answer in the user's language, as plain Markdown. "
     "Start immediately with the facts: a short sentence for one fact, or a compact list/table for several "
@@ -683,6 +710,7 @@ class OpenAIQuestionProvider:
                     + notice
                     + (CONTENT_ANSWER_FORMAT_GUIDANCE if intent == "ask_content" else ANSWER_FORMAT_GUIDANCE)
                     + CONTENT_SYNTHESIS_GUIDANCE
+                    + INTENT_GUIDANCE.get(intent, "")
                     + ' Return JSON only: {"answer":"string","citations":[source_number]}.'
                     + " The citations array lists each used source number once, even when cited by several items."
                 ),

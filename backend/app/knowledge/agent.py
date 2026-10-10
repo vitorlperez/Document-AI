@@ -55,6 +55,9 @@ INVENTORY_MAX_ITEMS = 500
 MAX_SYNTHESIS_SOURCES = 24
 MAX_SYNTHESIS_CATALOG_ITEMS = 200
 MAX_PLANNER_HISTORY_MESSAGES = 4
+# Files read one by one by compare_files / extract_table; more would exceed the synthesis budget.
+MAX_COMPARED_FILES = 6
+MAX_TABLE_FILES = 10
 TOPIC_EVIDENCE_MIN_CHARS = 20
 TOPIC_EVIDENCE_MAX_CHARS = 600
 TOPIC_EVIDENCE_MIN_WORDS = 3
@@ -1000,6 +1003,101 @@ class AgentService:
         # The model could not restructure verifiably: the evaluated per-file summary is the next best.
         return self._summary_or_honest(run, request, deadline)
 
+    def _per_file_evidence(
+        self, run: AgentRun, request: AgentRequest, files: list[UUID], question: str, deadline: float,
+    ) -> None:
+        """One retrieval per file, so each file contributes its own evidence to the synthesis."""
+        for node_id in files:
+            _require_time(deadline)
+            with _observed_phase("tool_execution", deadline):
+                run.add(self.tools.retrieve_evidence(
+                    scope=request.scope, user_id=request.user_id, question=question,
+                    providers=request.providers, mentions=[("file", node_id)], answer_mode="evidence",
+                ))
+
+    def _document_dates(self, sources: list[Evidence]) -> ToolResult | None:
+        """Names and modification dates of the documents behind the sources (no ids or URLs)."""
+        ids = list(dict.fromkeys(item.document_id for item in sources))
+        if not ids:
+            return None
+        rows = self.session.execute(
+            select(Document.id, Document.name, Document.modified_at).where(Document.id.in_(ids))
+        ).all()
+        items = [
+            {"name": sanitize_label(name), "kind": "file", "modified_at": modified.isoformat() if modified else "unknown"}
+            for _id, name, modified in sorted(rows, key=lambda row: ids.index(row[0]))
+        ]
+        return ToolResult("document_dates", {"items": items})
+
+    def _extractive_by_file(self, run: AgentRun, request: AgentRequest, intro: str) -> QuestionResult:
+        """Cited excerpts grouped by file: the answer when the model cannot compose a verified one."""
+        sources = _synthesis_sources(run.results)
+        if not sources:
+            return self._honest_insufficient(None, request, run.targets)
+        lines = [intro]
+        for index, item in enumerate(sources, 1):
+            lines.append(f"- {sanitize_label(item.document_name)}: {_sentence_preview(item.excerpt, 250)} [{index}]")
+        return QuestionResult("\n".join(lines), "supported", sources, RETRIEVAL_STATUS_SUFFICIENT)
+
+    def _compare_files(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        files = run.files()[:MAX_COMPARED_FILES]
+        if len(files) < 2:
+            raise PlanRejected("comparison needs at least two files")
+        question = run.decision.standalone_query or request.question
+        self._per_file_evidence(run, request, files, question, deadline)
+        dates = self._document_dates(_synthesis_sources(run.results))
+        if dates is not None:
+            run.add(dates)
+        synthesized = self._synthesize(run, request, deadline=deadline)
+        if synthesized is None:
+            return self._extractive_by_file(
+                run, request, "Não consegui montar a comparação automaticamente. Trechos relevantes de cada arquivo:",
+            )
+        dated = [
+            (item["modified_at"], item["name"]) for item in (dates.payload["items"] if dates else [])
+            if item["modified_at"] != "unknown"
+        ]
+        if len({name for _date, name in dated}) > 1:
+            latest_date, latest_name = max(dated)
+            synthesized = replace(
+                synthesized,
+                answer=f"{synthesized.answer}\n\nMais recente pela data de modificação: "
+                f"{sanitize_label(latest_name)} ({latest_date[:10]}).",
+            )
+        return synthesized
+
+    def _extract_table(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        question = run.decision.standalone_query or request.question
+        files = run.files()
+        if files and not run.folders():
+            self._per_file_evidence(run, request, files[:MAX_TABLE_FILES], question, deadline)
+        else:
+            with _observed_phase("tool_execution", deadline):
+                run.add(self.tools.retrieve_evidence(
+                    scope=request.scope, user_id=request.user_id, question=question,
+                    providers=request.providers, mentions=run.targets, answer_mode="evidence",
+                ))
+        synthesized = self._synthesize(run, request, deadline=deadline)
+        if synthesized is not None:
+            return synthesized
+        return self._extractive_by_file(
+            run, request, "Não consegui montar a tabela automaticamente. Trechos relevantes por arquivo:",
+        )
+
+    def _draft_document(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
+        question = run.decision.standalone_query or request.question
+        with _observed_phase("tool_execution", deadline):
+            run.add(self.tools.retrieve_evidence(
+                scope=request.scope, user_id=request.user_id, question=question,
+                providers=request.providers, mentions=run.targets, answer_mode="evidence",
+            ))
+        synthesized = self._synthesize(run, request, deadline=deadline)
+        if synthesized is not None:
+            return synthesized
+        return self._extractive_by_file(
+            run, request, "Não consegui redigir o documento automaticamente. Trechos relevantes dos arquivos:",
+        )
+
     def _ask_content(self, run: AgentRun, request: AgentRequest, deadline: float) -> QuestionResult:
         # The classifier resolves conversational references; retrieval and the answer
         # model must see the same autonomous question, rather than the raw ellipsis.
@@ -1033,6 +1131,9 @@ class AgentService:
         "inventory_stats": _inventory_stats,
         "select_files_by_topic": _select_files_by_topic,
         "restructure_previous": _restructure_previous,
+        "compare_files": _compare_files,
+        "extract_table": _extract_table,
+        "draft_document": _draft_document,
         "ask_content": _ask_content,
     }
 
@@ -1520,7 +1621,7 @@ def _synthesis_catalog(results: list[ToolResult]) -> list[dict[str, object]]:
         for item in items:
             if isinstance(item, dict) and isinstance(item.get("name"), str):
                 catalog.append({
-                    key: item[key] for key in ("name", "kind", "index_status") if key in item
+                    key: item[key] for key in ("name", "kind", "index_status", "modified_at") if key in item
                 })
     return catalog[:MAX_SYNTHESIS_CATALOG_ITEMS]
 
