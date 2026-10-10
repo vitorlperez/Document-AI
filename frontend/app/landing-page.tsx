@@ -3,25 +3,35 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight,
-  FileText, Folder, Menu, PanelRightClose, Plus, Search, Send, ShieldCheck, Sparkles,
+  FileText, Folder, Menu, MousePointer2, PanelRightClose, Plus, Search, Send, ShieldCheck, Sparkles,
 } from "lucide-react";
 import "./landing.css";
 import { Brand } from "./brand";
 import { ThemeToggle } from "./theme-toggle";
-import { ProviderLogo } from "./provider-logo";
+import { ProviderLogo, type ProviderLogoName } from "./provider-logo";
 
 type LandingPageProps = { onLogin: () => void; onSignUp: () => void };
 
 /** Optional decorative art for the Rotina section, delivered separately; the layout never depends on it. */
 const STORY_ART_SRC = "/landing/document-context.webp";
 
-const demoCases = [
+type DemoCase = {
+  label: string; scope: string; question: string; mentions: string;
+  /** Answer as [text, bold] segments so the streaming effect can reveal it word by word. */
+  answer: [string, boolean][];
+  providers: ProviderLogoName[];
+  sources: [string, string][];
+  extra: number;
+};
+
+const demoCases: DemoCase[] = [
   {
     label: "Resposta com fontes",
     scope: "Todas as ferramentas",
     question: "O que ficou definido para a primeira entrega?",
     mentions: "",
-    answer: <>A primeira entrega inclui o <strong>diagnóstico de marca</strong> e a <strong>proposta de posicionamento</strong>.</>,
+    answer: [["A primeira entrega inclui o ", false], ["diagnóstico de marca", true], [" e a ", false], ["proposta de posicionamento", true], [".", false]],
+    providers: ["google", "onedrive", "notion", "clickup"],
     sources: [["Escopo do projeto.pdf", "Google Drive"], ["Reunião de alinhamento", "Notion"], ["Cronograma de entregas", "OneDrive"]],
     extra: 2,
   },
@@ -30,7 +40,8 @@ const demoCases = [
     scope: "Google Drive",
     question: "Quais são os prazos previstos neste documento?",
     mentions: "Arquivo: Escopo do projeto.pdf",
-    answer: <>O documento prevê o <strong>diagnóstico de marca</strong> na primeira etapa e a <strong>proposta de posicionamento</strong> na etapa seguinte.</>,
+    answer: [["O documento prevê o ", false], ["diagnóstico de marca", true], [" na primeira etapa e a ", false], ["proposta de posicionamento", true], [" na etapa seguinte.", false]],
+    providers: ["google"],
     sources: [["Escopo do projeto.pdf", "Google Drive"]],
     extra: 0,
   },
@@ -39,21 +50,55 @@ const demoCases = [
     scope: "Notion",
     question: "Qual foi o orçamento aprovado para mídia?",
     mentions: "",
-    answer: <>Não encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia.</>,
+    answer: [["Não encontrei evidência nos documentos selecionados para confirmar o orçamento de mídia.", false]],
+    providers: ["notion"],
     sources: [],
     extra: 0,
   },
 ];
 
-/** Time each demo case stays on screen before the automatic advance. */
-const DEMO_ROTATE_MS = 6000;
+/**
+ * One demo case = one scripted run of the real flow, in ms from the start of the case:
+ * type the question → send → search the sources → stream the answer → reveal sources → click the first one.
+ * The rotation between cases is this same clock, so the case buttons and the animation never disagree.
+ */
+const DEMO_ROTATE_MS = 7500;
+const T_TYPE_START = 500;
+const T_TYPE_END = 2100;
+const T_SEND = 2500;
+const T_STREAM_START = 3700;
+const T_STREAM_END = 5500;
+const T_SOURCES = 5600;
+const T_CLICK = 6500;
+const DEMO_TICK_MS = 50;
+
+const progress = (t: number, from: number, to: number) => Math.min(1, Math.max(0, (t - from) / (to - from)));
+
+function AnswerWords({ segments, shown }: { segments: [string, boolean][]; shown: number }) {
+  let index = 0;
+  return <>{segments.map(([text, bold], segment) => {
+    const words = text.split(/(?<=\s)/).map((word) => {
+      const pending = index++ >= shown;
+      return <span key={index} className={pending ? "landing-word-pending" : undefined}>{word}</span>;
+    });
+    return bold ? <strong key={segment}>{words}</strong> : <span key={segment}>{words}</span>;
+  })}</>;
+}
+
+const countWords = (segments: [string, boolean][]) => segments.reduce((total, [text]) => total + text.split(/(?<=\s)/).length, 0);
 
 function ProductPreview() {
+  const figureRef = useRef<HTMLElement>(null);
+  const startedRef = useRef(false);
   const [activeCase, setActiveCase] = useState(0);
+  // Server render and reduced motion both show the finished state: no shift, nothing to hydrate into.
+  const [elapsed, setElapsed] = useState(DEMO_ROTATE_MS);
   const [reducedMotion, setReducedMotion] = useState(true);
   const [hidden, setHidden] = useState(false);
+  const [inView, setInView] = useState(false);
   const demo = demoCases[activeCase];
-  const running = !reducedMotion && !hidden;
+  const running = !reducedMotion && !hidden && inView;
+  const t = reducedMotion ? DEMO_ROTATE_MS : elapsed;
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -63,21 +108,50 @@ function ProductPreview() {
     syncVisibility();
     query.addEventListener("change", sync);
     document.addEventListener("visibilitychange", syncVisibility);
+    const figure = figureRef.current;
+    const observer = figure && "IntersectionObserver" in window ? new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.25 }) : null;
+    if (observer && figure) observer.observe(figure);
     return () => {
       query.removeEventListener("change", sync);
       document.removeEventListener("visibilitychange", syncVisibility);
+      observer?.disconnect();
     };
   }, []);
 
-  // Re-armed on every case change and every resume (tab visibility / reduced motion), so a click always restarts a full interval.
+  // Single clock: ticks only while visible, on screen and motion is allowed; pausing keeps the position so resuming continues.
   useEffect(() => {
     if (!running) return;
-    const timer = window.setTimeout(() => setActiveCase((current) => (current + 1) % demoCases.length), DEMO_ROTATE_MS);
-    return () => window.clearTimeout(timer);
-  }, [running, activeCase]);
+    if (!startedRef.current) { startedRef.current = true; setElapsed(0); }
+    let last = performance.now();
+    const timer = window.setInterval(() => {
+      const now = performance.now();
+      const delta = now - last;
+      last = now;
+      setElapsed((current) => current + delta);
+    }, DEMO_TICK_MS);
+    return () => window.clearInterval(timer);
+  }, [running]);
+
+  useEffect(() => {
+    if (running && elapsed >= DEMO_ROTATE_MS) { setActiveCase((current) => (current + 1) % demoCases.length); setElapsed(0); }
+  }, [running, elapsed]);
+
+  const selectCase = (index: number) => { setActiveCase(index); setElapsed(0); };
+
+  const typedLength = Math.round(progress(t, T_TYPE_START, T_TYPE_END) * demo.question.length);
+  const typing = t >= T_TYPE_START && t < T_SEND;
+  const sent = t >= T_SEND;
+  const searching = sent && t < T_STREAM_START;
+  const totalWords = countWords(demo.answer);
+  const shownWords = Math.floor(progress(t, T_STREAM_START, T_STREAM_END) * totalWords + (t >= T_STREAM_END ? 1 : 0));
+  const showSources = t >= T_SOURCES;
+  const clicking = t >= T_CLICK;
+  const activeProvider = searching ? Math.floor((t - T_SEND) / 280) % demo.providers.length : -1;
+  const answerText = demo.answer.map(([text]) => text).join("");
 
   return (
     <figure
+      ref={figureRef}
       className="landing-preview"
       aria-labelledby="landing-preview-caption"
     >
@@ -86,7 +160,7 @@ function ProductPreview() {
         <h2>Converse com seus documentos.<br /><em>Confira a origem.</em></h2>
       </div>
       <div className="landing-demo-options" role="group" aria-label="Escolha um exemplo da demonstração">
-        {demoCases.map((item, index) => <button key={item.label} type="button" aria-pressed={activeCase === index} onClick={() => setActiveCase(index)}>{item.label}{activeCase === index && running && <span className="landing-demo-progress" aria-hidden="true" />}</button>)}
+        {demoCases.map((item, index) => <button key={item.label} type="button" aria-pressed={activeCase === index} onClick={() => selectCase(index)}>{item.label}{activeCase === index && !reducedMotion && <span className="landing-demo-progress" aria-hidden="true" style={{ transform: `scaleX(${Math.min(1, t / DEMO_ROTATE_MS)})` }} />}</button>)}
       </div>
 
       <div className="landing-app-shell">
@@ -99,26 +173,53 @@ function ProductPreview() {
         <div className="landing-app-workspace">
           <section className="landing-app-chat" aria-label="Exemplo de conversa com documentos">
             <div className="landing-app-toolbar" aria-hidden="true"><span><Plus size={13} />Nova conversa</span><PanelRightClose size={16} /></div>
-            <div className="landing-app-thread" aria-live={running ? "off" : "polite"} key={activeCase}>
-              <div className="landing-user-message">
-                <small>{demo.scope}</small>
-                <p>{demo.question}{demo.mentions && <span className="landing-mention-line">{demo.mentions}</span>}</p>
+            {/* The staged run is decoration: assistive tech reads the finished conversation below instead. */}
+            <div className="landing-sr-only" aria-live={running ? "off" : "polite"} key={`sr-${activeCase}`}>
+              <p>Pergunta ({demo.scope}): {demo.question}{demo.mentions && ` ${demo.mentions}.`}</p>
+              <p>Resposta do Arquivio: {answerText}</p>
+              {demo.sources.length > 0 && <div aria-label="Documentos utilizados" role="group">
+                <p>Documentos utilizados:</p>
+                <ol>{demo.sources.map(([name, provider]) => <li key={name}>{name}, {provider}</li>)}</ol>
+              </div>}
+            </div>
+            <div className="landing-app-thread" aria-hidden="true">
+              {/* Every case is laid out in the same cell, so the block always keeps the height of the tallest one: switching cases never shifts the page. */}
+              {demoCases.map((c, caseIndex) => {
+                const on = caseIndex === activeCase;
+                const on_sent = on ? sent : true;
+                const on_searching = on && searching;
+                const on_showSources = on && showSources;
+                const on_clicking = on && clicking;
+                const on_activeProvider = on ? activeProvider : -1;
+                return <div key={c.label} className={`landing-thread-case${on ? " is-active" : ""}`}>
+              <div className={`landing-user-message${on_sent ? "" : " landing-stage-pending"}`}>
+                <small>{c.scope}</small>
+                <p>{c.question}{c.mentions && <span className="landing-mention-line">{c.mentions}</span>}</p>
               </div>
               <article className="landing-answer">
-                <div className="landing-answer-author"><span><Sparkles size={15} /></span><div><strong>Arquivio</strong><small>{demo.scope}</small></div></div>
-                <p>{demo.answer}</p>
-                {demo.sources.length > 0 && <div className="landing-answer-sources" aria-label="Documentos utilizados">
+                <div className={`landing-answer-author${on_sent ? "" : " landing-stage-pending"}`}><span><Sparkles size={15} /></span><div><strong>Arquivio</strong><small>{c.scope}</small></div></div>
+                <div className={`landing-search-status${on_sent ? "" : " landing-stage-pending"}${on_searching ? " is-searching" : ""}`}>
+                  <span className="landing-search-logos">{c.providers.map((provider, index) => <span key={provider} className={index === on_activeProvider ? "is-active" : undefined}><ProviderLogo provider={provider} size={16} /></span>)}</span>
+                  <span>{on_searching ? "Buscando nas fontes…" : "Busca concluída"}</span>
+                </div>
+                <p><AnswerWords segments={c.answer} shown={on ? shownWords : countWords(c.answer)} /></p>
+                {c.sources.length > 0 && <div className={`landing-answer-sources${on_showSources ? " is-shown" : ""}`}>
                   <strong>Documentos utilizados</strong>
-                  {demo.sources.map(([name, provider], index) => <div key={name}><span>{index + 1}.</span><FileText size={14} /><b>{name}</b><small>{provider}</small></div>)}
-                  {demo.extra > 0 && <p className="landing-sources-more">Ver mais {demo.extra} documentos <ChevronDown size={13} aria-hidden="true" /></p>}
+                  {c.sources.map(([name, provider], index) => <div key={name} className={index === 0 && on_clicking ? "is-clicked" : undefined} style={{ animationDelay: `${index * 140}ms` }}><span>{index + 1}.</span><FileText size={14} /><b>{name}</b><small>{provider}</small>{index === 0 && <MousePointer2 className={`landing-demo-cursor${on_clicking ? " is-clicking" : ""}`} size={18} />}</div>)}
+                  {c.extra > 0 && <p className="landing-sources-more">Ver mais {c.extra} documentos <ChevronDown size={13} aria-hidden="true" /></p>}
                 </div>}
               </article>
+                </div>;
+              })}
             </div>
             <div className="landing-composer" aria-hidden="true">
-              <span className="landing-composer-input">O que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta</span>
+              <span className="landing-composer-input">
+                <span className={typing ? "landing-stage-pending" : undefined}>O que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta</span>
+                {typing && <span className="landing-composer-typed">{demo.question.slice(0, typedLength)}<i className="landing-caret" />{demo.mentions && typedLength >= demo.question.length && <b className="landing-composer-chip">@ Escopo do projeto.pdf</b>}</span>}
+              </span>
               <span className="landing-composer-actions">
-                <span className="landing-scope-trigger">{demo.scope}<ChevronDown size={12} /></span>
-                <span className="landing-composer-send"><small>0/1000</small><span className="landing-send"><Send size={13} />Enviar</span></span>
+                <span className="landing-scope-trigger"><span>{demo.scope}</span><ChevronDown size={12} /></span>
+                <span className="landing-composer-send"><small>{typing ? `${typedLength}/1000` : "0/1000"}</small><span className="landing-send"><Send size={13} />Enviar</span></span>
               </span>
             </div>
             <p className="landing-composer-hint">Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.</p>

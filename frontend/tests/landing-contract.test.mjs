@@ -63,13 +63,18 @@ test("landing keeps the onLogin/onSignUp contract and every destination", () => 
   for (const id of ["landing-main", "produto", "integracoes", "como-funciona", "perguntas"]) assert.ok(source.includes(`id="${id}"`), `missing id ${id}`);
   assert.match(source, /aria-pressed=\{activeCase === index\}/);
   assert.match(source, /aria-live=\{running \? "off" : "polite"\}/);
-  assert.match(source, /DEMO_ROTATE_MS = 6000/);
+  assert.match(source, /DEMO_ROTATE_MS = 7500/);
+  assert.match(source, /const T_TYPE_START = 500;/);
   assert.doesNotMatch(source, /onPointerEnter|onPointerLeave|setHovered|setFocused/, "rotation must not pause on hover or focus");
   assert.match(source, /prefers-reduced-motion: reduce/);
   assert.match(source, /visibilitychange/);
-  assert.match(source, /window\.clearTimeout\(timer\)/);
+  assert.match(source, /window\.clearInterval\(timer\)/);
+  assert.match(source, /new IntersectionObserver/, "demo pauses off-screen");
+  assert.match(source, /const running = !reducedMotion && !hidden && inView;/);
+  assert.match(source, /useState\(DEMO_ROTATE_MS\)/, "server render and reduced motion show the finished state");
   assert.match(source, /removeEventListener\("visibilitychange"/);
-  assert.match(css, /\.landing-demo-progress[^}]*6000ms/);
+  assert.match(css, /\.landing-demo-progress[^}]*will-change: transform/);
+  assert.match(source, /scaleX\(\$\{Math\.min\(1, t \/ DEMO_ROTATE_MS\)\}\)/, "progress follows the demo clock");
   assert.equal((source.match(/<ProductPreview \/>/g) ?? []).length, 1, "a single ProductPreview");
 });
 
@@ -100,4 +105,16 @@ test("landing styles stay scoped and self-hosted", () => {
 test("decorative story art is optional and hidden from assistive tech", () => {
   assert.match(source, /\{storyArt && <div className="landing-story-art" aria-hidden="true" \/>\}/);
   assert.match(source, /image\.onload = \(\) => \{ if \(active\) setReady\(true\); \};/);
+});
+
+test("scripted demo is decorative, shift-free and keeps a textual equivalent", () => {
+  assert.match(source, /className="landing-app-thread" aria-hidden="true"/, "staged run hidden from assistive tech");
+  assert.match(source, /className="landing-sr-only" aria-live=/, "full conversation as text");
+  assert.match(source, /aria-label="Documentos utilizados" role="group"/);
+  for (const text of ["Buscando nas fontes…", "Busca concluída", "landing-composer-typed", "landing-demo-cursor", "AnswerWords"]) assert.ok(source.includes(text), `missing: ${text}`);
+  assert.doesNotMatch(source, /autoFocus|\.focus\(/, "demo never steals focus");
+  assert.match(css, /\.landing-stage-pending, \.landing-word-pending \{ visibility: hidden; \}/, "hidden steps keep their box (no layout shift)");
+  assert.match(css, /\.landing-sr-only \{/);
+  assert.match(css, /prefers-reduced-motion: reduce[\s\S]*animation: none !important/);
+  assert.doesNotMatch(source, /framer-motion|<video/, "no animation lib or video");
 });

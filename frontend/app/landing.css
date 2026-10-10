@@ -101,8 +101,7 @@
 .landing-demo-options { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .landing-demo-options button { min-height: 44px; padding: 10px 16px; border: 1px solid var(--lp-border-strong); border-radius: var(--lp-radius-sm); background: var(--lp-surface); color: var(--lp-fg); font-size: 14px; font-weight: 500; line-height: 1.2; transition: background-color var(--lp-fast) var(--lp-ease), border-color var(--lp-fast) var(--lp-ease), color var(--lp-fast) var(--lp-ease); }
 .landing-demo-options button { position: relative; overflow: hidden; }
-.landing-demo-progress { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: rgb(255 255 255 / 0.65); transform-origin: left; animation: lp-demo-progress 6000ms linear both; pointer-events: none; }
-@keyframes lp-demo-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.landing-demo-progress { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: rgb(255 255 255 / 0.65); transform-origin: left; will-change: transform; pointer-events: none; }
 .landing-demo-options button:hover { border-color: var(--lp-accent); color: var(--lp-accent); }
 .landing-demo-options button[aria-pressed="true"] { border-color: var(--lp-accent); background: var(--lp-accent-solid); color: #fff; }
 
@@ -116,8 +115,7 @@
 .landing-app-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 20px 0; color: var(--lp-fg-muted); font-size: 13px; font-weight: 500; }
 .landing-app-toolbar span { display: inline-flex; align-items: center; gap: 6px; }
 /* Case switch: content commits at once (keyed thread); the new thread only settles 4px / .92→1 in 200ms. */
-.landing-app-thread { flex: 1; padding: 14px 20px 16px; animation: lp-case-in var(--lp-case) var(--lp-ease) both; }
-@keyframes lp-case-in { from { opacity: 0.92; transform: translateY(4px); } }
+.landing-app-thread { flex: 1; padding: 14px 20px 16px; }
 .landing-user-message { max-width: 88%; margin: 0 0 16px auto; text-align: right; }
 .landing-user-message small { display: block; margin-bottom: 4px; color: var(--lp-fg-muted); font-size: 12px; font-weight: 500; }
 .landing-user-message p { display: inline-block; margin: 0; padding: 10px 14px; border-radius: 14px 14px 4px 14px; background: var(--lp-surface-muted); font-size: 16px; line-height: 1.45; text-align: left; }
@@ -139,11 +137,12 @@
 .landing-answer-sources small { margin-left: auto; padding-left: 8px; color: var(--lp-fg-muted); font-size: 13px; white-space: nowrap; }
 .landing-sources-more { display: flex; align-items: center; gap: 4px; margin: 0; padding: 8px 2px 0; color: var(--lp-accent); font-size: 13px; font-weight: 600; }
 .landing-composer { margin: 0 20px 8px; padding: 10px 12px 8px; border: 1px solid var(--lp-border-strong); border-radius: 12px; color: var(--lp-fg-muted); font-size: 14px; }
-.landing-composer-input { display: block; padding: 0 2px 10px; }
+.landing-composer-input { position: relative; display: block; padding: 0 2px 10px; }
 .landing-composer-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px solid var(--lp-border); }
+.landing-scope-trigger > svg { flex: 0 0 auto; }
 .landing-scope-trigger { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--lp-border); border-radius: var(--lp-radius-sm); color: var(--lp-fg); font-size: 13px; font-weight: 500; }
 .landing-composer-send { display: inline-flex; align-items: center; gap: 10px; }
-.landing-composer-send small { font-size: 12px; font-variant-numeric: tabular-nums; }
+.landing-composer-send small { min-width: 7ch; text-align: right; font-size: 12px; font-variant-numeric: tabular-nums; }
 .landing-send { display: inline-flex; min-height: 30px; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--lp-radius-sm); background: var(--lp-accent-solid); color: #fff; font-size: 13px; font-weight: 600; }
 .landing-composer-hint { margin: 0 20px 16px; color: var(--lp-fg-muted); font-size: 13px; }
 
@@ -375,6 +374,33 @@
   .landing-page .landing-header .arquivio-brand > svg { width: 20px; }
   .landing-footer .arquivio-brand { font-size: 22px; }
 }
+.landing-app-thread { display: grid; }
+.landing-thread-case { grid-area: 1 / 1; min-width: 0; }
+.landing-thread-case:not(.is-active) { visibility: hidden; }
+/* Scripted demo: everything keeps its box (visibility, never display) so the run causes no layout shift. */
+.landing-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.landing-stage-pending, .landing-word-pending { visibility: hidden; }
+.landing-composer-typed { position: absolute; inset: 0 2px auto; color: var(--lp-fg); line-height: inherit; overflow: hidden; text-overflow: ellipsis; }
+.landing-caret { display: inline-block; width: 1.5px; height: 1.1em; margin-left: 1px; vertical-align: text-bottom; background: var(--lp-accent); animation: lp-caret 900ms steps(1) infinite; }
+.landing-composer-chip { display: inline-block; margin-left: 6px; padding: 1px 8px; border: 1px solid color-mix(in srgb, var(--lp-accent) 27%, transparent); border-radius: 6px; background: var(--lp-surface-muted); color: var(--lp-accent); font-size: 13px; font-weight: 500; vertical-align: baseline; animation: lp-demo-pop 220ms var(--lp-ease) both; }
+.landing-search-status { display: flex; align-items: center; gap: 8px; margin: 10px 0 0 38px; color: var(--lp-fg-muted); font-size: 13px; }
+.landing-search-logos { display: inline-flex; gap: 4px; }
+.landing-search-logos > span { display: grid; place-items: center; padding: 3px; border: 1px solid var(--lp-border); border-radius: 6px; background: var(--lp-surface); opacity: 0.55; transition: opacity var(--lp-fast) var(--lp-ease), border-color var(--lp-fast) var(--lp-ease); }
+.landing-search-status.is-searching .landing-search-logos > span.is-active { opacity: 1; border-color: var(--lp-accent); }
+.landing-search-status:not(.is-searching) .landing-search-logos > span { opacity: 1; }
+.landing-search-status.is-searching > span:last-child { animation: lp-pulse 1100ms ease-in-out infinite; }
+.landing-answer-sources:not(.is-shown) { visibility: hidden; }
+.landing-answer-sources > div { position: relative; }
+.landing-answer-sources.is-shown > div { animation: lp-demo-pop 260ms var(--lp-ease) both; }
+.landing-answer-sources > div.is-clicked { background: color-mix(in srgb, var(--lp-accent) 14%, var(--lp-surface)); box-shadow: inset 0 0 0 1px var(--lp-accent); transition: background-color var(--lp-fast) var(--lp-ease); }
+.landing-demo-cursor { position: absolute; right: 18%; bottom: -14px; opacity: 0; fill: var(--lp-fg); color: var(--lp-surface); pointer-events: none; }
+.landing-demo-cursor.is-clicking { animation: lp-demo-cursor 900ms var(--lp-ease) both; }
+@keyframes lp-caret { 50% { opacity: 0; } }
+@keyframes lp-pulse { 50% { opacity: 0.45; } }
+@keyframes lp-demo-pop { from { opacity: 0; transform: translateY(4px); } }
+@keyframes lp-demo-cursor { 0% { opacity: 0; transform: translate(40px, 24px); } 25% { opacity: 1; } 70%, 100% { opacity: 1; transform: translate(0, 0); } }
+@media (max-width: 560px) { .landing-composer-actions { flex-wrap: nowrap; } .landing-scope-trigger { min-width: 0; white-space: nowrap; } .landing-scope-trigger > :first-child { overflow: hidden; text-overflow: ellipsis; }
+  .landing-search-status { margin-left: 0; } .landing-composer-typed { font-size: 13px; } }
 @media (prefers-reduced-motion: reduce) {
   .landing-page *, .landing-page *::before, .landing-page *::after { scroll-behavior: auto !important; transition-duration: 0ms !important; transition-delay: 0ms !important; animation: none !important; }
   .landing-page [data-reveal], .landing-page [data-reveal] :is(li, article) { opacity: 1 !important; transform: none !important; }
