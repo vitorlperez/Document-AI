@@ -44,3 +44,16 @@ def test_other_member_cannot_see_rename_or_delete(corpus):  # noqa: F811 - impor
 def test_foreign_organization_is_not_found(corpus):  # noqa: F811 - imported pytest fixture
     client = corpus[0]
     assert client.get(f'/organizations/{uuid4()}/conversations').status_code == 404
+
+
+def test_library_overview_scoped_by_provider_and_member_only(corpus):  # noqa: F811 - imported pytest fixture
+    client, _, _, org, _, _ = corpus
+    both = client.get(f'/organizations/{org}/library/overview').json()
+    assert both['document_count'] == 2
+    assert 'campaign' in both['themes']
+    assert 1 <= len(both['suggested_questions']) <= 5
+    notion = client.get(f'/organizations/{org}/library/overview', params={'providers': ['notion']}).json()
+    assert notion['document_count'] == 1
+    assert client.get(f'/organizations/{org}/library/overview', params={'providers': ['clickup']}).json()[
+        'suggested_questions'] == []
+    assert client.get(f'/organizations/{uuid4()}/library/overview').status_code in {403, 404}
