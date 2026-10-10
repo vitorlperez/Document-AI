@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CircleAlert, CircleCheck, Code2, FolderOpen, HardDrive, LogOut, ShieldCheck, Sparkles, Users, X } from "lucide-react";
+import { CircleAlert, CircleCheck, BarChart3, Code2, FolderOpen, HardDrive, LogOut, ShieldCheck, Sparkles, Users, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { Brand } from "../brand";
@@ -23,7 +23,7 @@ export function NotificationToast({ message, tone, onDismiss, action }: { messag
 
 export function Shell({ user, company, companies, children, alertMessage, alertTone, alertAction, fillViewport, pageSurface, onDismiss, onCompanyChange, onNavigate, onLogout }: { user: User; company: Company; companies: Company[]; children: ReactNode; alertMessage: string | null; alertTone: "notice" | "error"; alertAction?: ToastAction | null; fillViewport: boolean; pageSurface: boolean; onDismiss: () => void; onCompanyChange: (id: string) => void; onNavigate: (path: string) => void; onLogout: () => void }) {
   const pathname = usePathname();
-  const chatScreen = !/\/(library|team|integrations|developer)\/?$/.test(pathname ?? "");
+  const chatScreen = !/\/(library|team|integrations|developer|admin)\/?$/.test(pathname ?? "");
   const mobile = useIsMobileShell();
   useVisualViewportHeight(mobile);
   const canManage = company.role !== "member";
@@ -33,6 +33,7 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
     { label: "Biblioteca", suffix: "/library", icon: FolderOpen },
     ...(canManage ? [{ label: "Integrações", suffix: "/integrations", icon: HardDrive }] : []),
     ...(company.role === "owner" ? [{ label: "Equipe", suffix: "/team", icon: Users }] : []),
+    ...(canManage ? [{ label: "Administração", suffix: "/admin", icon: BarChart3 }] : []),
     ...(canManage ? [{ label: "Desenvolvedor", suffix: "/developer", icon: Code2 }] : []),
   ];
   return <main data-mobile-shell={mobile ? "true" : undefined} className={`product-app ${fillViewport ? "flex h-dvh flex-col overflow-hidden" : "min-h-screen"} bg-paper text-ink`}>

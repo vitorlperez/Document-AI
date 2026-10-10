@@ -1,6 +1,6 @@
 "use client";
 
-import { Code2, FolderOpen, HardDrive, HelpCircle, LogOut, Menu, Plus, ShieldCheck, Sparkles, Users, X } from "lucide-react";
+import { BarChart3, Code2, FolderOpen, HardDrive, HelpCircle, LogOut, Menu, Plus, ShieldCheck, Sparkles, Users, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Brand } from "./brand";
@@ -74,6 +74,7 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
     { key: "library", label: "Biblioteca", icon: FolderOpen, path: companyPath(company.id, "/library") },
     ...(company.role === "owner" ? [{ key: "team", label: "Equipe", icon: Users, path: companyPath(company.id, "/team") }] : []),
     ...(canManage ? [{ key: "integrations", label: "Integrações", icon: HardDrive, path: companyPath(company.id, "/integrations") }] : []),
+    ...(canManage ? [{ key: "admin", label: "Administração", icon: BarChart3, path: companyPath(company.id, "/admin") }] : []),
     ...(canManage ? [{ key: "developer", label: "Desenvolvedor", icon: Code2, path: companyPath(company.id, "/developer") }] : []),
   ];
 

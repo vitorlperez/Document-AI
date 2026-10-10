@@ -65,3 +65,30 @@ class UsageService:
                 record.quantity += increment
         else: record.quantity += increment
         self.session.flush(); return record
+
+
+def usage_summary(session: Session, *, scope: OrganizationScope) -> dict[str, object]:
+    """Current-month consumption against MONTHLY_LIMITS and the active-document cap."""
+    from sqlalchemy import func
+
+    from app.knowledge.models import Document
+
+    now = datetime.now(UTC)
+    period_start = date(now.year, now.month, 1)
+    used = dict(session.execute(
+        select(UsageRecord.metric, UsageRecord.quantity).where(
+            UsageRecord.organization_id == scope.organization_id, UsageRecord.period_start == period_start)
+    ).all())
+    metrics = []
+    for metric, limit in MONTHLY_LIMITS.items():
+        metrics.append(_usage_row(metric, int(used.get(metric, 0)), limit))
+    documents = session.scalar(select(func.count()).select_from(Document).where(
+        Document.organization_id == scope.organization_id, Document.index_status == "indexed")) or 0
+    return {"period_start": period_start.isoformat(), "metrics": metrics,
+            "active_documents": _usage_row("active_documents", int(documents), ACTIVE_DOCUMENT_LIMIT)}
+
+
+def _usage_row(metric: str, used: int, limit: int) -> dict[str, object]:
+    ratio = used / limit if limit else 0.0
+    level = "exceeded" if ratio >= 1 else "warning" if ratio >= 0.8 else "ok"
+    return {"metric": metric, "used": used, "limit": limit, "ratio": round(ratio, 4), "level": level}
