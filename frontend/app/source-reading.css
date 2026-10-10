@@ -1,18 +1,14 @@
 /* Source-reading status in the chat: logos of the selected tools lit in sequence (one language with the landing demo). */
 .source-reading { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; min-height: 1.75rem; color: var(--color-muted-foreground); font-size: 0.75rem; }
 .source-reading-logos { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; }
-.source-reading-logo { position: relative; display: grid; place-items: center; overflow: hidden; padding: 3px; border: 1px solid var(--color-line); border-radius: 6px; background: var(--color-panel, #fff); color: var(--color-primary); transition: opacity 180ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 180ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.source-reading-logo { display: grid; place-items: center; padding: 3px; border: 1px solid var(--color-line); border-radius: 6px; background: var(--color-panel, #fff); color: var(--color-primary); transition: opacity 180ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 180ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .source-reading.is-reading .source-reading-logo { opacity: 0.55; }
 .source-reading.is-reading .source-reading-logo.is-active { opacity: 1; border-color: var(--color-primary); transform: translateY(-1px); }
-/* A thin scan line sweeps the tool being "read". */
-.source-reading.is-reading .source-reading-logo.is-active::after { content: ""; position: absolute; inset: auto 0 0 0; height: 2px; background: var(--color-primary); transform-origin: left; animation: source-reading-scan 760ms linear both; }
 .source-reading-label { animation: source-reading-label-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .source-reading.is-reading .source-reading-label { animation: source-reading-label-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both, source-reading-pulse 1400ms ease-in-out 220ms infinite; }
-@keyframes source-reading-scan { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes source-reading-label-in { from { opacity: 0; transform: translateY(3px); } }
 @keyframes source-reading-pulse { 50% { opacity: 0.6; } }
 @media (prefers-reduced-motion: reduce) {
   .source-reading *, .source-reading-logo { animation: none !important; transition: none !important; }
   .source-reading.is-reading .source-reading-logo { opacity: 1; transform: none; }
-  .source-reading.is-reading .source-reading-logo.is-active::after { content: none; }
 }
