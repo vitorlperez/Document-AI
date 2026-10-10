@@ -121,3 +121,14 @@ test("scripted demo is one decorative, shift-free story with a textual equivalen
   assert.match(css, /prefers-reduced-motion: reduce[\s\S]*animation: none !important/);
   assert.doesNotMatch(source, /framer-motion|<video/, "no animation lib or video");
 });
+
+test("landing motion is progressive, token-driven and reduced-motion safe", () => {
+  assert.match(css, /@keyframes lp-reveal-in \{ from \{ opacity: 0; transform: translateY\(var\(--lp-reveal-y\)\); \} \}/, "reveal animates opacity/transform only");
+  assert.match(css, /\[data-reveal\]\.is-pending[^{]*\{ opacity: 0; \}/, "content hides only after JS marks it pending");
+  for (const line of css.split("\n")) if (/\{ opacity: 0;/.test(line) && /\.landing-(?:integrations|story|process|faq|closing)/.test(line)) assert.match(line, /\.is-pending/, "no unconditional hidden content");
+  assert.match(css, /@media \(prefers-reduced-motion: no-preference\) \{\s*\.landing-hero > \*/, "hero entry only with motion allowed");
+  assert.match(css, /@media \(hover: hover\) \{/, "hover lifts only on hover devices");
+  assert.match(source, /target\.classList\.add\("is-revealed"\)|entry\.target\.classList\.add\("is-revealed"\)/);
+  assert.match(source, /getBoundingClientRect\(\)\.top > window\.innerHeight/, "above-the-fold content is never hidden");
+  assert.doesNotMatch(css, /transition:[^;}]*\b(?:width|height|top|left|margin)\b/, "no layout-property transitions");
+});

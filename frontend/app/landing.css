@@ -214,16 +214,65 @@
 .landing-legal-links a { display: inline-flex; min-height: 44px; align-items: center; gap: 6px; padding: 0 10px; border-radius: var(--lp-radius-sm); color: var(--lp-fg-muted); font-size: 14px; transition: color var(--lp-fast) var(--lp-ease); }
 .landing-legal-links a:hover { color: var(--lp-accent); text-decoration: underline; text-underline-offset: 5px; }
 
-/* Progressive reveal (JS adds .is-pending only below the fold and only without reduced motion) */
-.landing-page [data-reveal].is-pending { opacity: 0; transform: translateY(8px); }
-.landing-page [data-reveal].is-pending.is-revealed { opacity: 1; transform: none; transition: opacity var(--lp-slow) var(--lp-ease), transform var(--lp-slow) var(--lp-ease); }
-.landing-page [data-reveal].is-pending :is(.landing-integrations-list li, .landing-story-list article, .landing-process-grid article) { opacity: 0; transform: translateY(8px); }
-.landing-page [data-reveal].is-pending.is-revealed :is(.landing-integrations-list li, .landing-story-list article, .landing-process-grid article) { opacity: 1; transform: none; transition: opacity var(--lp-slow) var(--lp-ease), transform var(--lp-slow) var(--lp-ease); }
-/* Stagger 20ms, capped at 40ms: the last module settles by 240 + 40 = 280ms. */
-.landing-page [data-reveal].is-revealed :is(.landing-integrations-list li, .landing-story-list article, .landing-process-grid article):nth-child(2) { transition-delay: 20ms; }
-.landing-page [data-reveal].is-revealed :is(.landing-integrations-list li, .landing-story-list article, .landing-process-grid article):nth-child(n+3) { transition-delay: 40ms; }
+/* Motion — one language with the demo: --lp-ease, opacity/transform only, 140-240ms for feedback, ~560ms for entrances.
+   Reveal is progressive enhancement: JS adds .is-pending only below the fold and only without reduced motion. */
+.landing-page {
+  --lp-reveal: 560ms;
+  --lp-reveal-y: 16px;
+  --lp-step: 70ms;
+}
+@keyframes lp-reveal-in { from { opacity: 0; transform: translateY(var(--lp-reveal-y)); } }
+@keyframes lp-hero-in { from { opacity: 0; transform: translateY(14px); } }
+
+/* Hero entry: eyebrow, title, subtitle, CTAs, note in sequence. Title starts at 0.55 so the LCP text never waits. */
+@media (prefers-reduced-motion: no-preference) {
+  .landing-hero > * { animation: lp-hero-in 640ms var(--lp-ease) backwards; }
+  .landing-hero > h1 { animation-name: lp-hero-in-title; animation-delay: 60ms; }
+  .landing-hero > .landing-eyebrow { animation-delay: 0ms; }
+  .landing-hero > .landing-hero-description { animation-delay: 160ms; }
+  .landing-hero > .landing-hero-actions { animation-delay: 260ms; }
+  .landing-hero > .landing-hero-note { animation-delay: 360ms; }
+}
+@keyframes lp-hero-in-title { from { opacity: 0.55; transform: translateY(14px); } }
+
+/* Scroll reveal: pieces of a pending section hold their first frame, then enter with a short stagger. */
+.landing-page [data-reveal].is-pending :is(.landing-integrations-intro, .landing-story-intro, .landing-process-heading, .landing-faq > div:first-child, .landing-process-note, .landing-closing > *, .landing-integrations-list li, .landing-story-list article, .landing-process-grid article, .landing-faq-list details) { opacity: 0; }
+.landing-page [data-reveal].is-pending.is-revealed :is(.landing-integrations-intro, .landing-story-intro, .landing-process-heading, .landing-faq > div:first-child, .landing-process-note, .landing-closing > *, .landing-integrations-list li, .landing-story-list article, .landing-process-grid article, .landing-faq-list details) { opacity: 1; animation: lp-reveal-in var(--lp-reveal) var(--lp-ease) backwards; }
+.landing-page [data-reveal].is-revealed :is(.landing-integrations-list li, .landing-story-list article, .landing-process-grid article, .landing-faq-list details):nth-child(1) { animation-delay: 80ms; }
+.landing-page [data-reveal].is-revealed :is(.landing-integrations-list li, .landing-story-list article, .landing-process-grid article, .landing-faq-list details):nth-child(2) { animation-delay: calc(80ms + var(--lp-step)); }
+.landing-page [data-reveal].is-revealed :is(.landing-integrations-list li, .landing-story-list article, .landing-process-grid article, .landing-faq-list details):nth-child(3) { animation-delay: calc(80ms + 2 * var(--lp-step)); }
+.landing-page [data-reveal].is-revealed :is(.landing-integrations-list li, .landing-faq-list details):nth-child(4) { animation-delay: calc(80ms + 3 * var(--lp-step)); }
+.landing-page [data-reveal].is-revealed :is(.landing-integrations-list li, .landing-faq-list details):nth-child(5) { animation-delay: calc(80ms + 4 * var(--lp-step)); }
+.landing-page [data-reveal].is-revealed .landing-faq-list details:nth-child(n+6) { animation-delay: calc(80ms + 5 * var(--lp-step)); }
+.landing-page [data-reveal].is-revealed .landing-process-note { animation-delay: 300ms; }
+.landing-page [data-reveal].is-revealed .landing-closing > :nth-child(2) { animation-delay: 80ms; }
+.landing-page [data-reveal].is-revealed .landing-closing > :nth-child(3) { animation-delay: 160ms; }
 /* Keyboard focus inside a pending section shows it immediately, without waiting for the observer. */
-.landing-page [data-reveal].is-pending:focus-within, .landing-page [data-reveal].is-pending:focus-within :is(.landing-integrations-list li, .landing-story-list article, .landing-process-grid article) { opacity: 1; transform: none; transition: none; }
+.landing-page [data-reveal].is-pending:focus-within :is(.landing-integrations-intro, .landing-story-intro, .landing-process-heading, .landing-faq > div:first-child, .landing-process-note, .landing-closing > *, .landing-integrations-list li, .landing-story-list article, .landing-process-grid article, .landing-faq-list details) { opacity: 1; animation: none; }
+
+/* Hover and focus feedback: lift + border + soft glow, only on devices that hover. Colors derive from tokens, so light and dark both work. */
+.landing-button { transition: background-color var(--lp-fast) var(--lp-ease), border-color var(--lp-fast) var(--lp-ease), transform var(--lp-fast) var(--lp-ease), box-shadow var(--lp-slow) var(--lp-ease); }
+.landing-integrations-list li, .landing-process-grid article { transition: transform var(--lp-slow) var(--lp-ease), border-color var(--lp-slow) var(--lp-ease), box-shadow var(--lp-slow) var(--lp-ease); }
+.landing-story-list article > span { transition: transform var(--lp-slow) var(--lp-ease); }
+.landing-story-list article::before { transition: transform var(--lp-slow) var(--lp-ease), background-color var(--lp-slow) var(--lp-ease); }
+.landing-faq-list details { transition: border-color var(--lp-fast) var(--lp-ease); }
+.landing-button:focus-visible { box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 22%, transparent); }
+.landing-integrations-list li:focus-within, .landing-process-grid article:focus-within { border-color: var(--lp-accent); }
+@media (hover: hover) {
+  .landing-button:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--lp-accent) 70%, transparent); }
+  .landing-button:active { transform: translateY(0); box-shadow: none; }
+  .landing-integrations-list li:hover, .landing-process-grid article:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--lp-accent) 55%, var(--lp-border)); box-shadow: 0 14px 28px -18px color-mix(in srgb, var(--lp-accent) 60%, transparent); }
+  .landing-story-list article:hover > span { transform: translateX(3px); }
+  .landing-story-list article:hover::before { transform: scale(1.25); background: var(--lp-lime); }
+  .landing-faq-list details:hover { border-bottom-color: var(--lp-border-strong); }
+  .landing-faq-list summary:hover svg { transform: translateY(2px); }
+  .landing-faq-list details[open] summary:hover svg { transform: rotate(180deg) translateY(2px); }
+}
+/* Lighter on phones: shorter travel, faster stagger, no hover lift. */
+@media (max-width: 767px) {
+  .landing-page { --lp-reveal: 420ms; --lp-reveal-y: 10px; --lp-step: 45ms; }
+  .landing-hero > * { animation-duration: 480ms; }
+}
 
 /* Shared wordmark sizing (kept from the previous landing; brand.css stays untouched) */
 .arquivio-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-family: Arial, Helvetica, sans-serif; font-size: 29px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; white-space: nowrap; }
@@ -446,7 +495,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .landing-page *, .landing-page *::before, .landing-page *::after { scroll-behavior: auto !important; transition-duration: 0ms !important; transition-delay: 0ms !important; animation: none !important; }
-  .landing-page [data-reveal], .landing-page [data-reveal] :is(li, article) { opacity: 1 !important; transform: none !important; }
+  .landing-page [data-reveal].is-pending * { opacity: 1 !important; transform: none !important; }
 }
 
 .landing-page:is(.dark *) {
