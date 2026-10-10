@@ -6754,5 +6754,83 @@
     "seen": 1791643997.945471,
     "ast_hash": "20c57be7ece967fee19e35f3fdae5c12",
     "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-shots.cjs": {
+    "mtime": 1791647479.106833,
+    "seen": 1791647979.6835048,
+    "ast_hash": "487a43b6c9f690fc8e470fc723e20d03",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-after-grid-dark.png": {
+    "mtime": 1791647899.0319285,
+    "seen": 1791647979.685923,
+    "ast_hash": "bdfd7e14efd6dce8bdffead79388c607",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-after-grid-focus-dark.png": {
+    "mtime": 1791647900.0232856,
+    "seen": 1791647979.685926,
+    "ast_hash": "6e990be8a4002eaa73441b86ec56eddd",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-after-grid-focus-light.png": {
+    "mtime": 1791647905.3490937,
+    "seen": 1791647979.685927,
+    "ast_hash": "5a28b4abbaf09fbee2d97f080d2aba21",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-after-grid-hover-dark.png": {
+    "mtime": 1791647899.5364654,
+    "seen": 1791647979.6859279,
+    "ast_hash": "e0beac8405653ffb5be2a8e80c06e32c",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-after-grid-hover-light.png": {
+    "mtime": 1791647904.8865476,
+    "seen": 1791647979.685929,
+    "ast_hash": "cdcd5b9a68f84b2f5a8f8fba2d7e24ae",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-after-grid-light.png": {
+    "mtime": 1791647904.3779783,
+    "seen": 1791647979.685931,
+    "ast_hash": "84f966e70b51820e67d33617bd478f69",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-before-grid-dark.png": {
+    "mtime": 1791644194.0275948,
+    "seen": 1791647979.685932,
+    "ast_hash": "b6f5ea537a777b464d6bb0e1eaa013d4",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-before-grid-focus-dark.png": {
+    "mtime": 1791644194.9869764,
+    "seen": 1791647979.685933,
+    "ast_hash": "0ea8ce1e0814c03007188d2122658810",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-before-grid-focus-light.png": {
+    "mtime": 1791644200.2994661,
+    "seen": 1791647979.685935,
+    "ast_hash": "f157de825330727edbe1d9190510a4bf",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-before-grid-hover-dark.png": {
+    "mtime": 1791644194.531914,
+    "seen": 1791647979.685937,
+    "ast_hash": "f4b6713a4e29cdce39fa6506cc1ea73e",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-before-grid-hover-light.png": {
+    "mtime": 1791644199.8385649,
+    "seen": 1791647979.6859388,
+    "ast_hash": "cdcd5b9a68f84b2f5a8f8fba2d7e24ae",
+    "semantic_hash": ""
+  },
+  "artifacts/dark-surfaces/grid-before-grid-light.png": {
+    "mtime": 1791644199.3369658,
+    "seen": 1791647979.685941,
+    "ast_hash": "84f966e70b51820e67d33617bd478f69",
+    "semantic_hash": ""
   }
 }
