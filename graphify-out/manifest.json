@@ -138,9 +138,9 @@
     "semantic_hash": ""
   },
   "backend/app/api/library.py": {
-    "mtime": 1790968706.1493719,
-    "seen": 1791495846.618156,
-    "ast_hash": "2d0c2e366a6170470a09993dba9b6d21",
+    "mtime": 1791688219.4975152,
+    "seen": 1791688733.3805702,
+    "ast_hash": "82982206cb6c002e989c7aec68e09e42",
     "semantic_hash": ""
   },
   "backend/app/api/platform.py": {
@@ -264,15 +264,15 @@
     "semantic_hash": "b3d7a275682c30e24674b661e78d9a7a"
   },
   "backend/app/integrations/google_drive.py": {
-    "mtime": 1790877897.6569383,
-    "seen": 1791495846.618191,
-    "ast_hash": "bbcbb49b978da88cd3d2906de537fe70",
+    "mtime": 1791688669.7334495,
+    "seen": 1791688733.380595,
+    "ast_hash": "3b2d8af144da4f8cbd43b0604bb392c2",
     "semantic_hash": ""
   },
   "backend/app/integrations/models.py": {
-    "mtime": 1790794043.1533487,
-    "seen": 1791495846.618193,
-    "ast_hash": "0cd38a241499db154c094a4bc443deaa",
+    "mtime": 1791688291.401001,
+    "seen": 1791688733.380596,
+    "ast_hash": "294ae16f7006ad21ab027714f2a75c31",
     "semantic_hash": ""
   },
   "backend/app/knowledge/__init__.py": {
@@ -312,15 +312,15 @@
     "semantic_hash": ""
   },
   "backend/app/library/service.py": {
-    "mtime": 1791495814.9587646,
-    "seen": 1791495846.618212,
-    "ast_hash": "5ede5fadf4a6289fa96ef733734a7c62",
+    "mtime": 1791688219.4969156,
+    "seen": 1791688733.380608,
+    "ast_hash": "739ab7f3dddc9e5352d43012eb305c0a",
     "semantic_hash": ""
   },
   "backend/app/main.py": {
-    "mtime": 1791672100.702928,
-    "seen": 1791672131.9773571,
-    "ast_hash": "888cf5e62d4c7001685958f5a41f194f",
+    "mtime": 1791688721.924759,
+    "seen": 1791688733.380609,
+    "ast_hash": "bbf1acbc3e3852a4e90684099fc8f68e",
     "semantic_hash": ""
   },
   "backend/app/organizations/__init__.py": {
@@ -516,9 +516,9 @@
     "semantic_hash": "881b58f96f087d81234b64b005f44659"
   },
   "backend/tests/unit/test_migration_sql.py": {
-    "mtime": 1791672133.94478,
-    "seen": 1791672277.134675,
-    "ast_hash": "06edfd8a8c11eaf3e05ef90cbee0bfce",
+    "mtime": 1791688502.453398,
+    "seen": 1791688733.3806798,
+    "ast_hash": "3bf3cd67379481c36c891606f554ba37",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_organization_service.py": {
@@ -1650,9 +1650,9 @@
     "semantic_hash": ""
   },
   "docs/integrations-roadmap.md": {
-    "mtime": 1791495830.8059762,
-    "seen": 1791495846.618616,
-    "ast_hash": "a9020c9cb3976efffa4356c4039a05a9",
+    "mtime": 1791688540.0100627,
+    "seen": 1791688733.3808599,
+    "ast_hash": "c8bf38fd613baa9868b0a08f640062c3",
     "semantic_hash": ""
   },
   "specs/work-items/F-040.md": {
@@ -1674,9 +1674,9 @@
     "semantic_hash": ""
   },
   "frontend/app/question-scope.tsx": {
-    "mtime": 1791551003.614141,
-    "seen": 1791551422.0461671,
-    "ast_hash": "504dc663e4ea5cef781981891de2c201",
+    "mtime": 1791688484.9523423,
+    "seen": 1791688733.380738,
+    "ast_hash": "d37b14b7e831d5272c41af33561d71ff",
     "semantic_hash": ""
   },
   "specs/adr/ADR-0007-indexed-question-scopes.md": {
@@ -1884,9 +1884,9 @@
     "semantic_hash": ""
   },
   "backend/app/integrations/onedrive.py": {
-    "mtime": 1790949638.2263474,
-    "seen": 1791495846.618196,
-    "ast_hash": "29010017543c84736c293ef5667b7c5f",
+    "mtime": 1791688678.828656,
+    "seen": 1791688733.3805969,
+    "ast_hash": "d89ff8787ffa97f5acf35d8959c77bc9",
     "semantic_hash": ""
   },
   "backend/tests/api/test_onedrive_integration.py": {
@@ -2784,9 +2784,9 @@
     "semantic_hash": ""
   },
   "backend/app/integrations/sharepoint.py": {
-    "mtime": 1790949638.2269473,
-    "seen": 1791495846.618197,
-    "ast_hash": "bea524049ab2d281ff8057d6f10f373a",
+    "mtime": 1791688678.8288028,
+    "seen": 1791688733.380598,
+    "ast_hash": "f51ff4c64dc9c36e3ab5564be08ac1f6",
     "semantic_hash": ""
   },
   "backend/app/knowledge/presentation.py": {
@@ -4512,9 +4512,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/chat-workspace.tsx": {
-    "mtime": 1791673320.7660983,
-    "seen": 1791674302.4804459,
-    "ast_hash": "e2c29fcc9a8550771a86866a460ec8c6",
+    "mtime": 1791688484.9527857,
+    "seen": 1791688733.380728,
+    "ast_hash": "09a73d3d5c1cc8ab830fadc924af705e",
     "semantic_hash": ""
   },
   "frontend/app/product/integrations-screen.tsx": {
@@ -4680,9 +4680,9 @@
     "semantic_hash": ""
   },
   "backend/app/integrations/clickup.py": {
-    "mtime": 1791643116.835852,
-    "seen": 1791643140.932618,
-    "ast_hash": "42630d217d20a82afd5f21a148c8e651",
+    "mtime": 1791688291.4023669,
+    "seen": 1791688733.3805928,
+    "ast_hash": "feadfb4d5a49611d7c2c0de79155f389",
     "semantic_hash": ""
   },
   "backend/app/knowledge/answer_assessment.py": {
@@ -4734,9 +4734,9 @@
     "semantic_hash": ""
   },
   "backend/tests/unit/test_clickup_integration.py": {
-    "mtime": 1791643116.8365057,
-    "seen": 1791643140.932759,
-    "ast_hash": "1e2e18fe57d8616d5f36c6b031896207",
+    "mtime": 1791688405.433433,
+    "seen": 1791688733.380662,
+    "ast_hash": "81415488a699c13bbf0a607adc5d2a66",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_inventory_followups.py": {
@@ -5148,9 +5148,9 @@
     "semantic_hash": ""
   },
   "docs/integracoes/clickup-runbook.md": {
-    "mtime": 1791643128.3970797,
-    "seen": 1791643140.933114,
-    "ast_hash": "b37cdfe0cde3641b03b94f9e7474dab0",
+    "mtime": 1791688546.7792597,
+    "seen": 1791688733.3808582,
+    "ast_hash": "0ad31214fdc05253990b47876999f0c1",
     "semantic_hash": ""
   },
   "docs/operacao/answer-assessment.md": {
@@ -5178,9 +5178,9 @@
     "semantic_hash": ""
   },
   "specs/adr/ADR-0019-clickup-connector.md": {
-    "mtime": 1791643128.3965294,
-    "seen": 1791643140.933153,
-    "ast_hash": "a7bcded0179eabc41b96417e9cddc0f6",
+    "mtime": 1791688540.0096517,
+    "seen": 1791688733.3809102,
+    "ast_hash": "da0e2e52a7b867d312250e2c5c359c29",
     "semantic_hash": ""
   },
   "specs/research/limpeza-artefatos-2026-10-03.md": {
@@ -6954,9 +6954,9 @@
     "semantic_hash": ""
   },
   "backend/app/api/evidence.py": {
-    "mtime": 1791671986.71546,
-    "seen": 1791672083.679468,
-    "ast_hash": "94818e01308e8f61aa4c9a66b00fca43",
+    "mtime": 1791688702.3160536,
+    "seen": 1791688733.380568,
+    "ast_hash": "4e1abb81b52db9af61c7243a0bff090b",
     "semantic_hash": ""
   },
   "backend/app/api/insights.py": {
@@ -7050,9 +7050,9 @@
     "semantic_hash": ""
   },
   "frontend/app/answer-actions.tsx": {
-    "mtime": 1791672036.543225,
-    "seen": 1791672083.6796072,
-    "ast_hash": "58dce26f6e0c2d2209dc43b57442802e",
+    "mtime": 1791688484.9514215,
+    "seen": 1791688733.380706,
+    "ast_hash": "b5f4a43eac48a9736dae6cca1e20a006",
     "semantic_hash": ""
   },
   "frontend/app/companies/[companyId]/admin/page.tsx": {
@@ -7167,6 +7167,66 @@
     "mtime": 1791687326.9774952,
     "seen": 1791687375.2306728,
     "ast_hash": "baa04a5f1df66ef45810a7c9d8b7a0bb",
+    "semantic_hash": ""
+  },
+  "backend/alembic/versions/20261011_0029_clickup_task_creations.py": {
+    "mtime": 1791688215.2894838,
+    "seen": 1791688733.380558,
+    "ast_hash": "a8d5d07395c3fbec05f1a2b0527b23a3",
+    "semantic_hash": ""
+  },
+  "backend/app/api/clickup_tasks.py": {
+    "mtime": 1791688347.540665,
+    "seen": 1791688733.3805661,
+    "ast_hash": "387d7bfb586843ecb7161af0b215eaee",
+    "semantic_hash": ""
+  },
+  "backend/app/api/document_view.py": {
+    "mtime": 1791688718.1649785,
+    "seen": 1791688733.380567,
+    "ast_hash": "8b42eb6035086ab955f709012724b0a2",
+    "semantic_hash": ""
+  },
+  "backend/app/integrations/clickup_tasks.py": {
+    "mtime": 1791688389.9103596,
+    "seen": 1791688733.3805928,
+    "ast_hash": "0bfabadf8542062fc13332ef174c0742",
+    "semantic_hash": ""
+  },
+  "backend/app/knowledge/file_access.py": {
+    "mtime": 1791688696.7376106,
+    "seen": 1791688733.3806012,
+    "ast_hash": "ba497c923fb0339a1ea03dc6cfc8eac9",
+    "semantic_hash": ""
+  },
+  "backend/tests/api/test_clickup_tasks_api.py": {
+    "mtime": 1791688389.9106557,
+    "seen": 1791688733.3806348,
+    "ast_hash": "920f5637caf88aa461e82c2567df150e",
+    "semantic_hash": ""
+  },
+  "frontend/app/clickup-task-logic.ts": {
+    "mtime": 1791688448.3136969,
+    "seen": 1791688733.3807108,
+    "ast_hash": "69612a3eae944ff3819e052faeaf0bc5",
+    "semantic_hash": ""
+  },
+  "frontend/app/clickup-task-modal.tsx": {
+    "mtime": 1791688499.7483633,
+    "seen": 1791688733.3807108,
+    "ast_hash": "74f09afe9e48bb3ef7837f249f24497b",
+    "semantic_hash": ""
+  },
+  "frontend/tests/clickup-task-logic.test.mjs": {
+    "mtime": 1791688484.9700007,
+    "seen": 1791688733.3807812,
+    "ast_hash": "d1c503c79b369eb9324e844d405385f3",
+    "semantic_hash": ""
+  },
+  "specs/adr/ADR-0020-clickup-create-task-from-answer.md": {
+    "mtime": 1791688539.9746459,
+    "seen": 1791688733.3809102,
+    "ast_hash": "c997f68b1db27ec4eb2b6b68967b9809",
     "semantic_hash": ""
   }
 }
