@@ -70,3 +70,8 @@ test("only auth routes require signed IP context; session and API stay available
   }
   assert.throws(() => forwardedRequestHeaders(new Headers(), proxyOptions), /IP/);
 });
+
+test("forwards the Idempotency-Key header the ClickUp task endpoint requires (without it the API answers 422)", () => {
+  const forwarded = forwardedRequestHeaders(new Headers({ "idempotency-key": "0f8fad5b-d9cb-469f-a165-70867728950e", "content-type": "application/json" }));
+  assert.equal(forwarded.get("idempotency-key"), "0f8fad5b-d9cb-469f-a165-70867728950e");
+});

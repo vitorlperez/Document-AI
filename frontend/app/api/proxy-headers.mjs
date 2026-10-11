@@ -10,6 +10,7 @@ const FORWARDED_REQUEST_HEADERS = [
   "sec-fetch-site",
   "user-agent",
   "x-request-id",
+  "idempotency-key", // required by POST .../clickup-task; dropping it makes the API answer 422
 ];
 
 /** Keep the proxy allowlist narrow while preserving the backend's CSRF signals. */

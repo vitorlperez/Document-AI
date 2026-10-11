@@ -2,6 +2,7 @@
 
 import { FileText, FolderOpen, HardDrive, Table2 } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
+import { errorDetail } from "../api-error-detail";
 import { cleanAnswerForDisplay } from "../answer-display";
 import { providerKey, type QuestionContext } from "../question-scope";
 import { type MentionCandidate } from "../mention-composer";
@@ -48,8 +49,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   if (response.status === 204) return undefined as T;
   if (!response.ok) {
     const body: unknown = await response.json().catch(() => null);
-    const detail = typeof body === "object" && body !== null && "detail" in body && typeof body.detail === "string" ? body.detail : "Não foi possível concluir esta ação.";
-    throw new ApiError(response.status, detail);
+    throw new ApiError(response.status, errorDetail(body));
   }
   return response.json() as Promise<T>;
 }
