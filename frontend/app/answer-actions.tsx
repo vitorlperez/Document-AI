@@ -1,19 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ClipboardCopy, Download } from "lucide-react";
+import { Check, ClipboardCopy, Download, ListPlus } from "lucide-react";
 import { answerWithSources } from "./answer-blocks";
 import { API_BASE } from "./product/types-and-api";
+import { ClickUpTaskModal } from "./clickup-task-modal";
 
 type Source = { document_name: string; source_url: string | null };
 type ExportFormat = "md" | "docx" | "pdf";
 const FORMATS: { value: ExportFormat; label: string }[] = [{ value: "md", label: "Markdown (.md)" }, { value: "docx", label: "Word (.docx)" }, { value: "pdf", label: "PDF (.pdf)" }];
 
-/** "Copiar com fontes" and "Exportar" for one persisted answer; export is rendered by the backend from the stored message. */
-export function AnswerActions({ organizationId, conversationId, messageId, text, sources }: { organizationId: string; conversationId: string; messageId: string; text: string; sources: Source[] }) {
+/** "Copiar com fontes", "Exportar" and (only with ClickUp connected) "Criar tarefa no ClickUp" for one persisted answer; export is rendered by the backend from the stored message. */
+export function AnswerActions({ organizationId, conversationId, messageId, text, sources, clickUpEnabled = false }: { organizationId: string; conversationId: string; messageId: string; text: string; sources: Source[]; clickUpEnabled?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [menu, setMenu] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [taskOpen, setTaskOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timer = useRef<number>(0);
   useEffect(() => () => window.clearTimeout(timer.current), []);
@@ -51,6 +53,8 @@ export function AnswerActions({ organizationId, conversationId, messageId, text,
         {FORMATS.map((format) => <button key={format.value} type="button" role="menuitem" className="block w-full rounded px-3 py-2 text-left text-xs text-ink hover:bg-sage" onClick={() => { void download(format.value); }}>{format.label}</button>)}
       </div>}
     </div>
+    {clickUpEnabled && <button type="button" className={button} aria-haspopup="dialog" onClick={() => setTaskOpen(true)}><ListPlus size={14} aria-hidden="true" />Criar tarefa no ClickUp</button>}
+    {taskOpen && <ClickUpTaskModal base={`/organizations/${organizationId}/conversations/${conversationId}/messages/${messageId}/clickup-task`} onClose={() => setTaskOpen(false)} />}
     {error && <p role="alert" className="w-full text-xs text-rose-700">{error}</p>}
   </div>;
 }

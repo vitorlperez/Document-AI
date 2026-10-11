@@ -7,7 +7,7 @@ import "./question-scope.css";
 export type QuestionContext = {
   id: string; name: string; status: string; source_id: string; source_provider: string;
   query_status: "ready" | "no_indexed_content" | "no_compatible_embeddings" | "not_ready";
-  sync_in_progress?: boolean;
+  sync_in_progress?: boolean; source_status?: string;
 };
 export const providerKey = (provider: string) => provider === "google_drive" ? "google" : provider;
 export const toolLabel = (provider?: string | null) => ({
