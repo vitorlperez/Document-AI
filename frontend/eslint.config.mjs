@@ -23,6 +23,14 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "off",
     },
   },
+  {
+    files: ["app/docs/api/page.tsx", "app/legal-layout.tsx"],
+    rules: {
+      // vinext's production bundle drops the navigation exports <Link> loads lazily, so a
+      // <Link> click throws and never navigates. These public pages use plain anchors.
+      "@next/next/no-html-link-for-pages": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

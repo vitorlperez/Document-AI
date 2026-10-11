@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { Brand } from "./brand";
 import "./legal.css";
 import { ThemeToggle } from "./theme-toggle";
@@ -7,8 +6,8 @@ import { ThemeToggle } from "./theme-toggle";
 export function LegalLayout({ title, children }: { title: string; children: ReactNode }) {
   return <div className="legal-page">
     <header className="legal-header legal-shell">
-      <Link href="/" aria-label="Arquivio, página inicial"><Brand /></Link>
-      <ThemeToggle /><nav aria-label="Páginas legais"><Link href="/privacidade">Privacidade</Link><Link href="/termos">Termos de uso</Link></nav>
+      <a href="/" aria-label="Arquivio, página inicial"><Brand /></a>
+      <ThemeToggle /><nav aria-label="Páginas legais"><a href="/privacidade">Privacidade</a><a href="/termos">Termos de uso</a></nav>
     </header>
     <main className="legal-main legal-shell" id="conteudo">
       <p className="legal-eyebrow">Arquivio · Informações legais</p>
@@ -16,6 +15,6 @@ export function LegalLayout({ title, children }: { title: string; children: Reac
       <p className="legal-updated">Última atualização: 28 de setembro de 2026</p>
       {children}
     </main>
-    <footer className="legal-footer legal-shell"><span>© {new Date().getFullYear()} Arquivio</span><nav aria-label="Links do rodapé"><Link href="/">Início</Link><Link href="/privacidade">Privacidade</Link><Link href="/termos">Termos de uso</Link></nav></footer>
+    <footer className="legal-footer legal-shell"><span>© {new Date().getFullYear()} Arquivio</span><nav aria-label="Links do rodapé"><a href="/">Início</a><a href="/privacidade">Privacidade</a><a href="/termos">Termos de uso</a></nav></footer>
   </div>;
 }

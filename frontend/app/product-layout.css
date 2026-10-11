@@ -26,6 +26,13 @@
   font-size: 17px;
   line-height: 1.5;
 }
+.product-app .page-surface h1.developer-title {
+  font-size: 28px;
+  line-height: 1.25;
+}
+@media (max-width: 639px) {
+  .product-app .page-surface h1.developer-title { font-size: 26px; }
+}
 .product-page-heading > div:first-child > p { display: none; }
 .product-app .page-surface > .grid { gap: 18px; }
 .product-app .page-surface > .grid > section,

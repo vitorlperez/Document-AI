@@ -112,7 +112,7 @@ function ApiDocsCard() {
 
 export function DeveloperScreen({ company }: { company: Company }) {
   return <div>
-    <div className="flex items-center gap-3"><Code2 size={24} className="text-primary" aria-hidden="true" /><div><h1 className="text-2xl font-semibold text-ink">Desenvolvedor</h1><p className="mt-1 text-sm text-muted-foreground">Chaves de API e conexão de clientes de IA para a organização {company.name}.</p></div></div>
+    <div className="flex items-center gap-3"><Code2 size={24} className="text-primary" aria-hidden="true" /><div><h1 className="developer-title text-2xl font-semibold text-ink">Desenvolvedor</h1><p className="mt-1 text-sm text-muted-foreground">Chaves de API e conexão de clientes de IA para a organização {company.name}.</p></div></div>
     <ApiDocsCard />
     <AccessSettings organizationId={company.id} api={api} />
     <McpSettings organizationId={company.id} />

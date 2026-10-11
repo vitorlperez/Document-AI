@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Brand } from "../../brand";
 import { ThemeToggle } from "../../theme-toggle";
 import { API_BASE } from "./api-docs-logic";
@@ -18,9 +17,9 @@ export default function ApiDocsPage() {
   return <div className="apidoc-page">
     <a className="apidoc-skip" href="#conteudo">Ir para o conteúdo</a>
     <header className="apidoc-header apidoc-shell">
-      <Link href="/" aria-label="Arquivio, página inicial"><Brand /></Link>
+      <a href="/" aria-label="Arquivio, página inicial"><Brand /></a>
       <ThemeToggle />
-      <nav aria-label="Navegação principal"><Link href="/">Início</Link><Link href="/product">Abrir o app</Link></nav>
+      <nav aria-label="Navegação principal"><a href="/">Início</a><a href="/login">Abrir o app</a></nav>
     </header>
     <div className="apidoc-shell apidoc-layout">
       <nav className="apidoc-toc" aria-label="Nesta página"><ul>{toc.map(([id, label]) => <li key={id}><a href={`#${id}`}>{label}</a></li>)}</ul></nav>
@@ -28,7 +27,7 @@ export default function ApiDocsPage() {
         <p className="apidoc-eyebrow">Arquivio · Para desenvolvedores</p>
         <h1>Documentação da API</h1>
         <p className="apidoc-lead">A API pública v1 dá acesso somente leitura à biblioteca da sua organização: identificar a chave, listar contextos, buscar, ler documentos e, opcionalmente, perguntar com citações.</p>
-        <div className="apidoc-actions"><DownloadSpec /><Link className="apidoc-button apidoc-ghost" href="/product">Criar uma chave no app</Link></div>
+        <div className="apidoc-actions"><DownloadSpec /><a className="apidoc-button apidoc-ghost" href="/login">Criar uma chave no app</a></div>
 
         <section id="introducao" aria-labelledby="introducao-h"><h2 id="introducao-h">Introdução</h2>
           <p>URL base: <code>{API_BASE}</code>. Todas as rotas ficam sob <code>/v1</code> e respondem JSON via HTTPS. A API não altera documentos: só lê a biblioteca que a chave pode ver.</p>
@@ -87,6 +86,6 @@ export default function ApiDocsPage() {
         </section>
       </main>
     </div>
-    <footer className="apidoc-footer apidoc-shell"><span>© {new Date().getFullYear()} Arquivio</span><nav aria-label="Links do rodapé"><Link href="/">Início</Link><Link href="/privacidade">Privacidade</Link><Link href="/termos">Termos de uso</Link></nav></footer>
+    <footer className="apidoc-footer apidoc-shell"><span>© {new Date().getFullYear()} Arquivio</span><nav aria-label="Links do rodapé"><a href="/">Início</a><a href="/privacidade">Privacidade</a><a href="/termos">Termos de uso</a></nav></footer>
   </div>;
 }
