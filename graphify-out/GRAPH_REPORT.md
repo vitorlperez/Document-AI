@@ -1,7 +1,7 @@
 # Graph Report - Document-AI  (2026-10-10)
 
 ## Corpus Check
-- 963 files · ~1,212,716 words
+- 963 files · ~1,212,717 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 54 file(s) not represented in the graph (top: .css 23, (none) 10, .sha256 4)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ee183026`
+- Built from commit: `e843616d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -1989,11 +1989,11 @@ Nodes (11): test_every_v1_route_requires_a_bearer_token(), path(), Interpreter g
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `ProviderLogoName` connect `integrations-screen.tsx` to `react`, `Membership`, `landing-page.tsx`?**
-  _High betweenness centrality (0.087) - this node is a cross-community bridge._
+  _High betweenness centrality (0.086) - this node is a cross-community bridge._
 - **Why does `OrganizationScope` connect `OrganizationScope` to `test_semantic_questions.py`, `integrations.py`, `AgentLimits`, `test_agent_revocation_review.py`, `test_multiscope_questions_api.py`, `agent_eval.py`, `main`, `RemoteThrottled`, `test_file_summaries.py`, `test_foundation_migration_applies_and_reverts_on_disposable_postgres`, `questions.py`, `owner_org`, `Evidence`, `select`, `ingestion/service.py`, `config.py`, `AIProviderUnavailable`, `MicrosoftGraphClient`, `ProcessingJob`, `RetrievalService`, `insights.py`, `answer_feedback`, `_member_scope`, `DataSource`, `User`, `seed`, `AgentService`, `server.py`, `GoogleAccessDenied`, `Document`, `Membership`, `test_agent_observability.py`, `PARTE A — SharePoint / Microsoft 365`, `WorkspaceFolder`, `knowledge/presentation.py`, `OrganizationService`, `test_notion_integration.py`, `test_company_library_api.py`, `test_clickup_integration.py`, `ClickUpConnectionService`, `test_text_search.py`, `NotificationService`, `test_notifications_api.py`, `WorkspaceService`, `Conversation`, `access_admin.py`, `export.py`, `api/auth.py`, `test_agent_flow.py`, `PlatformStaffAccessService`, `Principal`?**
   _High betweenness centrality (0.081) - this node is a cross-community bridge._
 - **Why does `IntegrationScreen()` connect `integrations-screen.tsx` to `Document`, `product-app.tsx`, `sync-status-logic.ts`, `messageFor`?**
-  _High betweenness centrality (0.081) - this node is a cross-community bridge._
+  _High betweenness centrality (0.080) - this node is a cross-community bridge._
 - **Are the 93 inferred relationships involving `OrganizationScope` (e.g. with `Principal` and `export_answer()`) actually correct?**
   _`OrganizationScope` has 93 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 300 inferred relationships involving `select()` (e.g. with `.authenticate()` and `create_key()`) actually correct?**

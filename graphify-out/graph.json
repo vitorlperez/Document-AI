@@ -16757,7 +16757,7 @@
       "file_type": "code",
       "norm_label": "accountmenuitems()",
       "source_file": "frontend/app/product/account-helpers.ts",
-      "source_location": "L24"
+      "source_location": "L25"
     },
     {
       "id": "frontend_app_product_account_helpers_avatarinitial",
@@ -156912,7 +156912,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L106",
+      "source_location": "L105",
       "weight": 1.0
     },
     {
@@ -156924,7 +156924,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L108",
+      "source_location": "L107",
       "weight": 1.0
     },
     {
@@ -156936,7 +156936,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L111",
+      "source_location": "L110",
       "weight": 1.0
     },
     {
@@ -156948,7 +156948,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L111",
+      "source_location": "L110",
       "weight": 1.0
     },
     {
@@ -157008,7 +157008,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L86",
+      "source_location": "L85",
       "weight": 1.0
     },
     {
@@ -157020,7 +157020,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L87",
+      "source_location": "L86",
       "weight": 1.0
     },
     {
@@ -157032,7 +157032,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L89",
+      "source_location": "L88",
       "weight": 1.0
     },
     {
@@ -157044,7 +157044,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L90",
+      "source_location": "L89",
       "weight": 1.0
     },
     {
@@ -157056,7 +157056,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L92",
+      "source_location": "L91",
       "weight": 1.0
     },
     {
@@ -157068,7 +157068,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L93",
+      "source_location": "L92",
       "weight": 1.0
     },
     {
@@ -157080,7 +157080,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L95",
+      "source_location": "L94",
       "weight": 1.0
     },
     {
@@ -157092,7 +157092,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/mobile-nav.tsx",
-      "source_location": "L96",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -157320,7 +157320,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/account-helpers.ts",
-      "source_location": "L27",
+      "source_location": "L29",
       "weight": 1.0
     },
     {
@@ -160032,7 +160032,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/shell.tsx",
-      "source_location": "L40",
+      "source_location": "L39",
       "weight": 1.0
     },
     {
@@ -160044,7 +160044,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/shell.tsx",
-      "source_location": "L43",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -160056,7 +160056,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/shell.tsx",
-      "source_location": "L45",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -160068,7 +160068,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/shell.tsx",
-      "source_location": "L52",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -160080,7 +160080,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/shell.tsx",
-      "source_location": "L52",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -160092,7 +160092,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/shell.tsx",
-      "source_location": "L52",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -160104,7 +160104,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/app/product/shell.tsx",
-      "source_location": "L56",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -293249,7 +293249,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/app/product/account-helpers.ts",
-      "source_location": "L24",
+      "source_location": "L25",
       "weight": 1.0
     },
     {
@@ -374030,5 +374030,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "ee183026264fdd7a655749369596a2b8afb331ae"
+  "built_at_commit": "e843616d72682d2ab2b449f65c0073e5fe40651a"
 }
