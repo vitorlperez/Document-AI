@@ -192,6 +192,12 @@ class SharePointGraphClient(MicrosoftGraphClient):
                 raise OneDriveOAuthInvalid("Microsoft delta response is incomplete")
         raise OneDriveOAuthInvalid("Microsoft delta response is incomplete")
 
+    def preview_url(self, *, credentials, item_id: str, page: int | None = None) -> str | None:
+        drive_id, raw = split_composite(item_id)
+        return self._preview(
+            f"{GRAPH_ROOT}/drives/{_drive(drive_id)}/items/{quote(raw, safe='')}/preview", credentials, page
+        )
+
     def get_item(self, *, credentials, item_id: str) -> dict[str, Any] | None:
         drive_id, raw = split_composite(item_id)
         return self._get_or_none(

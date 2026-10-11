@@ -16,10 +16,8 @@ router = APIRouter(tags=['evidence'])
 MAX_PASSAGE_CHARS = 4000
 
 
-@router.get('/organizations/{organization_id}/documents/{document_id}/evidence')
-def citation_evidence(organization_id: UUID, document_id: UUID, chunk_id: UUID = Query(),
-                      user: User = Depends(current_user),
-                      session: Session = Depends(database_session)) -> dict[str, object]:
+def scoped_document(session: Session, *, organization_id: UUID, document_id: UUID, user: User) -> Document:
+    """The document only when the member may query its folder; 404 otherwise (never reveals existence)."""
     scope = OrganizationScope(organization_id)
     try:
         contexts = LibraryService(session).question_contexts(scope=scope, user_id=user.id)
@@ -29,11 +27,21 @@ def citation_evidence(organization_id: UUID, document_id: UUID, chunk_id: UUID =
         Document.id == document_id, Document.organization_id == organization_id,
         Document.workspace_folder_id.in_([item.id for item in contexts]),
     ))
+    if document is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, 'evidence not found')
+    return document
+
+
+@router.get('/organizations/{organization_id}/documents/{document_id}/evidence')
+def citation_evidence(organization_id: UUID, document_id: UUID, chunk_id: UUID = Query(),
+                      user: User = Depends(current_user),
+                      session: Session = Depends(database_session)) -> dict[str, object]:
+    document = scoped_document(session, organization_id=organization_id, document_id=document_id, user=user)
     chunk = session.scalar(select(DocumentChunk).where(
         DocumentChunk.id == chunk_id, DocumentChunk.document_id == document_id,
         DocumentChunk.organization_id == organization_id,
-    )) if document is not None else None
-    if document is None or chunk is None:
+    ))
+    if chunk is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, 'evidence not found')
     return {
         'document_id': str(document.id),

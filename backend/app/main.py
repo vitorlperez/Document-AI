@@ -20,6 +20,7 @@ from app.api.auth import current_user
 from app.api.auth import router as auth_router
 from app.api.clickup_tasks import router as clickup_tasks_router
 from app.api.conversations import router as conversations_router
+from app.api.document_view import router as document_view_router
 from app.api.evidence import router as evidence_router
 from app.api.health import router as health_router
 from app.api.ingestion import router as ingestion_router
@@ -188,6 +189,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(conversations_router, dependencies=authenticated)
     app.include_router(overview_router, dependencies=authenticated)
     app.include_router(evidence_router, dependencies=authenticated)
+    app.include_router(document_view_router, dependencies=authenticated)
     return app
 
 

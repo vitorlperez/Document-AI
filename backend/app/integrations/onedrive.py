@@ -355,6 +355,28 @@ class MicrosoftGraphClient:
             dest.close()
             raise
 
+    def preview_url(
+        self, *, credentials: OneDriveCredentials, item_id: str, page: int | None = None
+    ) -> str | None:
+        """Short-lived Office embed URL (Graph `preview`); None when the item/account cannot be previewed."""
+        return self._preview(f"{GRAPH_ROOT}/me/drive/items/{quote(item_id, safe='')}/preview", credentials, page)
+
+    def _preview(self, url: str, credentials: OneDriveCredentials, page: int | None) -> str | None:
+        response = self.http.request(
+            "POST", url, idempotent=False, json={"page": str(page)} if page else {},
+            headers={"Authorization": f"Bearer {credentials.access_token}"}, timeout=20,
+        )
+        if response.status_code in {401, 403}:
+            raise SourceRemoteUnauthorized()
+        if not response.is_success:
+            return None
+        try:
+            link = response.json().get("getUrl")
+        except (ValueError, AttributeError):
+            return None
+        parsed = urlparse(link) if isinstance(link, str) else None
+        return link if parsed is not None and parsed.scheme == "https" and parsed.netloc else None
+
     def get_item(self, *, credentials: OneDriveCredentials, item_id: str) -> dict[str, Any] | None:
         url = f"{GRAPH_ROOT}/me/drive/items/{quote(item_id, safe='')}?$select=id,name,file,folder,size,parentReference,webUrl,lastModifiedDateTime,deleted"
         try:

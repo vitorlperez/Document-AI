@@ -410,6 +410,23 @@ class GoogleDriveOAuthClient:
         raise_for_google(response)
         return response
 
+    def export_pdf(self, *, credentials: GoogleCredentials, file_id: str) -> IO[bytes]:
+        """Google-native Docs/Slides/Sheets as a PDF in a seekable temp file (Drive caps exports at 10 MB)."""
+        response = self.http.request(
+            "GET", f"https://www.googleapis.com/drive/v3/files/{file_id}/export",
+            params={"mimeType": "application/pdf"},
+            headers={"Authorization": f"Bearer {credentials.access_token}"}, timeout=30,
+        )
+        raise_for_google(response)
+        dest = tempfile.TemporaryFile()  # noqa: SIM115 - ownership transfers to the caller
+        try:
+            dest.write(response.content)
+            dest.seek(0)
+            return dest
+        except BaseException:
+            dest.close()
+            raise
+
     def read_file(self, *, credentials: GoogleCredentials, remote_file: RemoteFile) -> IO[bytes]:
         """Seekable temp file with the content; the caller closes it."""
         headers = {"Authorization": f"Bearer {credentials.access_token}"}
