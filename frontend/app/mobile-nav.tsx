@@ -28,18 +28,30 @@ export function useIsMobileShell() {
   return mobile;
 }
 
-/** Tracks the visual viewport so the composer stays above the virtual keyboard (iOS does not shrink dvh). */
-export function useVisualViewportHeight(enabled: boolean) {
+/**
+ * Keeps the app pinned to the *visible* area when the virtual keyboard opens.
+ * iOS Safari never shrinks the layout viewport (dvh stays) and instead scrolls the visual viewport down to the
+ * focused field, so the shell must follow both its height (--app-vh) and its offset (--app-vt) — otherwise the
+ * header scrolls away and the composer lands in the wrong place. With `lockDocument` (the full-height chat shell) the document
+ * itself is frozen so only the transcript scrolls; other screens keep normal page scrolling.
+ */
+export function useVisualViewportHeight(enabled: boolean, lockDocument = false) {
   useEffect(() => {
     const viewport = window.visualViewport;
     const root = document.documentElement;
     if (!enabled || !viewport) return;
-    const update = () => root.style.setProperty("--app-vh", `${Math.round(viewport.height)}px`);
+    if (lockDocument) root.dataset.appLock = "true";
+    const update = () => {
+      root.style.setProperty("--app-vh", `${Math.round(viewport.height)}px`);
+      root.style.setProperty("--app-vt", `${Math.round(viewport.offsetTop)}px`);
+      if (lockDocument && (window.scrollY !== 0 || window.scrollX !== 0)) window.scrollTo(0, 0);
+    };
     update();
     viewport.addEventListener("resize", update);
     viewport.addEventListener("scroll", update);
-    return () => { viewport.removeEventListener("resize", update); viewport.removeEventListener("scroll", update); root.style.removeProperty("--app-vh"); };
-  }, [enabled]);
+    window.addEventListener("scroll", update);
+    return () => { viewport.removeEventListener("resize", update); viewport.removeEventListener("scroll", update); window.removeEventListener("scroll", update); root.style.removeProperty("--app-vh"); root.style.removeProperty("--app-vt"); delete root.dataset.appLock; };
+  }, [enabled, lockDocument]);
 }
 
 const chatSelector = (suffix: string) => `#consultas ${suffix}`;
@@ -107,7 +119,7 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
           <SyncBanner tools={sync.tools} className="mobile-drawer-sync" />
         </div>
         <div className="mobile-drawer-foot">
-          <ThemeToggle className="mobile-drawer-theme" /><div className="mobile-drawer-user"><span title={user.email}>{user.email}</span><small>{roleLabel(company.role)}</small></div>
+          <ThemeToggle className="mobile-drawer-theme" showLabels /><div className="mobile-drawer-user"><span title={user.email}>{user.email}</span><small>{roleLabel(company.role)}</small></div>
           {user.is_platform_staff && <button type="button" onClick={() => go("/staff")}><ShieldCheck size={18} aria-hidden="true" />Suporte</button>}
         </div>
       </SheetContent>

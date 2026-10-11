@@ -49,8 +49,8 @@ export function AnswerActions({ organizationId, conversationId, messageId, text,
     <button type="button" className={button} onClick={() => { void copy(); }}>{copied ? <Check size={14} aria-hidden="true" /> : <ClipboardCopy size={14} aria-hidden="true" />}{copied ? "Copiado" : "Copiar com fontes"}</button>
     <div className="relative">
       <button type="button" className={button} disabled={busy} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((open) => !open)}><Download size={14} aria-hidden="true" />{busy ? "Exportando…" : "Exportar"}</button>
-      {menu && <div role="menu" className="absolute left-0 top-full z-10 mt-1 min-w-40 rounded-md border border-line bg-white p-1 shadow-md">
-        {FORMATS.map((format) => <button key={format.value} type="button" role="menuitem" className="block w-full rounded px-3 py-2 text-left text-xs text-ink hover:bg-sage" onClick={() => { void download(format.value); }}>{format.label}</button>)}
+      {menu && <div role="menu" className="absolute left-0 top-full z-10 mt-1 min-w-40 rounded-md border border-[var(--card-edge)] bg-[var(--surface-raised)] p-1 shadow-xl">
+        {FORMATS.map((format) => <button key={format.value} type="button" role="menuitem" className="flex min-h-11 w-full items-center rounded px-3 text-left text-xs font-medium text-ink hover:bg-sage focus-visible:bg-sage focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary" onClick={() => { void download(format.value); }}>{format.label}</button>)}
       </div>}
     </div>
     {clickUpEnabled && <button type="button" className={button} aria-haspopup="dialog" onClick={() => setTaskOpen(true)}><ListPlus size={14} aria-hidden="true" />Criar tarefa no ClickUp</button>}

@@ -27,7 +27,7 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
   const pathname = usePathname();
   const chatScreen = !/\/(library|team|integrations|developer|admin|profile)\/?$/.test(pathname ?? "");
   const mobile = useIsMobileShell();
-  useVisualViewportHeight(mobile);
+  useVisualViewportHeight(mobile, Boolean(fillViewport));
   const canManage = company.role !== "member";
   const go = (suffix = "") => onNavigate(companyPath(company.id, suffix));
   const tabs = [

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./theme-toggle.css";
 import { ThemeProvider } from "./theme-provider";
@@ -18,4 +18,6 @@ export const metadata: Metadata = {
     siteName: "Arquivio",
   },
 };
+/** Android Chrome: the keyboard resizes the layout viewport (dvh and the composer follow it); iOS ignores this and is handled by useVisualViewportHeight. */
+export const viewport: Viewport = { width: "device-width", initialScale: 1, interactiveWidget: "resizes-content" };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="pt-BR" suppressHydrationWarning><body><ThemeProvider>{children}</ThemeProvider></body></html>; }

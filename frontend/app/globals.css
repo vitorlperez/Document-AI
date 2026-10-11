@@ -78,6 +78,8 @@
   --surface-raised: #ffffff;
   --card-edge: #eceee7;
   --dialog-edge: #dedfd5;
+  /* Borders of interactive controls (WCAG 1.4.11 ≥ 3:1 on panel/paper). */
+  --control-edge: #7b857f;
 }
 
 .dark {
@@ -125,6 +127,7 @@
   --surface-raised: #1b2b25;
   --card-edge: #3a5047;
   --dialog-edge: #3a5047;
+  --control-edge: #6b8479;
   --header-bg: #0e1613;
   --heading-bg: #1a2823;
   --evidence-bg: #121c18;

@@ -4,7 +4,7 @@
 .question-scope-trigger:focus-visible, .question-scope-option:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .question-scope-trigger:disabled { opacity: .5; cursor: not-allowed; }
 .question-scope-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.question-scope-menu { position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 30; width: min(320px, calc(100vw - 40px)); max-height: 280px; overflow-y: auto; padding: 5px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 12px 30px var(--shadow-ink); }
+.question-scope-menu { position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 30; width: min(320px, calc(100vw - 40px)); max-height: 280px; overflow-y: auto; padding: 5px; border: 1px solid var(--card-edge); border-radius: 8px; background: var(--surface-raised); box-shadow: 0 12px 30px var(--shadow-ink); }
 .question-scope-option { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 44px; padding: 8px 10px; border-radius: 5px; color: var(--ink); text-align: left; font-size: 13px; cursor: pointer; }
 .question-scope-option:hover { background: var(--sage); }
 .question-scope-check { display: grid; place-items: center; flex: none; width: 18px; height: 18px; border: 1px solid currentColor; border-radius: 4px; color: var(--primary); }

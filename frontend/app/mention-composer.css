@@ -5,7 +5,7 @@
 .mention-chip button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 4px; cursor: pointer; }
 .mention-chip button:hover { background: color-mix(in srgb, var(--ink) 12%, transparent); }
 .mention-chip button:focus-visible, .mention-options button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.mention-options { position: absolute; bottom: calc(100% + 10px); left: 0; z-index: 20; width: min(420px, calc(100vw - 40px)); max-height: 260px; overflow: auto; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 12px 30px var(--shadow-ink); }
+.mention-options { position: absolute; bottom: calc(100% + 10px); left: 0; z-index: 20; width: min(420px, calc(100vw - 40px)); max-height: 260px; overflow: auto; padding: 6px; border: 1px solid var(--card-edge); border-radius: 8px; background: var(--surface-raised); box-shadow: 0 12px 30px var(--shadow-ink); }
 .mention-options button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px; border-radius: 5px; text-align: left; cursor: pointer; }
 .mention-options button:hover, .mention-options button[aria-selected="true"] { background: var(--sage); }
 .mention-options button span { min-width: 0; }

@@ -55,7 +55,7 @@ export function NotificationBell({ company }: { company: Company }) {
   }
   return <div ref={root} className="relative">
     <button type="button" onClick={() => setOpen((value) => !value)} aria-haspopup="dialog" aria-expanded={open} aria-label={data.unread ? `Notificações, ${data.unread} não lidas` : "Notificações"} title="Notificações" className="relative rounded-lg p-2 text-muted-foreground hover:bg-sage"><Bell size={18} aria-hidden="true" />{data.unread > 0 && <span className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-semibold leading-4 text-primary-foreground">{data.unread > 9 ? "9+" : data.unread}</span>}</button>
-    {open && <div role="dialog" aria-label="Notificações" className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-line bg-panel p-3 shadow-xl">
+    {open && <div role="dialog" aria-label="Notificações" className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-[var(--card-edge)] bg-[var(--surface-raised)] p-3 shadow-xl">
       <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-semibold">Notificações</h2><button type="button" onClick={() => void markAllRead()} disabled={!data.unread} className="min-h-8 text-xs font-semibold text-primary underline disabled:opacity-50">Marcar todas como lidas</button></div>
       {error && <p role="alert" className="mt-2 text-xs text-rose-700">{error}</p>}
       <ul className="mt-2 max-h-80 space-y-2 overflow-y-auto">

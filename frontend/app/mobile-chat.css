@@ -35,12 +35,12 @@
 .mobile-drawer-field { display: grid; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted-foreground); }
 .mobile-drawer-field select { min-height: 44px; width: 100%; padding: 0 12px; border: 1px solid var(--color-line); border-radius: 10px; background: var(--panel); color: var(--color-ink); font-size: 16px; font-weight: 600; text-transform: none; letter-spacing: 0; }
 .mobile-drawer-nav { display: grid; gap: 2px; }
-.mobile-drawer-nav button, .mobile-drawer-foot button {
+.mobile-drawer-nav button, .mobile-drawer-foot > button {
   display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 12px;
   border: 0; border-radius: 10px; background: transparent; text-align: left; font-size: 15px; font-weight: 600; color: var(--color-ink);
 }
-.mobile-drawer-nav button svg, .mobile-drawer-foot button svg { color: var(--color-primary); flex-shrink: 0; }
-.mobile-drawer-nav button:hover, .mobile-drawer-foot button:hover { background: var(--color-sage); }
+.mobile-drawer-nav button svg, .mobile-drawer-foot > button svg { color: var(--color-primary); flex-shrink: 0; }
+.mobile-drawer-nav button:hover, .mobile-drawer-foot > button:hover { background: var(--color-sage); }
 .mobile-drawer-nav button[aria-current="page"] { background: var(--color-sage-selected); }
 .mobile-drawer-section .tools-list { border-radius: 10px; padding-inline: 6px; }
 .mobile-drawer-section .tools-list .ts-head { padding-left: 6px; }
@@ -53,7 +53,9 @@
 
 @media (max-width: 767px) {
   /* Whole app follows the visual viewport (keyboard-aware); falls back to dvh. */
-  .product-app[data-mobile-shell].h-dvh { height: var(--app-vh, 100dvh); }
+  .product-app[data-mobile-shell].h-dvh { position: fixed; top: 0; left: 0; right: 0; height: var(--app-vh, 100dvh); transform: translateY(var(--app-vt, 0px)); }
+  /* The shell owns scrolling (transcript only); the document must not scroll or bounce under the keyboard. */
+  html[data-app-lock], html[data-app-lock] body { overflow: hidden; overscroll-behavior: none; }
   .product-app[data-mobile-shell] > .product-content { padding: 0; }
   .product-app > .product-content > .workspace-shell { border-radius: 0; }
 
