@@ -18,3 +18,9 @@ test("Claude Code example shell-quotes URL characters", () => {
   const examples = mcpClientExamples("https://mcp.example.test/a'b?x=$(echo unsafe)");
   assert.equal(examples.claudeCode, "claude mcp add --transport http arquivio 'https://mcp.example.test/a'\"'\"'b?x=$(echo unsafe)'");
 });
+
+test("Claude Code API-key example sends the key from an environment variable, never inline", () => {
+  const url = "https://mcp.example.test/mcp";
+  const { claudeCodeKey } = mcpClientExamples(url);
+  assert.equal(claudeCodeKey, `claude mcp add --transport http arquivio '${url}' --header "Authorization: Bearer $ARQUIVIO_API_KEY"`);
+});

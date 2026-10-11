@@ -18,10 +18,12 @@ function useIsMobile() {
   );
 }
 
-export function MentionComposer({ organizationId, value, onChange, mentions, onMentionsChange, all, providers, disabled, textareaRef, onSubmit }: {
+export function MentionComposer({ organizationId, value, onChange, mentions, onMentionsChange, all, providers, disabled, textareaRef, onSubmit, label = "Sua pergunta", placeholder }: {
   organizationId: string; value: string; onChange: (value: string) => void; mentions: MentionCandidate[];
   onMentionsChange: (items: MentionCandidate[]) => void; all: boolean; providers: string[];
   disabled: boolean; textareaRef: RefObject<HTMLTextAreaElement | null>; onSubmit: () => void;
+  /** Accessible name and placeholder; the defaults describe the chat question box. */
+  label?: string; placeholder?: string;
 }) {
   const isMobile = useIsMobile();
   const [trigger, setTrigger] = useState<Trigger | null>(null);
@@ -89,7 +91,7 @@ export function MentionComposer({ organizationId, value, onChange, mentions, onM
   const options = trigger?.command ? [{ kind: "file" as const, name: "Arquivo" }, { kind: "folder" as const, name: "Pasta" }] : [];
   return <div className="mention-composer">
     {mentions.length > 0 && <div className="mention-chips" aria-label="Arquivos e pastas mencionados">{mentions.map((item) => <span className="mention-chip" key={item.node_id}>{item.kind === "file" ? <FileText size={14} /> : <FolderOpen size={14} />}<span title={item.path}>{item.name}</span><button type="button" disabled={disabled} aria-label={`Remover ${item.name}`} onClick={() => onMentionsChange(mentions.filter((value) => value.node_id !== item.node_id))}><X size={14} /></button></span>)}</div>}
-    <textarea ref={textareaRef} aria-label="Sua pergunta" aria-autocomplete="list" aria-controls={trigger ? "mention-options" : undefined} onCompositionStart={() => { composing.current = true; setTrigger(null); }} onCompositionEnd={(event) => { composing.current = false; update(event as unknown as ChangeEvent<HTMLTextAreaElement>); }} onKeyDown={keyDown} value={value} onChange={update} disabled={disabled} maxLength={1000} rows={2} placeholder={isMobile ? "Pergunte sobre seus documentos…" : "O que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta · Enter envia, Shift+Enter quebra linha"} className="w-full resize-none border-0 bg-transparent px-2 py-1 text-base outline-none placeholder:text-muted-foreground sm:text-sm" />
+    <textarea ref={textareaRef} aria-label={label} aria-autocomplete="list" aria-controls={trigger ? "mention-options" : undefined} onCompositionStart={() => { composing.current = true; setTrigger(null); }} onCompositionEnd={(event) => { composing.current = false; update(event as unknown as ChangeEvent<HTMLTextAreaElement>); }} onKeyDown={keyDown} value={value} onChange={update} disabled={disabled} maxLength={1000} rows={2} placeholder={placeholder ?? (isMobile ? "Pergunte sobre seus documentos…" : "O que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta · Enter envia, Shift+Enter quebra linha")} className="w-full resize-none border-0 bg-transparent px-2 py-1 text-base outline-none placeholder:text-muted-foreground sm:text-sm" />
     {trigger && <div id="mention-options" className="mention-options" role="listbox" aria-label={trigger.command ? "Comandos de contexto" : "Arquivos e pastas"}>
       {trigger.command ? options.map((option, index) => <button type="button" role="option" aria-selected={active === index} disabled={disabled} key={option.kind} onClick={(event) => { const input = event.currentTarget.closest(".mention-composer")?.querySelector("textarea"); selectCommand(option.kind); requestAnimationFrame(() => { input?.focus(); input?.setSelectionRange(trigger.start + 1, trigger.start + 1); }); }}>{option.kind === "file" ? <FileText size={16} /> : <FolderOpen size={16} />}{option.name}</button>) : <>
         {!trigger.query.trim() && <p>Digite o nome de um arquivo ou pasta para pesquisar.</p>}

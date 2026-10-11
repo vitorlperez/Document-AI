@@ -5,5 +5,7 @@ export function mcpClientExamples(url: string | null) {
   return {
     cursor: JSON.stringify({ mcpServers: { arquivio: { url } } }, null, 2),
     claudeCode: `claude mcp add --transport http arquivio ${shellUrl}`,
+    /** Alternative for environments that accept an organization API key as Bearer (static_key_enabled). */
+    claudeCodeKey: `claude mcp add --transport http arquivio ${shellUrl} --header "Authorization: Bearer $ARQUIVIO_API_KEY"`,
   };
 }
