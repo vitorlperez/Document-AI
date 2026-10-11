@@ -4494,9 +4494,9 @@
     "semantic_hash": ""
   },
   "frontend/app/mobile-nav.tsx": {
-    "mtime": 1791739664.4164972,
-    "seen": 1791739790.3856268,
-    "ast_hash": "eee0af42d6cd405e9bfafefcc3d8efd3",
+    "mtime": 1791741810.798349,
+    "seen": 1791742013.382976,
+    "ast_hash": "343c4776116c502a63d487a55fae2cc2",
     "semantic_hash": ""
   },
   "frontend/app/modal-dismiss.tsx": {
@@ -4512,9 +4512,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/chat-workspace.tsx": {
-    "mtime": 1791689058.3629858,
-    "seen": 1791691075.6216729,
-    "ast_hash": "acfa7e3874b6fe7b51842caa1a29c3c2",
+    "mtime": 1791741810.7974122,
+    "seen": 1791742013.382983,
+    "ast_hash": "edc7daa1f74e04c73160b6253ae30d48",
     "semantic_hash": ""
   },
   "frontend/app/product/integrations-screen.tsx": {
@@ -7068,9 +7068,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/conversation-history.tsx": {
-    "mtime": 1791671811.918393,
-    "seen": 1791672083.679626,
-    "ast_hash": "ed57fd1511f728a82d04075bf130cee2",
+    "mtime": 1791741810.7994387,
+    "seen": 1791742013.382983,
+    "ast_hash": "f03a7755339ad1d80288a9d07c1fc4ca",
     "semantic_hash": ""
   },
   "frontend/app/product/insights-panel.tsx": {
@@ -7275,6 +7275,12 @@
     "mtime": 1791723500.1820369,
     "seen": 1791739790.385687,
     "ast_hash": "82072f7d07f72a2fd041f8f33f2a885a",
+    "semantic_hash": ""
+  },
+  "frontend/tests/mobile-history.test.mjs": {
+    "mtime": 1791741816.3453546,
+    "seen": 1791742013.383039,
+    "ast_hash": "cef7d1f828a4f7307fafb92e54490535",
     "semantic_hash": ""
   }
 }
