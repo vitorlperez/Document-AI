@@ -392,6 +392,7 @@ def me(user: User = Depends(current_user), session: Session = Depends(database_s
     return {
         "id": str(user.id),
         "email": user.email,
+        "created_at": user.created_at.isoformat(),
         "is_platform_staff": PlatformStaffAccessService(session).is_platform_staff(user_id=user.id),
     }
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { BarChart3, Code2, FolderOpen, HardDrive, HelpCircle, LogOut, Menu, Plus, ShieldCheck, Sparkles, Users, X } from "lucide-react";
+import { FolderOpen, HardDrive, HelpCircle, Menu, Plus, ShieldCheck, Sparkles, Users, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Brand } from "./brand";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationBell } from "./product/notification-bell";
+import { AccountMenu } from "./product/account-menu";
 import { SyncBanner, useSyncStatus } from "./sync-status";
 import { ToolsSidebar, type ToolSelection } from "./tools-sidebar";
 import { type Company, type LibraryNode, type LibraryPage, type User, api, companyPath, roleLabel } from "./product/types-and-api";
@@ -75,8 +76,6 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
     { key: "library", label: "Biblioteca", icon: FolderOpen, path: companyPath(company.id, "/library") },
     ...(company.role === "owner" ? [{ key: "team", label: "Equipe", icon: Users, path: companyPath(company.id, "/team") }] : []),
     ...(canManage ? [{ key: "integrations", label: "Integrações", icon: HardDrive, path: companyPath(company.id, "/integrations") }] : []),
-    ...(canManage ? [{ key: "admin", label: "Administração", icon: BarChart3, path: companyPath(company.id, "/admin") }] : []),
-    ...(canManage ? [{ key: "developer", label: "Desenvolvedor", icon: Code2, path: companyPath(company.id, "/developer") }] : []),
   ];
 
   return <>
@@ -85,6 +84,7 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
       <div className="mobile-header-title"><span>{company.name}</span></div>
       <button type="button" data-tour="new-conversation" className="mobile-header-new" onClick={newConversation}><Plus size={16} aria-hidden="true" />Nova conversa</button>
       <NotificationBell key={company.id} company={company} />
+      <AccountMenu user={user} company={company} onNavigate={onNavigate} onLogout={onLogout} />
     </header>
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent side="left" showCloseButton={false} motionProfile="arquivio" id="mobile-drawer" className="mobile-drawer" aria-describedby="mobile-drawer-description" onCloseAutoFocus={(event) => { event.preventDefault(); menuButtonRef.current?.focus({ preventScroll: true }); }}>
@@ -110,7 +110,6 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
         <div className="mobile-drawer-foot">
           <ThemeToggle className="mobile-drawer-theme" /><div className="mobile-drawer-user"><span title={user.email}>{user.email}</span><small>{roleLabel(company.role)}</small></div>
           {user.is_platform_staff && <button type="button" onClick={() => go("/staff")}><ShieldCheck size={18} aria-hidden="true" />Suporte</button>}
-          <button type="button" onClick={() => { setOpen(false); onLogout(); }}><LogOut size={18} aria-hidden="true" />Sair</button>
         </div>
       </SheetContent>
     </Sheet>

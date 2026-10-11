@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { CircleAlert, CircleCheck, BarChart3, Code2, FolderOpen, HardDrive, LogOut, ShieldCheck, Sparkles, Users, X } from "lucide-react";
+import { CircleAlert, CircleCheck, FolderOpen, HardDrive, ShieldCheck, Sparkles, Users, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { Brand } from "../brand";
 import { ThemeToggle } from "../theme-toggle";
 import { NotificationBell } from "./notification-bell";
+import { AccountMenu } from "./account-menu";
 import { MobileShellHeader, useIsMobileShell, useVisualViewportHeight } from "../mobile-nav";
 import { type Company, type User, roleLabel, companyPath } from "./types-and-api";
 
@@ -24,7 +25,7 @@ export function NotificationToast({ message, tone, onDismiss, action }: { messag
 
 export function Shell({ user, company, companies, children, alertMessage, alertTone, alertAction, fillViewport, pageSurface, onDismiss, onCompanyChange, onNavigate, onLogout }: { user: User; company: Company; companies: Company[]; children: ReactNode; alertMessage: string | null; alertTone: "notice" | "error"; alertAction?: ToastAction | null; fillViewport: boolean; pageSurface: boolean; onDismiss: () => void; onCompanyChange: (id: string) => void; onNavigate: (path: string) => void; onLogout: () => void }) {
   const pathname = usePathname();
-  const chatScreen = !/\/(library|team|integrations|developer|admin)\/?$/.test(pathname ?? "");
+  const chatScreen = !/\/(library|team|integrations|developer|admin|profile)\/?$/.test(pathname ?? "");
   const mobile = useIsMobileShell();
   useVisualViewportHeight(mobile);
   const canManage = company.role !== "member";
@@ -34,8 +35,6 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
     { label: "Biblioteca", suffix: "/library", icon: FolderOpen },
     ...(canManage ? [{ label: "Integrações", suffix: "/integrations", icon: HardDrive }] : []),
     ...(company.role === "owner" ? [{ label: "Equipe", suffix: "/team", icon: Users }] : []),
-    ...(canManage ? [{ label: "Administração", suffix: "/admin", icon: BarChart3 }] : []),
-    ...(canManage ? [{ label: "Desenvolvedor", suffix: "/developer", icon: Code2 }] : []),
   ];
   return <main data-mobile-shell={mobile ? "true" : undefined} className={`product-app ${fillViewport ? "flex h-dvh flex-col overflow-hidden" : "min-h-screen"} bg-paper text-ink`}>
     {mobile ? <MobileShellHeader user={user} company={company} companies={companies} screen={chatScreen ? "chat" : "other"} activePath={pathname ?? companyPath(company.id)} onCompanyChange={onCompanyChange} onNavigate={onNavigate} onLogout={onLogout} /> : <header className="product-header z-20 shrink-0 border-b border-line">
@@ -49,9 +48,8 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
           {tabs.map((tab) => { const Icon = tab.icon; const active = tab.suffix === "" ? chatScreen : (pathname ?? "").replace(/\/$/, "").endsWith(tab.suffix); return <a key={tab.label} href={companyPath(company.id, tab.suffix)} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return; event.preventDefault(); go(tab.suffix); }} aria-current={active ? "page" : undefined} aria-label={tab.label} title={tab.label} className="primary-tab"><Icon size={17} aria-hidden="true" /><span className="primary-tab-label">{tab.label}</span></a>; })}
         </nav>
         <div className="product-header-end">
-          <span className="hidden text-sm text-muted-foreground min-[1600px]:block">{user.email}</span>
           {user.is_platform_staff && <button onClick={() => onNavigate("/staff")} className="rounded-lg border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-700"><ShieldCheck className="mr-1 inline" size={14} />Suporte</button>}
-          <NotificationBell key={company.id} company={company} /><ThemeToggle /><button onClick={onLogout} aria-label="Sair da conta" title="Sair" className="rounded-lg p-2 text-muted-foreground hover:bg-sage"><LogOut size={18} /></button>
+          <NotificationBell key={company.id} company={company} /><ThemeToggle /><AccountMenu user={user} company={company} onNavigate={onNavigate} onLogout={onLogout} />
         </div>
       </div>
     </header>}

@@ -114,6 +114,7 @@ def test_platform_staff_lists_all_companies_and_metadata(platform_api) -> None:
         {"organization_id": str(organization.id), "name": "Acme"},
         {"organization_id": str(second_organization.id), "name": "Beta"},
     ]
+    assert "created_at" in me.json()
     assert overview.json()["organization_id"] == str(second_organization.id)
     assert overview.json()["folders"] == []
     assert me.json()["is_platform_staff"] is True
