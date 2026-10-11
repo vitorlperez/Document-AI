@@ -1044,10 +1044,10 @@
     "semantic_hash": "7fab78f5673f3280927620b2747024ff"
   },
   "frontend/eslint.config.mjs": {
-    "mtime": 1789152327.0787246,
-    "seen": 1791495846.61847,
-    "ast_hash": "6fccde72c62f9b793ce8897d65390201",
-    "semantic_hash": "6fccde72c62f9b793ce8897d65390201"
+    "mtime": 1791746031.601735,
+    "seen": 1791747287.157769,
+    "ast_hash": "f5092f3f760c25981dff483ad7316080",
+    "semantic_hash": ""
   },
   "frontend/examples/d1/app/api/notes/route.ts": {
     "mtime": 1789152327.0796375,
@@ -1152,8 +1152,8 @@
     "semantic_hash": ""
   },
   "frontend/vite.config.ts": {
-    "mtime": 1791495816.4207802,
-    "seen": 1791495846.618494,
+    "mtime": 1791745929.2950313,
+    "seen": 1791747287.157791,
     "ast_hash": "a767ca9c1e3c4b9d257ba80ee0dc87fd",
     "semantic_hash": ""
   },
@@ -2178,9 +2178,9 @@
     "semantic_hash": ""
   },
   "frontend/app/legal-layout.tsx": {
-    "mtime": 1791551036.167919,
-    "seen": 1791551422.04614,
-    "ast_hash": "52cd02f282d82663ebb7baa7bebbd75f",
+    "mtime": 1791745942.1237025,
+    "seen": 1791747287.157721,
+    "ast_hash": "9da5e641f328127dba2a53f2e73fcd78",
     "semantic_hash": ""
   },
   "frontend/app/privacidade/page.tsx": {
@@ -4608,9 +4608,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/developer-screen.tsx": {
-    "mtime": 1791744357.2534003,
-    "seen": 1791744612.31673,
-    "ast_hash": "b63d7aad948f67391e50832cc1e4ad55",
+    "mtime": 1791746006.6254895,
+    "seen": 1791747287.157732,
+    "ast_hash": "00680b4fd21b316d07ce364bce132b4c",
     "semantic_hash": ""
   },
   "frontend/tests/developer-mcp-config.test.mjs": {
@@ -7296,15 +7296,27 @@
     "semantic_hash": ""
   },
   "frontend/app/docs/api/page.tsx": {
-    "mtime": 1791742900.5894926,
-    "seen": 1791743148.0824661,
-    "ast_hash": "fe12c7b6f80069e51b54b9c2d88acdfa",
+    "mtime": 1791745942.1232417,
+    "seen": 1791747287.157717,
+    "ast_hash": "97b36d12aac290a3a45d196abeec4c4c",
     "semantic_hash": ""
   },
   "frontend/tests/api-docs-logic.test.mjs": {
     "mtime": 1791742850.492487,
     "seen": 1791743148.0825338,
     "ast_hash": "0f376fec9dbebe9e7ced3d91c05fc9f9",
+    "semantic_hash": ""
+  },
+  "frontend/tests/developer-heading-hierarchy.test.mjs": {
+    "mtime": 1791746006.4743874,
+    "seen": 1791747287.157783,
+    "ast_hash": "be40ed3ec96c6031b63eeb0eb837a673",
+    "semantic_hash": ""
+  },
+  "frontend/tests/public-page-links.test.mjs": {
+    "mtime": 1791745939.3710647,
+    "seen": 1791747287.15779,
+    "ast_hash": "42dc46b6e45ffde7ff7103c02e01928e",
     "semantic_hash": ""
   }
 }
