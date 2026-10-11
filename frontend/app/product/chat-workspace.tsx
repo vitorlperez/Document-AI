@@ -337,25 +337,27 @@ function AssistantAnswer({ organizationId, messageId, answer, animate, onProgres
     </div>
     {reveal.done && Boolean(answer.coverage?.pending_folders) && <p className={`mt-2 text-xs text-amber-800${settle}`}>Resposta baseada no que já foi sincronizado{answer.coverage!.total_folders > 0 ? ` — ${answer.coverage!.pending_folders} de ${Math.max(answer.coverage!.total_folders, answer.coverage!.pending_folders)} ${Math.max(answer.coverage!.total_folders, answer.coverage!.pending_folders) === 1 ? "pasta ainda está sincronizando" : "pastas ainda estão sincronizando"}` : ""}.</p>}
     {verifying !== null && answer.citations[verifying - 1] && <SourceEvidencePanel organizationId={organizationId} number={verifying} citation={answer.citations[verifying - 1] as EvidenceCitation} onClose={() => setVerifying(null)} />}
-    {reveal.done && answer.citations.length > 0 && <div className={animate ? "answer-settle" : undefined}><SourceDocuments items={answer.citations} expanded={expanded} setExpanded={setExpanded} rowId={sourceId} /></div>}
+    {reveal.done && answer.citations.length > 0 && <div className={animate ? "answer-settle" : undefined}><SourceDocuments items={answer.citations} expanded={expanded} setExpanded={setExpanded} rowId={sourceId} onVerify={setVerifying} /></div>}
   </>;
 }
 
-function SourceDocumentRow({ item, number, id }: { item: Evidence; number: number; id: string }) {
-  return <li id={id} tabIndex={-1} className="source-row flex min-w-0 items-center gap-2 border-t border-line-soft py-2.5 first:border-t-0">
-    <span className="w-5 shrink-0 text-right text-xs font-semibold text-primary">{number}.</span>
-    <FileText size={15} className="shrink-0 text-primary" aria-hidden="true" />
-    <span className="min-w-0 flex-1 break-words text-xs font-medium leading-5 text-ink">{item.document_name}</span>
-    {item.source_provider && <span className="citation-tool mb-0 shrink-0">{toolLabel(item.source_provider)}</span>}
-    {item.source_url && <a href={item.source_url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${item.document_name} no original`} title="Abrir original" className="shrink-0 rounded-md p-1.5 text-primary hover:bg-sage focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"><ExternalLink size={14} aria-hidden="true" /></a>}
+function SourceDocumentRow({ item, number, id, onVerify }: { item: Evidence; number: number; id: string; onVerify: (number: number) => void }) {
+  return <li id={id} tabIndex={-1} className="source-row flex min-w-0 items-center gap-2 border-t border-line-soft first:border-t-0">
+    <button type="button" onClick={() => onVerify(number)} aria-label={`Verificar fonte ${number}: ${item.document_name}`} title="Verificar fonte" className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md py-2.5 text-left hover:bg-sage focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+      <span className="w-5 shrink-0 text-right text-xs font-semibold text-primary">{number}.</span>
+      <FileText size={15} className="shrink-0 text-primary" aria-hidden="true" />
+      <span className="min-w-0 flex-1 break-words text-xs font-medium leading-5 text-ink">{item.document_name}</span>
+      {item.source_provider && <span className="citation-tool mb-0 shrink-0">{toolLabel(item.source_provider)}</span>}
+    </button>
+    {item.source_url && <a href={item.source_url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${item.document_name} no original`} title="Abrir original" className="shrink-0 cursor-pointer rounded-md p-1.5 text-primary hover:bg-sage focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"><ExternalLink size={14} aria-hidden="true" /></a>}
   </li>;
 }
 
-function SourceDocuments({ items, expanded, setExpanded, rowId }: { items: Evidence[]; expanded: boolean; setExpanded: (update: (open: boolean) => boolean) => void; rowId: (number: number) => string }) {
+function SourceDocuments({ items, expanded, setExpanded, rowId, onVerify }: { items: Evidence[]; expanded: boolean; setExpanded: (update: (open: boolean) => boolean) => void; rowId: (number: number) => string; onVerify: (number: number) => void }) {
   const remainingCount = Math.max(items.length - 3, 0);
   return <section className="mt-5 border-t border-line pt-4" aria-label="Documentos utilizados como fonte">
     <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fontes</h3>
-    <ol>{items.slice(0, expanded ? undefined : 3).map((item, index) => <SourceDocumentRow key={citationSourceKey(item)} item={item} number={index + 1} id={rowId(index + 1)} />)}</ol>
+    <ol>{items.slice(0, expanded ? undefined : 3).map((item, index) => <SourceDocumentRow key={citationSourceKey(item)} item={item} number={index + 1} id={rowId(index + 1)} onVerify={onVerify} />)}</ol>
     {remainingCount > 0 && <button type="button" onClick={() => setExpanded((open) => !open)} aria-expanded={expanded} className="flex items-center gap-1 border-t border-line-soft py-2 text-xs font-semibold text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
       {expanded ? "Mostrar menos" : `Ver mais ${remainingCount} ${remainingCount === 1 ? "documento" : "documentos"}`}
       <ChevronRight size={14} className={`transition-transform ${expanded ? "-rotate-90" : "rotate-90"}`} aria-hidden="true" />
