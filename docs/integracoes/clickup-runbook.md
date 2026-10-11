@@ -34,6 +34,11 @@ Critério para subir: depois da primeira sincronização, `embedding_tokens` do 
 - [ ] Docs: criar um Doc com subpágina e confirmar que ambos aparecem no texto indexado. Se o plano não expõe Docs v3, a sincronização das tarefas deve continuar normalmente.
 - [ ] Revogar o app no ClickUp (Settings → Apps) e sincronizar: a fonte vira "Reconectar" sem 500 e sem perder o que já foi indexado.
 - [ ] Anotar o tempo da primeira sincronização e o uso (100 req/min no plano Business ou inferior).
+- [ ] **Criar tarefa a partir da resposta (ADR-0020)**: numa resposta com fonte ClickUp, o botão "Criar tarefa no ClickUp" aparece (e não aparece com a fonte em "Reconectar"). O modal lista só as listas selecionadas, sugere a mais citada, carrega responsáveis; criar numa lista de teste e conferir título, descrição (resposta + Fontes + rodapé "Criada pelo Arquivio a pedido de …"), responsável, prazo, prioridade e etiquetas. Clicar duas vezes em "Criar" não duplica; reabrir o modal e criar de novo gera outra tarefa (nova chave). Revogar o app no ClickUp e tentar criar: mensagem de reconexão e botão some.
+
+## 3a. Criar tarefa a partir de uma resposta (ADR-0020)
+
+Única escrita do conector, por ação humana. Diagnóstico: tabela `clickup_task_creations` (ids, estado e `error_code`: `reauth_required`, `list_unavailable`, `rate_limited`, `rejected`, `outcome_unknown`) e `audit_logs.action = 'clickup.task.created'`. Registro `pending` antigo = processo caiu no meio; o usuário abre o modal de novo (nova chave) depois de conferir a lista. `outcome_unknown` = o ClickUp não confirmou: conferir a lista antes de repetir. Limite de 5 criações/min por usuário.
 
 ## 3b. Resync incremental
 
