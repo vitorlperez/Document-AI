@@ -71,6 +71,18 @@
   /* "Conhecer o app / Nova conversa" moved to the header/drawer (still clickable programmatically); the strip stays only as a thin row for the sync indicator. */
   .product-app .conversation-panel > .chat-topbar { position: relative; min-height: 0; padding: 0 12px; }
   .product-app .conversation-panel > .chat-topbar > button { display: none; }
+  /* The hidden topbar buttons are covered elsewhere on mobile: "Nova conversa" in the header, "Conhecer o app" and "Conversas" (data-tour="history", clicked programmatically) in the drawer. */
+  /* History: full-screen sheet over the conversation panel (below the mobile header), 44px touch targets, 16px text/inputs (no iOS zoom). */
+  .product-app .conversation-panel > .conversation-history { inset: 0; width: 100%; max-width: none; z-index: 30; border-right: 0; box-shadow: none; background: var(--surface-raised); color: var(--color-ink); padding-bottom: env(safe-area-inset-bottom); }
+  .conversation-history > div:first-child { min-height: 52px; padding-inline: 16px 8px; border-bottom-color: var(--card-edge); }
+  .conversation-history > div:first-child h2 { font-size: 16px; }
+  .conversation-history > div:last-child { padding: 8px; overscroll-behavior: contain; }
+  .conversation-history li { border-radius: 10px; }
+  .conversation-history li > button, .conversation-history li > form > button { min-height: 44px; min-width: 44px; }
+  .conversation-history li > button:first-child { font-size: 15px; padding-inline: 10px; }
+  .conversation-history li > form input { min-height: 44px; font-size: 16px; }
+  .conversation-history > div:last-child > button { min-height: 44px; font-size: 14px; }
+  .conversation-history :is(button, input):focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
   .product-app .conversation-panel > .chat-topbar:not(:has(> .sync-chip)) { display: none; }
   /* Composer pinned to the bottom, clear of the home indicator. */
   .product-app .chat-workspace .conversation-composer { flex-shrink: 0; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--color-line-soft); }

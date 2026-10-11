@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderOpen, HardDrive, HelpCircle, Menu, Plus, ShieldCheck, Sparkles, X } from "lucide-react";
+import { FolderOpen, HardDrive, HelpCircle, History, Menu, Plus, ShieldCheck, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Brand } from "./brand";
@@ -59,6 +59,7 @@ const chatSelector = (suffix: string) => `#consultas ${suffix}`;
 export function MobileShellHeader({ user, company, companies, screen, activePath, onCompanyChange, onNavigate, onLogout }: { user: User; company: Company; companies: Company[]; screen: "chat" | "other"; activePath: string; onCompanyChange: (id: string) => void; onNavigate: (path: string) => void; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreMenuFocus = useRef(true);
   const canManage = company.role !== "member";
   const sync = useSyncStatus(company.id, { enabled: true });
   const [roots, setRoots] = useState<LibraryNode[]>([]);
@@ -75,6 +76,12 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
     setOpen(false);
     if (screen === "chat") document.querySelector<HTMLButtonElement>(chatSelector('[data-tour="new-conversation"]'))?.click();
     else onNavigate(companyPath(company.id));
+  };
+  // The history panel lives in the chat; the topbar button that toggles it is hidden on mobile, so the drawer opens it programmatically.
+  const showHistory = () => {
+    restoreMenuFocus.current = false;
+    setOpen(false);
+    document.querySelector<HTMLButtonElement>(chatSelector('[data-tour="history"]'))?.click();
   };
   const showTour = () => {
     setOpen(false);
@@ -98,7 +105,7 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
       <AccountMenu user={user} company={company} onNavigate={onNavigate} onLogout={onLogout} />
     </header>
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="left" showCloseButton={false} motionProfile="arquivio" id="mobile-drawer" className="mobile-drawer" aria-describedby="mobile-drawer-description" onCloseAutoFocus={(event) => { event.preventDefault(); menuButtonRef.current?.focus({ preventScroll: true }); }}>
+      <SheetContent side="left" showCloseButton={false} motionProfile="arquivio" id="mobile-drawer" className="mobile-drawer" aria-describedby="mobile-drawer-description" onCloseAutoFocus={(event) => { event.preventDefault(); if (restoreMenuFocus.current) menuButtonRef.current?.focus({ preventScroll: true }); restoreMenuFocus.current = true; }}>
         <div className="mobile-drawer-head">
           <Brand compact />
           <SheetClose className="mobile-header-button" aria-label="Fechar menu"><X size={20} aria-hidden="true" /></SheetClose>
@@ -111,6 +118,7 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
           </label>
           <nav aria-label="Navegação principal" className="mobile-drawer-nav">
             {navItems.map(({ key, label, icon: Icon, path }) => <button key={key} type="button" onClick={() => go(path)} aria-current={activePath.replace(/\/$/, "") === path ? "page" : undefined}><Icon size={18} aria-hidden="true" />{label}</button>)}
+            {screen === "chat" && <button type="button" data-testid="drawer-history" onClick={showHistory}><History size={18} aria-hidden="true" />Conversas</button>}
             {screen === "chat" && <button type="button" onClick={showTour}><HelpCircle size={18} aria-hidden="true" />Conhecer o app</button>}
           </nav>
           <section aria-label="Ferramentas" className="mobile-drawer-section">

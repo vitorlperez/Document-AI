@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, MessageSquare, Pencil, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, messageFor } from "./types-and-api";
 
 export type ConversationSummary = { id: string; title: string; last_message_at: string; created_at: string };
@@ -15,6 +15,7 @@ export function ConversationHistory({ organizationId, activeId, refreshKey, disa
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const closeRef = useRef<HTMLButtonElement>(null);
   const base = `/organizations/${organizationId}/conversations`;
   const load = useCallback(async (page: number) => {
     try {
@@ -25,6 +26,8 @@ export function ConversationHistory({ organizationId, activeId, refreshKey, disa
     finally { setLoading(false); }
   }, [base]);
   useEffect(() => { void Promise.resolve().then(() => load(1)); }, [load, refreshKey]);
+  // Move focus into the panel when it opens (keyboard + screen reader users, and the full-screen mobile sheet).
+  useEffect(() => { closeRef.current?.focus({ preventScroll: true }); }, []);
   async function rename(id: string) {
     const title = draft.trim();
     if (!title) { setEditing(null); return; }
@@ -43,8 +46,8 @@ export function ConversationHistory({ organizationId, activeId, refreshKey, disa
       onDeleted(item.id);
     } catch (caught) { setError(messageFor(caught)); }
   }
-  return <aside aria-label="Histórico de conversas" className="conversation-history absolute inset-y-0 left-0 z-20 flex w-72 max-w-[85%] flex-col border-r border-line bg-panel shadow-lg">
-    <div className="flex items-center justify-between border-b border-line-soft px-3 py-2"><h2 className="text-sm font-semibold text-ink">Conversas</h2><button type="button" onClick={onClose} aria-label="Fechar histórico" className="grid min-h-11 min-w-11 place-items-center rounded-md text-muted-foreground hover:bg-sage"><X size={16} aria-hidden="true" /></button></div>
+  return <aside aria-label="Histórico de conversas" onKeyDown={(event) => { if (event.key === "Escape" && editing === null) onClose(); }} className="conversation-history absolute inset-y-0 left-0 z-20 flex w-72 max-w-[85%] flex-col border-r border-line bg-panel shadow-lg">
+    <div className="flex items-center justify-between border-b border-line-soft px-3 py-2"><h2 className="text-sm font-semibold text-ink">Conversas</h2><button ref={closeRef} type="button" onClick={onClose} aria-label="Fechar histórico" className="grid min-h-11 min-w-11 place-items-center rounded-md text-muted-foreground hover:bg-sage"><X size={16} aria-hidden="true" /></button></div>
     <div className="flex-1 overflow-y-auto p-2">
       {loading ? <p role="status" className="p-3 text-xs text-muted-foreground">Carregando…</p> : items.length === 0 && !error ? <p className="p-3 text-xs text-muted-foreground">Suas conversas aparecerão aqui.</p> : <ul className="space-y-0.5">{items.map((item) => <li key={item.id} className={`group flex items-center gap-1 rounded-md ${item.id === activeId ? "bg-sage-selected" : "hover:bg-sage"}`}>
         {editing === item.id ? <form className="flex min-w-0 flex-1 items-center gap-1 p-1" onSubmit={(event) => { event.preventDefault(); void rename(item.id); }}>
