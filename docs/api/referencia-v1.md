@@ -1,5 +1,7 @@
 # API pública v1
 
+Versão para leitura no navegador, com exemplos curl/JavaScript/Python e download do contrato: <https://www.arquivio.com.br/docs/api> (e Desenvolvedor → Acesso por API e IA, no app).
+
 O Owner/Admin habilita a API em Integrações → Acesso por API e IA. Crie uma chave e copie o segredo imediatamente: a listagem nunca o devolve. A chave pertence à organização e ao membro que a criou; desativá-lo, revogar ou expirar a chave remove seu acesso imediatamente. Cookies de sessão não autenticam `/v1`; Bearer não autentica a administração.
 
 Envie `Authorization: Bearer $KEY` via HTTPS. Nunca grave o segredo em URLs ou logs.

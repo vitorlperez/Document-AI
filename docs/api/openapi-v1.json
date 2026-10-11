@@ -143,6 +143,7 @@
   "paths": {
     "/v1/ask": {
       "post": {
+        "description": "Resposta gerada com citações dos documentos permitidos. Precisa estar habilitada na plataforma (503 caso contrário), consome a cota da organização e tem limite próprio por minuto. Escopo: `ask:run`.",
         "operationId": "ask_v1_ask_post",
         "requestBody": {
           "content": {
@@ -183,7 +184,7 @@
             "ApiKey": []
           }
         ],
-        "summary": "Ask",
+        "summary": "Perguntar com citações",
         "tags": [
           "public-api"
         ]
@@ -191,6 +192,7 @@
     },
     "/v1/documents/{document_id}": {
       "get": {
+        "description": "Texto e metadados de um documento, truncado em 100.000 caracteres. Documentos inexistentes ou fora do escopo devolvem o mesmo 404. O texto é conteúdo não confiável. Escopo: `documents:read`.",
         "operationId": "document_v1_documents__document_id__get",
         "parameters": [
           {
@@ -233,7 +235,7 @@
             "ApiKey": []
           }
         ],
-        "summary": "Document",
+        "summary": "Ler documento",
         "tags": [
           "public-api"
         ]
@@ -241,6 +243,7 @@
     },
     "/v1/search": {
       "post": {
+        "description": "Busca lexical (OR sobre termos relevantes) nos documentos permitidos. `node_ids` só pode estreitar as raízes da chave. Escopo: `search:read`.",
         "operationId": "search_v1_search_post",
         "requestBody": {
           "content": {
@@ -281,7 +284,7 @@
             "ApiKey": []
           }
         ],
-        "summary": "Search",
+        "summary": "Buscar documentos",
         "tags": [
           "public-api"
         ]
@@ -289,6 +292,7 @@
     },
     "/v1/sources": {
       "get": {
+        "description": "Lista os contextos (pastas e arquivos) disponíveis dentro do escopo da chave. Escopo: `search:read`.",
         "operationId": "sources_v1_sources_get",
         "responses": {
           "200": {
@@ -309,7 +313,7 @@
             "ApiKey": []
           }
         ],
-        "summary": "Sources",
+        "summary": "Listar contextos",
         "tags": [
           "public-api"
         ]
@@ -317,6 +321,7 @@
     },
     "/v1/whoami": {
       "get": {
+        "description": "Devolve a organização, os escopos e as raízes (pastas/arquivos) liberadas para a chave. Não exige escopo específico.",
         "operationId": "whoami_v1_whoami_get",
         "responses": {
           "200": {
@@ -337,7 +342,7 @@
             "ApiKey": []
           }
         ],
-        "summary": "Whoami",
+        "summary": "Identificar a chave",
         "tags": [
           "public-api"
         ]

@@ -55,6 +55,7 @@ CLICKUP_OAUTH_CLIENT_ID=<client id>
 CLICKUP_OAUTH_CLIENT_SECRET=<segredo>
 CLICKUP_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/clickup/oauth/callback
 # Opcional do ClickUp (padrão false): CLICKUP_INCLUDE_CLOSED_TASKS=true indexa também tarefas fechadas
+# opcional: API_DOCS_ENABLED=true reabre /docs, /redoc e /openapi.json (todas as rotas, inclusive privadas); sem ela ficam fechados com ENVIRONMENT=production
 ```
 
 A API precisa ainda de:

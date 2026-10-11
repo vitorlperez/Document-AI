@@ -194,3 +194,36 @@ def test_enabled_ask_uses_safe_presentation_and_audits(api):
     response = client.post("/v1/ask", json={"question": "When does the campaign launch?"}, headers=bearer(key))
     assert response.status_code == 200, response.text
     assert response.json()["citations"][0]["source_url"] == "https://drive.example.test/A"
+
+
+def _app_with(monkeypatch, **overrides):
+    import importlib
+
+    from fastapi.testclient import TestClient
+
+    from app.core.config import Settings
+
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://test_user:not-a-secret@localhost:5432/test_db")
+    main = importlib.import_module("app.main")
+    settings = Settings(database_url="postgresql+psycopg://test_user:not-a-secret@localhost:5432/test_db",
+                        public_app_url="http://app.example.test", **overrides)
+    return TestClient(main.create_app(settings))
+
+
+PRODUCTION = {"environment": "production", "auth_proxy_secret": "x" * 40, "auth_trusted_proxy_cidrs": "10.0.0.0/8"}
+
+
+def test_full_api_docs_are_closed_in_production_but_public_v1_stays_open(monkeypatch):
+    client = _app_with(monkeypatch, **PRODUCTION)
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        assert client.get(path).status_code == 404, path
+    response = client.get("/v1/openapi.json")
+    assert response.status_code == 200
+    assert all(p.startswith("/v1") for p in response.json()["paths"])
+    assert client.app.openapi()["paths"]  # export tooling does not depend on openapi_url
+
+
+def test_full_api_docs_follow_environment_and_explicit_flag(monkeypatch):
+    assert _app_with(monkeypatch).get("/openapi.json").status_code == 200
+    assert _app_with(monkeypatch, **PRODUCTION, api_docs_enabled=True).get("/docs").status_code == 200
+    assert _app_with(monkeypatch, api_docs_enabled=False).get("/docs").status_code == 404

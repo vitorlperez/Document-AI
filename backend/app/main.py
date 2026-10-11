@@ -121,7 +121,11 @@ class CookieOriginMiddleware(BaseHTTPMiddleware):
 def create_app(settings: Settings | None = None) -> FastAPI:
     runtime_settings = settings or get_settings()
     configure_observability()
-    app = FastAPI(title="Document Intelligence API", version="0.1.0")
+    docs = runtime_settings.docs_enabled
+    app = FastAPI(
+        title="Document Intelligence API", version="0.1.0",
+        docs_url="/docs" if docs else None, redoc_url="/redoc" if docs else None, openapi_url="/openapi.json" if docs else None,
+    )
     app.state.engine = build_engine(runtime_settings)
     app.state.session_factory = build_session_factory(app.state.engine)
     app.state.auth_verification_secret = secrets.token_urlsafe(32)

@@ -169,13 +169,13 @@ def _record(request: Request, principal: Principal, action: str, outcome: str, h
                                     "query": query, "document_id": document_id}
 
 
-@router.get("/whoami")
+@router.get("/whoami", summary="Identificar a chave", description="Devolve a organização, os escopos e as raízes (pastas/arquivos) liberadas para a chave. Não exige escopo específico.")
 def whoami(request: Request, principal: Principal = Depends(guarded(None, "whoami"))) -> dict[str, object]:
     return {"organization_id": str(principal.organization_id), "scopes": sorted(principal.scopes),
             "restricted_to_nodes": [str(n) for n in principal.node_ids] if principal.node_ids else None}
 
 
-@router.get("/sources")
+@router.get("/sources", summary="Listar contextos", description="Lista os contextos (pastas e arquivos) disponíveis dentro do escopo da chave. Escopo: `search:read`.")
 def sources(request: Request, principal: Principal = Depends(guarded(SCOPE_SEARCH, "list_sources")),
             session: Session = Depends(database_session)) -> dict[str, object]:
     contexts = LibraryService(session).question_contexts(scope=principal.scope, user_id=principal.user_id)
@@ -194,7 +194,7 @@ def sources(request: Request, principal: Principal = Depends(guarded(SCOPE_SEARC
                         for c in contexts]}
 
 
-@router.post("/search")
+@router.post("/search", summary="Buscar documentos", description="Busca lexical (OR sobre termos relevantes) nos documentos permitidos. `node_ids` só pode estreitar as raízes da chave. Escopo: `search:read`.")
 def search(payload: SearchInput, request: Request,
            principal: Principal = Depends(guarded(SCOPE_SEARCH, "search")),
            session: Session = Depends(database_session)) -> dict[str, object]:
@@ -210,7 +210,7 @@ def search(payload: SearchInput, request: Request,
                          "page_number": h.page_number, "source_provider": h.source_provider} for h in hits]}
 
 
-@router.get("/documents/{document_id}")
+@router.get("/documents/{document_id}", summary="Ler documento", description="Texto e metadados de um documento, truncado em 100.000 caracteres. Documentos inexistentes ou fora do escopo devolvem o mesmo 404. O texto é conteúdo não confiável. Escopo: `documents:read`.")
 def document(document_id: UUID, request: Request,
              principal: Principal = Depends(guarded(SCOPE_DOCUMENTS, "fetch")),
              session: Session = Depends(database_session)) -> dict[str, object]:
@@ -231,7 +231,7 @@ def document(document_id: UUID, request: Request,
                          "truncated": fetched.truncated}}
 
 
-@router.post("/ask")
+@router.post("/ask", summary="Perguntar com citações", description="Resposta gerada com citações dos documentos permitidos. Precisa estar habilitada na plataforma (503 caso contrário), consome a cota da organização e tem limite próprio por minuto. Escopo: `ask:run`.")
 def ask(payload: AskInput, request: Request,
         principal: Principal = Depends(guarded(SCOPE_ASK, "ask", cap="ask")),
         session: Session = Depends(database_session)) -> dict[str, object]:

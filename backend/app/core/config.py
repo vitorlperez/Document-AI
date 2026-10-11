@@ -23,6 +23,9 @@ class Settings(BaseSettings):
             return "postgresql+psycopg://" + value[len("postgresql://"):]
         return value
     environment: str = "development"
+    # Swagger/ReDoc/openapi.json cover every route, private ones included. None = on outside production, off in production;
+    # set API_DOCS_ENABLED explicitly to override. The public /v1/openapi.json is always served.
+    api_docs_enabled: bool | None = None
     source_fencing_enabled: bool = True
     vector_backend: Literal["python", "pgvector"] = "pgvector"
     ocr_engine: Literal["none", "docling_serve"] = "none"
@@ -70,6 +73,12 @@ class Settings(BaseSettings):
                 if network.prefixlen == 0:
                     raise ValueError("AUTH_TRUSTED_PROXY_CIDRS must trust only frontend peers, never /0")
         return value
+
+    @property
+    def docs_enabled(self) -> bool:
+        if self.api_docs_enabled is not None:
+            return self.api_docs_enabled
+        return self.environment.strip().lower() != "production"
 
     @model_validator(mode="after")
     def validate_production_auth_proxy(self):
