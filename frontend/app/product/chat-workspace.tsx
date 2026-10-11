@@ -9,7 +9,9 @@ import { AnswerActions } from "../answer-actions";
 import { clickUpConnected } from "../clickup-task-logic";
 import { AnswerMarkdown } from "../answer-markdown";
 import { REVEAL_MAX_MS, useAnswerReveal } from "../answer-reveal";
-import { SourceEvidencePanel, SourceReadingStatus, type EvidenceCitation } from "../source-reading";
+import { SourceReadingStatus, type EvidenceCitation } from "../source-reading";
+import { FileViewerHost, type ViewerCitation, type ViewerTarget } from "../file-viewer";
+import { HIGHLIGHT_MS, type SourceHighlight, citationTarget, highlightAnnouncement, isHighlighted, nextHighlight } from "../file-viewer-logic";
 import { QuestionScopePicker, contextReady, toolLabel, providerKey } from "../question-scope";
 import { SyncIndicator, useSyncStatus } from "../sync-status";
 import { ToolsSidebar, useToolsSidebarCollapsed } from "../tools-sidebar";
@@ -85,6 +87,19 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
   const [restoringConversation, setRestoringConversation] = useState(true);
   const [asking, setAsking] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [viewerTarget, setViewerTarget] = useState<ViewerTarget | null>(null);
+  const viewerTrigger = useRef<HTMLElement | null>(null);
+  const panelsRef = useRef<HTMLDivElement>(null);
+  const openFile = useCallback((citation: ViewerCitation, number: number) => {
+    if (document.activeElement instanceof HTMLElement && !viewerTarget) viewerTrigger.current = document.activeElement;
+    setViewerTarget({ citation, number });
+  }, [viewerTarget]);
+  const closeViewer = useCallback(() => {
+    setViewerTarget(null);
+    const trigger = viewerTrigger.current;
+    viewerTrigger.current = null;
+    if (trigger?.isConnected) window.requestAnimationFrame(() => trigger.focus({ preventScroll: true }));
+  }, []);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const conversationEpoch = useRef(0);
   const askSequence = useRef(0);
@@ -151,6 +166,7 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
     if (asking || id === conversationId) { setHistoryOpen(false); return; }
     const epoch = ++conversationEpoch.current;
     askSequence.current += 1;
+    setViewerTarget(null);
     setRestoringConversation(true);
     void api<{ id: string; messages: PersistedConversationMessage[] }>(`/organizations/${company.id}/conversations/${id}`).then((conversation) => {
       if (conversationEpoch.current !== epoch) return;
@@ -165,6 +181,7 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
     if (id !== conversationId) return;
     conversationEpoch.current += 1;
     askSequence.current += 1;
+    setViewerTarget(null);
     window.sessionStorage.removeItem(`arquivio:conversation:${company.id}`);
     setConversationId(null);
     setMessages([]);
@@ -172,6 +189,7 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
   function startNewConversation() {
     if (asking) return;
     conversationEpoch.current += 1;
+    setViewerTarget(null);
     window.sessionStorage.removeItem(`arquivio:conversation:${company.id}`);
     setConversationId(null);
     setMessages([]);
@@ -264,12 +282,12 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
     finally { setAsking(false); }
   }
   return <><div className="workspace-frame chat-workspace overflow-hidden border border-line bg-panel">
-    <div className={`grid workspace-panels${toolsCollapsed ? " tools-collapsed" : ""}`}>
+    <div ref={panelsRef} className={`grid workspace-panels${toolsCollapsed ? " tools-collapsed" : ""}`}>
       <ToolsSidebar orgId={company.id} canManage={canManage} collapsed={toolsCollapsed} onToggle={toggleTools} tools={syncStatus.tools} loading={syncStatus.loading} libraryRoots={roots} onAdd={onConnect} onSelectTool={(tool) => router.push(libraryPath(company.id, tool.libraryNodeId))} />
       <main id="consultas" className="conversation-panel relative flex min-h-[560px] min-w-0 flex-col bg-panel">
         <div className="chat-topbar flex shrink-0 items-center justify-end gap-1 border-b border-line-soft bg-panel px-3 py-1.5 sm:px-5"><button type="button" onClick={() => setHistoryOpen((open) => !open)} aria-expanded={historyOpen} className="mr-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:bg-sage"><History size={16} aria-hidden="true" /><span className="hidden sm:inline">Conversas</span></button><SyncIndicator tools={syncStatus.tools} /><button type="button" onClick={onShowTour} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:bg-sage" aria-label="Rever tour do app"><HelpCircle size={16} aria-hidden="true" /><span className="hidden sm:inline">Conhecer o app</span></button><NewConversationButton onClick={startNewConversation} disabled={asking} /></div>
         {historyOpen && <ConversationHistory organizationId={company.id} activeId={conversationId} refreshKey={conversationId} disabled={asking} onOpen={openConversation} onDeleted={conversationDeleted} onClose={() => setHistoryOpen(false)} />}
-        <div ref={transcriptRef} onScroll={(event) => { const el = event.currentTarget; followTranscript.current = el.scrollHeight - el.scrollTop - el.clientHeight < 96; }} role="log" aria-label="Conversa com seus documentos" aria-live="polite" className="flex-1 overflow-y-auto px-5 py-6 sm:px-7">{messages.length > 0 ? <div className="mx-auto max-w-3xl space-y-5">{messages.map((message) => message.role === "user" ? <div key={message.id} className="ml-auto max-w-[85%]"><p className="mb-1 text-right text-xs font-medium text-muted-foreground">{message.contextName}</p><div className="conversation-question px-4 py-3 text-sm leading-6">{message.content}{Boolean(message.mentions?.length) && <span className="mt-2 block text-xs">{mentionSummary(message.mentions ?? [])}</span>}</div>{message.contextId && (savedByMessage[message.id] ? <div className="mt-1.5 flex items-center justify-end gap-2 text-xs text-muted-foreground">Pergunta salva<FollowToggle organizationId={company.id} savedQueryId={savedByMessage[message.id].id} followed={savedByMessage[message.id].followed ?? false} onError={setError} /></div> : <button disabled={saving} onClick={() => { void saveQuestion(message); }} className="mt-1.5 block ml-auto text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-40">Salvar pergunta</button>)}</div> : <article key={message.id} className="conversation-answer"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-sage-selected text-primary"><Sparkles size={15} /></span><div><p className="text-sm font-semibold text-ink">Arquivio</p><p className="text-xs text-muted-foreground">{message.contextName}</p></div></div>{(message.pending || (!message.error && message.answer && (message.fresh || Boolean(message.providers?.length)))) && <SourceReadingStatus providers={message.providers} reading={Boolean(message.pending)} />}{message.pending ? null : message.error ? <div className="mt-4 text-sm leading-6 text-rose-700"><p>Não foi possível concluir esta pergunta: {message.error}</p><button type="button" className="mt-2 min-h-11 underline" onClick={() => { setQuestion(message.content); setMentions(message.mentions ?? []); setAllTools(message.allTools ?? true); setQueryProviders(message.providers ?? []); composerRef.current?.focus(); }}>Repetir com este contexto</button></div> : message.answer ? <><AssistantAnswer organizationId={company.id} messageId={message.id} answer={message.answer} animate={Boolean(message.fresh)} onProgress={followReveal} onRevealed={() => revealFinished(message.id)} />
+        <div ref={transcriptRef} onScroll={(event) => { const el = event.currentTarget; followTranscript.current = el.scrollHeight - el.scrollTop - el.clientHeight < 96; }} role="log" aria-label="Conversa com seus documentos" aria-live="polite" className="flex-1 overflow-y-auto px-5 py-6 sm:px-7">{messages.length > 0 ? <div className="mx-auto max-w-3xl space-y-5">{messages.map((message) => message.role === "user" ? <div key={message.id} className="ml-auto max-w-[85%]"><p className="mb-1 text-right text-xs font-medium text-muted-foreground">{message.contextName}</p><div className="conversation-question px-4 py-3 text-sm leading-6">{message.content}{Boolean(message.mentions?.length) && <span className="mt-2 block text-xs">{mentionSummary(message.mentions ?? [])}</span>}</div>{message.contextId && (savedByMessage[message.id] ? <div className="mt-1.5 flex items-center justify-end gap-2 text-xs text-muted-foreground">Pergunta salva<FollowToggle organizationId={company.id} savedQueryId={savedByMessage[message.id].id} followed={savedByMessage[message.id].followed ?? false} onError={setError} /></div> : <button disabled={saving} onClick={() => { void saveQuestion(message); }} className="mt-1.5 block ml-auto text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-40">Salvar pergunta</button>)}</div> : <article key={message.id} className="conversation-answer"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-sage-selected text-primary"><Sparkles size={15} /></span><div><p className="text-sm font-semibold text-ink">Arquivio</p><p className="text-xs text-muted-foreground">{message.contextName}</p></div></div>{(message.pending || (!message.error && message.answer && (message.fresh || Boolean(message.providers?.length)))) && <SourceReadingStatus providers={message.providers} reading={Boolean(message.pending)} />}{message.pending ? null : message.error ? <div className="mt-4 text-sm leading-6 text-rose-700"><p>Não foi possível concluir esta pergunta: {message.error}</p><button type="button" className="mt-2 min-h-11 underline" onClick={() => { setQuestion(message.content); setMentions(message.mentions ?? []); setAllTools(message.allTools ?? true); setQueryProviders(message.providers ?? []); composerRef.current?.focus(); }}>Repetir com este contexto</button></div> : message.answer ? <><AssistantAnswer onOpenFile={openFile} messageId={message.id} answer={message.answer} animate={Boolean(message.fresh)} onProgress={followReveal} onRevealed={() => revealFinished(message.id)} />
         {message.persisted && conversationId && message.answer?.answer && <AnswerActions organizationId={company.id} conversationId={conversationId} messageId={message.id} text={message.answer.answer} sources={message.answer.citations} clickUpEnabled={clickUpConnected(contexts)} />}
         {message.persisted && conversationId && <AnswerFeedback organizationId={company.id} conversationId={conversationId} messageId={message.id} initialVote={message.feedback} />}</> : null}</article>)}</div> : <div className="mx-auto flex h-full max-w-md flex-col items-center justify-center py-16 text-center"><span className="grid size-12 place-items-center rounded-lg bg-sage text-primary"><Sparkles size={22} /></span><h2 className="mt-4 text-lg font-semibold text-ink">O que você quer descobrir?</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Pergunte sobre conteúdo indexado. Se quiser restringir a pergunta, escolha ferramentas abaixo ou mencione arquivos e pastas com @ ou /.</p>{canAsk && <div className="mt-6 flex flex-wrap justify-center gap-2">{(suggestions.length > 0 ? suggestions : ["Quais são os principais prazos?", "O que foi definido sobre as entregas?", "Quais são as responsabilidades da equipe?"]).map((prompt) => <button key={prompt} onClick={() => { setQuestion(prompt); setMentions([]); composerRef.current?.focus(); }} className="rounded-md border border-line px-3 py-2 text-xs text-muted-foreground hover:border-primary hover:bg-sage">{prompt}</button>)}</div>}</div>}</div>
         <form data-tour="composer" onSubmit={(event) => { void ask(event); }} className="conversation-composer shrink-0 bg-panel p-4 sm:px-7 sm:py-5">
@@ -284,6 +302,7 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
           <p className="mt-2 text-xs text-muted-foreground">@ menciona arquivos e pastas · / abre comandos.</p>
         </form>
       </main>
+      <FileViewerHost organizationId={company.id} target={viewerTarget} panelsRef={panelsRef} onClose={closeViewer} />
     </div>
   </div></>;
 }
@@ -312,14 +331,23 @@ function AnswerFeedback({ organizationId, conversationId, messageId, initialVote
   </div>;
 }
 
-function AssistantAnswer({ organizationId, messageId, answer, animate, onProgress, onRevealed }: { organizationId: string; messageId: string; answer: Answer; animate: boolean; onProgress: () => void; onRevealed: () => void }) {
+function AssistantAnswer({ messageId, answer, animate, onProgress, onRevealed, onOpenFile }: { messageId: string; answer: Answer; animate: boolean; onProgress: () => void; onRevealed: () => void; onOpenFile: (citation: ViewerCitation, number: number) => void }) {
   const [expanded, setExpanded] = useState(false);
-  const [verifying, setVerifying] = useState<number | null>(null);
+  const [highlight, setHighlight] = useState<SourceHighlight>(null);
   const fullText = answerText(answer);
   const reveal = useAnswerReveal(fullText, animate, { onProgress, onDone: onRevealed });
   const sourceId = (number: number) => `source-${messageId}-${number}`;
-  const openSource = (number: number) => {
-    setVerifying(number);
+  // The highlight lasts a few seconds, or until another [N] is picked.
+  useEffect(() => {
+    if (!highlight) return;
+    const timer = window.setTimeout(() => setHighlight(null), HIGHLIGHT_MS);
+    return () => window.clearTimeout(timer);
+  }, [highlight]);
+  // A [N] never opens anything: it only points at the matching file in this answer's source list.
+  const pointToSource = (cited: number) => {
+    const number = citationTarget(cited, answer.citations.length);
+    if (number === null) return;
+    setHighlight((current) => nextHighlight(current, number));
     setExpanded((open) => open || number > 3);
     // Wait for the expanded list to render before moving focus to the cited row.
     window.requestAnimationFrame(() => {
@@ -334,17 +362,17 @@ function AssistantAnswer({ organizationId, messageId, answer, animate, onProgres
     {/* While the text is still arriving, assistive tech gets the whole answer once instead of every word. */}
     {!reveal.done && <p className="sr-only">{fullText}</p>}
     <div className={reveal.done ? undefined : "answer-revealing"} aria-hidden={reveal.done ? undefined : true} inert={!reveal.done}>
-      <AnswerMarkdown text={reveal.text} fileNames={answer.citations.map((citation) => citation.document_name)} onCite={answer.citations.length > 0 ? openSource : undefined} />
+      <AnswerMarkdown text={reveal.text} fileNames={answer.citations.map((citation) => citation.document_name)} onCite={answer.citations.length > 0 ? pointToSource : undefined} />
     </div>
     {reveal.done && Boolean(answer.coverage?.pending_folders) && <p className={`mt-2 text-xs text-amber-800${settle}`}>Resposta baseada no que já foi sincronizado{answer.coverage!.total_folders > 0 ? ` — ${answer.coverage!.pending_folders} de ${Math.max(answer.coverage!.total_folders, answer.coverage!.pending_folders)} ${Math.max(answer.coverage!.total_folders, answer.coverage!.pending_folders) === 1 ? "pasta ainda está sincronizando" : "pastas ainda estão sincronizando"}` : ""}.</p>}
-    {verifying !== null && answer.citations[verifying - 1] && <SourceEvidencePanel organizationId={organizationId} number={verifying} citation={answer.citations[verifying - 1] as EvidenceCitation} onClose={() => setVerifying(null)} />}
-    {reveal.done && answer.citations.length > 0 && <div className={animate ? "answer-settle" : undefined}><SourceDocuments items={answer.citations} expanded={expanded} setExpanded={setExpanded} rowId={sourceId} onVerify={setVerifying} /></div>}
+    {highlight && answer.citations[highlight.number - 1] && <p role="status" aria-live="polite" className="sr-only" key={highlight.nonce}>{highlightAnnouncement(highlight.number, answer.citations[highlight.number - 1].document_name)}</p>}
+    {reveal.done && answer.citations.length > 0 && <div className={animate ? "answer-settle" : undefined}><SourceDocuments items={answer.citations} expanded={expanded} setExpanded={setExpanded} rowId={sourceId} highlight={highlight} onOpen={(number) => { setHighlight(null); onOpenFile(answer.citations[number - 1] as EvidenceCitation & ViewerCitation, number); }} /></div>}
   </>;
 }
 
-function SourceDocumentRow({ item, number, id, onVerify }: { item: Evidence; number: number; id: string; onVerify: (number: number) => void }) {
-  return <li id={id} tabIndex={-1} className="source-row flex min-w-0 items-center gap-2 border-t border-line-soft first:border-t-0">
-    <button type="button" onClick={() => onVerify(number)} aria-label={`Verificar fonte ${number}: ${item.document_name}`} title="Verificar fonte" className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md py-2.5 text-left hover:bg-sage focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+function SourceDocumentRow({ item, number, id, cited, onOpen }: { item: Evidence; number: number; id: string; cited: boolean; onOpen: (number: number) => void }) {
+  return <li id={id} tabIndex={-1} aria-current={cited ? "true" : undefined} className={`source-row flex min-w-0 items-center gap-2 border-t border-line-soft first:border-t-0${cited ? " is-cited" : ""}`}>
+    <button type="button" onClick={() => onOpen(number)} aria-label={`Visualizar arquivo ${number}: ${item.document_name}`} title="Visualizar arquivo" className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md py-2.5 text-left hover:bg-sage focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
       <span className="w-5 shrink-0 text-right text-xs font-semibold text-primary">{number}.</span>
       <FileText size={15} className="shrink-0 text-primary" aria-hidden="true" />
       <span className="min-w-0 flex-1 break-words text-xs font-medium leading-5 text-ink">{item.document_name}</span>
@@ -354,11 +382,11 @@ function SourceDocumentRow({ item, number, id, onVerify }: { item: Evidence; num
   </li>;
 }
 
-function SourceDocuments({ items, expanded, setExpanded, rowId, onVerify }: { items: Evidence[]; expanded: boolean; setExpanded: (update: (open: boolean) => boolean) => void; rowId: (number: number) => string; onVerify: (number: number) => void }) {
+function SourceDocuments({ items, expanded, setExpanded, rowId, highlight, onOpen }: { items: Evidence[]; expanded: boolean; setExpanded: (update: (open: boolean) => boolean) => void; rowId: (number: number) => string; highlight: SourceHighlight; onOpen: (number: number) => void }) {
   const remainingCount = Math.max(items.length - 3, 0);
   return <section className="mt-5 border-t border-line pt-4" aria-label="Documentos utilizados como fonte">
     <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fontes</h3>
-    <ol>{items.slice(0, expanded ? undefined : 3).map((item, index) => <SourceDocumentRow key={citationSourceKey(item)} item={item} number={index + 1} id={rowId(index + 1)} onVerify={onVerify} />)}</ol>
+    <ol>{items.slice(0, expanded ? undefined : 3).map((item, index) => <SourceDocumentRow key={citationSourceKey(item)} item={item} number={index + 1} id={rowId(index + 1)} cited={isHighlighted(highlight, index + 1)} onOpen={onOpen} />)}</ol>
     {remainingCount > 0 && <button type="button" onClick={() => setExpanded((open) => !open)} aria-expanded={expanded} className="flex items-center gap-1 border-t border-line-soft py-2 text-xs font-semibold text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
       {expanded ? "Mostrar menos" : `Ver mais ${remainingCount} ${remainingCount === 1 ? "documento" : "documentos"}`}
       <ChevronRight size={14} className={`transition-transform ${expanded ? "-rotate-90" : "rotate-90"}`} aria-hidden="true" />
