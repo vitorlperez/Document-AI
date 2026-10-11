@@ -55,7 +55,7 @@ test("landing keeps the onLogin/onSignUp contract and every destination", () => 
   assert.match(source, /type LandingPageProps = \{ onLogin: \(\) => void; onSignUp: \(\) => void \};/);
   assert.equal((source.match(/onClick=\{onLogin\}/g) ?? []).length, 3, "Entrar (header + menu) and Já tenho uma conta");
   assert.equal((source.match(/onClick=\{onSignUp\}/g) ?? []).length, 4, "Criar conta (header + menu), hero and closing CTAs");
-  for (const href of ["#landing-main", "#produto", "#integracoes", "#como-funciona", "#perguntas", "/privacidade", "/termos"]) assert.ok(source.includes(`href="${href}"`), `missing href ${href}`);
+  for (const href of ["#landing-main", "#produto", "#integracoes", "#como-funciona", "#perguntas", "/privacidade", "/termos", "/docs/api"]) assert.ok(source.includes(`href="${href}"`), `missing href ${href}`);
   for (const id of ["landing-main", "produto", "integracoes", "como-funciona", "perguntas"]) assert.ok(source.includes(`id="${id}"`), `missing id ${id}`);
   assert.match(source, /aria-pressed=\{userPaused\}/, "viewers can pause the moving demo");
   assert.doesNotMatch(source, /activeCase|demoCases|DEMO_ROTATE_MS/, "the three-case selector and rotation are gone");

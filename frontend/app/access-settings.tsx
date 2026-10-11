@@ -67,7 +67,7 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
   }
   return <section className="mt-6 rounded-lg border border-line-soft bg-panel p-6" aria-busy={busy || loading}>
     <h2 ref={heading} tabIndex={-1} className="text-xl font-semibold outline-none">Acesso por API e IA</h2>
-    <p className="mt-2 text-sm text-muted-foreground">Conecte automações aos documentos desta organização. As chaves dependem do acesso ativo de quem as criou.</p>
+    <p className="mt-2 text-sm text-muted-foreground">Conecte automações aos documentos desta organização. As chaves dependem do acesso ativo de quem as criou. <a href="/docs/api" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-4">Documentação da API<span className="sr-only"> (abre em nova aba)</span></a></p>
     {error && <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
     {loading ? <p role="status" className="mt-4">Carregando acesso…</p> : <>
       <label className="mt-4 flex items-center gap-3"><input type="checkbox" checked={enabled} disabled={busy} onChange={() => void toggle()} />Habilitar API pública</label>
