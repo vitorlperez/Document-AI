@@ -109,6 +109,7 @@ def library_question_contexts(
                 "status": item.status,
                 "source_id": str(item.source_id),
                 "source_provider": item.source_provider,
+                "source_status": item.source_status,
                 "query_status": item.query_status,
                 "sync_in_progress": item.sync_in_progress,
             }

@@ -775,3 +775,72 @@ def test_clickup_unreadable_area_does_not_advance_the_checkpoint() -> None:
     selection = CursorSelection(_cursor(since=datetime.now(UTC) - timedelta(hours=1)))
     _, result = discover(FakeClient(docs_error=SourceItemUnavailable), [selection], known_documents=ALL_KNOWN)
     assert result.delta_links is None
+
+
+# --- the single write: create_task (ADR-0020) ---------------------------------------------------
+
+def _post_stub(monkeypatch, replies, calls):
+    def post(url, **kwargs):
+        calls.append((url, kwargs))
+        reply = replies.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+    monkeypatch.setattr(httpx, "post", post)
+
+
+def _response(status, json=None, headers=None):
+    return httpx.Response(status, json=json if json is not None else {}, headers=headers,
+                          request=httpx.Request("POST", "https://x"))
+
+
+def test_clickup_create_task_posts_once_with_bearer_and_json(monkeypatch) -> None:
+    from app.integrations.clickup import ClickUpOAuthClient as Client
+    calls: list = []
+    _post_stub(monkeypatch, [_response(200, {"id": "abc", "url": "https://app.clickup.com/t/abc"})], calls)
+    client = Client(client_id="i", client_secret="s", redirect_uri="https://cb")
+    data = client.create_task(credentials=CREDENTIALS, list_id="L1", payload={"name": "n"})
+    assert data["id"] == "abc"
+    [(url, kwargs)] = calls
+    assert url == "https://api.clickup.com/api/v2/list/L1/task"
+    assert kwargs["headers"] == {"Authorization": "Bearer token"} and kwargs["json"] == {"name": "n"}
+
+
+@pytest.mark.parametrize(("reply", "expected"), [
+    (_response(401), ClickUpRemoteUnauthorized),
+    (_response(403), SourceItemUnavailable),
+    (_response(404), SourceItemUnavailable),
+    (_response(400), "ClickUpWriteRejected"),
+    (_response(422), "ClickUpWriteRejected"),
+    (_response(429, headers={"Retry-After": "12"}), "ClickUpRateLimited"),
+    (_response(500), "ClickUpOutcomeUnknown"),
+    (_response(502), "ClickUpOutcomeUnknown"),
+    (_response(200, {"no": "id"}), "ClickUpOutcomeUnknown"),
+    (httpx.ReadTimeout("slow"), "ClickUpOutcomeUnknown"),
+])
+def test_clickup_create_task_maps_failures_and_never_retries_a_write(monkeypatch, reply, expected) -> None:
+    from app.integrations import clickup as module
+    calls: list = []
+    _post_stub(monkeypatch, [reply, _response(200, {"id": "second"})], calls)
+    client = module.ClickUpOAuthClient(client_id="i", client_secret="s", redirect_uri="https://cb")
+    exception = getattr(module, expected) if isinstance(expected, str) else expected
+    with pytest.raises(exception) as caught:
+        client.create_task(credentials=CREDENTIALS, list_id="L1", payload={"name": "n"})
+    assert len(calls) == 1  # a 5xx or 429 on POST is never replayed automatically
+    if expected == "ClickUpRateLimited":
+        assert caught.value.retry_after_seconds == 12
+
+
+def test_clickup_member_and_status_reads(monkeypatch) -> None:
+    client = ClickUpOAuthClient(client_id="i", client_secret="s", redirect_uri="https://cb")
+    seen = []
+
+    def get(url, **kwargs):
+        seen.append(url)
+        payload = {"members": [{"id": 1}]} if url.endswith("/member") else {"statuses": [{"status": "open"}]}
+        return httpx.Response(200, json=payload, request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(httpx, "get", get)
+    assert client.list_members(credentials=CREDENTIALS, list_id="L1") == [{"id": 1}]
+    assert client.list_statuses(credentials=CREDENTIALS, list_id="L1") == [{"status": "open"}]
+    assert seen == ["https://api.clickup.com/api/v2/list/L1/member", "https://api.clickup.com/api/v2/list/L1"]

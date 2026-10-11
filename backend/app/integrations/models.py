@@ -1,7 +1,17 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, Uuid, text
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, CreatedAtMixin, UUIDPrimaryKeyMixin
@@ -40,3 +50,25 @@ class OAuthConnectionState(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     state_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ClickUpTaskCreation(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
+    """Ledger of the human-approved ClickUp write (ADR-0020): idempotency key, outcome and ids only, never content."""
+
+    __tablename__ = "clickup_task_creations"
+    organization_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    message_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    list_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    task_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    task_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    error_code: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("organization_id", "idempotency_key", name="uq_clickup_task_creations_org_key"),
+        CheckConstraint("status IN ('pending', 'created', 'failed')", name="ck_clickup_task_creations_status"),
+        Index("ix_clickup_task_creations_user_created", "user_id", "created_at"),
+        Index("ix_clickup_task_creations_message", "message_id"),
+    )

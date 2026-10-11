@@ -46,6 +46,7 @@ class LibraryContext:
     source_provider: str
     query_status: str
     sync_in_progress: bool = False
+    source_status: str = "connected"
 
 
 @dataclass(frozen=True)
@@ -858,6 +859,7 @@ class LibraryService:
                 status=folder.status,
                 source_id=folder.source_id,
                 source_provider=source.provider,
+                source_status=source.status,
                 sync_in_progress=has_active_job,
                 query_status=("not_ready" if not folder_is_queryable(folder, self.session, has_embeddings=has_embeddings)
                               else "ready" if has_embeddings else "no_indexed_content" if not has_content

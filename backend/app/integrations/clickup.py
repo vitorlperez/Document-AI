@@ -1,4 +1,7 @@
-"""ClickUp OAuth and API adapter: tasks and Docs as read-only knowledge (ADR-0019)."""
+"""ClickUp OAuth and API adapter: tasks and Docs as read-only knowledge (ADR-0019).
+
+The single write, `ClickUpOAuthClient.create_task`, is a human-approved action (ADR-0020).
+"""
 
 import json
 from dataclasses import dataclass, replace
@@ -16,7 +19,12 @@ from app.ingestion.service import DiscoveredDocument, DiscoveryResult
 from app.integrations.credentials import OAuthCredentials
 from app.integrations.errors import SourceItemUnavailable, SourceRemoteUnauthorized
 from app.integrations.google_drive import RemoteFolder
-from app.integrations.http import RemoteHttp
+from app.integrations.http import (
+    RemoteHttp,
+    RemoteThrottled,
+    parse_rate_limit_reset,
+    parse_retry_after,
+)
 from app.integrations.models import DataSource
 from app.integrations.oauth_base import OAuthConnectionServiceBase
 
@@ -58,6 +66,22 @@ class ClickUpOAuthInvalid(ValueError):
 
 class ClickUpAccessDenied(PermissionError):
     pass
+
+
+class ClickUpRateLimited(RuntimeError):
+    """A write was refused with 429; nothing was created."""
+
+    def __init__(self, retry_after_seconds: float | None = None):
+        super().__init__("ClickUp rate limit reached")
+        self.retry_after_seconds = retry_after_seconds
+
+
+class ClickUpWriteRejected(ValueError):
+    """ClickUp refused the payload (400/422); nothing was created."""
+
+
+class ClickUpOutcomeUnknown(RuntimeError):
+    """Timeout, transport or 5xx on a write: the task may or may not exist (never retried automatically)."""
 
 
 def _utc_ms(value: object) -> datetime | None:
@@ -174,6 +198,48 @@ class ClickUpOAuthClient:
             "GET", f"/api/v3/workspaces/{workspace_id}/docs/{doc_id}/pages", credentials=credentials,
             params={"max_page_depth": "-1", "content_format": "text/md"})
         return self._items(data, "pages")
+
+    def list_members(self, *, credentials: OAuthCredentials, list_id: str) -> list[dict]:
+        """People who can be assigned in the list (may be incomplete: guests and some plans are omitted)."""
+        return self._items(self._request("GET", f"/api/v2/list/{list_id}/member", credentials=credentials), "members")
+
+    def list_statuses(self, *, credentials: OAuthCredentials, list_id: str) -> list[dict]:
+        data = self._request("GET", f"/api/v2/list/{list_id}", credentials=credentials)
+        return self._items(data, "statuses")
+
+    def create_task(self, *, credentials: OAuthCredentials, list_id: str, payload: dict) -> dict:
+        """The only write of the connector (ADR-0020): human-approved, never called by the agent or MCP.
+
+        Not retried by the HTTP core: a second POST after an unknown outcome would duplicate the task.
+        """
+        try:
+            response = self.http.request(
+                "POST", f"{CLICKUP_API}/api/v2/list/{list_id}/task", idempotent=False,
+                headers={"Authorization": f"Bearer {credentials.access_token}"}, json=payload, timeout=20)
+        except RemoteThrottled as error:
+            raise ClickUpRateLimited(error.retry_after_seconds) from error
+        except httpx.TransportError as error:
+            raise ClickUpOutcomeUnknown("transport failure") from error
+        status = response.status_code
+        if status == 401:
+            raise ClickUpRemoteUnauthorized()
+        if status in {403, 404}:
+            raise SourceItemUnavailable("restricted_resource" if status == 403 else "object_not_found")
+        if status == 429:
+            raise ClickUpRateLimited(
+                parse_retry_after(response.headers.get("Retry-After"))
+                or parse_rate_limit_reset(response.headers.get("X-RateLimit-Reset")))
+        if status in {400, 422}:
+            raise ClickUpWriteRejected("ClickUp rejected the task")
+        if status >= 400:
+            raise ClickUpOutcomeUnknown(f"http {status}")
+        try:
+            data = response.json()
+        except ValueError as error:
+            raise ClickUpOutcomeUnknown("unreadable response") from error
+        if not isinstance(data, dict) or not data.get("id"):
+            raise ClickUpOutcomeUnknown("response without task id")
+        return data
 
     @staticmethod
     def _items(data: object, key: str) -> list[dict]:
