@@ -1,11 +1,11 @@
 "use client";
 
-import { BarChart3, Code2, LogOut, UserRound } from "lucide-react";
+import { BarChart3, Code2, LogOut, UserRound, Users } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { accountMenuItems, avatarInitial, displayNameFromEmail } from "./account-helpers";
 import { type Company, type User, companyPath } from "./types-and-api";
 
-const icons = { profile: UserRound, admin: BarChart3, developer: Code2 };
+const icons = { profile: UserRound, team: Users, admin: BarChart3, developer: Code2 };
 const itemClass = "flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 text-left text-sm font-medium text-ink hover:bg-sage focus-visible:bg-sage focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary";
 
 export function AvatarBadge({ user, size = 32 }: { user: User; size?: number }) {

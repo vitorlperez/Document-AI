@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CircleAlert, CircleCheck, FolderOpen, HardDrive, ShieldCheck, Sparkles, Users, X } from "lucide-react";
+import { CircleAlert, CircleCheck, FolderOpen, HardDrive, ShieldCheck, Sparkles, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { Brand } from "../brand";
@@ -34,7 +34,6 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
     { label: "Conversa", suffix: "", icon: Sparkles },
     { label: "Biblioteca", suffix: "/library", icon: FolderOpen },
     ...(canManage ? [{ label: "Integrações", suffix: "/integrations", icon: HardDrive }] : []),
-    ...(company.role === "owner" ? [{ label: "Equipe", suffix: "/team", icon: Users }] : []),
   ];
   return <main data-mobile-shell={mobile ? "true" : undefined} className={`product-app ${fillViewport ? "flex h-dvh flex-col overflow-hidden" : "min-h-screen"} bg-paper text-ink`}>
     {mobile ? <MobileShellHeader user={user} company={company} companies={companies} screen={chatScreen ? "chat" : "other"} activePath={pathname ?? companyPath(company.id)} onCompanyChange={onCompanyChange} onNavigate={onNavigate} onLogout={onLogout} /> : <header className="product-header z-20 shrink-0 border-b border-line">

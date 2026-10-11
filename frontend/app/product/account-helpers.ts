@@ -19,11 +19,13 @@ export function displayNameFromEmail(email: string | null | undefined): string {
 /** Same rule as the former Administração/Desenvolvedor tabs: only owners and admins. */
 export const canManageOrganization = (role: Role) => role !== "member";
 
-export type AccountMenuItem = { key: "profile" | "admin" | "developer"; label: string; suffix: string };
+export type AccountMenuItem = { key: "profile" | "team" | "admin" | "developer"; label: string; suffix: string };
 
+/** Same rule as the former Equipe tab: owners only. */
 export function accountMenuItems(role: Role): AccountMenuItem[] {
   return [
     { key: "profile", label: "Perfil", suffix: "/profile" },
+    ...(role === "owner" ? [{ key: "team" as const, label: "Equipe", suffix: "/team" }] : []),
     ...(canManageOrganization(role) ? [
       { key: "admin" as const, label: "Administração", suffix: "/admin" },
       { key: "developer" as const, label: "Desenvolvedor", suffix: "/developer" },

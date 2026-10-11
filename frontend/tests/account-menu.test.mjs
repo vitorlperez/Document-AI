@@ -20,13 +20,14 @@ test("displayNameFromEmail humanises the local part", () => {
 
 test("Administração and Desenvolvedor stay owner/admin only", () => {
   assert.deepEqual(accountMenuItems("member").map((item) => item.key), ["profile"]);
-  for (const role of ["owner", "admin"]) assert.deepEqual(accountMenuItems(role).map((item) => item.key), ["profile", "admin", "developer"]);
+  assert.deepEqual(accountMenuItems("owner").map((item) => item.key), ["profile", "team", "admin", "developer"]);
+  assert.deepEqual(accountMenuItems("admin").map((item) => item.key), ["profile", "admin", "developer"]);
 });
 
 test("header and mobile nav no longer carry admin/developer tabs or a loose logout", () => {
   for (const file of ["product/shell.tsx", "mobile-nav.tsx"]) {
     const source = read(file);
-    assert.doesNotMatch(source, /label: "Administração"|label: "Desenvolvedor"/);
+    assert.doesNotMatch(source, /label: "Administração"|label: "Desenvolvedor"|label: "Equipe"/);
     assert.doesNotMatch(source, /LogOut/);
     assert.match(source, /<AccountMenu /);
   }
