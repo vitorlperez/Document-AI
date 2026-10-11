@@ -21,7 +21,9 @@ export function viewerFor(view: Pick<DocumentView, "mime_type" | "file_available
   return "text";
 }
 
-export type FileErrorCode = "source_access_denied" | "source_file_missing" | "source_file_unavailable" | "file_too_large" | "viewer_not_supported" | "source_throttled" | "source_unavailable";
+export type FileErrorCode =
+  | "source_access_denied" | "source_file_missing" | "source_file_unavailable" | "file_too_large" | "viewer_not_supported" | "source_throttled" | "source_unavailable"
+  | "network_error" | "session_expired" | "forbidden" | "render_password" | "render_invalid" | "render_viewer_unavailable" | "render_failed";
 
 const FILE_ERRORS: Record<FileErrorCode, string> = {
   source_access_denied: "A conexão com a ferramenta de origem não permite abrir este arquivo agora. Reconecte a ferramenta ou abra o original.",
@@ -31,7 +33,34 @@ const FILE_ERRORS: Record<FileErrorCode, string> = {
   viewer_not_supported: "Este tipo de arquivo não tem visualização completa; mostramos o texto extraído.",
   source_throttled: "A ferramenta de origem pediu um intervalo. Tente novamente em instantes.",
   source_unavailable: "Não foi possível falar com a ferramenta de origem agora.",
+  network_error: "Falha de conexão ao carregar o arquivo. Verifique sua internet e tente novamente.",
+  forbidden: "Você não tem permissão para visualizar este arquivo.",
+  session_expired: "Sua sessão expirou. Entre novamente para visualizar o arquivo.",
+  render_password: "Este PDF é protegido por senha e não pode ser exibido aqui. Abra o original.",
+  render_invalid: "O arquivo baixado não é um documento válido ou está corrompido. Abra o original.",
+  render_viewer_unavailable: "Não foi possível carregar o visualizador de documentos neste navegador.",
+  render_failed: "Não foi possível exibir o arquivo original aqui.",
 };
+
+/** Maps a failure thrown by pdf.js / docx-preview to a stable code, so the UI can say why instead of a generic apology. */
+export function renderFailureCode(error: unknown): FileErrorCode {
+  const name = typeof error === "object" && error !== null && "name" in error ? String((error as { name: unknown }).name) : "";
+  const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
+  if (name === "PasswordException") return "render_password";
+  if (name === "InvalidPDFException" || name === "FormatError" || /not a (valid )?(pdf|zip)|corrupt|end of central directory|invalid pdf/i.test(message)) return "render_invalid";
+  if (/worker|dynamically imported module|importing a module script|load failed|Not allowed to load local resource/i.test(message)) return "render_viewer_unavailable";
+  return "render_failed";
+}
+
+/** What the response status of GET /file means when the body carries no `detail` code. */
+export function httpFileErrorCode(status: number): FileErrorCode | string {
+  if (status === 401) return "session_expired";
+  if (status === 403) return "forbidden";
+  if (status === 404) return "source_file_missing";
+  if (status === 415) return "viewer_not_supported";
+  if (status === 413) return "file_too_large";
+  return `http_${status}`;
+}
 
 export function fileErrorMessage(code: string | null | undefined): string {
   return (code && FILE_ERRORS[code as FileErrorCode]) || "Não foi possível carregar a visualização deste arquivo.";

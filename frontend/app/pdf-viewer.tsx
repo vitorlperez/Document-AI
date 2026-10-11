@@ -3,7 +3,10 @@
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
 import { useEffect, useRef, useState } from "react";
-import { locateInSpans } from "./file-viewer-logic";
+import { locateInSpans, renderFailureCode } from "./file-viewer-logic";
+// `?url` makes the bundler emit the worker as an asset and hand back its real served URL. resolving a package file relative to the
+// module URL is NOT safe here: the production build rewrote it to `file:///ROOT/...`, which browsers refuse to load, so every PDF failed.
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import "pdfjs-dist/web/pdf_viewer.css";
 import "./pdf-viewer.css";
 
@@ -12,12 +15,12 @@ const ZOOM_STEPS = [0.6, 0.8, 1, 1.25, 1.5, 2, 2.5];
 /** pdf.js is loaded here, on demand, so the chat bundle never carries it. */
 async function loadPdfjs() {
   const pdfjs = await import("pdfjs-dist");
-  if (!pdfjs.GlobalWorkerOptions.workerSrc) pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
+  if (!pdfjs.GlobalWorkerOptions.workerSrc) pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
   return pdfjs;
 }
 
 /** Single-page PDF reader: opens on the cited page, marks the cited passage through the text layer, basic page and zoom controls. */
-export function PdfViewer({ blob, page, excerpt, onFailed }: { blob: Blob; page: number | null; excerpt: string; onFailed: () => void }) {
+export function PdfViewer({ blob, page, excerpt, onFailed }: { blob: Blob; page: number | null; excerpt: string; onFailed: (code: string) => void }) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [current, setCurrent] = useState(page ?? 1);
   const [zoomIndex, setZoomIndex] = useState(2);
@@ -40,7 +43,7 @@ export function PdfViewer({ blob, page, excerpt, onFailed }: { blob: Blob; page:
         if (cancelled) { void document.destroy(); return; }
         setPdf(document);
         setCurrent(Math.min(Math.max(page ?? 1, 1), document.numPages));
-      } catch { if (!cancelled) failed.current(); }
+      } catch (caught) { if (!cancelled) failed.current(renderFailureCode(caught)); }
     })();
     return () => { cancelled = true; if (document) void document.destroy(); };
   }, [blob, page]);
@@ -92,7 +95,7 @@ export function PdfViewer({ blob, page, excerpt, onFailed }: { blob: Blob; page:
         setStatus(page === current && excerpt && !marked ? "marked-missing" : "ready");
       } catch (caught) {
         const name = (caught as { name?: string } | null)?.name;
-        if (!cancelled && name !== "RenderingCancelledException") failed.current();
+        if (!cancelled && name !== "RenderingCancelledException") failed.current(renderFailureCode(caught));
       }
     })();
     return () => { cancelled = true; renderTask?.cancel(); };

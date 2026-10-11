@@ -2,6 +2,7 @@
 
 Every route reuses the evidence scope check: a member only reaches documents in folders they may query.
 """
+import logging
 import re
 import unicodedata
 from collections.abc import Iterator
@@ -29,6 +30,7 @@ from app.knowledge.file_access import (
 from app.knowledge.models import Document, DocumentChunk
 from app.workspaces.models import WorkspaceFolder
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=['document-view'])
 STREAM_CHUNK_BYTES = 256 * 1024
 DEFAULT_CHUNK_PAGE = 60
@@ -104,6 +106,10 @@ def document_file(organization_id: UUID, document_id: UUID, user: User = Depends
     try:
         opened = fetcher.open(document, source)
     except FileAccessError as error:
+        logger.warning('document file unavailable', extra={
+            'event': 'document_file_failed', 'code': error.code, 'status_code': error.status_code,
+            'provider': source.provider, 'document_id': str(document.id),
+        })
         raise _error(error) from error
     return StreamingResponse(_chunks_of(opened.stream), media_type=opened.content_type, headers={
         'Content-Length': str(opened.size),

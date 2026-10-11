@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   CHAT_MIN_WIDTH, DOCX_MIME, PDF_MIME, VIEWER_MIN_WIDTH, VIEWER_WIDTH_KEY, citationTarget, clampViewerWidth, defaultViewerWidth, fallsBackToText, fileErrorMessage,
-  groupByPage, highlightAnnouncement, isHighlighted, locateInSpans, nextHighlight, parseRowTable, parseStoredWidth, readStoredWidth, splitHighlight, storeWidth, viewerFor, widthAfterDrag,
+  groupByPage, highlightAnnouncement, httpFileErrorCode, renderFailureCode, isHighlighted, locateInSpans, nextHighlight, parseRowTable, parseStoredWidth, readStoredWidth, splitHighlight, storeWidth, viewerFor, widthAfterDrag,
 } from "../app/file-viewer-logic.ts";
 
 const read = (path) => readFileSync(new URL(`../app/${path}`, import.meta.url), "utf8");
@@ -118,4 +118,38 @@ test("wiring: viewer closes on Esc, restores focus, loads renderers lazily", () 
   assert.match(viewer, /role="separator"/);
   assert.match(read("pdf-viewer.tsx"), /await import\("pdfjs-dist"\)/);
   assert.doesNotMatch(read("product/chat-workspace.tsx"), /from "pdfjs-dist"|from "docx-preview"/);
+});
+
+test("pdf.js worker is resolved through the bundler's ?url import, never new URL(..., import.meta.url)", () => {
+  // Regression: the production build rewrote `new URL("pdfjs-dist/...", import.meta.url)` to `file:///ROOT/...`, so the worker
+  // never loaded and every PDF fell back to extracted text ("Não foi possível exibir o arquivo original aqui").
+  const source = read("pdf-viewer.tsx");
+  assert.match(source, /import pdfWorkerUrl from "pdfjs-dist\/build\/pdf\.worker\.min\.mjs\?url"/);
+  assert.match(source, /workerSrc = pdfWorkerUrl/);
+  assert.doesNotMatch(source, /import\.meta\.url/);
+});
+
+test("a production build, when present, never points assets at a file:// URL", async () => {
+  const { existsSync, readdirSync } = await import("node:fs");
+  const dir = new URL("../dist/client/_next/static/chunks/", import.meta.url);
+  if (!existsSync(dir)) return;
+  for (const name of readdirSync(dir).filter((file) => file.startsWith("pdf-viewer"))) {
+    assert.doesNotMatch(readFileSync(new URL(name, dir), "utf8"), /file:\/\/\//, `${name} references a file:/// URL`);
+  }
+});
+
+test("renderFailureCode and httpFileErrorCode explain why a file could not be shown", () => {
+  assert.equal(renderFailureCode({ name: "PasswordException" }), "render_password");
+  assert.equal(renderFailureCode({ name: "InvalidPDFException", message: "Invalid PDF structure." }), "render_invalid");
+  assert.equal(renderFailureCode(new Error("Setting up fake worker failed: \"Failed to fetch dynamically imported module\".")), "render_viewer_unavailable");
+  assert.equal(renderFailureCode(new Error("Not allowed to load local resource: file:///x.mjs")), "render_viewer_unavailable");
+  assert.equal(renderFailureCode(new Error("boom")), "render_failed");
+  assert.equal(httpFileErrorCode(401), "session_expired");
+  assert.equal(httpFileErrorCode(403), "forbidden");
+  assert.equal(httpFileErrorCode(404), "source_file_missing");
+  assert.equal(httpFileErrorCode(502), "http_502");
+  for (const code of ["render_password", "render_invalid", "render_viewer_unavailable", "render_failed", "session_expired", "forbidden", "network_error"]) {
+    assert.notEqual(fileErrorMessage(code), fileErrorMessage("unknown_code"), code);
+  }
+  assert.match(fileErrorMessage("source_access_denied"), /Reconecte/);
 });

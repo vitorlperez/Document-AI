@@ -103,6 +103,18 @@ def test_provider_errors_become_clear_codes(corpus, error, status, code):  # noq
         assert response.headers['retry-after'] == '12'
 
 
+def test_file_failures_are_logged_with_provider_and_code(corpus, caplog):  # noqa: F811 - imported pytest fixture
+    client, _, _, org, _, _ = corpus
+    client.app.state.document_file_fetcher = FakeFetcher(error=FileAccessError(409, 'source_access_denied'))
+    cite = citation_for(client, org)
+    with caplog.at_level('WARNING'):
+        response = client.get(f"/organizations/{org}/documents/{cite['document_id']}/file")
+    assert response.status_code == 409
+    record = next(item for item in caplog.records if getattr(item, 'event', None) == 'document_file_failed')
+    assert (record.code, record.status_code, record.provider) == ('source_access_denied', 409, 'google_drive')
+    assert record.document_id == cite['document_id']
+
+
 def test_view_metadata_and_preview(corpus):  # noqa: F811 - imported pytest fixture
     client, factory, _, org, _, _ = corpus
     client.app.state.document_file_fetcher = FakeFetcher()

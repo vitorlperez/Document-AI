@@ -5,7 +5,7 @@ import { type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPoi
 import { createPortal } from "react-dom";
 import { REDUCED_MOTION_QUERY } from "./interface-motion";
 import {
-  CHAT_MIN_WIDTH, type DocumentView, VIEWER_MIN_WIDTH, clampViewerWidth, defaultViewerWidth, fallsBackToText, fileErrorMessage, groupByPage, parseRowTable,
+  CHAT_MIN_WIDTH, type DocumentView, VIEWER_MIN_WIDTH, clampViewerWidth, defaultViewerWidth, fallsBackToText, fileErrorMessage, groupByPage, httpFileErrorCode, parseRowTable,
   readStoredWidth, splitHighlight, storeWidth, viewerFor, widthAfterDrag, type ViewerChunk,
 } from "./file-viewer-logic";
 import { type EvidenceCitation } from "./source-reading";
@@ -38,7 +38,7 @@ async function fetchFileBlob(organizationId: string, documentId: string, signal:
   const response = await fetch(`${API_BASE}/organizations/${organizationId}/documents/${documentId}/file`, { credentials: "include", signal });
   if (!response.ok) {
     const body: unknown = await response.json().catch(() => null);
-    throw new FileLoadError(typeof body === "object" && body !== null && "detail" in body && typeof body.detail === "string" ? body.detail : `http_${response.status}`);
+    throw new FileLoadError(typeof body === "object" && body !== null && "detail" in body && typeof body.detail === "string" ? body.detail : httpFileErrorCode(response.status));
   }
   return response.blob();
 }
@@ -72,7 +72,8 @@ function ViewTab({ organizationId, citation, onOpenTrecho }: { organizationId: s
         setState(kind === "pdf" ? { phase: "pdf", blob } : { phase: "docx", blob });
       } catch (caught) {
         if (controller.signal.aborted) return;
-        const code = caught instanceof FileLoadError ? caught.code : caught instanceof Error && "status" in caught && caught.status === 404 ? "source_file_missing" : "source_unavailable";
+        const code = caught instanceof FileLoadError ? caught.code : caught instanceof Error && "status" in caught && typeof caught.status === "number" ? httpFileErrorCode(caught.status) : "network_error";
+        console.warn("[file-viewer] could not load the file", { documentId: citation.document_id, code, caught });
         setState(fallsBackToText(code) ? { phase: "text", notice: fileErrorMessage(code) } : { phase: "error", code });
       }
     })();
@@ -80,7 +81,10 @@ function ViewTab({ organizationId, citation, onOpenTrecho }: { organizationId: s
     // `view` is intentionally read once: the metadata is stable while this viewer instance lives.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId, citation.document_id, citation.page_number, simpleWord]);
-  const renderFailed = useCallback(() => setState({ phase: "text", notice: "Não foi possível exibir o arquivo original aqui. Mostrando o texto extraído." }), []);
+  const renderFailed = useCallback((code: string) => {
+    console.warn("[file-viewer] could not render the original", { documentId: citation.document_id, code });
+    setState({ phase: "text", notice: `${fileErrorMessage(code)} Mostrando o texto extraído.` });
+  }, [citation.document_id]);
   if (state.phase === "loading") return <p className="fv-status" role="status">Carregando arquivo…</p>;
   if (state.phase === "error") return <div className="fv-status" role="alert"><p>{fileErrorMessage(state.code)}</p><div className="fv-actions"><button type="button" onClick={() => setState({ phase: "text", notice: null })}>Ver texto extraído</button><button type="button" onClick={onOpenTrecho}>Ver trecho citado</button></div></div>;
   if (state.phase === "pdf") return <Suspense fallback={viewerLoading}><PdfViewer blob={state.blob} page={citation.page_number} excerpt={citation.excerpt} onFailed={renderFailed} /></Suspense>;

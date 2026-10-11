@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { renderFailureCode } from "./file-viewer-logic";
 
 /** Safe links only: the document is third-party content, so anything but http(s)/mailto is neutralised. */
 function hardenLinks(root: HTMLElement) {
@@ -11,7 +12,7 @@ function hardenLinks(root: HTMLElement) {
 }
 
 /** Word document rendered in the page by docx-preview (loaded on demand). Pages flow continuously: there is no jump to a page. */
-export function DocxViewer({ blob, onFailed }: { blob: Blob; onFailed: () => void }) {
+export function DocxViewer({ blob, onFailed }: { blob: Blob; onFailed: (code: string) => void }) {
   const host = useRef<HTMLDivElement>(null);
   const failed = useRef(onFailed);
   useEffect(() => { failed.current = onFailed; }, [onFailed]);
@@ -29,7 +30,7 @@ export function DocxViewer({ blob, onFailed }: { blob: Blob; onFailed: () => voi
         const wrapper = element.querySelector<HTMLElement>(".docx-wrapper");
         const page = element.querySelector<HTMLElement>("section.docx");
         if (wrapper && page && page.offsetWidth > element.clientWidth) wrapper.style.zoom = String(Math.max(0.3, (element.clientWidth - 8) / page.offsetWidth));
-      } catch { if (!cancelled) failed.current(); }
+      } catch (caught) { if (!cancelled) failed.current(renderFailureCode(caught)); }
     })();
     return () => { cancelled = true; element.replaceChildren(); };
   }, [blob]);
