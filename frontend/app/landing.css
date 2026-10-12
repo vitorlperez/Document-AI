@@ -260,7 +260,7 @@
 .landing-integrations-list li:focus-within, .landing-process-grid article:focus-within { border-color: var(--lp-accent); }
 @media (hover: hover) {
   .landing-button:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--lp-accent) 70%, transparent); }
-  .landing-button:active { transform: translateY(0); box-shadow: none; }
+  .landing-button:active { transform: translateY(var(--motion-dist-xs, 2px)) scale(var(--motion-scale-press, 0.975)); box-shadow: none; }
   .landing-integrations-list li:hover, .landing-process-grid article:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--lp-accent) 55%, var(--lp-border)); box-shadow: 0 14px 28px -18px color-mix(in srgb, var(--lp-accent) 60%, transparent); }
   .landing-story-list article:hover > span { transform: translateX(3px); }
   .landing-story-list article:hover::before { transform: scale(1.25); background: var(--lp-lime); }
@@ -517,3 +517,9 @@
 }
 .landing-closing .landing-button:is(.dark *) { border-color: #fff; background: #fff; color: #14392f; }
 .landing-closing .landing-button:is(.dark *):hover, .landing-page:is(.dark *) ::selection { color: #142b25; }
+
+/* Motion [M56]: press feedback for touch too, and animated underline on footer/legal links. Tokens fall back so the page never depends on the foundation file. */
+.landing-button:active, .landing-login:active { transform: translateY(var(--motion-dist-xs, 2px)) scale(var(--motion-scale-press, 0.975)); }
+.landing-login { transition: color var(--lp-fast) var(--lp-ease), transform var(--lp-fast) var(--lp-ease); }
+.landing-legal-links a { transition: color var(--lp-fast) var(--lp-ease); }
+.landing-desktop-nav a:active { transform: translateY(1px); }

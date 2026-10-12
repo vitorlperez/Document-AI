@@ -18,3 +18,18 @@
 .legal-main li + li { margin-top: 8px; }
 .legal-footer { display: flex; justify-content: space-between; gap: 24px; padding-block: 24px; border-top: 1px solid var(--line); color: var(--muted-foreground); font-size: 12px; }
 @media (max-width: 600px) { .legal-header, .legal-footer { align-items: flex-start; flex-direction: column; } .legal-main { padding-block: 48px 72px; } }
+
+/* Motion [M56]: visual-only polish with the shared --motion-* tokens; reduced motion is zeroed by the global rule in motion-tokens.css. */
+.legal-header nav a, .legal-footer nav a { text-decoration-color: transparent; transition: color var(--motion-fast) var(--ease-out), text-decoration-color var(--motion-fast) var(--ease-out); }
+.legal-header nav a:hover, .legal-footer nav a:hover { text-decoration-color: currentColor; }
+@media (prefers-reduced-motion: no-preference) {
+  .legal-main > :is(.legal-eyebrow, h1, .legal-updated) { animation: mo-slide-in var(--motion-medium) var(--ease-out) backwards; }
+  .legal-main > h1 { animation-delay: var(--motion-stagger-md); }
+  .legal-main > .legal-updated { animation-delay: calc(2 * var(--motion-stagger-md)); }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .legal-main section { animation: mo-reveal linear both; animation-timeline: view(); animation-range: entry 0 entry 40%; }
+  }
+}
+@media print { .legal-main section { animation: none; } }

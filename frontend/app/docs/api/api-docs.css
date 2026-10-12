@@ -72,3 +72,28 @@
   .apidoc-endpoint { padding: 14px; }
   .apidoc-footer { flex-direction: column; }
 }
+
+/* Motion [M56]: visual-only polish with the shared --motion-* tokens. Reveal and hover are progressive enhancement; reduced motion is zeroed by the global rule in motion-tokens.css. */
+.apidoc-header nav a, .apidoc-footer nav a { text-decoration-color: transparent; transition: color var(--motion-fast) var(--ease-out), text-decoration-color var(--motion-fast) var(--ease-out); }
+.apidoc-header nav a:hover, .apidoc-footer nav a:hover { text-decoration-color: currentColor; }
+.apidoc-toc a { border-left: 2px solid transparent; margin-left: -1px; transition: color var(--motion-fast) var(--ease-out), padding-left var(--motion-base) var(--ease-out), border-color var(--motion-fast) var(--ease-out); }
+.apidoc-toc a:hover, .apidoc-toc a:focus-visible { padding-left: 18px; border-left-color: var(--brand); }
+.apidoc-button, .apidoc-copy, .apidoc-code-bar [role="tab"] { transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), transform var(--motion-base) var(--ease-out); }
+.apidoc-button:not(.apidoc-ghost):hover { box-shadow: 0 8px 24px -10px color-mix(in srgb, var(--brand) 55%, transparent); }
+.apidoc-button:active, .apidoc-copy:active, .apidoc-code-bar [role="tab"]:active { transform: translateY(var(--motion-dist-xs)) scale(var(--motion-scale-press)); }
+.apidoc-endpoint { transition: border-color var(--motion-base) var(--ease-out), box-shadow var(--motion-base) var(--ease-out); }
+.apidoc-endpoint:hover, .apidoc-endpoint:focus-within { border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); box-shadow: 0 14px 28px -20px color-mix(in srgb, var(--brand) 60%, transparent); }
+.apidoc-table-wrap tbody tr { transition: background-color var(--motion-fast) var(--ease-out); }
+.apidoc-table-wrap tbody tr:hover { background: color-mix(in srgb, var(--brand) 6%, transparent); }
+@media (prefers-reduced-motion: no-preference) {
+  .apidoc-main > :is(.apidoc-eyebrow, h1, .apidoc-lead, .apidoc-actions) { animation: mo-slide-in var(--motion-medium) var(--ease-out) backwards; }
+  .apidoc-main > h1 { animation-delay: var(--motion-stagger-md); }
+  .apidoc-main > .apidoc-lead { animation-delay: calc(2 * var(--motion-stagger-md)); }
+  .apidoc-main > .apidoc-actions { animation-delay: calc(3 * var(--motion-stagger-md)); }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .apidoc-main section { animation: mo-reveal linear both; animation-timeline: view(); animation-range: entry 0 entry 40%; }
+  }
+}
+@media print { .apidoc-main section { animation: none; } }
