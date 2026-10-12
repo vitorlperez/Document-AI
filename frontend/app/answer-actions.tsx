@@ -45,7 +45,7 @@ export function AnswerActions({ organizationId, conversationId, messageId, text,
   }
 
   const button = "inline-flex min-h-9 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-muted-foreground hover:bg-sage hover:text-ink disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary";
-  return <div className="relative mt-3 flex flex-wrap items-center gap-1" role="group" aria-label="Ações da resposta">
+  return <div className="relative mt-3 flex flex-wrap items-center gap-1" role="group" data-tour="answer-actions" aria-label="Ações da resposta">
     <button type="button" className={button} onClick={() => { void copy(); }}>{copied ? <Check size={14} aria-hidden="true" /> : <ClipboardCopy size={14} aria-hidden="true" />}{copied ? "Copiado" : "Copiar com fontes"}</button>
     <div className="relative">
       <button type="button" className={button} disabled={busy} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((open) => !open)}><Download size={14} aria-hidden="true" />{busy ? "Exportando…" : "Exportar"}</button>

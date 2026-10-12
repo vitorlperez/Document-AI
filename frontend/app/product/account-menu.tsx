@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Code2, LogOut, UserRound, Users } from "lucide-react";
+import { BarChart3, Code2, LogOut, Settings, UserRound, Users } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { accountMenuItems, avatarInitial, displayNameFromEmail } from "./account-helpers";
 import { type Company, type User, companyPath } from "./types-and-api";
@@ -10,6 +10,11 @@ const itemClass = "flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 tex
 
 export function AvatarBadge({ user, size = 32 }: { user: User; size?: number }) {
   return <span aria-hidden="true" style={{ width: size, height: size, fontSize: size * 0.45 }} className="inline-flex shrink-0 select-none items-center justify-center rounded-full bg-primary font-semibold leading-none text-primary-foreground">{avatarInitial(displayNameFromEmail(user.email), user.email)}</span>;
+}
+
+/** Avatar with a small gear badge (bottom-right) so the menu behind it reads as "account and settings". */
+export function AvatarWithGear({ user }: { user: User }) {
+  return <span className="relative inline-flex"><AvatarBadge user={user} /><span aria-hidden="true" data-testid="account-menu-gear" className="absolute -bottom-1 -right-1 grid size-4 place-items-center rounded-full border border-[var(--card-edge)] bg-[var(--surface-raised)] text-ink shadow-sm"><Settings size={10} strokeWidth={2.5} /></span></span>;
 }
 
 export function AccountMenu({ user, company, onNavigate, onLogout }: { user: User; company: Company; onNavigate: (path: string) => void; onLogout: () => void }) {
@@ -44,7 +49,7 @@ export function AccountMenu({ user, company, onNavigate, onLogout }: { user: Use
   const choose = (action: () => void) => () => { setOpen(false); action(); };
 
   return <div ref={root} className="relative" onKeyDown={open ? onKeyDown : undefined}>
-    <button ref={trigger} type="button" onClick={() => setOpen((value) => !value)} onKeyDown={(event) => { if (event.key === "ArrowDown" && !open) { event.preventDefault(); setOpen(true); } }} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined} aria-label={`Menu da conta de ${name}`} title="Conta" data-testid="account-menu-trigger" className="inline-flex size-11 items-center justify-center rounded-full hover:bg-sage focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary min-[768px]:size-10"><AvatarBadge user={user} /></button>
+    <button ref={trigger} type="button" onClick={() => setOpen((value) => !value)} onKeyDown={(event) => { if (event.key === "ArrowDown" && !open) { event.preventDefault(); setOpen(true); } }} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined} aria-label={`Conta e configurações de ${name}`} title="Conta e configurações" data-tour="account" data-testid="account-menu-trigger" className="inline-flex size-11 items-center justify-center rounded-full hover:bg-sage focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary min-[768px]:size-10"><AvatarWithGear user={user} /></button>
     {open && <div ref={menu} id={menuId} role="menu" aria-label="Conta" className="absolute right-0 top-full z-50 mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-[var(--card-edge)] bg-[var(--surface-raised)] p-1.5 shadow-xl">
       <div className="px-3 py-2.5"><p className="truncate text-sm font-semibold text-ink">{name}</p><p className="truncate text-xs text-muted-foreground" title={user.email}>{user.email}</p></div>
       <div role="separator" className="my-1 border-t border-[var(--card-edge)]" />
