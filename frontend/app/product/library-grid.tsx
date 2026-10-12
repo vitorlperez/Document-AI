@@ -1,10 +1,11 @@
 "use client";
 
 import { ChevronRight, ExternalLink, File, FileSpreadsheet, FileText, Folder, Image as ImageIcon, LayoutGrid, List, MoreHorizontal, Presentation, RefreshCw, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { FILE_KIND_LABEL, fileKind, type FileKind, type LibraryGridSize, type LibraryView } from "../library-view-logic";
 import type { LibraryNode } from "./types-and-api";
 import { LibraryIndexingBadge } from "./library-indexing-badge";
+import { LoadingBlock, SkeletonLine, Spinner, staggerStyle } from "../ui";
 import "../library-view.css";
 
 const SIZES: { value: LibraryGridSize; label: string; name: string }[] = [{ value: "s", label: "P", name: "Pequeno" }, { value: "m", label: "M", name: "Médio" }, { value: "l", label: "G", name: "Grande" }];
@@ -70,7 +71,7 @@ function CardMenu({ name, actions }: { name: string; actions: MenuAction[] }) {
   if (actions.length === 0) return null;
   return <>
     <button ref={trigger} type="button" className="library-card-more" aria-haspopup="menu" aria-expanded={open} aria-label={`Ações para ${name}`} title="Mais ações" onClick={() => { setPos(null); setOpen((value) => !value); }} onKeyDown={(event) => { if (event.key === "ArrowDown" && !open) { event.preventDefault(); setPos(null); setOpen(true); } }}><MoreHorizontal size={16} aria-hidden="true" /></button>
-    {open && <div ref={menu} role="menu" aria-label={`Ações para ${name}`} className="library-card-menu" style={pos ? { top: pos.top, left: pos.left } : { top: 0, left: 0, visibility: "hidden" }} onKeyDown={keys}>
+    {open && <div ref={menu} role="menu" aria-label={`Ações para ${name}`} className="library-card-menu" data-ready={pos ? "" : undefined} style={pos ? { top: pos.top, left: pos.left } : { top: 0, left: 0, visibility: "hidden" }} onKeyDown={keys}>
       {actions.map((action) => <button key={action.key} type="button" role="menuitem" disabled={action.disabled} data-danger={action.danger || undefined} onClick={() => { close(true); action.run(); }}>{action.icon}<span>{action.label}</span></button>)}
     </div>}
   </>;
@@ -84,9 +85,15 @@ export type LibraryGridProps = {
   onSyncFolder: (item: LibraryNode) => void; onRemoveFolder: (item: LibraryNode) => void;
 };
 
+/** Placeholder com a forma real dos cards/linhas enquanto a biblioteca carrega (skeleton, não texto cru). */
+export function LibraryLoadingSkeleton({ view, label = "Carregando arquivos…" }: { view: LibraryView; label?: string }) {
+  if (view.mode === "list") return <LoadingBlock label={label}><ul aria-hidden="true" className="library-skeleton-list">{Array.from({ length: 8 }, (_, i) => <li key={i} className="library-skeleton-row"><span className="mo-skeleton" data-shape="circle" style={{ width: 32, height: 32 }} /><SkeletonLine width={`${[52, 38, 64, 45, 58, 34, 49, 61][i]}%`} /><SkeletonLine width="12%" /></li>)}</ul></LoadingBlock>;
+  return <LoadingBlock label={label}><div aria-hidden="true" data-size={view.size} className="library-grid library-skeleton-grid">{Array.from({ length: view.size === "s" ? 12 : view.size === "m" ? 8 : 6 }, (_, i) => <div key={i} className="library-card library-skeleton-card"><span className="mo-skeleton library-skeleton-icon" /><SkeletonLine width={`${[78, 62, 70, 55][i % 4]}%`} /><SkeletonLine width="34%" /></div>)}</div></LoadingBlock>;
+}
+
 export function LibraryGrid({ items, size, loading, canManage, busyNodeId, busyFileId, onOpen, onReprocessFile, onRemoveFile, onSyncFolder, onRemoveFolder }: LibraryGridProps) {
-  return <ul aria-busy={loading} aria-label="Arquivos e pastas" data-size={size} className={`library-grid${loading ? " is-loading" : ""}`}>
-    {items.map((item) => {
+  return <ul key={size} aria-busy={loading} aria-label="Arquivos e pastas" data-size={size} className={`library-grid${loading ? " is-loading" : ""}`}>
+    {items.map((item, index) => {
       const isFolder = item.kind !== "file";
       const indexed = !isFolder && (item.workspace_documents?.length ?? 0) > 0;
       const kind = fileKind(item.name, item.mime_type); const Icon = KIND_ICON[kind];
@@ -100,9 +107,9 @@ export function LibraryGrid({ items, size, loading, canManage, busyNodeId, busyF
       if (item.kind === "folder" && canManage) actions.push({ key: "remove-folder", label: "Remover pasta", icon: <Trash2 size={15} aria-hidden="true" />, danger: true, disabled: busyNodeId !== null, run: () => onRemoveFolder(item) });
       const label = isFolder ? (item.kind === "source" ? "Integração" : "Pasta") : FILE_KIND_LABEL[kind];
       const working = busyNodeId === item.id || busyFileId === item.id;
-      return <li key={item.id} className="library-card" data-kind={isFolder ? "folder" : kind} data-busy={working || undefined}>
+      return <li key={item.id} className="library-card mo-stagger-item" data-step={size === "s" ? undefined : "md"} style={staggerStyle(index) as CSSProperties} data-kind={isFolder ? "folder" : kind} data-busy={working || undefined}>
         <button type="button" className="library-card-main" onClick={() => onOpen(item)} title={item.name} aria-label={isFolder ? `Abrir pasta ${item.name}` : item.source_url ? `${item.name} — abrir no provedor` : item.name}>
-          <span className="library-card-icon" aria-hidden="true">{isFolder ? <Folder size={size === "s" ? 24 : size === "m" ? 30 : 38} /> : <Icon size={size === "s" ? 24 : size === "m" ? 30 : 38} />}{working && <RefreshCw size={12} className="library-card-spin" />}</span>
+          <span className="library-card-icon" aria-hidden="true">{isFolder ? <Folder size={size === "s" ? 24 : size === "m" ? 30 : 38} /> : <Icon size={size === "s" ? 24 : size === "m" ? 30 : 38} />}{working && <span className="library-card-spin"><Spinner size={12} /></span>}</span>
           <span className="library-card-name">{item.name}</span>
           <span className="library-card-meta"><span>{label}</span>{isFolder && <ChevronRight size={12} aria-hidden="true" />}</span>
         </button>

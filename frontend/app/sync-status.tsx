@@ -1,13 +1,14 @@
 "use client";
 
-import { AlertTriangle, Check, LoaderCircle, Minus, RefreshCw, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { AlertTriangle, Check, Minus, RefreshCw, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { api, ApiError } from "./product/types-and-api";
 import {
   anyQueryable as hasQueryable, anySyncing as hasSyncing, bannerCopy, errorMessage, isActive, isIndeterminate, normalizeSyncItems,
   percent, pollInterval, progressView, shortLabel, stageLabel, summarize, summaryProgress, type SyncStatusItemDto, type ToolSyncState,
 } from "./sync-status-logic";
 import { providerLabel } from "./provider-labels";
+import { ProgressIndicator, Spinner } from "./ui";
 import "./sync-status.css";
 
 export type { ToolSyncState } from "./sync-status-logic";
@@ -54,7 +55,7 @@ export function ToolSyncBadge({ tool, compact = false, short = false }: { tool: 
   const problem = tool.state === "failed" || tool.state === "partial_failure";
   const view = progressView(tool);
   const label = `${providerLabel(tool.provider)}: ${active ? view.text : stageLabel(tool)}`;
-  const icon = active ? <LoaderCircle size={14} className="sync-spin" aria-hidden="true" /> : problem ? <AlertTriangle size={14} aria-hidden="true" /> : tool.state === "ready" ? <Check size={14} aria-hidden="true" /> : null;
+  const icon = active ? <Spinner size={14} /> : problem ? <AlertTriangle size={14} aria-hidden="true" /> : tool.state === "ready" ? <Check size={14} aria-hidden="true" /> : null;
   if (!icon) return <span className="sync-badge sync-badge-idle" hidden={compact} />;
   if (compact) return <span className={`sync-badge sync-badge-compact sync-badge-${tool.state}`} title={label} role="img" aria-label={label}>{icon}</span>;
   // short = percent only (narrow lists); the step + count live in the tooltip and the aria label.
@@ -98,9 +99,9 @@ export function SyncIndicator({ tools, className = "" }: { tools: ToolSyncState[
   if (!progress) return null;
   const pct = progress.percent;
   return <div className={`sync-chip ${className}`} role="progressbar" aria-label="Sincronização em andamento" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ?? undefined} aria-valuetext={progress.speech} title={`Sincronizando sua base — ${progress.text}`} data-indeterminate={pct === null || undefined}>
-    <LoaderCircle size={14} className="sync-spin" aria-hidden="true" />
+    <Spinner size={14} />
     <span className="sync-chip-text">{progress.compact}</span>
-    <span className="sync-chip-bar" aria-hidden="true"><span style={pct === null ? undefined : { width: `${pct}%` }} /></span>
+    <span className="sync-chip-bar" aria-hidden="true"><span style={pct === null ? undefined : ({ "--mo-progress": pct / 100 } as CSSProperties)} /></span>
   </div>;
 }
 
@@ -111,10 +112,10 @@ export function SyncBanner({ tools, className = "" }: { tools: ToolSyncState[]; 
   const progress = summaryProgress(tools);
   if (!copy && !issue) return null;
   return <div className={`sync-banner ${className}`} role="status" aria-live="polite" data-tone={copy ? "progress" : "warning"}>
-    {copy ? <LoaderCircle size={16} className="sync-spin" aria-hidden="true" /> : <AlertTriangle size={16} aria-hidden="true" />}
+    {copy ? <Spinner size={16} /> : <AlertTriangle size={16} aria-hidden="true" />}
     <div><p>{copy ?? errorMessage(issue)}</p>
       {copy && progress && <>
-        <div className="sync-banner-bar" role="progressbar" aria-label="Progresso da sincronização" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent ?? undefined} aria-valuetext={progress.speech} data-indeterminate={progress.percent === null || undefined}><span style={progress.percent === null ? undefined : { width: `${progress.percent}%` }} /></div>
+        <ProgressIndicator className="sync-banner-bar" label="Progresso da sincronização" value={progress.percent} />
         <p className="sync-banner-meta">{progress.text}</p>
       </>}
     </div>
