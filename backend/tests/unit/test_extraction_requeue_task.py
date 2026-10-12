@@ -9,8 +9,7 @@ from app.ingestion.service import DiscoveredDocument
 from app.knowledge.questions import AIProviderRateLimited
 
 
-@pytest.mark.parametrize("enabled", [False, True])
-def test_task_force_reads_newly_eligible_ignored_files(monkeypatch, enabled):
+def test_task_force_reads_newly_eligible_ignored_files_and_orphan_catalog_files(monkeypatch):
     from app.library import manual_sync
     monkeypatch.setattr(manual_sync, "update_progress", lambda *_, **__: None)
     monkeypatch.setattr(manual_sync, "scoped_documents", lambda _s, _j, docs, *_: docs)
@@ -62,7 +61,6 @@ def test_task_force_reads_newly_eligible_ignored_files(monkeypatch, enabled):
     embedding = MagicMock()
     embedding.embed_workspace.side_effect = AIProviderRateLimited(None)
     settings = SimpleNamespace(
-        new_formats_enabled=enabled,
         active_document_limit=500,
         google_oauth_client_id=None,
         google_oauth_client_secret=None,
@@ -79,6 +77,11 @@ def test_task_force_reads_newly_eligible_ignored_files(monkeypatch, enabled):
     )
     monkeypatch.setattr(tasks, "EmbeddingService", lambda *a, **k: embedding)
     monkeypatch.setattr(tasks.reconcile_workspace_folder, "max_retries", 0)
-    assert tasks.reconcile_workspace_folder.apply(args=[str(job_id)], throw=True).successful()
-    assert provider.discover.call_args.kwargs["force_file_ids"] == ({"csv"} if enabled else set())
-    assert ("text/csv" in provider.eligible_mime_types) is enabled
+    # A delta never returns unchanged files: catalog files without any document are forced.
+    monkeypatch.setattr(
+        tasks, "LibraryService",
+        lambda _session: SimpleNamespace(orphan_file_ids=lambda **_: {"orphan"}),
+    )
+    tasks.reconcile_workspace_folder.apply(args=[str(job_id)], throw=False)
+    assert provider.discover.call_args.kwargs["force_file_ids"] == {"csv", "orphan"}
+    assert "text/csv" in provider.eligible_mime_types

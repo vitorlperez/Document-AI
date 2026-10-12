@@ -18,14 +18,30 @@ from app.ingestion.service import (
 )
 from app.library.manual_sync import SyncCooldown, request_run, serialize_run
 from app.library.models import LibraryNode, ManualSyncRun
-from app.library.service import PAGE_SIZE_MAX, IndexedDocumentProvenance, LibraryService
+from app.library.service import (
+    PAGE_SIZE_MAX,
+    FileIndexing,
+    IndexedDocumentProvenance,
+    LibraryService,
+)
 from app.workspaces.models import WorkspaceFolder
 
 router = APIRouter(tags=["library"])
 
 
+def _indexing(item: FileIndexing) -> dict[str, object]:
+    return {
+        "state": item.state,
+        "error_code": item.error_code,
+        "document_id": str(item.document_id) if item.document_id else None,
+        "workspace_folder_id": str(item.workspace_folder_id) if item.workspace_folder_id else None,
+        "indexed_at": item.indexed_at.isoformat() if item.indexed_at else None,
+    }
+
+
 def _node(
-    *, node: LibraryNode, documents: list[IndexedDocumentProvenance], source_provider: str | None = None
+    *, node: LibraryNode, documents: list[IndexedDocumentProvenance], source_provider: str | None = None,
+    indexing: FileIndexing | None = None,
 ) -> dict[str, object]:
     return {
         "id": str(node.id),
@@ -42,6 +58,7 @@ def _node(
             {"workspace_folder_id": str(item.workspace_folder_id), "document_id": str(item.document_id)}
             for item in documents
         ],
+        **({"indexing": _indexing(indexing)} if node.kind == "file" and indexing else {}),
     }
 
 
@@ -82,9 +99,10 @@ def library_search(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
-    documents = service.documents_for_nodes(scope=scope, nodes=result.items)
+    documents, indexing = service.documents_and_indexing_for_nodes(scope=scope, nodes=result.items)
     return {
-        "items": [_node(node=node, documents=documents.get(node.id, [])) for node in result.items],
+        "items": [_node(node=node, documents=documents.get(node.id, []), indexing=indexing.get(node.id))
+                  for node in result.items],
         "page": result.page, "page_size": result.page_size, "total": result.total, "pages": result.pages,
     }
 
@@ -201,9 +219,10 @@ def library_children(
     except SyncAccessDenied as error:
         # A foreign UUID is intentionally indistinguishable from an absent node.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="library node not found") from error
-    documents = service.documents_for_nodes(scope=scope, nodes=result.items)
+    documents, indexing = service.documents_and_indexing_for_nodes(scope=scope, nodes=result.items)
     return {
-        "items": [_node(node=node, documents=documents.get(node.id, [])) for node in result.items],
+        "items": [_node(node=node, documents=documents.get(node.id, []), indexing=indexing.get(node.id))
+                  for node in result.items],
         "page": result.page,
         "page_size": result.page_size,
         "total": result.total,

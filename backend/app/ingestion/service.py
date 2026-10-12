@@ -15,7 +15,6 @@ from app.audit_usage.service import UsageLimitExceeded, UsageService
 from app.core.scoping import OrganizationScope
 from app.ingestion.blocks import ExtractedBlock
 from app.ingestion.extraction import (
-    BASE_MIME_TYPES,
     ELIGIBLE_MIME_TYPES,  # noqa: F401 -- compatibility re-export
     eligible_mime_types,
 )
@@ -128,7 +127,7 @@ class IngestionService:
     def __init__(self, session: Session, *, settings=None):
         self.session = session
         self.settings = settings
-        self.eligible_mime_types = eligible_mime_types(settings) if settings else BASE_MIME_TYPES
+        self.eligible_mime_types = eligible_mime_types(settings)
 
     def require_active_member(self, *, scope: OrganizationScope, user_id: UUID) -> None:
         membership = self.session.scalar(
@@ -424,7 +423,13 @@ class IngestionService:
         self.session.delete(folder)
         self.session.flush()
         from app.library.service import LibraryService
-        LibraryService(self.session).forget_stale_exclusions(
+        library = LibraryService(self.session)
+        library.forget_stale_exclusions(
+            organization_id=scope.organization_id, source_id=removed.source_id
+        )
+        # The catalog is shared by the source's spaces: what only this space
+        # indexed must not linger as a file without any document.
+        library.prune_orphan_file_nodes(
             organization_id=scope.organization_id, source_id=removed.source_id
         )
         self.session.add(

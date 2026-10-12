@@ -85,6 +85,9 @@ def _run_task(monkeypatch, *, known_rows: list, manual_mode: str | None = None,
         def __init__(self, _):
             return None
 
+        def orphan_file_ids(self, **_):
+            return set()
+
         def filter_excluded_content(self, *, documents, folders, **kwargs):
             seen["filter_kwargs"] = kwargs
             return documents, folders

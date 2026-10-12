@@ -50,7 +50,7 @@ Todo item `kind == "file"` devolvido pelos endpoints que já serializam nós da 
 ### Precedência quando o mesmo arquivo tem documentos em vários workspaces
 
 `indexed` > `failed` > `skipped` > `ignored` > `not_found_in_source` > `pending`.
-Empate dentro do mesmo estado: documento mais recente (`indexed_at`/`id` decrescente). Ou seja, basta um workspace
+Empate dentro do mesmo estado: o documento de menor `workspace_folder_id`/`id` (determinístico). Ou seja, basta um workspace
 com o documento indexado para o arquivo contar como `indexed`.
 
 ### `error_code` (estável; mostrar mensagem local, nunca o código cru ao usuário final)
@@ -76,7 +76,7 @@ limpo pelo backend no próximo sync completo.
 
 ## Notas de implementação (backend)
 
-- Uma única consulta por página (`LibraryService.indexing_for_nodes`), sem N+1.
+- Uma única consulta por página sobre `documents` (`LibraryService.documents_and_indexing_for_nodes`, compartilhada com `workspace_documents`), sem N+1.
 - Somente metadados: `state`, `error_code`, ids e `indexed_at`; nada de texto de documento.
 - Escopo de tenant idêntico a `documents_for_nodes` (organização do escopo; workspaces da fonte do nó).
 - `pending` não promete data: depende do próximo sync do workspace que cobre o arquivo.

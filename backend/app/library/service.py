@@ -1,5 +1,6 @@
 """Company-scoped Library projection and browse boundary."""
 
+from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
@@ -81,6 +82,25 @@ class IndexedDocumentProvenance:
 
     workspace_folder_id: UUID
     document_id: UUID
+
+
+@dataclass(frozen=True)
+class FileIndexing:
+    """Safe indexing state of one library file (specs/library-indexing-status.md)."""
+
+    state: str
+    error_code: str | None = None
+    document_id: UUID | None = None
+    workspace_folder_id: UUID | None = None
+    indexed_at: datetime | None = None
+
+
+# Best state first: one indexed copy in any space makes the file indexed.
+INDEXING_PRECEDENCE = ("indexed", "failed", "skipped", "ignored", "not_found_in_source")
+DOCUMENT_STATUS_TO_STATE = {
+    "indexed": "indexed", "failed": "failed", "skipped": "skipped", "ignored": "ignored",
+    "removed": "not_found_in_source", "deleted": "not_found_in_source",
+}
 
 
 @dataclass(frozen=True)
@@ -307,17 +327,30 @@ class LibraryService:
         self, *, scope: OrganizationScope, nodes: list[LibraryNode]
     ) -> dict[UUID, list[IndexedDocumentProvenance]]:
         """Load indexed document references for a browse page in one query."""
+        return self.documents_and_indexing_for_nodes(scope=scope, nodes=nodes)[0]
+
+    def indexing_for_nodes(
+        self, *, scope: OrganizationScope, nodes: list[LibraryNode]
+    ) -> dict[UUID, FileIndexing]:
+        """Indexing state of each file node of a page (no document text is read)."""
+        return self.documents_and_indexing_for_nodes(scope=scope, nodes=nodes)[1]
+
+    def documents_and_indexing_for_nodes(
+        self, *, scope: OrganizationScope, nodes: list[LibraryNode]
+    ) -> tuple[dict[UUID, list[IndexedDocumentProvenance]], dict[UUID, FileIndexing]]:
+        """Indexed provenance and indexing state of a browse page, from one query over `documents`."""
         files = [node for node in nodes if node.kind == "file"]
         if not files:
-            return {}
+            return {}, {}
         node_ids_by_source_external: dict[tuple[UUID, str], list[UUID]] = {}
         for node in files:
             node_ids_by_source_external.setdefault((node.source_id, node.external_id), []).append(node.id)
-        result: dict[UUID, list[IndexedDocumentProvenance]] = {}
+        provenance: dict[UUID, list[IndexedDocumentProvenance]] = {}
+        best: dict[tuple[UUID, str], FileIndexing] = {}
         rows = self.session.execute(
             select(
-                WorkspaceFolder.source_id, Document.external_file_id,
-                Document.workspace_folder_id, Document.id,
+                WorkspaceFolder.source_id, Document.external_file_id, Document.workspace_folder_id,
+                Document.id, Document.index_status, Document.error_code, Document.indexed_at,
             )
             .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
             .where(
@@ -325,16 +358,31 @@ class LibraryService:
                 WorkspaceFolder.organization_id == scope.organization_id,
                 WorkspaceFolder.source_id.in_({node.source_id for node in files}),
                 Document.external_file_id.in_({node.external_id for node in files}),
-                Document.index_status == "indexed",
             )
             .order_by(Document.workspace_folder_id, Document.id)
-        )
-        for source_id, external_id, workspace_folder_id, document_id in rows:
-            for node_id in node_ids_by_source_external.get((source_id, external_id), []):
-                result.setdefault(node_id, []).append(
-                    IndexedDocumentProvenance(workspace_folder_id, document_id)
+        ).all()
+        for source_id, external_id, folder_id, document_id, status, error_code, indexed_at in rows:
+            if status == "indexed":
+                for node_id in node_ids_by_source_external.get((source_id, external_id), []):
+                    provenance.setdefault(node_id, []).append(
+                        IndexedDocumentProvenance(folder_id, document_id)
+                    )
+            state = DOCUMENT_STATUS_TO_STATE.get(status)
+            if state is None:
+                continue
+            key = (source_id, external_id)
+            current = best.get(key)
+            if current is None or INDEXING_PRECEDENCE.index(state) < INDEXING_PRECEDENCE.index(current.state):
+                best[key] = FileIndexing(
+                    state=state, document_id=document_id, workspace_folder_id=folder_id,
+                    error_code=error_code if state in {"failed", "skipped", "ignored"} else None,
+                    indexed_at=indexed_at if state == "indexed" else None,
                 )
-        return result
+        indexing = {
+            node.id: best.get((node.source_id, node.external_id), FileIndexing(state="pending"))
+            for node in files
+        }
+        return provenance, indexing
 
     def remove_file_if_unindexed(
         self, *, scope: OrganizationScope, source_id: UUID, external_file_id: str
@@ -1144,11 +1192,17 @@ class LibraryService:
         folders: list[RemoteFolder],
         workspace_folder_id: UUID | None = None,
         partial: bool = False,
+        full_snapshot: bool = False,
+        removed_file_ids: Collection[str] = (),
     ) -> None:
         """Upsert the synchronized provider metadata into the local catalog.
 
         This deliberately receives provider-neutral values. A new connector only
         needs to supply opaque IDs and parent relationships.
+
+        A complete snapshot also prunes the catalog files of the source that it
+        did not see and that no space indexes (orphans); an incremental run
+        prunes only the orphans the source reported as gone.
         """
         if source.organization_id != organization_id:
             raise SyncAccessDenied("source tenant mismatch")
@@ -1208,6 +1262,18 @@ class LibraryService:
             self._remove_empty_folders(source_id=source.id,
                                       preserved_external_ids={folder.id for folder in folders},
                                       candidate_ids=notion_candidates)
+        if full_snapshot:
+            seen = {document.external_file_id for document in documents}
+            self.prune_orphan_file_nodes(
+                organization_id=organization_id, source_id=source.id,
+                keep_external_ids=seen, preserved_folder_external_ids={folder.id for folder in folders},
+            )
+        elif removed_file_ids:
+            self.prune_orphan_file_nodes(
+                organization_id=organization_id, source_id=source.id,
+                only_external_ids=set(removed_file_ids),
+                preserved_folder_external_ids={folder.id for folder in folders},
+            )
         # A delta only carries what changed and the catalog is shared by every
         # space of the source: prune just the files this space saw disappear
         # at the source and that no other space still keeps.
@@ -1240,6 +1306,52 @@ class LibraryService:
             candidate_ids=parents,
         )
         self.session.flush()
+
+    def orphan_file_ids(self, *, organization_id: UUID, source_id: UUID) -> set[str]:
+        """External IDs of catalog files of the source that no space holds a live document for."""
+        return {node.external_id for node in self._orphan_file_nodes(
+            organization_id=organization_id, source_id=source_id)}
+
+    def prune_orphan_file_nodes(
+        self, *, organization_id: UUID, source_id: UUID,
+        keep_external_ids: Collection[str] = (), only_external_ids: Collection[str] | None = None,
+        preserved_folder_external_ids: Collection[str] = (),
+    ) -> int:
+        """Drop catalog files without a live document in any space, then the folders they emptied.
+
+        ``keep_external_ids`` protects files a complete snapshot just saw (they are
+        ingested by that same run); ``only_external_ids`` limits the sweep to files the
+        source reported gone. Idempotent; files with any live document are never touched.
+        """
+        keep, only = set(keep_external_ids), None if only_external_ids is None else set(only_external_ids)
+        stale = [node for node in self._orphan_file_nodes(organization_id=organization_id, source_id=source_id)
+                 if node.external_id not in keep and (only is None or node.external_id in only)]
+        if not stale:
+            return 0
+        parents = {node.parent_id for node in stale if node.parent_id is not None}
+        for node in stale:
+            self.session.delete(node)
+        self.session.flush()
+        self._remove_empty_folders(
+            source_id=source_id, preserved_external_ids=set(preserved_folder_external_ids), candidate_ids=parents,
+        )
+        self.session.flush()
+        return len(stale)
+
+    def _orphan_file_nodes(self, *, organization_id: UUID, source_id: UUID) -> list[LibraryNode]:
+        live = select(Document.external_file_id).join(
+            WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id,
+        ).where(
+            WorkspaceFolder.source_id == source_id,
+            Document.organization_id == organization_id,
+            Document.index_status != "removed",
+        )
+        return list(self.session.scalars(select(LibraryNode).where(
+            LibraryNode.organization_id == organization_id,
+            LibraryNode.source_id == source_id,
+            LibraryNode.kind == "file",
+            LibraryNode.external_id.not_in(live),
+        )))
 
     def _notion_projection_candidates(self, *, source_id: UUID,
                                      workspace_folder_id: UUID) -> set[UUID]:

@@ -89,6 +89,7 @@ def sync(session: Session, organization, user, folder, documents, *, full_snapsh
     LibraryService(session).project_successful_sync(
         organization_id=organization.id, source=session.get(DataSource, folder.source_id),
         documents=documents, folders=folders, workspace_folder_id=folder.id,
+        full_snapshot=full_snapshot,
     )
     session.flush()
     return job

@@ -104,6 +104,9 @@ def _run_worker(monkeypatch, *, provider_name: str, provider) -> dict:
         def filter_excluded_content(self, *, documents, folders, **_: object):
             return documents, folders
 
+        def orphan_file_ids(self, **_: object) -> set[str]:
+            return set()
+
         def project_successful_sync(self, **kwargs: object) -> None:
             projected.update(kwargs)
 

@@ -588,10 +588,30 @@ class GoogleConnectionService(OAuthConnectionServiceBase):
             )
             self.session.add(source)
         else:
+            account_changed = bool(
+                source.account_email and account_email and source.account_email != account_email
+            )
             source.encrypted_credentials = self.cipher.encrypt(credentials)
             source.status = "connected"
             source.account_email = account_email
             source.connected_by_user_id = state.user_id
+            if account_changed:
+                from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
+
+                # Another account has other files and its own change feed: drop every saved
+                # cursor so each space takes a complete snapshot and reconciles the catalog.
+                for selection in self.session.scalars(
+                    select(WorkspaceFolderSelection)
+                    .join(WorkspaceFolder,
+                          WorkspaceFolder.id == WorkspaceFolderSelection.workspace_folder_id)
+                    .where(WorkspaceFolder.source_id == source.id)
+                ):
+                    selection.encrypted_delta_link = None
+                logger.info(
+                    "google account changed on reconnect",
+                    extra={"event": "google_connection", "provider": "google_drive",
+                           "action": "complete", "result": "account_changed"},
+                )
         state.consumed_at = datetime.now(UTC)
         self.session.flush()
         logger.info(

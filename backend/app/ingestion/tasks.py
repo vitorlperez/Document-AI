@@ -52,6 +52,10 @@ celery_app.conf.update(
 
 
 TERMINAL_ERROR_CODES = frozenset({"file_encrypted", "ocr_document_too_large"})  # file_too_large is retried: the limit is configurable
+# Providers whose incremental discovery re-reads a forced ID as is. Catalog files without any
+# document are forced through it, so a delta recovers (or prunes) them without a full scan.
+ORPHAN_REINGEST_PROVIDERS = frozenset({"google_drive", "onedrive", "sharepoint"})
+MAX_ORPHAN_REINGEST = 200
 
 
 def beat_schedule(interval_minutes: int) -> dict[str, dict[str, object]]:
@@ -461,6 +465,15 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 # Incremental runs use the provider delta; only "full" rediscovers.
                 if run_mode(session, job) == "full":
                     discover_kwargs["force_full"] = True
+            if not discover_kwargs.get("force_full") and source_provider in ORPHAN_REINGEST_PROVIDERS:
+                # A delta never returns unchanged files: catalog files that no space indexes
+                # (left by a removed space) would stay invisible. Re-read them explicitly.
+                orphan_ids = LibraryService(session).orphan_file_ids(
+                    organization_id=job.organization_id, source_id=source.id
+                )
+                discover_kwargs["force_file_ids"] = force_file_ids | set(
+                    sorted(orphan_ids)[:MAX_ORPHAN_REINGEST]
+                )
             from app.library.manual_sync import scoped_documents, update_progress
 
             last_progress_at = None
@@ -649,6 +662,8 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                            if discovery and discovery.catalog_documents is not None else document_results),
                 folders=source_folders,
                 workspace_folder_id=job.workspace_folder_id,
+                full_snapshot=bool(discovery and discovery.full_snapshot),
+                removed_file_ids=discovery.removed_file_ids if discovery else (),
             )
             if discovery and discovery.delta_links is not None:
                 selections_by_id = {item.id: item for item in selections}

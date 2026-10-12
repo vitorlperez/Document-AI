@@ -121,8 +121,10 @@ def test_company_library_is_member_scoped_and_nodes_use_uuids(api: tuple[TestCli
             "source_url": "https://drive.example.test/brief",
             "workspace_folder_ids": children.json()["items"][0]["workspace_folder_ids"],
             "workspace_documents": children.json()["items"][0]["workspace_documents"],
+            "indexing": children.json()["items"][0]["indexing"],
         }
     ]
+    assert children.json()["items"][0]["indexing"]["state"] == "indexed"
     assert len(children.json()["items"][0]["workspace_folder_ids"]) == 1
     assert len(children.json()["items"][0]["workspace_documents"]) == 1
     assert UUID(children.json()["items"][0]["workspace_documents"][0]["document_id"])

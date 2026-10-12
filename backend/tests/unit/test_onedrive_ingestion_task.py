@@ -145,6 +145,9 @@ def test_onedrive_delta_cursor_commits_with_successful_ingestion(monkeypatch) ->
         def filter_excluded_content(self, *, documents, folders, **_: object):
             return documents, folders
 
+        def orphan_file_ids(self, **_: object) -> set[str]:
+            return set()
+
         def project_successful_sync(self, **_: object) -> None:
             return None
 
