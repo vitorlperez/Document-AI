@@ -1,0 +1,819 @@
+{
+ "$schema": "motion-reference/v1",
+ "source": {
+  "url": "https://rogueon.ai/pt-br",
+  "extraUrls": [
+   "https://rogueon.ai/pt-br/code"
+  ],
+  "capturedAt": "2026-10-12",
+  "method": "Playwright headless 1440x900 + init hooks (IntersectionObserver/getContext/Element.animate) + CSS bundle read + MutationObserver on data-* state attrs",
+  "note": "Somente padrões de motion. Sem marca, texto, cor ou asset. Evidência visual em /private/tmp/claude-501/rogueon-capture/ (não versionada)."
+ },
+ "easings": {
+  "out": {
+   "value": "cubic-bezier(0.2,0.8,0.2,1)",
+   "var": "--out",
+   "confidence": "observed"
+  },
+  "spring": {
+   "value": "cubic-bezier(0.25,1.4,0.5,1)",
+   "var": "--spring",
+   "confidence": "observed"
+  },
+  "springPop": {
+   "value": "cubic-bezier(0.3,1.5,0.5,1)",
+   "use": "balão de chat (scale .55→1)",
+   "confidence": "observed"
+  },
+  "springSoft": {
+   "value": "cubic-bezier(0.2,1.25,0.4,1)",
+   "use": "notch/estado hero",
+   "confidence": "observed"
+  },
+  "springPeek": {
+   "value": "cubic-bezier(0.34,1.56,0.64,1)",
+   "use": "mascote espiando",
+   "confidence": "observed"
+  },
+  "standardOut": {
+   "value": "cubic-bezier(0.3,0.8,0.3,1)",
+   "use": "accordion grid-template-rows .28s, translate .32s",
+   "confidence": "observed"
+  },
+  "inOut": {
+   "value": "cubic-bezier(0.45,0,0.55,1)",
+   "use": "scroll longo alternate 30s",
+   "confidence": "observed"
+  },
+  "basic": [
+   "ease",
+   "ease-in-out",
+   "linear",
+   "step-end",
+   "steps(1)"
+  ]
+ },
+ "durationsScale": {
+  "instant": "80ms",
+  "fast": "120ms",
+  "base": "160-200ms",
+  "medium": "260-350ms",
+  "slow": "460-550ms",
+  "entrance": "900-1100ms",
+  "ambient": "2.6s-70s",
+  "hits": {
+   "0.12s": 15,
+   "0.2s": 3,
+   "0.35s": 2,
+   "0.55s": 2,
+   "0.3s": 1,
+   "0.16s": 1
+  },
+  "confidence": "observed"
+ },
+ "keyframes": {
+  "code-page_twinkle": {
+   "offsets": {
+    "0%": {
+     "opacity": "0.25"
+    },
+    "100%": {
+     "opacity": "1"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_drift": {
+   "offsets": {
+    "0%": {
+     "transform": "translate3d(calc(var(--dx) * -1),calc(var(--dy) * -1),0) rotate(calc(var(--r) - var(--dr)))"
+    },
+    "100%": {
+     "transform": "translate3d(var(--dx),var(--dy),0) rotate(calc(var(--r) + var(--dr)))"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_arrive": {
+   "offsets": {
+    "0%": {
+     "opacity": "0",
+     "transform": "translate3d(0px, 26px, 0px) scale(0.82)"
+    },
+    "100%": {
+     "opacity": "1",
+     "transform": "none"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_arriveLead": {
+   "offsets": {
+    "0%": {
+     "transform": "translate3d(0px, 18px, 0px) scale(0.92)"
+    },
+    "100%": {
+     "transform": "none"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_rise": {
+   "offsets": {
+    "0%": {
+     "opacity": "0",
+     "transform": "translate3d(0px, 18px, 0px)"
+    },
+    "100%": {
+     "opacity": "1",
+     "transform": "none"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_riseLead": {
+   "offsets": {
+    "0%": {
+     "transform": "translate3d(0px, 18px, 0px)"
+    },
+    "100%": {
+     "transform": "none"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_pulse": {
+   "offsets": {
+    "0%, 100%": {
+     "opacity": "0.6"
+    },
+    "50%": {
+     "opacity": "1"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_caret": {
+   "offsets": {
+    "50%": {
+     "opacity": "0"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_marquee": {
+   "offsets": {
+    "100%": {
+     "transform": "translate3d(calc(-50% - 6px), 0px, 0px)"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_revealFade": {
+   "offsets": {
+    "0%": {
+     "opacity": "0"
+    },
+    "100%": {
+     "opacity": "1"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_stand": {
+   "offsets": {
+    "0%": {
+     "opacity": "0",
+     "transform": "perspective(1600px) rotateX(16deg) translate3d(0px, 64px, 0px) scale(0.95)"
+    },
+    "60%": {
+     "opacity": "1"
+    },
+    "100%": {
+     "opacity": "1",
+     "transform": "none"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_reveal": {
+   "offsets": {
+    "0%": {
+     "opacity": "0",
+     "transform": "translate3d(0px, 28px, 0px)"
+    },
+    "100%": {
+     "opacity": "1",
+     "transform": "none"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_scroll": {
+   "offsets": {
+    "0%, 9%": {
+     "transform": "translateZ(0px)"
+    },
+    "91%, 100%": {
+     "transform": "translate3d(0,calc(-100% + var(--pt) * 784),0)"
+    }
+   },
+   "confidence": "observed"
+  },
+  "code-page_replay": {
+   "offsets": {
+    "0%, 7%": {
+     "opacity": "1",
+     "transform": "translateZ(0px)"
+    },
+    "10%, 17%": {
+     "transform": "translate3d(0,calc(var(--travel) * .125),0)"
+    },
+    "20%, 27%": {
+     "transform": "translate3d(0,calc(var(--travel) * .25),0)"
+    },
+    "30%, 37%": {
+     "transform": "translate3d(0,calc(var(--travel) * .375),0)"
+    },
+    "40%, 47%": {
+     "transform": "translate3d(0,calc(var(--travel) * .5),0)"
+    },
+    "50%, 57%": {
+     "transform": "translate3d(0,calc(var(--travel) * .625),0)"
+    },
+    "60%, 67%": {
+     "transform": "translate3d(0,calc(var(--travel) * .75),0)"
+    },
+    "70%, 77%": {
+     "transform": "translate3d(0,calc(var(--travel) * .875),0)"
+    },
+    "80%, 93%": {
+     "opacity": "1",
+     "transform": "translate3d(0,var(--travel),0)"
+    },
+    "96%": {
+     "opacity": "0",
+     "transform": "translate3d(0,var(--travel),0)"
+    },
+    "96.1%": {
+     "opacity": "0",
+     "transform": "translateZ(0px)"
+    },
+    "100%": {
+     "opacity": "1",
+     "transform": "translateZ(0px)"
+    }
+   },
+   "confidence": "observed"
+  },
+  "ad-consent_entra": {
+   "offsets": {
+    "0%": {
+     "opacity": "0",
+     "transform": "translateY(8px)"
+    }
+   },
+   "confidence": "observed"
+  },
+  "type-word_blink": {
+   "offsets": {
+    "0%, 50%": {
+     "opacity": "1"
+    },
+    "50.01%, 100%": {
+     "opacity": "0"
+    }
+   },
+   "confidence": "observed"
+  },
+  "landing-intro_intro-shade-fallback": {
+   "offsets": {
+    "100%": {
+     "opacity": "1"
+    }
+   },
+   "confidence": "observed"
+  },
+  "hero_intro-content-fallback": {
+   "offsets": {
+    "100%": {
+     "visibility": "visible"
+    }
+   },
+   "confidence": "observed"
+  },
+  "how-it-works_bubble-float": {
+   "offsets": {
+    "0%, 100%": {
+     "translate": "0px"
+    },
+    "50%": {
+     "translate": "0px -9px"
+    }
+   },
+   "confidence": "observed"
+  },
+  "how-it-works_typing-dot": {
+   "offsets": {
+    "0%, 60%, 100%": {
+     "opacity": "0.25",
+     "transform": "none"
+    },
+    "30%": {
+     "opacity": "0.9",
+     "transform": "translateY(-3px)"
+    }
+   },
+   "confidence": "observed"
+  },
+  "pricing_shimmer": {
+   "offsets": {
+    "0%": {
+     "background-position-x": "100%",
+     "background-position-y": "0px"
+    },
+    "100%": {
+     "background-position-x": "-100%",
+     "background-position-y": "0px"
+    }
+   },
+   "confidence": "observed"
+  }
+ },
+ "transitionsObserved": [
+  {
+   "property": "transform",
+   "duration": "0.38s",
+   "easing": "cubic-bezier(0.25, 1.4, 0.5, 1)",
+   "hits": 32,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "filter",
+   "duration": "0.3s",
+   "easing": "ease-out",
+   "hits": 17,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "opacity",
+   "duration": "0.16s",
+   "easing": "ease",
+   "hits": 12,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "transform",
+   "duration": "0.46s",
+   "easing": "cubic-bezier(0.2, 1.25, 0.4, 1)",
+   "hits": 12,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "color",
+   "duration": "0.2s",
+   "easing": "ease",
+   "hits": 11,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "box-shadow",
+   "duration": "0.2s",
+   "easing": "ease",
+   "hits": 11,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "opacity",
+   "duration": "0.2s",
+   "easing": "ease",
+   "hits": 11,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "border-color",
+   "duration": "0.12s",
+   "easing": "ease",
+   "hits": 9,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "background-color",
+   "duration": "0.2s",
+   "easing": "ease",
+   "hits": 7,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "transform",
+   "duration": "0.9s",
+   "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+   "hits": 6,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "color",
+   "duration": "0.12s",
+   "easing": "ease",
+   "hits": 5,
+   "pages": [
+    "/pt-br"
+   ]
+  },
+  {
+   "property": "filter",
+   "duration": "0.12s",
+   "easing": "ease",
+   "hits": 4,
+   "pages": [
+    "/pt-br"
+   ]
+  },
+  {
+   "property": "opacity",
+   "duration": "0.12s",
+   "easing": "ease",
+   "hits": 4,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "opacity",
+   "duration": "0.18s",
+   "easing": "ease",
+   "hits": 4,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "transform",
+   "duration": "0.3s",
+   "easing": "cubic-bezier(0.25, 1.4, 0.5, 1)",
+   "hits": 4,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "opacity",
+   "duration": "0.08s",
+   "easing": "linear",
+   "hits": 4,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "transform",
+   "duration": "0.8s",
+   "easing": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+   "hits": 4,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "transform",
+   "duration": "0.2s",
+   "easing": "ease",
+   "hits": 3,
+   "pages": [
+    "/pt-br"
+   ]
+  },
+  {
+   "property": "opacity",
+   "duration": "0.6s",
+   "easing": "ease",
+   "hits": 3,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "border-color",
+   "duration": "0.2s",
+   "easing": "ease",
+   "hits": 3,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "opacity",
+   "duration": "0.35s",
+   "easing": "ease",
+   "hits": 2,
+   "pages": [
+    "/pt-br"
+   ]
+  },
+  {
+   "property": "scale",
+   "duration": "0.55s",
+   "easing": "cubic-bezier(0.3, 1.5, 0.5, 1)",
+   "hits": 2,
+   "pages": [
+    "/pt-br"
+   ]
+  },
+  {
+   "property": "background-color",
+   "duration": "0.12s",
+   "easing": "ease",
+   "hits": 2,
+   "pages": [
+    "/pt-br"
+   ]
+  },
+  {
+   "property": "box-shadow",
+   "duration": "0.12s",
+   "easing": "ease",
+   "hits": 2,
+   "pages": [
+    "/pt-br"
+   ]
+  },
+  {
+   "property": "background",
+   "duration": "0.12s",
+   "easing": "ease",
+   "hits": 2,
+   "pages": [
+    "/pt-br"
+   ]
+  },
+  {
+   "property": "opacity",
+   "duration": "0.3s",
+   "easing": "ease",
+   "hits": 2,
+   "pages": [
+    "/pt-br",
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "transform",
+   "duration": "0.16s",
+   "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+   "hits": 2,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "text-decoration-color",
+   "duration": "0.2s",
+   "easing": "ease",
+   "hits": 2,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "transform",
+   "duration": "0.16s",
+   "easing": "ease",
+   "hits": 1,
+   "pages": [
+    "/pt-br"
+   ]
+  },
+  {
+   "property": "transform",
+   "duration": "0.2s",
+   "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+   "hits": 1,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "transform",
+   "duration": "0.5s",
+   "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+   "hits": 1,
+   "pages": [
+    "/pt-br/code"
+   ]
+  },
+  {
+   "property": "transform",
+   "duration": "0.25s",
+   "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+   "hits": 1,
+   "pages": [
+    "/pt-br/code"
+   ]
+  }
+ ],
+ "transitionsFromCss": [
+  "transform .16s ease (press)",
+  "transform .38s var(--spring) (hover lift/dock)",
+  "opacity .2s + transform .38s spring (tooltip/tag)",
+  "grid-template-rows .28s cubic-bezier(.3,.8,.3,1) (accordion)",
+  "transform .3s var(--out) (ícone +/− do FAQ)",
+  "opacity .35s ease + scale .55s cubic-bezier(.3,1.5,.5,1) (balão)",
+  "opacity .08s linear + transform .8s springPeek (mascote)",
+  "opacity .6s ease (fade de mídia)",
+  "background/color/box-shadow .12s ease (links, hover)",
+  "background .15s,color .15s (tabs)"
+ ],
+ "chatSequence": {
+  "mechanism": "atributo data-conversation no container (idle→user→typing→reply) muda por JS; CSS só reage (opacity/scale por seletor de atributo). Disparo por IntersectionObserver threshold .45.",
+  "timeline_ms": {
+   "idle": 0,
+   "user": 150,
+   "typing": 900,
+   "reply": 2000,
+   "note": "medido: idle@10599, user@10750, typing@11500, reply@12599 (Δ 150/750/1100 entre estados). Loop volta a idle."
+  },
+  "bubble": {
+   "hidden": "opacity:0;scale:.55",
+   "visible": "opacity:1;scale:1",
+   "transition": "opacity .35s ease, scale .55s cubic-bezier(.3,1.5,.5,1)",
+   "transformOrigin": "canto da cauda (100% 100% user, 0 100% assistente)",
+   "float": "bubble-float 4.6s/5.4s ease-in-out infinite, delay .6s/1.4s, reverse no 2º (usa propriedade `translate`, não transform, para não brigar com scale)"
+  },
+  "typingIndicator": {
+   "dots": 3,
+   "keyframe": "typing-dot",
+   "duration": "1s infinite",
+   "delaysMs": [
+    0,
+    150,
+    300
+   ],
+   "body": "0%,60%,100%{opacity:.25;transform:none} 30%{opacity:.9;transform:translateY(-3px)}",
+   "container": "display:none por padrão; só aparece no estado typing; height fixa 20px (sem layout shift)"
+  },
+  "headlineTypewriter": {
+   "mechanism": "palavra a palavra via JS (data-typing=true no cursor)",
+   "caret": "2px×.9em, blink 1.06s step-end infinite; durante digitação animation:none;opacity:1 (caret sólido)",
+   "cadence": "rajadas ~230-450ms, pausa ~1.8s entre palavras",
+   "reducedMotion": "caret display:none; texto final direto (sr-only guarda o texto completo)"
+  }
+ },
+ "reveals": {
+  "scrollDriven": {
+   "supported": "@supports (animation-timeline: view())",
+   "rule": "animation: reveal linear both; animation-timeline: view(); animation-range: entry 0 entry 45%",
+   "variants": {
+    "reveal": "translate3d(0,28px,0)+opacity 0→1",
+    "stand": "perspective(1600px) rotateX(16deg) translate3d(0,64px,0) scale(.95), opacity 0→1 até 60%; range entry 0 cover 38%",
+    "revealFade": "opacity 0→1"
+   },
+   "gated": "@media (prefers-reduced-motion:no-preference)"
+  },
+  "cssOnLoad": [
+   {
+    "name": "rise",
+    "duration": "900ms",
+    "easing": "out",
+    "fill": "both",
+    "from": "y18 opacity0"
+   },
+   {
+    "name": "arrive",
+    "duration": "1100ms",
+    "easing": "out",
+    "fill": "backwards",
+    "from": "y26 scale .82 opacity0"
+   }
+  ],
+  "intersectionObservers": [
+   {
+    "threshold": 0.45,
+    "use": "gatilho do chat"
+   },
+   {
+    "rootMargin": "200px",
+    "use": "pré-carregar/ativar mídia antes de entrar"
+   },
+   {
+    "rootMargin": "200px 0px",
+    "use": "idem"
+   }
+  ],
+  "stagger": {
+   "typingDots": "150ms",
+   "hero": "transition-delay 30/60/90ms e .12/.15/.18/.21s em grupos de itens",
+   "note": "passos de 30ms para itens pequenos, 150ms para elementos de mais peso"
+  }
+ },
+ "pageIntro": {
+  "mechanism": "data-intro-state=pending→playing→done no hero; ~3.0s total (playing@223ms, done@3213ms). Fundo começa scale 2.05 + blur(45px) + shade e relaxa; conteúdo [data-intro-reveal] translateY(14px) opacity 0 → entra. Botão 'pular' (skip) sempre disponível. Fallback CSS: animation 0s com delay 1.5s força visibilidade se o JS falhar.",
+  "skip": true,
+  "fallback": "conteúdo nunca fica preso invisível"
+ },
+ "interaction": {
+  "press": [
+   "button :active transform translateY(2px) scale(.975)",
+   "card-objeto :active translateY(5px) scale(.94), duration .12s"
+  ],
+  "hover": [
+   "botão primário: background mais claro + box-shadow 0 8px 30px -8px glow (45% alpha)",
+   "objeto de card: scale(1.045) rotate(-2deg) brightness(1.06) via spring .38s",
+   "chip de exemplo: filter brightness(.94) .12s",
+   "link inline: fundo cheio + box-shadow 0 0 0 2px (marca-texto) .12s",
+   "seta/ícone em CTA: translateX(2-3px)",
+   "dock: translateY(-8*pt) spring .38s + etiqueta (opacity+translate) + ponto indicador",
+   "marquee: animation-play-state: paused em hover/focus-within/active",
+   "nav logo hover opacity 1→.75"
+  ],
+  "focus": "focus-visible: outline 2px solid accent, offset 2px (medido: rgb(219,255,90) 2px/2px) — mesmo estilo em links, botões, dock; hover e focus compartilham seletor (:hover,:focus-visible)",
+  "accordion": "details/summary; ícone + vira − (barra rotate 90→0, .3s out, opacity .5→1); painel anima grid-template-rows .28s cubic-bezier(.3,.8,.3,1)",
+  "tabs": "background/color .15s; selecionada: fundo sólido + cor de acento; hover: fundo 3.5% branco"
+ },
+ "loadingPatterns": {
+  "shimmer": {
+   "keyframe": "shimmer",
+   "body": "0%{background-position-x:100%} 100%{background-position-x:-100%}",
+   "css": "background: linear-gradient(90deg, ink@18%, ink@38% 50%, ink@18%); background-size:200% 100%; animation: shimmer 3.2s ease-in-out infinite; height:9px; radius:999px",
+   "use": "barras skeleton/placeholder (conteúdo bloqueado)",
+   "reducedMotion": "animation:none"
+  },
+  "pulse": {
+   "keyframe": "pulse",
+   "body": "0%,100%{opacity:.6} 50%{opacity:1}",
+   "duration": "2.6s ease-in-out infinite",
+   "stagger": "delays negativos ~70ms por ponto"
+  },
+  "twinkle": "opacity .25→1 alternate, duração/atraso por variável (--t/--d)",
+  "typingDots": "ver chatSequence",
+  "caret": "blink step-end 1.06s"
+ },
+ "enterExit": {
+  "toast/banner": "ad-consent entra .22s ease-out de opacity 0 + translateY(8px); sem animação de saída (display some)",
+  "menuMobile": "painel com backdrop-filter blur(16px) sobre fundo rgba escuro 82%",
+  "tooltip/tag": "opacity .2s + translate3d(-50%, y) com spring .38s",
+  "mascote": "clip-path no wrapper, img translateY(102%)→0 .8s springPeek, opacity .08s linear"
+ },
+ "effects": {
+  "backdropBlur": [
+   "blur(12px) em banner/tags/dock",
+   "blur(16px) em menu mobile"
+  ],
+  "filter": [
+   "blur(45.4px) em camada de fundo durante intro",
+   "brightness(.94/1.06) em hover",
+   "invert(1)+mix-blend-mode:difference em controle sobre mídia variável (skip)"
+  ],
+  "glow": "box-shadow 0 8px 30px -8px cor@.45 só em hover do CTA",
+  "insetHairline": "box-shadow inset 0 0 0 1px branco@.12-.14 em superfícies glass",
+  "canvas": "hero 2d canvas 2880×1800 (efeito de revelação de código) — JS/canvas, não reproduzível em CSS",
+  "marquee": "translate3d 0→-50% 70s linear infinite + mask-image nas bordas"
+ },
+ "ambient": {
+  "drift": "translate3d/rotate por variáveis, alternate ease-in-out",
+  "scrollLoop": "30s cubic-bezier(.45,0,.55,1) infinite alternate",
+  "replay": "30s steps discretos por 12.5% com pausas (loop de demonstração)",
+  "marquee": "70s linear"
+ },
+ "reducedMotion": {
+  "ruleCount": {
+   "/pt-br": 29,
+   "/pt-br/code": 22
+  },
+  "strategy": [
+   "bloco global: *,::before,::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto}",
+   "reveals scroll-driven só em (prefers-reduced-motion:no-preference)",
+   "por componente: animation:none/transition:none em shimmer, balões, tabs, links",
+   "remove decoração (caret, drift, scroller), marquee vira lista com wrap",
+   "estado final garantido (balões visíveis em [data-conversation] sob reduce)",
+   "toggle manual 'pausar movimento' na página code"
+  ],
+  "respected": true
+ },
+ "risks": [
+  "Intro do hero e canvas são JS; só medidos por estados/tempos, sem frame-strip do canvas.",
+  "Painel de chat 'real' do produto está atrás de login (app.rogueon.ai) — não acessado; o chat observado é a demo animada da landing, o prompt do hero não foi enviado.",
+  "Hover/press do chip e do campo: medidos pelo CSS do bundle, não por diff vivo (seletor da sonda atingiu o <ul>).",
+  "Estados de streaming de resposta real (token a token) não observáveis sem conta."
+ ],
+ "evidence": "/private/tmp/claude-501/rogueon-capture/ (screenshots/, ds/, ds-code/screenshots/motion/, probe-*.json) — não versionado"
+}
