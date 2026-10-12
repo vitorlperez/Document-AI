@@ -1,7 +1,8 @@
 "use client";
 
 import { Bell, Building2, Mail, SlidersHorizontal, UserRound } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { Enter, ErrorState, LoadingBlock, SkeletonList } from "../ui";
 import { AvatarBadge } from "./account-menu";
 import { displayNameFromEmail } from "./account-helpers";
 import { type Company, type User, api, messageFor, roleLabel } from "./types-and-api";
@@ -23,18 +24,31 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function EmailNotificationPreference({ company, setError }: { company: Company; setError: (message: string | null) => void }) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const base = `/organizations/${company.id}/notification-preferences`;
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const load = useCallback(async (signal?: AbortSignal) => {
+    setLoading(true); setLoadError(null);
+    try {
+      const value = await api<{ email_enabled: boolean }>(base, { signal, cache: "no-store" });
+      if (!signal?.aborted) setEnabled(value.email_enabled);
+    } catch (caught) { if (!signal?.aborted) setLoadError(messageFor(caught)); }
+    finally { if (!signal?.aborted) setLoading(false); }
+  }, [base]);
   useEffect(() => {
     const controller = new AbortController();
-    api<{ email_enabled: boolean }>(base, { signal: controller.signal, cache: "no-store" }).then((value) => setEnabled(value.email_enabled)).catch((caught) => { if (!controller.signal.aborted) setError(messageFor(caught)); });
+    void Promise.resolve().then(() => { if (!controller.signal.aborted) void load(controller.signal); });
     return () => controller.abort();
-  }, [base, setError]);
+  }, [load]);
   async function toggle() {
-    if (enabled === null) return;
-    const next = !enabled; setEnabled(next); setError(null);
-    try { await api(base, { method: "PUT", body: JSON.stringify({ email_enabled: next }) }); } catch (caught) { setEnabled(!next); setError(messageFor(caught)); }
+    if (enabled === null || saving) return;
+    const next = !enabled; setEnabled(next); setError(null); setSaving(true);
+    try { await api(base, { method: "PUT", body: JSON.stringify({ email_enabled: next }) }); } catch (caught) { setEnabled(!next); setError(messageFor(caught)); } finally { setSaving(false); }
   }
-  return <label className="flex min-h-11 items-start gap-3 text-sm">
-    <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[var(--color-primary)]" checked={enabled ?? false} disabled={enabled === null} onChange={() => void toggle()} />
+  if (loading) return <LoadingBlock label="Carregando preferências de notificação…"><SkeletonList rows={1} /></LoadingBlock>;
+  if (loadError) return <ErrorState title="Não foi possível carregar as preferências" description={loadError} actions={<button type="button" className="mo-interactive min-h-11 underline" onClick={() => void load()}>Tentar novamente</button>} />;
+  return <label aria-busy={saving} className="flex min-h-11 items-start gap-3 text-sm">
+    <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[var(--color-primary)]" checked={enabled ?? false} disabled={enabled === null || saving} onChange={() => void toggle()} />
     <span><span className="flex items-center gap-1.5 font-medium text-ink"><Bell size={15} aria-hidden="true" />Notificações por e-mail</span><span className="mt-0.5 block text-muted-foreground">Receba também por e-mail os avisos de perguntas seguidas e o resumo semanal desta organização.</span></span>
   </label>;
 }
@@ -42,7 +56,7 @@ function EmailNotificationPreference({ company, setError }: { company: Company; 
 export function ProfileScreen({ user, company, setError }: { user: User; company: Company; setError: (message: string | null) => void }) {
   const name = displayNameFromEmail(user.email) || user.email;
   const since = user.created_at ? new Date(user.created_at) : null;
-  return <div className="mx-auto max-w-3xl space-y-4">
+  return <Enter variant="fade" className="mx-auto max-w-3xl space-y-4">
     <h1 className="text-2xl font-semibold text-ink">Perfil</h1>
     <section className={`${cardClass} flex items-center gap-4`} aria-label="Resumo da conta">
       <AvatarBadge user={user} size={64} />
@@ -61,5 +75,5 @@ export function ProfileScreen({ user, company, setError }: { user: User; company
     <Section icon={SlidersHorizontal} title="Preferências" description="Ajustes pessoais para esta organização.">
       <EmailNotificationPreference key={company.id} company={company} setError={setError} />
     </Section>
-  </div>;
+  </Enter>;
 }

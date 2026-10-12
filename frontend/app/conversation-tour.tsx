@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./onboarding.css";
 import "./interface-motion.css";
+import { Enter, ProgressIndicator, Spinner } from "./ui";
 import { playSurfaceEntry } from "./interface-motion";
 
 const steps = [
@@ -91,16 +92,17 @@ export function ConversationTour({ onComplete }: { onComplete: (exit: TourExit) 
     finally { setBusy(false); }
   }
   return <dialog ref={dialog} className="conversation-tour" data-arquivio-motion-root="" aria-labelledby="tour-title" aria-describedby="tour-description" onCancel={(event) => { event.preventDefault(); void finish(); }} onClick={(event) => { if (!busy && !(event.target as HTMLElement).closest(".tour-card")) void finish(); }}>
-    <div className={`tour-highlight ${rect ? "" : "tour-highlight-fallback"}`} style={rect ?? undefined} aria-hidden="true" />
+    <Enter key={step.target} variant="scale" className={`tour-highlight ${rect ? "" : "tour-highlight-fallback"}`} style={rect ?? undefined}><span className="sr-only" aria-hidden="true" /></Enter>
     <section ref={card} className="tour-card" style={position} aria-busy={busy} data-arquivio-motion="tour-card">
       <p className="onboarding-eyebrow">Conheça seu espaço · {index + 1} de {steps.length}</p>
       <h2 id="tour-title">{step.title}</h2>
       <p id="tour-description">{step.description}</p>
+      <ProgressIndicator value={((index + 1) / steps.length) * 100} label={`Etapa ${index + 1} de ${steps.length}`} className="mt-4" />
       {error && <p role="alert" className="onboarding-error">{error}</p>}
       <div className="tour-actions">
         <button disabled={busy} onClick={() => { void finish(); }} className="onboarding-text-button">Pular tour</button>
         {index > 0 && <button disabled={busy} onClick={() => setIndex(index - 1)} className="onboarding-text-button">Voltar</button>}
-        <button ref={primary} disabled={busy} onClick={() => { if (index === steps.length - 1) void finish("finished"); else setIndex(index + 1); }} className="onboarding-primary">{busy ? "Salvando…" : index === steps.length - 1 ? "Começar a conversar" : "Próximo"}</button>
+        <button ref={primary} disabled={busy} onClick={() => { if (index === steps.length - 1) void finish("finished"); else setIndex(index + 1); }} className="onboarding-primary mo-interactive inline-flex items-center gap-2">{busy && <Spinner size={14} />}{busy ? "Salvando…" : index === steps.length - 1 ? "Começar a conversar" : "Próximo"}</button>
       </div>
     </section>
   </dialog>;
