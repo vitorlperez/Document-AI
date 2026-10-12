@@ -68,6 +68,10 @@ def beat_schedule(interval_minutes: int) -> dict[str, dict[str, object]]:
             "task": "document_intelligence.ingestion.weekly_digest",
             "schedule": crontab(day_of_week=1, hour=8, minute=0),
         },
+        "automations-tick": {
+            "task": "document_intelligence.ingestion.automations_tick",
+            "schedule": timedelta(minutes=5),
+        },
     }
 
 
@@ -260,6 +264,41 @@ def refresh_followed_after_sync(session: Session, settings: Settings, workspace_
         # Notifications are best effort after a completed sync; the sync itself must stay successful.
         logger.exception("followed query refresh failed")
         session.rollback()
+
+
+def trigger_automations_after_sync(session: Session, settings: Settings, workspace_folder_id: UUID) -> None:
+    """Queue folder_changed automations of a synced folder; never allowed to fail the sync."""
+    try:
+        if _semantic_provider(settings) is None:
+            return  # without an AI key no automation can run
+        from app.automations.triggers import enqueue_folder_changed
+
+        enqueue_folder_changed(session, workspace_folder_id=workspace_folder_id, send_task=celery_app.send_task)
+    except Exception:
+        logger.exception("automation trigger after sync failed")
+        session.rollback()
+
+
+@celery_app.task(name="document_intelligence.ingestion.automations_tick")
+def automations_tick_task() -> dict[str, int]:
+    """Every 5 minutes: queue the schedule automations that are due."""
+    from app.automations.triggers import enqueue_due_schedules
+
+    session_factory = build_session_factory(build_engine(get_settings()))
+    with session_factory() as session:
+        return enqueue_due_schedules(session, send_task=celery_app.send_task)
+
+
+@celery_app.task(name="document_intelligence.ingestion.run_automation")
+def run_automation_task(run_id: str) -> str | None:
+    from app.automations.executor import execute_run
+    from app.organizations.delivery import email_delivery_from_settings
+
+    settings = get_settings()
+    session_factory = build_session_factory(build_engine(settings))
+    with session_factory() as session:
+        return execute_run(session, UUID(run_id), provider=_semantic_provider(settings),
+                           email=email_delivery_from_settings(settings), app_url=settings.public_app_url)
 
 
 @celery_app.task(name="document_intelligence.ingestion.weekly_digest")
@@ -612,6 +651,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             source.last_synced_at = completed_job.completed_at
             session.commit()
             refresh_followed_after_sync(session, settings, job.workspace_folder_id)
+            trigger_automations_after_sync(session, settings, job.workspace_folder_id)
             logger.info(
                 "workspace reconciliation complete",
                 extra={

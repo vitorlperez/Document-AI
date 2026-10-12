@@ -18,6 +18,7 @@ from app.api.answer_export import router as answer_export_router
 from app.api.answer_feedback import router as answer_feedback_router
 from app.api.auth import current_user
 from app.api.auth import router as auth_router
+from app.api.automations import router as automations_router
 from app.api.clickup_tasks import router as clickup_tasks_router
 from app.api.conversations import router as conversations_router
 from app.api.document_view import router as document_view_router
@@ -146,6 +147,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redirect_uri=runtime_settings.google_oauth_redirect_uri,
     )
     app.state.ingestion_dispatcher = CeleryIngestionDispatcher(create_celery_app(runtime_settings))
+    app.state.automation_send_task = create_celery_app(runtime_settings).send_task
     app.state.semantic_provider = OpenAIQuestionProvider(
         runtime_settings.openai_api_key.get_secret_value() if runtime_settings.openai_api_key else None,
         evidence_context_chars=runtime_settings.evidence_context_chars,
@@ -185,6 +187,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(usage_router, dependencies=authenticated)
     app.include_router(insights_router, dependencies=authenticated)
     app.include_router(notifications_router, dependencies=authenticated)
+    app.include_router(automations_router, dependencies=authenticated)
     app.include_router(ingestion_router, dependencies=authenticated)
     app.include_router(library_router, dependencies=authenticated)
     app.include_router(answer_feedback_router, dependencies=authenticated)
