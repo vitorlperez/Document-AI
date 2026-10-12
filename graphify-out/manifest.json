@@ -312,9 +312,9 @@
     "semantic_hash": ""
   },
   "backend/app/library/service.py": {
-    "mtime": 1791688219.4969156,
-    "seen": 1791688733.380608,
-    "ast_hash": "739ab7f3dddc9e5352d43012eb305c0a",
+    "mtime": 1791768289.3553126,
+    "seen": 1791768499.440545,
+    "ast_hash": "9379127085bd4f5623771c8398b0be25",
     "semantic_hash": ""
   },
   "backend/app/main.py": {
@@ -7332,9 +7332,9 @@
     "semantic_hash": ""
   },
   "backend/app/api/automations.py": {
-    "mtime": 1791767479.0043728,
-    "seen": 1791767657.736068,
-    "ast_hash": "017ff051d4d72a71637f2af4eec85103",
+    "mtime": 1791768289.354575,
+    "seen": 1791768499.440497,
+    "ast_hash": "e209c3649da9aaa4d73876dcb399b3fb",
     "semantic_hash": ""
   },
   "backend/app/automations/__init__.py": {
@@ -7344,9 +7344,9 @@
     "semantic_hash": ""
   },
   "backend/app/automations/executor.py": {
-    "mtime": 1791767457.2003005,
-    "seen": 1791767657.736078,
-    "ast_hash": "e0f401d1915b702c616b8fe0e692fae7",
+    "mtime": 1791768289.3548017,
+    "seen": 1791768499.440508,
+    "ast_hash": "446fd7664b275b14edbc3f48f6b47a4e",
     "semantic_hash": ""
   },
   "backend/app/automations/models.py": {
@@ -7362,15 +7362,15 @@
     "semantic_hash": ""
   },
   "backend/app/automations/triggers.py": {
-    "mtime": 1791766748.5400534,
-    "seen": 1791767012.3212008,
-    "ast_hash": "cd57a40b08ff2f3189c13b5b65299f21",
+    "mtime": 1791768289.354957,
+    "seen": 1791768499.440511,
+    "ast_hash": "bcdbd912cd55b1382c11f674aa7b4fa1",
     "semantic_hash": ""
   },
   "backend/tests/api/test_automations_api.py": {
-    "mtime": 1791766917.561103,
-    "seen": 1791767012.3212612,
-    "ast_hash": "818a91f04548b33b333e95107e6a5f1f",
+    "mtime": 1791768289.3555484,
+    "seen": 1791768499.4405718,
+    "ast_hash": "933bacbb2b61ae56c84cba7422b1af26",
     "semantic_hash": ""
   },
   "frontend/app/companies/[companyId]/automations/page.tsx": {
@@ -7380,9 +7380,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/automation-editor.tsx": {
-    "mtime": 1791767566.2788286,
-    "seen": 1791767657.7362309,
-    "ast_hash": "422c873638ba5e31dc7aa870d5aa8785",
+    "mtime": 1791768289.3557029,
+    "seen": 1791768499.440667,
+    "ast_hash": "3058d92745195f6f02563e50c677be22",
     "semantic_hash": ""
   },
   "frontend/app/product/automation-history.tsx": {
@@ -7392,39 +7392,39 @@
     "semantic_hash": ""
   },
   "frontend/app/product/automations-api.ts": {
-    "mtime": 1791767531.8408663,
-    "seen": 1791767657.736233,
-    "ast_hash": "077c0b678542e07fc3714b29b1410b45",
+    "mtime": 1791768289.3558757,
+    "seen": 1791768499.44067,
+    "ast_hash": "2b555cf81b86f4deaf834c2b29516381",
     "semantic_hash": ""
   },
   "frontend/app/product/automations-model.ts": {
-    "mtime": 1791767010.608179,
-    "seen": 1791767012.321364,
-    "ast_hash": "4bd2791d6b172b9ba2013edd56871e11",
+    "mtime": 1791768289.3560278,
+    "seen": 1791768499.44067,
+    "ast_hash": "4b1d66b44086c13edd6d975c00e054b4",
     "semantic_hash": ""
   },
   "frontend/app/product/automations-screen.tsx": {
-    "mtime": 1791767566.2790923,
-    "seen": 1791767657.736234,
-    "ast_hash": "101bcf81a1c8481fbba1bc88f1104780",
+    "mtime": 1791768289.356177,
+    "seen": 1791768499.440671,
+    "ast_hash": "576ef7ff9c49e40551423c2eabf507e1",
     "semantic_hash": ""
   },
   "frontend/tests/automations-model.test.mjs": {
-    "mtime": 1791767010.588718,
-    "seen": 1791767012.321467,
-    "ast_hash": "fc6b320ff8f0b6b246ca527d10c40914",
+    "mtime": 1791768289.3566334,
+    "seen": 1791768499.440726,
+    "ast_hash": "456d355dbcdef60a87f697179984d61d",
     "semantic_hash": ""
   },
   "specs/automations-api.md": {
-    "mtime": 1791767402.1045408,
-    "seen": 1791767657.7364109,
-    "ast_hash": "e6f134575de38cddd97c07769a0f3fe6",
+    "mtime": 1791768289.3724747,
+    "seen": 1791768499.440861,
+    "ast_hash": "7b4b3d2c2b557fd382008fbd88f23449",
     "semantic_hash": ""
   },
   "frontend/tests/automation-editor.test.mjs": {
-    "mtime": 1791767566.2795074,
-    "seen": 1791767657.736286,
-    "ast_hash": "b3b8dc3425abba10c44bbbefee113e22",
+    "mtime": 1791768289.3563378,
+    "seen": 1791768499.440725,
+    "ast_hash": "d6f0dab3d8adaf68c27b93c0af00eb17",
     "semantic_hash": ""
   },
   "backend/alembic/versions/20261013_0031_webhooks.py": {
@@ -7479,6 +7479,24 @@
     "mtime": 1791767596.2485929,
     "seen": 1791767657.736286,
     "ast_hash": "6e61bbd5ece25882f0921d1770e47472",
+    "semantic_hash": ""
+  },
+  "frontend/tests/automation-webhooks.test.mjs": {
+    "mtime": 1791768289.3564851,
+    "seen": 1791768499.440726,
+    "ast_hash": "8afe6f0b88420fb026f2eff1619aff2d",
+    "semantic_hash": ""
+  },
+  "backend/app/automations/scope.py": {
+    "mtime": 1791767987.8822358,
+    "seen": 1791768499.440511,
+    "ast_hash": "0a848d0c4388c3d8e47bfaa5331bfb94",
+    "semantic_hash": ""
+  },
+  "frontend/app/product/automation-folder-picker.tsx": {
+    "mtime": 1791768168.5917616,
+    "seen": 1791768499.4406679,
+    "ast_hash": "26c829229d9cb0facdf372a1862f0e8e",
     "semantic_hash": ""
   }
 }
