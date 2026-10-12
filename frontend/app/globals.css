@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
 @import "./ui/motion-tokens.css";
+@import "./surfaces.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -22,23 +23,23 @@
 }
 
 :root {
-  --background: #faf9f5;
+  --background: var(--surface-canvas);
   --foreground: #243b35;
-  --card: #ffffff;
+  --card: var(--surface-raised);
   --card-foreground: #171717;
-  --popover: #ffffff;
+  --popover: var(--surface-overlay);
   --popover-foreground: #171717;
   --primary: #1c6052;
   --primary-foreground: #fafafa;
   --secondary: #f5f5f5;
   --secondary-foreground: #171717;
   --muted: #f5f5f5;
-  --muted-foreground: #657069;
+  --muted-foreground: #5a655e;
   --accent: #f5f5f5;
   --accent-foreground: #171717;
   --destructive: #e7000b;
-  --border: #dedfd5;
-  --input: #e5e5e5;
+  --border: var(--edge-subtle);
+  --input: var(--edge-strong);
   --ring: #a1a1a1;
   --chart-1: #f54900;
   --chart-2: #009689;
@@ -56,15 +57,15 @@
   --sidebar-ring: #a1a1a1;
   --primary-hover: #124b3f;
   --brand: #1c6052;
-  --paper: #faf9f5;
+  --paper: var(--surface-canvas);
   --ink: #243b35;
-  --sage: #f3f5ef;
-  --sage-selected: #dde9db;
-  --line: #dedfd5;
-  --line-soft: #eceee7;
-  --panel: #ffffff;
-  --header-bg: #faf9f5;
-  --heading-bg: #eff1e9;
+  --sage: var(--surface-sunken);
+  --sage-selected: #d5e3d2;
+  --line: var(--edge-subtle);
+  --line-soft: #e0e3d7;
+  --panel: var(--surface);
+  --header-bg: #fcfcf8;
+  --heading-bg: #ebede3;
   --evidence-bg: #fafcf7;
   --evidence-border: #e1e7db;
   --evidence-excerpt-bg: #f7f8f0;
@@ -77,19 +78,35 @@
   --shadow-ink: #243b3540;
   --scrim: rgb(18 40 32 / 0.45);
   --surface-raised: #ffffff;
-  --card-edge: #eceee7;
-  --dialog-edge: #dedfd5;
+  --card-edge: var(--edge-subtle);
+  --dialog-edge: var(--edge-strong);
   /* Borders of interactive controls (WCAG 1.4.11 ≥ 3:1 on panel/paper). */
   --control-edge: #7b857f;
+  /* Surfaces & elevation [M56] — see specs/design/surfaces-elevation.md. Levels: canvas < sunken < surface < raised < overlay. */
+  --surface-canvas: #efeee5;
+  --surface: #ffffff;
+  --surface-sunken: #eaede2;
+  --surface-overlay: #ffffff;
+  --edge-subtle: #d3d6c8;
+  --edge-strong: #aeb5a5;
+  --edge-highlight: transparent;
+  --elev-ink: 36 59 53;
+  --elev-1: 0 1px 2px rgb(var(--elev-ink) / 0.08), 0 2px 6px -2px rgb(var(--elev-ink) / 0.10);
+  --elev-2: 0 2px 4px rgb(var(--elev-ink) / 0.08), 0 10px 22px -8px rgb(var(--elev-ink) / 0.20);
+  --elev-3: 0 4px 10px rgb(var(--elev-ink) / 0.10), 0 24px 52px -12px rgb(var(--elev-ink) / 0.32);
+  --elev-inset: inset 0 1px 2px rgb(var(--elev-ink) / 0.07);
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-panel: 14px;
 }
 
 .dark {
   color-scheme: dark;
-  --background: #0e1613;
+  --background: var(--surface-canvas);
   --foreground: #e6eee9;
-  --card: #141f1b;
+  --card: var(--surface-raised);
   --card-foreground: #e6eee9;
-  --popover: #141f1b;
+  --popover: var(--surface-overlay);
   --popover-foreground: #e6eee9;
   --primary: #6fc2ab;
   --primary-foreground: #08140f;
@@ -100,8 +117,8 @@
   --accent: #1b2823;
   --accent-foreground: #e6eee9;
   --destructive: #f87171;
-  --border: #2a3a34;
-  --input: #2a3a34;
+  --border: var(--edge-subtle);
+  --input: var(--edge-strong);
   --ring: #6fc2ab;
   --chart-1: #fb923c;
   --chart-2: #2dd4bf;
@@ -118,19 +135,19 @@
   --sidebar-ring: #6fc2ab;
   --primary-hover: #8ad3be;
   --brand: #7fcab4;
-  --paper: #0e1613;
+  --paper: var(--surface-canvas);
   --ink: #e6eee9;
-  --sage: #16221d;
-  --sage-selected: #1f3a31;
-  --line: #2a3a34;
-  --line-soft: #202d28;
-  --panel: #141f1b;
-  --surface-raised: #1b2b25;
-  --card-edge: #3a5047;
-  --dialog-edge: #3a5047;
+  --sage: var(--surface-sunken);
+  --sage-selected: #21392f;
+  --line: var(--edge-subtle);
+  --line-soft: #233229;
+  --panel: var(--surface);
+  --surface-raised: #1b2a24;
+  --card-edge: var(--edge-subtle);
+  --dialog-edge: var(--edge-strong);
   --control-edge: #6b8479;
-  --header-bg: #0e1613;
-  --heading-bg: #1a2823;
+  --header-bg: #0f1814;
+  --heading-bg: #192621;
   --evidence-bg: #121c18;
   --evidence-border: #2a3a34;
   --evidence-excerpt-bg: #16221d;
@@ -140,8 +157,20 @@
   --danger-border: #9f3a4e;
   --danger-fg: #fda4af;
   --focus-ring: #8ad3be;
-  --shadow-ink: #00000066;
+  --shadow-ink: #000000a6;
   --scrim: rgb(0 0 0 / 0.6);
+  --surface-canvas: #080e0b;
+  --surface: #121c17;
+  --surface-sunken: #0d1612;
+  --surface-overlay: #243730;
+  --edge-subtle: #2c3d35;
+  --edge-strong: #4a6458;
+  --edge-highlight: rgb(255 255 255 / 0.05);
+  --elev-ink: 0 0 0;
+  --elev-1: 0 1px 2px rgb(0 0 0 / 0.5), inset 0 1px 0 var(--edge-highlight);
+  --elev-2: 0 4px 12px -2px rgb(0 0 0 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.07);
+  --elev-3: 0 8px 18px rgb(0 0 0 / 0.5), 0 28px 60px -12px rgb(0 0 0 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.09);
+  --elev-inset: inset 0 1px 3px rgb(0 0 0 / 0.5);
 
   /* Status palette remapped so existing text-/bg-/border-{rose,amber,emerald,violet,slate} utilities stay legible. */
   --color-rose-50: #3a1a21;
@@ -183,6 +212,11 @@
   --color-forest-hover: var(--primary-hover);
   --color-panel: var(--panel);
   --color-raised: var(--surface-raised);
+  --color-sunken: var(--surface-sunken);
+  --color-canvas: var(--surface-canvas);
+  --color-overlay: var(--surface-overlay);
+  --color-edge: var(--edge-subtle);
+  --color-edge-strong: var(--edge-strong);
   --color-card-edge: var(--card-edge);
   --color-dialog-edge: var(--dialog-edge);
   --color-brand: var(--brand);

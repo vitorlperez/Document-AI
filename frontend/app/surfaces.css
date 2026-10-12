@@ -1,0 +1,160 @@
+/* Surfaces & elevation [M56]. Tokens live in globals.css (--surface-*, --edge-*, --elev-*, --radius-*).
+   Doc: specs/design/surfaces-elevation.md. Rule of thumb: every box differs from its parent by tone OR edge+shadow.
+   Light: elevation = shadow + edge. Dark: elevation = lighter tone + edge + top highlight (shadows barely read).
+   Every selector ends in :not(.s_) (never matches): +1 class of specificity so these win over per-screen CSS imported later. */
+
+/* L0 — canvas and app chrome */
+.product-header:not(.s_),
+.mobile-header:not(.s_) { background: var(--header-bg); border-bottom: 1px solid var(--edge-subtle); box-shadow: var(--elev-1); }
+.staff-app > header:not(.s_) { background: var(--header-bg); border-bottom: 1px solid var(--edge-subtle); box-shadow: var(--elev-1); }
+
+/* L1 — main panels sitting on the canvas */
+.page-surface:not(.s_),
+.workspace-frame:not(.s_) {
+  border: 1px solid var(--edge-subtle);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  box-shadow: var(--elev-1);
+}
+.workspace-frame:not(.s_) { border-radius: var(--radius-panel); }
+.auth-card:not(.s_) { border: 1px solid var(--edge-subtle); border-radius: var(--radius-panel); background: var(--surface-raised); box-shadow: var(--elev-2); }
+.product-page-heading:not(.s_) { background: var(--heading-bg); border-bottom: 1px solid var(--edge-subtle); }
+
+/* L2 — cards inside a panel (raised): clear edge + rest shadow; clickable ones lift on hover. */
+.product-app .page-surface > .grid > section:not(.s_),
+.product-app .page-surface > .grid > form:not(.s_),
+.integration-tool-card:not(.s_),
+.org-picker-option:not(.s_),
+.library-card:not(.s_),
+.product-app .page-surface :is(.bg-panel, .bg-raised):is(.border, [class*="border-line"], [class*="border-card-edge"], [class*="border-[var(--card-edge)]"]):not(.s_),
+.staff-app > .grid > section:not(.s_) {
+  background: var(--surface-raised);
+  border: 1px solid var(--edge-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-1);
+}
+.integration-tool-card:not(.s_),
+.org-picker-option:not(.s_),
+.library-card:not(.s_) {
+  transition: transform var(--motion-base) var(--ease-out), box-shadow var(--motion-base) var(--ease-out), border-color var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out);
+}
+.integration-tool-card:hover:not(.s_),
+.org-picker-option:hover:not(.s_),
+.library-card:hover:not(.s_),
+.library-card:focus-within:not(.s_) {
+  box-shadow: var(--elev-2);
+  border-color: var(--edge-strong);
+  transform: translateY(calc(var(--motion-dist-xs) * -1));
+}
+.org-picker-option:hover:not(.s_) { background: var(--surface-raised); }
+.product-app .page-surface .integration-tool-card[class*="border-dashed"]:not(.s_),
+.product-app .page-surface .integration-tool-card[aria-disabled="true"]:not(.s_) { background: var(--surface-sunken); box-shadow: none; border-style: dashed; border-color: var(--edge-strong); transform: none; }
+.product-app .page-surface .integration-tool-card[class*="border-dashed"]:hover:not(.s_) { box-shadow: none; transform: none; border-color: var(--edge-strong); }
+
+/* Tailwind shadow utilities collapse to the 3 levels. */
+.shadow-xs:not(.s_),
+.shadow-sm:not(.s_) { box-shadow: var(--elev-1); }
+.shadow-md:not(.s_),
+.shadow-lg:not(.s_) { box-shadow: var(--elev-2); }
+.shadow-xl:not(.s_),
+.shadow-2xl:not(.s_) { box-shadow: var(--elev-3); }
+
+/* Sunken — wells: sidebars, empty/state boxes, insets, segmented controls, code. */
+.tools-sidebar:not(.s_),
+.tools-list:not(.s_),
+.sources-panel:not(.s_),
+.library-panels > aside:first-child:not(.s_),
+.conversation-history:not(.s_) { background: var(--surface-sunken); }
+.library-empty:not(.s_),
+.state-panel:not(.s_) {
+  background: var(--surface-sunken);
+  border: 1px dashed var(--edge-strong);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-inset);
+}
+.library-empty[role="alert"]:not(.s_),
+.state-panel-error:not(.s_) { background: var(--danger-bg); border-color: var(--danger-border); box-shadow: none; }
+.library-seg:not(.s_) { background: var(--surface-sunken); border-color: var(--edge-subtle); box-shadow: var(--elev-inset); }
+.library-seg button[aria-checked="true"]:not(.s_) { background: var(--surface-raised); box-shadow: var(--elev-1); border: 0; }
+.product-app .page-surface > .grid > section :is(.bg-sage, .bg-paper, [class*="bg-sage"]):not(.s_),
+.product-app .bg-sage:is(.rounded, .rounded-md, .rounded-lg, .rounded-xl, [class*="rounded-"]):not(.s_) { border: 1px solid var(--edge-subtle); border-radius: var(--radius-control); }
+.evidence-card:not(.s_) { background: var(--surface-sunken); border-color: var(--edge-subtle); }
+
+/* Wells inside panels: transparent bordered boxes and canvas-toned boxes become sunken (never "same tone as the parent"). */
+.product-app .page-surface :is(label, li, article, div).border:not([class*="bg-"], [class*="border-dashed"], [class*="border-rose"], [class*="border-amber"], [class*="border-emerald"], [class*="border-primary"]):not(.s_),
+.product-app .page-surface .bg-paper:not(.s_) {
+  background: var(--surface-sunken);
+  border-color: var(--edge-subtle);
+  border-radius: var(--radius-control);
+}
+
+/* Inputs: recessed (sunken in dark / white well in light) with a visible edge; focus ring comes from .mo-field. */
+.product-app :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"]), select, textarea):not(.bg-transparent):not(.s_),
+.auth-page :is(input:not([type="checkbox"], [type="radio"]), select, textarea):not(.bg-transparent):not(.s_) {
+  background-color: var(--input-bg, var(--surface));
+  border: 1px solid var(--control-edge);
+  border-radius: var(--radius-control);
+  box-shadow: var(--elev-inset);
+}
+.dark .product-app :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"]), select, textarea):not(.bg-transparent):not(.s_),
+.dark .auth-page :is(input:not([type="checkbox"], [type="radio"]), select, textarea):not(.bg-transparent):not(.s_) { background-color: var(--surface-sunken); }
+.product-app :is(input, select, textarea):is(:focus, :focus-visible):not(.bg-transparent):not(.s_),
+.auth-page :is(input, select, textarea):is(:focus, :focus-visible):not(.bg-transparent):not(.s_) { border-color: var(--focus-ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring) 22%, transparent); }
+.product-app :is(input, textarea):not(.bg-transparent):not(.s_)::placeholder { color: var(--muted-foreground); opacity: 0.85; }
+
+/* Chat composer card + conversation bubbles */
+.conversation-panel .focus-within\:border-primary:not(.s_) { box-shadow: var(--elev-2); }
+.conversation-question:not(.s_) { box-shadow: var(--elev-1); border: 1px solid var(--edge-subtle); }
+
+/* Outline-style buttons read as raised controls. */
+.product-app button.bg-panel.border:not(.s_),
+.product-app button.border.bg-raised:not(.s_),
+.product-app a.bg-panel.border:not(.s_) { background: var(--surface-raised); border-color: var(--edge-strong); box-shadow: var(--elev-1); }
+
+/* L3 — overlays: popovers, menus, dialogs, toasts. Lighter tone in dark so they separate from the page. */
+.shell-popover > *:not(.s_),
+.library-card-menu:not(.s_),
+.answer-export-menu:not(.s_),
+.question-scope-menu:not(.s_),
+.mention-options:not(.s_),
+.mo-toast:not(.s_),
+[role="menu"]:not(.s_),
+[role="listbox"][class*="mention"]:not(.s_),
+.session-error:not(.s_) {
+  background: var(--surface-overlay);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-3);
+}
+.session-error:not(.s_) { background: var(--danger-bg); border-color: var(--danger-border); }
+dialog[open]:not(.s_),
+.mobile-drawer.mobile-drawer:not(.s_),
+.library-sync-dialog:not(.s_),
+.conversation-tour:not(.s_) {
+  background: var(--surface-overlay);
+  border: 1px solid var(--dialog-edge);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--elev-3);
+  color: var(--foreground);
+}
+[role="dialog"] > section:not(.s_),
+[role="dialog"] > div:first-child:not([class*="fixed"]):not(.s_) { background-color: var(--surface-overlay); }
+dialog:not(.s_)::backdrop { background: var(--scrim); }
+
+/* Tables / lists: header row tone + hairline rows. */
+.product-app table:not(.s_) { border-collapse: separate; border-spacing: 0; border: 1px solid var(--edge-subtle); border-radius: var(--radius-card); overflow: hidden; background: var(--surface-raised); }
+.product-app thead th:not(.s_) { background: var(--heading-bg); }
+.product-app :is(td, th):not(.s_) { border-bottom: 1px solid var(--line-soft); }
+.product-app tbody tr:last-child td:not(.s_) { border-bottom: 0; }
+.product-app tbody tr:hover:not(.s_) { background: var(--surface-sunken); }
+
+/* Hover lift uses motion tokens; reduced motion neutralises transform via the global rule. */
+@media (prefers-reduced-motion: reduce) {.integration-tool-card:hover:not(.s_),
+.org-picker-option:hover:not(.s_),
+.library-card:hover:not(.s_),
+.library-card:focus-within:not(.s_) { transform: none; }
+}
+@media (max-width: 639px) {.page-surface:not(.s_),
+.workspace-frame:not(.s_) { border-radius: var(--radius-card); }
+.product-app .page-surface:not(.s_) { border-inline: 1px solid var(--edge-subtle); border-radius: var(--radius-card); }
+}
