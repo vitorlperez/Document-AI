@@ -9,8 +9,11 @@ from app.automations.models import Automation, AutomationRun
 from app.automations.schedule import compute_next_run, normalize_trigger_config
 from app.automations.triggers import enqueue_due_schedules, enqueue_folder_changed, queue_run
 from app.identity.models import User
+from app.knowledge.models import Document
+from app.library.models import LibraryNode
 from app.notifications.models import Notification
 from app.organizations.models import Membership, MembershipRole
+from app.workspaces.models import WorkspaceFolder
 from tests.api.test_multiscope_questions_api import corpus  # noqa: F401
 from tests.api.test_notifications_api import FakeEmail, ScriptedProvider, touch_documents
 from tests.api.test_text_search_api import login, search_api  # noqa: F401
@@ -57,6 +60,42 @@ def run_pending(factory, provider, mail=None, status=None):
         with factory() as session:
             results.append(execute_run(session, run_id, provider=provider, email=mail, app_url="http://app"))
     return results
+
+
+def node_body(node_id, **extra):
+    return {**body("x"), "scope": {"node_ids": [str(node_id)]}, **extra}
+
+
+def seed_tree(factory, folders):
+    """source -> Projetos -> {2026 -> campaign file, Outros -> outside file}; the outside file is indexed in the same space."""
+    ids = {}
+    with factory.begin() as session:
+        space = session.get(WorkspaceFolder, folders["google_drive"])
+        document = session.query(Document).filter_by(workspace_folder_id=space.id).one()
+        session.add(Document(organization_id=space.organization_id, workspace_folder_id=space.id, external_file_id="outside",
+                             name="outside.pdf", mime_type="application/pdf", source_url="https://drive.example.test/outside", content_hash="b" * 64, processing_version="v1",
+                             index_status="indexed"))
+
+        def add(parent, external_id, kind, name):
+            node = LibraryNode(organization_id=space.organization_id, source_id=space.source_id, parent_id=parent and parent.id,
+                               external_id=external_id, kind=kind, name=name)
+            session.add(node)
+            session.flush()
+            return node
+
+        root = add(None, "root", "source", "Drive")
+        projects = add(root, "projects", "folder", "Projetos")
+        year = add(projects, "year", "folder", "2026")
+        other = add(projects, "other", "folder", "Outros")
+        add(year, document.external_file_id, "file", document.name)
+        add(other, "outside", "file", "outside.pdf")
+        ids.update(root=root.id, projects=projects.id, year=year.id, other=other.id)
+    return ids
+
+
+def touch_external(factory, external_id):
+    with factory.begin() as session:
+        session.query(Document).filter_by(external_file_id=external_id).update({"indexed_at": datetime.now(UTC) + timedelta(hours=1)})
 
 
 # --- schedule -----------------------------------------------------------------------------------
@@ -266,3 +305,84 @@ def test_beat_and_hook_wiring():
     assert tasks.run_automation_task.name == "document_intelligence.ingestion.run_automation"
     import inspect
     assert "trigger_automations_after_sync(session, settings, job.workspace_folder_id)" in inspect.getsource(tasks.reconcile_workspace_folder)
+
+
+# --- scope by any indexed folder (node_ids) -----------------------------------------------------
+
+def test_scope_accepts_any_indexed_folder_and_shows_its_path(corpus):  # noqa: F811
+    client, factory, _, org, folders, _ = corpus
+    nodes = seed_tree(factory, folders)
+    base = f"/organizations/{org}/automations"
+    created = client.post(base, json=node_body(nodes["year"]))
+    assert created.status_code == 201, created.text
+    scope = created.json()["scope"]
+    assert scope["node_ids"] == [str(nodes["year"])]
+    assert scope["folders"] == [{"node_id": str(nodes["year"]), "name": "2026", "path": "Drive/Projetos/2026"}]
+    assert client.post(base, json=node_body(nodes["projects"])).status_code == 201  # a parent folder too (subfolders included)
+    assert client.patch(f"{base}/{created.json()['id']}", json={"scope": {"node_ids": [str(nodes["other"])]}}).json()["scope"]["node_ids"] == [str(nodes["other"])]
+    for bad in (nodes["root"], org):  # the whole source and unknown nodes are not folders of the library tree
+        assert client.post(base, json=node_body(bad)).json()["detail"] == "scope_not_allowed"
+    assert client.post(base, json={**node_body(nodes["year"]), "scope": {"node_ids": [str(nodes["year"])], "workspace_folder_ids": [str(folders["notion"])]}}).status_code == 422
+    assert client.post(base, json={**node_body(nodes["year"]), "scope": {}}).status_code == 422
+
+
+def test_run_is_restricted_to_the_chosen_folder(corpus):  # noqa: F811
+    client, factory, _, org, folders, base = corpus
+    nodes = seed_tree(factory, folders)
+    client.app.state.automation_send_task = Sent()
+    inside = client.post(f"/organizations/{org}/automations", json=node_body(nodes["year"])).json()
+    whole = client.post(f"/organizations/{org}/automations", json=node_body(nodes["projects"])).json()
+    legacy = create(client, org, folders["google_drive"])
+    for item in (inside, whole, legacy):
+        client.post(f"/organizations/{org}/automations/{item['id']}/run")
+    assert run_pending(factory, ScriptedProvider(base)) == ["ok", "ok", "ok"]
+    considered = {}
+    for item in (inside, whole, legacy):
+        runs = client.get(f"/organizations/{org}/automations/{item['id']}/runs").json()["items"]
+        considered[item["id"]] = runs[0]["documents_considered"]
+    assert considered == {inside["id"]: 1, whole["id"]: 2, legacy["id"]: 2}
+    with factory.begin() as session:  # the folder disappears from the library: a clear scope error, not a silent wide run
+        session.query(LibraryNode).filter_by(id=nodes["year"]).delete()
+    client.post(f"/organizations/{org}/automations/{inside['id']}/run")
+    assert run_pending(factory, ScriptedProvider(base)) == ["error"]
+    with factory() as session:
+        assert session.query(AutomationRun).filter_by(automation_id=UUID(inside["id"]), status="error").one().error_code == "scope_unavailable"
+
+
+def test_folder_changed_fires_only_for_changes_inside_the_chosen_folder(corpus):  # noqa: F811
+    client, factory, _, org, folders, base = corpus
+    nodes = seed_tree(factory, folders)
+    drive = folders["google_drive"]
+    created = client.post(f"/organizations/{org}/automations", json=node_body(nodes["year"], trigger_kind="folder_changed", trigger_config={})).json()
+    sent = Sent()
+
+    def hook(folder):
+        with factory() as session:
+            return enqueue_folder_changed(session, workspace_folder_id=folder, send_task=sent)
+
+    touch_external(factory, "outside")  # a sibling folder of the same space changed
+    assert hook(drive)["queued"] == 0
+    touch_external(factory, "google_drive")  # a file inside the chosen folder changed
+    assert hook(folders["notion"])["queued"] == 0  # another space's sync never triggers it
+    assert hook(drive) == {"considered": 1, "queued": 1}
+    assert hook(drive)["queued"] == 0  # idempotent
+    assert run_pending(factory, ScriptedProvider(base)) == ["ok"]
+    assert hook(drive)["queued"] == 0 and created["id"]
+
+
+def test_recipient_access_is_checked_against_the_chosen_folder(corpus, monkeypatch):  # noqa: F811
+    client, factory, gateway, org, folders, base = corpus
+    nodes = seed_tree(factory, folders)
+    member_id = add_member(client, factory, gateway, org, "member@example.test")
+    relogin_owner(client, gateway)
+    listed = client.get(f"/organizations/{org}/automation-recipients", params={"node_ids": [str(nodes["year"])]}).json()["items"]
+    assert {item["email"]: item["has_access"] for item in listed} == {"owner@example.test": True, "member@example.test": True}
+    assert client.get(f"/organizations/{org}/automation-recipients", params={"node_ids": [str(org)]}).json()["detail"] == "scope_not_allowed"
+    created = client.post(f"/organizations/{org}/automations", json=node_body(nodes["year"], recipient_user_ids=[member_id])).json()
+    real = executor.node_access
+    monkeypatch.setattr(executor, "node_access", lambda session, scope, user_id, ids: "no_folder_access" if str(user_id) == member_id else real(session, scope, user_id, ids))
+    client.post(f"/organizations/{org}/automations/{created['id']}/run")
+    assert run_pending(factory, ScriptedProvider(base)) == ["ok"]
+    with factory() as session:
+        result = session.query(AutomationRun).one().result
+        assert result["notified"] == 1 and result["skipped_recipients"] == [{"user_id": member_id, "reason": "no_folder_access"}]

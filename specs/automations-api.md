@@ -8,14 +8,14 @@ Todas as datas são ISO-8601 UTC (`2026-10-12T11:00:00Z`). Todos os ids são UUI
 
 ## Conceitos
 
-Uma **automação** roda uma pergunta (`prompt`) sobre um conjunto de pastas (`scope`) e entrega a resposta com
+Uma **automação** roda uma pergunta (`prompt`) sobre um conjunto de **pastas indexadas da biblioteca, em qualquer nível da árvore** (`scope`) e entrega a resposta com
 citações aos destinatários, no sino (notificações) e opcionalmente por e-mail. Cada disparo gera uma
 **execução** (`run`) com o resultado salvo em JSON; o PDF é gerado sob demanda a partir desse resultado.
 
 - **Permissão de execução = permissão do criador** (`created_by_user_id`), nunca Owner/Admin. Se o criador
   perder acesso a uma pasta do escopo, a execução termina com `status = "error"`, `error_code = "creator_access_lost"`.
 - **Gatilhos**: `schedule` (diário/semanal/mensal, em fuso configurável) ou `folder_changed` (quando um sync
-  indexa mudanças em alguma pasta do escopo).
+  indexa mudanças dentro de alguma pasta do escopo, subpastas incluídas).
 - Cada execução consome **1 pergunta** da cota mensal da organização. Cota estourada => `status = "quota"`
   e aviso ao criador.
 - Limite: **20 automações por organização** (constante `limit` devolvida na listagem).
@@ -43,7 +43,7 @@ organização é rejeitado na criação (`recipient_not_member`).
   "enabled": true,
   "trigger_kind": "schedule",
   "trigger_config": {"frequency": "weekly", "weekday": 0, "hour": 8, "timezone": "America/Sao_Paulo"},
-  "scope": {"workspace_folder_ids": ["…", "…"]},
+  "scope": {"node_ids": ["…"], "folders": [{"node_id": "…", "name": "2026", "path": "Drive/Projetos/2026"}]},
   "prompt": "Resuma o que mudou nos contratos e liste pendências.",
   "template": "summary",
   "output_formats": ["email", "pdf"],
@@ -64,8 +64,19 @@ Campos:
     `weekday` 0–6 (0 = segunda; obrigatório se `weekly`); `day` 1–28 (obrigatório se `monthly`);
     `timezone` nome IANA (padrão `"America/Sao_Paulo"`).
   - `folder_changed`: `{}` (sem parâmetros no MVP).
-- `scope.workspace_folder_ids`: 1–20 ids de pasta de trabalho (`/workspace-folders`, os mesmos ids usados nas
-  perguntas). O criador precisa ter acesso a todas.
+- `scope.node_ids`: 1–20 ids de **nós de pasta** da biblioteca (`kind = "folder"`, qualquer profundidade; os mesmos
+  ids de `@menção` do chat — `GET /library`, `GET /library/nodes/{id}/children` e
+  `GET /library/mention-candidates`). A automação considera os arquivos indexados da pasta **e de todas as
+  subpastas**. A raiz da fonte (`kind = "source"`), arquivos e ids desconhecidos/de outra organização são rejeitados
+  (`422 scope_not_allowed`), assim como pasta sem nenhum documento indexado. O criador precisa poder consultar todas.
+  - Na **resposta**, `scope.folders` traz `{node_id, name, path}` (caminho completo, `Fonte/Pasta/Subpasta`) para
+    exibir sem nova consulta; pasta que sumiu da biblioteca fica fora de `folders` (a UI mostra "indisponível") e a
+    próxima execução termina em `scope_unavailable`.
+  - **Legado (somente leitura de compatibilidade)**: automações criadas antes têm
+    `scope.workspace_folder_ids` (espaço conectado inteiro) e continuam executando como antes, sem migração de
+    dados; o `POST`/`PATCH` ainda aceita esse formato. Envie **exatamente um** dos dois campos (`node_ids` ou
+    `workspace_folder_ids`); ambos ou nenhum => `422`. Ao editar uma automação legada na UI, escolher pastas troca o
+    escopo para `node_ids`.
 - `prompt`: 1–1000 caracteres.
 - `template`: `"summary"` (resumo), `"table"` (a resposta pede uma tabela Markdown), `"alert"` (só avisa quando
   há algo a reportar; resposta vazia => `status = "empty"` e nenhuma notificação).
@@ -121,7 +132,7 @@ Corpo:
 ```json
 {
   "name": "…", "trigger_kind": "schedule", "trigger_config": {…},
-  "scope": {"workspace_folder_ids": ["…"]}, "prompt": "…",
+  "scope": {"node_ids": ["…"]}, "prompt": "…",
   "template": "summary", "output_formats": ["email"],
   "recipient_user_ids": ["…"], "enabled": true
 }
@@ -135,11 +146,12 @@ Corpo:
 Mesmos campos do `POST`, todos opcionais. Mudar `trigger_kind`/`trigger_config` recalcula `next_run_at`.
 O escopo é validado contra o acesso do **criador** da automação.
 
-### `GET /automation-recipients?workspace_folder_ids=<id>&workspace_folder_ids=<id>`
+### `GET /automation-recipients?node_ids=<id>&node_ids=<id>`
 Catálogo para o seletor de destinatários. **Somente Owner/Admin** (`403 owner or admin required` para membro comum;
 membro comum só pode notificar a si mesmo, então o seletor não deve ser exibido para ele).
-`workspace_folder_ids` (repetível, 0–20) é o escopo da automação em edição; omitido => `has_access` é `null`.
-Pastas que não existem na organização => `422 scope_not_allowed`. Resposta `200`:
+`node_ids` (repetível, 0–20) são as pastas do escopo da automação em edição; omitido => `has_access` é `null`.
+Pasta inexistente/não pasta/sem acesso do solicitante => `422 scope_not_allowed`. (`workspace_folder_ids` continua
+aceito para escopo legado; não combine os dois.) Resposta `200`:
 ```json
 {"items": [
   {"user_id": "…", "name": "ana", "email": "ana@empresa.com", "role": "member",
@@ -184,7 +196,7 @@ Formato FastAPI: `{"detail": "<codigo>"}` (validação de corpo do Pydantic devo
 | 404 | `automation not found` | Id inexistente, de outra organização, ou sem permissão de ver |
 | 404 | `run not found` / `run_has_no_result` | Execução inexistente / sem resposta para PDF |
 | 409 | `automation_limit_reached` | Organização já tem 20 automações |
-| 422 | `scope_not_allowed` | Alguma pasta não existe ou o criador não tem acesso |
+| 422 | `scope_not_allowed` | Alguma pasta não existe, não é pasta indexada da biblioteca (arquivo, raiz da fonte, sem documentos indexados) ou o criador não tem acesso |
 | 422 | `recipient_not_member` | Algum destinatário não é membro ativo |
 | 422 | `invalid_trigger_config` | Combinação inválida (ex.: `weekly` sem `weekday`, fuso desconhecido) |
 | 422 | `invalid_output_formats` | Valor fora de `email`/`pdf` |
@@ -207,8 +219,8 @@ Formato FastAPI: `{"detail": "<codigo>"}` (validação de corpo do Pydantic devo
 ## Comportamento dos gatilhos (para a UI explicar)
 
 - `schedule`: um tick a cada 5 minutos executa as automações com `next_run_at <= agora`; atraso típico < 5 min.
-- `folder_changed`: depois de cada sync concluído, se alguma pasta do escopo teve documentos indexados/modificados
-  desde a última execução, a automação roda uma vez por conjunto de mudanças (sem duplicar se o sync repetir).
+- `folder_changed`: depois de cada sync concluído, se algum documento **dentro das pastas escolhidas (e subpastas)**
+  foi indexado/modificado desde a última execução (mudanças em outras pastas do mesmo espaço não disparam), a automação roda uma vez por conjunto de mudanças (sem duplicar se o sync repetir).
 
 ## Webhooks de saída
 

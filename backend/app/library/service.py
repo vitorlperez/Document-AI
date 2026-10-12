@@ -978,6 +978,17 @@ class LibraryService:
                 break
         return False
 
+    def node_paths(self, *, scope: OrganizationScope, node_ids: list[UUID]) -> dict[UUID, str]:
+        """Full path (source/…/folder) of each existing node; vanished or detached nodes are omitted."""
+        nodes = self._selection_nodes(scope=scope)
+        paths = {}
+        for node_id in node_ids:
+            node = nodes.get(node_id)
+            path = self._node_path(node, nodes) if node is not None else None
+            if path is not None:
+                paths[node_id] = path
+        return paths
+
     def mention_candidates(
         self, *, scope: OrganizationScope, user_id: UUID, query: str, limit: int = 20
     ) -> list[MentionCandidate]:

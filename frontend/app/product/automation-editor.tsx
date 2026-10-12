@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { type AutomationDraft, promptTemplates, validateAutomationStep, weekdays } from "./automations-model";
+import { AutomationFolderPicker, type LibraryFetch } from "./automation-folder-picker";
 import { AutomationRecipients, type RecipientOption } from "./automation-recipients";
 import type { Folder } from "./types-and-api";
 
@@ -9,7 +10,7 @@ const control = "mt-2 min-h-11 w-full rounded-lg border border-line bg-panel px-
 export const automationButton = "min-h-11 rounded-lg border border-line px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
 const steps = ["Quando", "Onde", "O que fazer", "Entregar"];
 
-export function AutomationEditor({ initial, folders, saving, serverError, onSave, onCancel, loadRecipients, canChooseRecipients }: { loadRecipients: (query: string, signal: AbortSignal) => Promise<RecipientOption[]>; canChooseRecipients: boolean; initial: AutomationDraft; folders: Folder[]; saving: boolean; serverError: string | null; onSave: (draft: AutomationDraft) => void; onCancel: () => void }) {
+export function AutomationEditor({ fetchJson, organizationId, initial, folders, saving, serverError, onSave, onCancel, loadRecipients, canChooseRecipients }: { fetchJson: LibraryFetch; organizationId: string; loadRecipients: (query: string, signal: AbortSignal) => Promise<RecipientOption[]>; canChooseRecipients: boolean; initial: AutomationDraft; folders: Folder[]; saving: boolean; serverError: string | null; onSave: (draft: AutomationDraft) => void; onCancel: () => void }) {
   const [draft, setDraft] = useState(initial);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +18,7 @@ export function AutomationEditor({ initial, folders, saving, serverError, onSave
   const [recipientLoading, setRecipientLoading] = useState(true);
   const [recipientError, setRecipientError] = useState<string | null>(null);
   const [recipientRevision, setRecipientRevision] = useState(0);
-  const scopeQuery = new URLSearchParams(draft.folderIds.map((id) => ["workspace_folder_ids", id])).toString();
+  const scopeQuery = new URLSearchParams(draft.scopeFolders.length ? draft.scopeFolders.map((folder) => ["node_ids", folder.id]) : draft.legacyFolderIds.map((id) => ["workspace_folder_ids", id])).toString();
   useEffect(() => {
     if (!canChooseRecipients || step !== 3) return;
     const controller = new AbortController();
@@ -58,13 +59,13 @@ export function AutomationEditor({ initial, folders, saving, serverError, onSave
           <p className="text-sm text-muted-foreground">Escolha uma hora cheia. O horário segue o fuso informado; a execução pode iniciar até 5 minutos depois.</p>
         </> : <p className="text-sm text-muted-foreground">A automação considera arquivos novos após a sincronização das pastas escolhidas.</p>}
       </div>}
-      {step === 1 && <fieldset className="mt-4"><legend className="text-sm text-muted-foreground">Quais pastas a automação deve consultar?</legend>{folders.length ? <div className="mt-3 space-y-2">{folders.map((folder) => <label key={folder.id} className="flex min-h-11 items-center gap-3 rounded-lg border border-line p-3"><input type="checkbox" checked={draft.folderIds.includes(folder.id)} onChange={(event) => update("folderIds", event.target.checked ? [...draft.folderIds, folder.id] : draft.folderIds.filter((id) => id !== folder.id))} /><span className="min-w-0 break-words">{folder.name}</span></label>)}</div> : <p className="mt-3">Nenhuma pasta conectada disponível. Conecte e sincronize uma pasta em Integrações antes de criar a automação.</p>}</fieldset>}
+      {step === 1 && <section className="mt-4" aria-label="Pastas da automação"><p className="text-sm text-muted-foreground">Quais pastas a automação deve consultar?</p><AutomationFolderPicker fetchJson={fetchJson} organizationId={organizationId} selected={draft.scopeFolders} onChange={(next) => update("scopeFolders", next)} legacyNames={draft.legacyFolderIds.map((id) => folders.find((folder) => folder.id === id)?.name ?? "pasta")} /></section>}
       {step === 2 && <div className="mt-4">
         <p className="text-sm text-muted-foreground">Escreva o resultado que você quer receber ou comece com um modelo.</p>
         <div className="mt-3 flex flex-wrap gap-2">{Object.entries(promptTemplates).map(([name, prompt]) => <button type="button" key={name} className={automationButton} onClick={() => { update("prompt", prompt); update("template", name === "tabela" ? "table" : name === "alerta" ? "alert" : "summary"); }}>Usar modelo de {name}</button>)}</div>
         <label className="mt-4 block">Formato do resultado<select className={control} value={draft.template} onChange={(event) => update("template", event.target.value as AutomationDraft["template"])}><option value="summary">Resumo</option><option value="table">Tabela</option><option value="alert">Alerta (só notificar se houver algo a reportar)</option></select></label>
         <label className="mt-4 block">Pergunta ou instrução<textarea className={`${control} min-h-40`} maxLength={1000} value={draft.prompt} aria-describedby="prompt-count" onChange={(event) => update("prompt", event.target.value)} placeholder="Ex.: Quais prazos vencem nesta semana? Liste responsáveis e cite os documentos." /></label>
-        <p id="prompt-count" className="mt-2 text-sm text-muted-foreground">{draft.prompt.length}/1000 caracteres. O resultado deve se apoiar nos arquivos selecionados.</p>
+        <p id="prompt-count" className="mt-2 text-sm text-muted-foreground">{draft.prompt.length}/1000 caracteres. O resultado deve se apoiar nos arquivos das pastas escolhidas.</p>
       </div>}
       {step === 3 && <fieldset className="mt-4 space-y-3"><legend className="mb-2 text-sm text-muted-foreground">Escolha onde receber os resultados.</legend>
         <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked disabled />Sino de notificações do app (sempre ativo)</label>

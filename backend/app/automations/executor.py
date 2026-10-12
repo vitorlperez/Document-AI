@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.audit_usage.service import UsageLimitExceeded
 from app.automations.models import Automation, AutomationRun
-from app.automations.triggers import scope_folder_ids
+from app.automations.scope import legacy_folder_ids, node_access, resolve_nodes, scope_node_ids
 from app.automations.webhooks import enqueue_completed
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
@@ -77,22 +77,35 @@ def execute_run(session: Session, run_id: UUID, *, provider: SemanticProvider | 
 
     scope = OrganizationScope(automation.organization_id)
     creator = automation.created_by_user_id
-    folder_ids = scope_folder_ids(automation)
+    node_ids = scope_node_ids(automation.scope)
+    folder_ids = legacy_folder_ids(automation.scope)
     failure_email = None  # failures and quota warnings go to the creator's bell; e-mail only for results
     if provider is None:
         _finish(run, "error", error_code="ai_unavailable")
     else:
         allowed = accessible_folders(session, scope, creator)
-        if allowed is None or not folder_ids or not set(folder_ids) <= allowed:
+        selection = None
+        if node_ids:
+            try:
+                selection = resolve_nodes(session, scope, creator, node_ids)
+            except SyncAccessDenied:
+                _finish(run, "error", error_code="creator_access_lost")
+            except ValueError:
+                _finish(run, "error", error_code="scope_unavailable")
+        elif allowed is None or not folder_ids or not set(folder_ids) <= allowed:
             _finish(run, "error", error_code="creator_access_lost")
-        else:
-            run.documents_considered = session.scalar(select(func.count(Document.id)).where(
-                Document.organization_id == automation.organization_id, Document.workspace_folder_id.in_(folder_ids),
-                Document.index_status == "indexed")) or 0
+        if run.status == "running":
+            if selection is not None:
+                run.documents_considered = len(selection.document_ids or ())
+            else:
+                run.documents_considered = session.scalar(select(func.count(Document.id)).where(
+                    Document.organization_id == automation.organization_id, Document.workspace_folder_id.in_(folder_ids),
+                    Document.index_status == "indexed")) or 0
             try:
                 with session.begin_nested():
                     result = QuestionService(session, provider).ask(
-                        scope=scope, user_id=creator, workspace_folder_ids=folder_ids, question=build_question(automation),
+                        scope=scope, user_id=creator, workspace_folder_ids=selection.folder_ids if selection else folder_ids,
+                        document_ids=selection.document_ids if selection else None, question=build_question(automation),
                         answer_mode="summary" if automation.template == "summary" else None)
                 run.questions_used = 1
             except UsageLimitExceeded:
@@ -124,7 +137,7 @@ def execute_run(session: Session, run_id: UUID, *, provider: SemanticProvider | 
 
 
 def _deliver(session: Session, automation: Automation, run: AutomationRun, result, *, scope: OrganizationScope,
-             allowed: set[UUID], folder_ids: list[UUID], email: EmailDeliveryPort | None, app_url: str) -> None:
+             allowed: set[UUID] | None, folder_ids: list[UUID], email: EmailDeliveryPort | None, app_url: str) -> None:
     automation.last_run_at = datetime.now(UTC)
     citations = citation_payload(result.citations)
     if result.answer is None:
@@ -132,6 +145,7 @@ def _deliver(session: Session, automation: Automation, run: AutomationRun, resul
         return
     recipients = list(dict.fromkeys([str(automation.created_by_user_id), *[str(item) for item in automation.recipients or []]]))
     skipped: list[dict[str, str]] = []
+    node_ids = scope_node_ids(automation.scope)
     notified = 0
     wants = set(automation.output_formats or [])
     data: dict[str, object] = {"automation_id": str(automation.id), "run_id": str(run.id), "template": automation.template,
@@ -140,12 +154,13 @@ def _deliver(session: Session, automation: Automation, run: AutomationRun, resul
         data["pdf_path"] = pdf_path(automation, run)
     for raw in recipients:
         user_id = UUID(raw)
-        folders = allowed if user_id == automation.created_by_user_id else accessible_folders(session, scope, user_id)
-        if folders is None:
-            skipped.append({"user_id": raw, "reason": "not_member"})
-            continue
-        if not set(folder_ids) <= folders:
-            skipped.append({"user_id": raw, "reason": "no_folder_access"})
+        if node_ids:
+            denied = node_access(session, scope, user_id, node_ids)
+        else:
+            folders = allowed if user_id == automation.created_by_user_id else accessible_folders(session, scope, user_id)
+            denied = "not_member" if folders is None else "ok" if set(folder_ids) <= folders else "no_folder_access"
+        if denied != "ok":
+            skipped.append({"user_id": raw, "reason": denied})
             continue
         NotificationService(session).notify(
             scope=scope, user_id=user_id, kind="automation_result", title=automation.name,

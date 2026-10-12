@@ -13,7 +13,7 @@ test("catálogo consulta o escopo atual e as duas superfícies exigem Owner/Admi
   assert.match(screen, /\/automation-recipients\?\$\{query\}/);
   assert.doesNotMatch(screen, /\/members/);
   assert.match(editor, /if \(!canChooseRecipients \|\| step !== 3\) return/);
-  assert.match(editor, /draft\.folderIds\.map\(\(id\) => \["workspace_folder_ids", id\]\)/);
+  assert.match(editor, /draft\.scopeFolders\.map\(\(folder\) => \["node_ids", folder\.id\]\)/);
   assert.match(contract, /GET \/automation-recipients/);
 });
 test("cadastro envia evento contratado e separa o secret do objeto listado", () => {

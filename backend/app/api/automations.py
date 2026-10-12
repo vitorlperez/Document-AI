@@ -5,7 +5,7 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
@@ -17,9 +17,17 @@ from app.automations.schedule import (
     compute_next_run,
     normalize_trigger_config,
 )
+from app.automations.scope import (
+    MAX_SCOPE_NODES,
+    node_access,
+    node_paths,
+    resolve_nodes,
+    scope_node_ids,
+)
 from app.automations.triggers import queue_run
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
+from app.ingestion.service import SyncAccessDenied
 from app.knowledge.export import ExportSource, render
 from app.knowledge.untrusted import sanitize_label
 from app.organizations.models import Membership, MembershipRole
@@ -32,7 +40,16 @@ OUTPUT_FORMATS = {"email", "pdf"}
 
 
 class ScopeInput(BaseModel):
-    workspace_folder_ids: list[UUID] = Field(min_length=1, max_length=MAX_SCOPE_FOLDERS)
+    """Library folders at any depth (``node_ids``); ``workspace_folder_ids`` is the legacy whole-folder scope."""
+
+    node_ids: list[UUID] | None = Field(default=None, min_length=1, max_length=MAX_SCOPE_NODES)
+    workspace_folder_ids: list[UUID] | None = Field(default=None, min_length=1, max_length=MAX_SCOPE_FOLDERS)
+
+    @model_validator(mode="after")
+    def exactly_one(self) -> "ScopeInput":
+        if (self.node_ids is None) == (self.workspace_folder_ids is None):
+            raise ValueError("send node_ids or workspace_folder_ids")
+        return self
 
 
 class AutomationCreate(BaseModel):
@@ -97,13 +114,24 @@ def _serialize_run(run: AutomationRun) -> dict[str, object]:
             "error_code": run.error_code, "result": run.result, "pdf_available": run.status == "ok"}
 
 
+def _serialize_scope(session: Session, automation: Automation) -> dict[str, object]:
+    scope = dict(automation.scope or {})
+    node_ids = scope_node_ids(scope)
+    if node_ids:  # display names and full paths; a vanished folder is simply missing from ``folders``
+        paths = node_paths(session, OrganizationScope(automation.organization_id), node_ids)
+        scope["folders"] = [{"node_id": str(item), "name": paths[item].rsplit("/", 1)[-1], "path": paths[item]}
+                            for item in node_ids if item in paths]
+    return scope
+
+
 def _serialize(session: Session, automation: Automation) -> dict[str, object]:
     ids = [UUID(str(item)) for item in automation.recipients or []]
     emails = dict(session.execute(select(User.id, User.email).where(User.id.in_(ids))).all()) if ids else {}
     last = session.scalar(select(AutomationRun).where(AutomationRun.automation_id == automation.id)
                           .order_by(AutomationRun.created_at.desc(), AutomationRun.id.desc()).limit(1))
     return {"id": str(automation.id), "name": automation.name, "enabled": automation.enabled,
-            "trigger_kind": automation.trigger_kind, "trigger_config": automation.trigger_config, "scope": automation.scope,
+            "trigger_kind": automation.trigger_kind, "trigger_config": automation.trigger_config,
+            "scope": _serialize_scope(session, automation),
             "prompt": automation.prompt, "template": automation.template, "output_formats": automation.output_formats,
             "recipients": [{"user_id": str(item), "email": emails.get(item)} for item in ids],
             "created_by_user_id": str(automation.created_by_user_id), "last_run_at": _iso(automation.last_run_at),
@@ -126,7 +154,14 @@ def _validate_trigger(kind: str, config: dict[str, object]) -> dict[str, object]
 
 
 def _validate_scope(session: Session, organization_id: UUID, creator_id: UUID, scope: ScopeInput) -> dict[str, object]:
-    ids = list(dict.fromkeys(scope.workspace_folder_ids))
+    if scope.node_ids is not None:
+        node_ids = list(dict.fromkeys(scope.node_ids))
+        try:
+            resolve_nodes(session, OrganizationScope(organization_id), creator_id, node_ids)
+        except (SyncAccessDenied, ValueError) as error:  # not a member, foreign/unknown node, a file, or nothing indexed
+            raise HTTPException(422, "scope_not_allowed") from error
+        return {"node_ids": [str(item) for item in node_ids]}
+    ids = list(dict.fromkeys(scope.workspace_folder_ids or []))
     allowed = accessible_folders(session, OrganizationScope(organization_id), creator_id)
     if allowed is None or not set(ids) <= allowed:
         raise HTTPException(422, "scope_not_allowed")
@@ -155,10 +190,18 @@ def _refresh_schedule(automation: Automation) -> None:
 
 @router.get("/organizations/{organization_id}/automation-recipients")
 def list_recipients(organization_id: UUID, workspace_folder_ids: list[UUID] = Query(default_factory=list, max_length=MAX_SCOPE_FOLDERS),
+                    node_ids: list[UUID] = Query(default_factory=list, max_length=MAX_SCOPE_NODES),
                     user: User = Depends(current_user), session: Session = Depends(database_session)) -> dict[str, object]:
     if not _is_admin(_membership(session, organization_id, user)):
         raise HTTPException(403, "owner or admin required")
-    folders = set(workspace_folder_ids)
+    folders, nodes = set(workspace_folder_ids), list(dict.fromkeys(node_ids))
+    if folders and nodes:
+        raise HTTPException(422, "scope_not_allowed")
+    if nodes:
+        try:
+            resolve_nodes(session, OrganizationScope(organization_id), user.id, nodes)
+        except (SyncAccessDenied, ValueError) as error:
+            raise HTTPException(422, "scope_not_allowed") from error
     if folders:
         known = set(session.scalars(select(WorkspaceFolder.id).where(
             WorkspaceFolder.organization_id == organization_id, WorkspaceFolder.id.in_(folders))))
@@ -170,7 +213,9 @@ def list_recipients(organization_id: UUID, workspace_folder_ids: list[UUID] = Qu
     items = []
     for user_id, role, email in rows:
         has_access: bool | None = None
-        if folders:
+        if nodes:
+            has_access = node_access(session, scope, user_id, nodes) == "ok"
+        elif folders:
             allowed = accessible_folders(session, scope, user_id)
             has_access = allowed is not None and folders <= allowed
         items.append({"user_id": str(user_id), "name": email.split("@", 1)[0], "email": email, "role": role.value,
