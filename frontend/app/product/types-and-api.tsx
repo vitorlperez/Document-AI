@@ -8,6 +8,7 @@ import { providerKey, type QuestionContext } from "../question-scope";
 import { type MentionCandidate } from "../mention-composer";
 import { type CatalogFolder } from "../new-space-options";
 import { ProviderLogo, type ProviderLogoName } from "../provider-logo";
+import type { LibraryIndexingFields } from "../library-indexing-status";
 
 export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 export const SESSION_PATH = API_BASE.replace(/\/$/, "") === "/api" ? "/session" : "/me";
@@ -20,7 +21,7 @@ export type User = { id: string; email: string; created_at?: string; is_platform
 export type Folder = { id: string; name: string; status: string; last_synced_at: string | null; source_id?: string; external_folder_id?: string; selection_kind?: string; selection_folder_ids?: string[] };
 export type DocumentFailure = { id: string; name: string; status: "failed"; error_code: string | null; source_url: string };
 export type LibraryDocumentRef = { workspace_folder_id: string; document_id: string };
-export type LibraryNode = { id: string; parent_id: string | null; source_id: string; source_provider?: string | null; kind: "source" | "folder" | "file"; external_id?: string; name: string; mime_type: string | null; source_url: string | null; workspace_documents?: LibraryDocumentRef[] };
+export type LibraryNode = LibraryIndexingFields & { id: string; parent_id: string | null; source_id: string; source_provider?: string | null; kind: "source" | "folder" | "file"; external_id?: string; name: string; mime_type: string | null; source_url: string | null; workspace_documents?: LibraryDocumentRef[] };
 export type LibraryPage = { items: LibraryNode[]; page?: number; pages?: number; total?: number };
 export type LibraryContext = QuestionContext;
 export type LibrarySync = { id: string; source_id: string; workspace_folder_id: string; workspace_name: string; status: string; created_at: string; started_at: string | null; completed_at: string | null; error_code: string | null };

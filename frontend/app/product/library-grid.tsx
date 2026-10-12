@@ -4,6 +4,7 @@ import { ChevronRight, ExternalLink, File, FileSpreadsheet, FileText, Folder, Im
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { FILE_KIND_LABEL, fileKind, type FileKind, type LibraryGridSize, type LibraryView } from "../library-view-logic";
 import type { LibraryNode } from "./types-and-api";
+import { LibraryIndexingBadge } from "./library-indexing-badge";
 import "../library-view.css";
 
 const SIZES: { value: LibraryGridSize; label: string; name: string }[] = [{ value: "s", label: "P", name: "Pequeno" }, { value: "m", label: "M", name: "Médio" }, { value: "l", label: "G", name: "Grande" }];
@@ -103,12 +104,12 @@ export function LibraryGrid({ items, size, loading, canManage, busyNodeId, busyF
         <button type="button" className="library-card-main" onClick={() => onOpen(item)} title={item.name} aria-label={isFolder ? `Abrir pasta ${item.name}` : item.source_url ? `${item.name} — abrir no provedor` : item.name}>
           <span className="library-card-icon" aria-hidden="true">{isFolder ? <Folder size={size === "s" ? 24 : size === "m" ? 30 : 38} /> : <Icon size={size === "s" ? 24 : size === "m" ? 30 : 38} />}{working && <RefreshCw size={12} className="library-card-spin" />}</span>
           <span className="library-card-name">{item.name}</span>
-          <span className="library-card-meta"><span>{label}</span>{!isFolder && <span className="library-card-badge" data-indexed={indexed || undefined}>{indexed ? "Indexado" : "Não indexado"}</span>}{isFolder && <ChevronRight size={12} aria-hidden="true" />}</span>
+          <span className="library-card-meta"><span>{label}</span>{isFolder && <ChevronRight size={12} aria-hidden="true" />}</span>
         </button>
+        {!isFolder && <div className="library-card-indexing"><LibraryIndexingBadge item={item} /></div>}
         <CardMenu name={item.name} actions={actions} />
       </li>;
     })}
   </ul>;
 }
-
 
