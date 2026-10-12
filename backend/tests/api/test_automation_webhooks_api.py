@@ -215,7 +215,8 @@ def test_completed_run_enqueues_one_signed_delivery_per_subscribed_endpoint(corp
         assert attempt_delivery(session, delivery.id, sender=sender) == "skipped" and len(sender.calls) == 1
     listed = client.get(f"{endpoints_url(org)}/{endpoint['id']}/deliveries").json()["items"]
     assert [(item["status"], item["attempts"], item["last_error"]) for item in listed] == [("delivered", 1, None)]
-    assert client.get(endpoints_url(org)).json()["items"][0]["last_delivery"]["status"] == "delivered"
+    by_id = {item["id"]: item for item in client.get(endpoints_url(org)).json()["items"]}
+    assert by_id[endpoint["id"]]["last_delivery"]["status"] == "delivered"
 
 
 def test_endpoint_not_subscribed_gets_nothing_and_enqueue_is_idempotent(corpus):  # noqa: F811
