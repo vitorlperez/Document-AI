@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnswerMarkdown } from "../answer-markdown";
+import { LoadingBlock, SkeletonCard } from "../ui";
 import { automationButton } from "./automation-editor";
 import { automationDate } from "./automation-history";
 import { api, automationError, automationPath, downloadRunPdf, runErrorText, runStatusLabel, type AutomationRun } from "./automations-api";
@@ -23,9 +24,9 @@ export function AutomationReportView({ organizationId, automationId, runId }: { 
   }, [organizationId, automationId, runId]);
   async function download() { setDownloading(true); try { await downloadRunPdf(organizationId, automationId, runId); } catch (caught) { setError(automationError(caught)); } finally { setDownloading(false); } }
   if (error && !data) return <p role="alert" className="mt-6 rounded-lg border border-rose-200 p-4 text-sm text-rose-700">{error}</p>;
-  if (!data) return <p role="status" className="mt-6">Carregando relatório…</p>;
+  if (!data) return <LoadingBlock label="Carregando relatório…" className="mt-6"><SkeletonCard lines={4} /></LoadingBlock>;
   const { automation, run } = data;
-  return <section aria-labelledby="automation-report-title" className="mt-6 min-w-0 rounded-lg border border-line bg-panel p-4 sm:p-6">
+  return <section aria-labelledby="automation-report-title" data-variant="slide" className="mo-enter mt-6 min-w-0 rounded-lg border border-line bg-panel p-4 sm:p-6">
     <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="automation-report-title" className="break-words text-xl font-semibold">{automation.name}</h2>{run.pdf_available && <button disabled={downloading} className={automationButton} onClick={() => void download()}>{downloading ? "Baixando…" : "Baixar PDF"}</button>}</div>
     <p className="mt-2 text-sm text-muted-foreground">{automationDate(run.started_at)} · <span role="status">{runStatusLabel(run.status)}</span> · {run.documents_considered} documentos considerados</p>
     {automation.folders.length > 0 && <p className="mt-1 break-words text-sm text-muted-foreground">{automation.folders.length === 1 ? "Pasta" : "Pastas"}: {automation.folders.join(" · ")}</p>}

@@ -5,14 +5,16 @@ import { type AutomationDraft, promptTemplates, validateAutomationStep, weekdays
 import { AutomationFolderPicker, type LibraryFetch } from "./automation-folder-picker";
 import { AutomationRecipients, type RecipientOption } from "./automation-recipients";
 import type { Folder } from "./types-and-api";
+import { Enter, ProgressIndicator, Spinner } from "../ui";
 
-const control = "mt-2 min-h-11 w-full rounded-lg border border-line bg-panel px-3 py-2 focus-visible:outline-2 focus-visible:outline-primary";
-export const automationButton = "min-h-11 rounded-lg border border-line px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
+const control = "mo-field mt-2 min-h-11 w-full rounded-lg border border-line bg-panel px-3 py-2 focus-visible:outline-2 focus-visible:outline-primary";
+export const automationButton = "mo-interactive min-h-11 rounded-lg border border-line px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
 const steps = ["Quando", "Onde", "O que fazer", "Entregar"];
 
 export function AutomationEditor({ fetchJson, organizationId, initial, folders, saving, serverError, onSave, onCancel, loadRecipients, canChooseRecipients }: { fetchJson: LibraryFetch; organizationId: string; loadRecipients: (query: string, signal: AbortSignal) => Promise<RecipientOption[]>; canChooseRecipients: boolean; initial: AutomationDraft; folders: Folder[]; saving: boolean; serverError: string | null; onSave: (draft: AutomationDraft) => void; onCancel: () => void }) {
   const [draft, setDraft] = useState(initial);
   const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [error, setError] = useState<string | null>(null);
   const [recipients, setRecipients] = useState<RecipientOption[]>([]);
   const [recipientLoading, setRecipientLoading] = useState(true);
@@ -39,14 +41,16 @@ export function AutomationEditor({ fetchJson, organizationId, initial, folders, 
   function next() {
     const invalid = validateAutomationStep(draft, step);
     if (invalid) { setError(invalid); return; }
-    if (step < 3) { setError(null); setStep(step + 1); return; }
-    for (let index = 0; index < 4; index++) { const message = validateAutomationStep(draft, index); if (message) { setStep(index); setError(message); return; } }
+    if (step < 3) { setError(null); setDirection("forward"); setStep(step + 1); return; }
+    for (let index = 0; index < 4; index++) { const message = validateAutomationStep(draft, index); if (message) { setDirection("back"); setStep(index); setError(message); return; } }
     onSave(draft);
   }
-  return <section className="mt-6 rounded-lg border border-line bg-panel p-4 sm:p-6" aria-busy={saving}>
-    <ol aria-label="Etapas da automação" className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">{steps.map((label, index) => <li key={label} aria-current={index === step ? "step" : undefined} className={`rounded-lg px-3 py-3 ${index === step ? "bg-sage font-semibold text-primary" : "text-muted-foreground"}`}>{index + 1}. {label}</li>)}</ol>
+  return <section className="mo-enter mt-6 rounded-lg border border-line bg-panel p-4 sm:p-6" data-variant="slide" aria-busy={saving}>
+    <ol aria-label="Etapas da automação" className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">{steps.map((label, index) => <li key={label} aria-current={index === step ? "step" : undefined} className={`rounded-lg px-3 py-3 transition-[background-color,color] duration-[var(--motion-base)] ease-[var(--ease-out)] ${index === step ? "bg-sage font-semibold text-primary" : "text-muted-foreground"}`}>{index + 1}. {label}</li>)}</ol>
+    <ProgressIndicator value={((step + 1) / steps.length) * 100} label={`Etapa ${step + 1} de ${steps.length}`} className="mt-3" />
     <form onSubmit={(event) => { event.preventDefault(); next(); }} className="mt-6 max-w-2xl">
       <h2 ref={heading} tabIndex={-1} className="text-xl font-semibold outline-none">{steps[step]}</h2>
+      <Enter key={step} variant={direction === "forward" ? "slide-x" : "fade"}>
       {step === 0 && <div className="mt-4 space-y-4">
         <label className="block">Nome da automação<input autoComplete="off" maxLength={160} className={control} value={draft.name} onChange={(event) => update("name", event.target.value)} placeholder="Ex.: Resumo semanal de projetos" /></label>
         <label className="block">Quando executar<select className={control} value={draft.trigger} onChange={(event) => update("trigger", event.target.value as AutomationDraft["trigger"])}><option value="schedule">Em um horário programado</option><option value="folder_change">Quando arquivos novos chegarem na pasta</option></select></label>
@@ -74,8 +78,9 @@ export function AutomationEditor({ fetchJson, organizationId, initial, folders, 
         {canChooseRecipients && <AutomationRecipients items={recipients} selected={draft.recipientIds} loading={recipientLoading} error={recipientError} onChange={(ids) => update("recipientIds", ids)} onRetry={() => setRecipientRevision((value) => value + 1)} />}
         <p className="text-sm text-muted-foreground">Os resultados também ficam no histórico desta automação.</p>
       </fieldset>}
-      {(error || serverError) && <p role="alert" className="mt-4 rounded-lg border border-rose-200 p-3 text-sm text-rose-700">{error || serverError}</p>}
-      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={saving} className={automationButton} onClick={onCancel}>Cancelar</button>{step > 0 && <button type="button" disabled={saving} className={automationButton} onClick={() => { setError(null); setStep(step - 1); }}>Voltar</button>}<button type="submit" disabled={saving} className={`${automationButton} bg-primary text-primary-foreground`}>{saving ? "Salvando…" : step === 3 ? "Salvar automação" : "Continuar"}</button></div>
+      </Enter>
+      {(error || serverError) && <Enter key={error || serverError} variant="slide"><p role="alert" className="mt-4 rounded-lg border border-rose-200 p-3 text-sm text-rose-700">{error || serverError}</p></Enter>}
+      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={saving} className={automationButton} onClick={onCancel}>Cancelar</button>{step > 0 && <button type="button" disabled={saving} className={automationButton} onClick={() => { setError(null); setDirection("back"); setStep(step - 1); }}>Voltar</button>}<button type="submit" disabled={saving} className={`${automationButton} bg-primary text-primary-foreground`}>{saving ? <span className="inline-flex items-center gap-2"><Spinner size={14} />Salvando…</span> : step === 3 ? "Salvar automação" : "Continuar"}</button></div>
     </form>
   </section>;
 }

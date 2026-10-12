@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { filterRecipients } from "./automation-delivery-model";
+import { LoadingBlock, SkeletonList } from "../ui";
 
 export type RecipientOption = { user_id: string; name: string | null; email: string; has_access: boolean | null; is_you: boolean };
 export function AutomationRecipients({ items, selected, loading, error, onChange, onRetry }: { items: RecipientOption[]; selected: string[]; loading: boolean; error: string | null; onChange: (ids: string[]) => void; onRetry: () => void }) {
@@ -12,7 +13,7 @@ export function AutomationRecipients({ items, selected, loading, error, onChange
     <legend className="font-semibold">Destinatários da organização</legend>
     <label className="block text-sm">Buscar por nome ou e-mail<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} className="mt-2 min-h-11 w-full rounded-lg border border-line bg-panel px-3 py-2 focus-visible:outline-2 focus-visible:outline-primary" /></label>
     <p className="text-sm text-muted-foreground">Quem não tiver acesso a todas as pastas selecionadas será ignorado na execução e não receberá o resultado.</p>
-    {loading ? <p role="status">Carregando destinatários e permissões…</p> : error ? <div role="alert"><p className="text-sm text-rose-700">Não foi possível consultar os destinatários: {error}</p><button type="button" onClick={onRetry} className="mt-2 min-h-11 rounded-lg border border-line px-3 focus-visible:outline-2 focus-visible:outline-primary">Tentar novamente</button></div> : <>
+    {loading ? <LoadingBlock label="Carregando destinatários e permissões…"><SkeletonList rows={3} /></LoadingBlock> : error ? <div role="alert"><p className="text-sm text-rose-700">Não foi possível consultar os destinatários: {error}</p><button type="button" onClick={onRetry} className="mt-2 min-h-11 rounded-lg border border-line px-3 focus-visible:outline-2 focus-visible:outline-primary">Tentar novamente</button></div> : <>
       <p role="status" className="text-sm text-muted-foreground">{filtered.length} destinatário(s) encontrado(s) · {selected.length} selecionado(s)</p>
       <div className="max-h-80 space-y-2 overflow-y-auto">{filtered.map((recipient) => <label key={recipient.user_id} className="flex min-h-11 items-start gap-3 rounded-lg border border-line p-3">
         <input type="checkbox" className="mt-1 shrink-0" checked={selected.includes(recipient.user_id)} onChange={(event) => onChange(event.target.checked ? [...selected, recipient.user_id] : selected.filter((id) => id !== recipient.user_id))} />
