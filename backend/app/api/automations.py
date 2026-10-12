@@ -12,6 +12,13 @@ from sqlalchemy.orm import Session
 from app.api.auth import current_user, database_session
 from app.automations.executor import accessible_folders
 from app.automations.models import Automation, AutomationRun
+from app.automations.report_pdf import (
+    DEFAULT_TIMEZONE,
+    ReportMeta,
+    ReportSource,
+    to_report_pdf,
+    trigger_label,
+)
 from app.automations.schedule import (
     InvalidTriggerConfig,
     compute_next_run,
@@ -19,6 +26,7 @@ from app.automations.schedule import (
 )
 from app.automations.scope import (
     MAX_SCOPE_NODES,
+    legacy_folder_ids,
     node_access,
     node_paths,
     resolve_nodes,
@@ -28,7 +36,6 @@ from app.automations.triggers import queue_run
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.ingestion.service import SyncAccessDenied
-from app.knowledge.export import ExportSource, render
 from app.knowledge.untrusted import sanitize_label
 from app.organizations.models import Membership, MembershipRole
 from app.workspaces.models import WorkspaceFolder
@@ -122,6 +129,17 @@ def _serialize_scope(session: Session, automation: Automation) -> dict[str, obje
         scope["folders"] = [{"node_id": str(item), "name": paths[item].rsplit("/", 1)[-1], "path": paths[item]}
                             for item in node_ids if item in paths]
     return scope
+
+
+def _folder_labels(session: Session, automation: Automation) -> tuple[str, ...]:
+    node_ids = scope_node_ids(automation.scope)
+    if node_ids:
+        paths = node_paths(session, OrganizationScope(automation.organization_id), node_ids)
+        return tuple(paths[item] for item in node_ids if item in paths)
+    ids = legacy_folder_ids(automation.scope)
+    names = session.scalars(select(WorkspaceFolder.name).where(
+        WorkspaceFolder.organization_id == automation.organization_id, WorkspaceFolder.id.in_(ids))) if ids else []
+    return tuple(names)
 
 
 def _serialize(session: Session, automation: Automation) -> dict[str, object]:
@@ -361,9 +379,18 @@ def run_pdf(organization_id: UUID, automation_id: UUID, run_id: UUID, user: User
     for item in (run.result or {}).get("citations") or []:
         if isinstance(item, dict) and isinstance(item.get("document_name"), str):
             url = item.get("source_url")
-            sources.append(ExportSource(sanitize_label(item["document_name"]),
-                                        url if isinstance(url, str) and url.startswith(("http://", "https://")) else ""))
-    body, media_type = render("pdf", title=automation.name, answer=answer, sources=sources)
+            page = item.get("page_number")
+            sources.append(ReportSource(
+                sanitize_label(item["document_name"]),
+                url if isinstance(url, str) and url.startswith(("http://", "https://")) else "",
+                str(item.get("excerpt") or ""), page if isinstance(page, int) and not isinstance(page, bool) else None))
+    config = automation.trigger_config or {}
+    meta = ReportMeta(
+        automation_name=automation.name, folders=_folder_labels(session, automation),
+        executed_at=run.finished_at or run.started_at or run.created_at,
+        trigger=trigger_label(automation.trigger_kind, config, run.trigger_ref),
+        timezone=str(config.get("timezone") or DEFAULT_TIMEZONE), documents_considered=run.documents_considered)
+    body, media_type = to_report_pdf(meta, answer, sources), "application/pdf"
     slug = re.sub(r"[^A-Za-z0-9]+", "-", automation.name).strip("-")[:40].lower() or "automacao"
     return Response(body, media_type=media_type, headers={
         "Content-Disposition": f'attachment; filename="arquivio-{slug}.pdf"', "Cache-Control": "no-store"})
