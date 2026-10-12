@@ -1,17 +1,17 @@
-# Graph Report - Document-AI  (2026-10-11)
+# Graph Report - Document-AI  (2026-10-12)
 
 ## Corpus Check
-- 1018 files · ~1,251,953 words
+- 1034 files · ~1,261,156 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 56 file(s) not represented in the graph (top: .css 26, (none) 9, .sha256 4)
 
 ## Summary
-- 8986 nodes · 26194 edges · 526 communities (353 shown, 173 thin omitted)
-- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 3535 edges (avg confidence: 0.93)
+- 9137 nodes · 26757 edges · 550 communities (372 shown, 178 thin omitted)
+- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 3582 edges (avg confidence: 0.93)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b1dcb088`
+- Built from commit: `b039ad24`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -19,19 +19,19 @@
 - test_semantic_questions.py
 - cn
 - integrations.py
-- Membership
+- test_auth_and_invitations.py
 - sidebar.tsx
 - test_agent_revocation_review.py
-- test_workos_sdk_contract.py
-- test_migration_sql.py
-- SourceItemUnavailable
+- integrations-screen.tsx
+- MembershipRole
+- OrganizationScope
 - automations-screen.tsx
 - file-viewer.tsx
 - automations.py
 - test_file_summaries.py
-- tasks.py
-- Document-AI (Arquivio) — Análise de integrações e roadmap
-- RemoteFolder
+- chat-ui/visual-check.cjs
+- _extract_blocks
+- test_ingestion_embeddings.py
 - library-screen.tsx
 - F-038 — Aplicativo alinhado ao exemplo da landing
 - GoogleDriveDocumentProvider
@@ -41,44 +41,44 @@
 - questions.py
 - field.tsx
 - dependencies
-- User
+- test_multiscope_questions_api.py
 - Button
 - command.tsx
-- test_automations_api.py
+- interface-motion.ts
 - AIProviderUnavailable
 - GoogleDriveOAuthClient
-- main.py
+- test_document_view_api.py
 - test_answer_assessment.py
 - types-and-api.tsx
-- integrations-screen.tsx
-- Document
+- landing-page.tsx
+- LibraryNode
 - compilerOptions
-- AuthenticationUnavailable
+- identity/auth.py
 - developer-screen.tsx
-- Arquivio
-- test_identity_auth.py
+- organizations
+- test_onedrive_integration.py
 - components.json
 - F-055 - Loadings da aplicação e citações concisas
-- GoogleRemoteUnauthorized
-- knowledge/presentation.py
+- extraction/__init__.py
+- OpenAIQuestionProvider
 - api-docs-logic.ts
 - 5. Inventário literal completo
-- ScopedAccess
+- test_text_search.py
 - SyncAccessDenied
-- library/service.py
-- ingestion/service.py
+- seed
+- test_workspace_folder_management_api.py
 - OAuthCredentials
-- .ask
+- test_notion_integration.py
 - test_mcp_server.py
 - chart.tsx
 - sites-env.sh
-- server.py
-- context-menu.tsx
-- sqlalchemy
-- search.py
+- asgi.py
+- test_text_search_api.py
+- WorkspaceFolder
+- WorkspaceService
 - seed_tenant
 - What You Must Do When Invoked
-- RetrievalService
+- test_mcp_tools.py
 - test_exhausted_embedding_rate_limit_rolls_back_and_marks_job_failed
 - F-044 — Inicialização resiliente do container frontend
 - Workflow roles and validation gates
@@ -86,26 +86,26 @@
 - test_clickup_tasks_api.py
 - install-pnpm.sh
 - clickup-task-modal.tsx
-- OrganizationService
-- sqlalchemy_dialects
-- test_structured_logging.py
-- test_onedrive_integration.py
+- Membership
+- .__init__
+- Preparar a produção na Railway
+- scoped_document
 - test_sharepoint.py
 - test_company_library_api.py
-- NotionPage
+- devDependencies
 - 001 - MVP: Document Intelligence para pastas de trabalho
 - install-ci.sh
-- interface-motion.ts
-- test_text_search.py
+- automation-editor.tsx
+- User
 - 2. Invariantes críticos de microcopy
 - test_inventory_followups.py
-- EmbeddingService
+- request_context
 - messageFor
 - F-041 — Dimensões uniformes nas páginas internas
 - cloudflare-env.d.ts
 - totals
-- test_workspace_folder_management_api.py
-- test_remote_http.py
+- NotionPage
+- RemoteThrottled
 - product-app.tsx
 - start-render-api.sh
 - init-work-item.sh
@@ -125,7 +125,7 @@
 - F-047 — Fluxo de conexão e sincronização por ferramenta
 - F-004 - Asynchronous ingestion and document lifecycle
 - F-005 - Folder-scoped textual search
-- ClickUpDocumentProvider
+- RemoteFolder
 - F-008 - Interface web do MVP Document Intelligence
 - F-009 - Ambiente local Docker do frontend e backend
 - F-010 - Company switcher, RBAC e operação de pastas
@@ -147,41 +147,41 @@
 - F-035 - Deploy de piloto Oracle Always Free
 - F-036 - Perfil de deploy gratuito para piloto
 - F-048 — Ações uniformes nos cards de integrações
-- test_extraction_providers.py
+- FakeGooglePort
 - F-051 - Cards de integrações compactos e uniformes
-- test_real_fetcher_preview_returns_none_instead_of_raising
+- preview
 - Deploy do piloto na Oracle Always Free
 - F-042 — Perguntas por pasta, ferramenta e todas as ferramentas
 - notifications.py
 - test_onedrive_delta_cursor_commits_with_successful_ingestion
 - F-054 - Cor do foco em campos de entrada
-- conversations.py
-- registry.py
-- test_content_consolidation.py
-- Automation
+- Acceptance criteria and test matrix
+- FakeClient
+- triggers.py
+- sqlalchemy_dialects
 - Subagentes do Arquivio
 - graphify reference: add a URL and watch a folder
 - graphify reference: commit hook and native CLAUDE.md integration
 - graphify reference: incremental update and cluster-only
-- compute_next_run
+- test_automations_api.py
 - F-059 - Fontes citadas como lista compacta de documentos
 - AGENTS.md
-- OcrError
+- knowledge/presentation.py
 - graphify reference: GitHub clone and cross-repo merge
 - graphify reference: transcribe video and audio
 - F-040 — Mais espaço para a conversa
 - extraction-spec.md
 - 0003-pilot-sync-ai-and-usage.md
-- test_google_error_classification.py
+- ClickUpOAuthClient
 - access_admin.py
 - ai-answer-assessment-20261007 - Avaliação da resposta, judge offline e feedback
-- MonkeyPatch
+- test_workos_sdk_contract.py
 - F-069 - Integração frontend/backend Origin e autenticação
 - lp-chat-modernization-20261002 - Modernização da LP pública (chat-first)
-- Settings
+- ClickUpConnectionService
 - F-049 - Card Notion alinhado ao Google Drive
 - AgentService
-- combobox.tsx
+- _run_worker
 - sync-status-logic.ts
 - 5. Re-render Optimization
 - F-046 — Biblioteca fixa na conversa
@@ -190,43 +190,43 @@
 - ClickUpTaskService
 - F-058 - Componentes consistentes em Conversa e Biblioteca
 - test_notion_synced_child_links_preserve_reference_without_importing_target
-- Integrações
-- test_agent_observability.py
+- Arquivio
+- strip_invisible
 - F-060 - Links somente nas referências da resposta
 - ocr_eval.py
 - 7. JavaScript Performance
-- ._extract
-- test_ingestion_scheduler.py
+- automation_email.py
+- Rotas
 - F-061 - Remover referências inline da resposta exibida
-- test_document_view_api.py
-- answer_feedback
+- 01-cobertura-e-nucleo.md
+- main.py
 - select.tsx
 - Quick Reference
-- Capture
-- session
+- lucide-react
+- conversations.py
 - _run_task
-- test_clickup_sync_persists_documents_projects_the_hierarchy_and_prunes_deleted_tasks
+- CookieOriginMiddleware
 - test_clickup_integration.py
-- JsonFormatter
-- attachment.tsx
+- menubar.tsx
+- onedrive.py
 - work-item.md
-- authenticate
+- OAuthConnectionServiceBase
 - test_automation_webhooks_api.py
-- postgres_api
-- F-063 - Integração OneDrive
-- Handoff — F-037 Arquivio: produto, UI e landing page
+- Integrações — índice dos planos de desenvolvimento
+- test_principal.py
+- DocumentFileFetcher
 - chat-available-tools-count - Contagem de ferramentas disponíveis no compositor
-- test_ocr_cache.py
-- ClickUpDocumentProvider
-- get_settings
+- test_content_consolidation.py
+- test_structured_logging.py
+- DocumentChunk
 - Frontend do Arquivio
-- F-033 - Compactar citações por arquivo
-- 6. Fluxos funcionais
+- report_pdf.py
+- ref_node_fs
 - extract_blocks
-- public_v1.py
+- Principal
 - Refinamento de respostas: inventário, contagem e seleção temática
 - Arquivio — DNA de direção A: Contexto vivo
-- radix-ui
+- combobox.tsx
 - F-003 - Google Drive OAuth and workspace folders
 - ADR-0010 - Encerrar sessão WorkOS pelo backend
 - F-066 - Logout sem redirecionamento de retorno WorkOS
@@ -237,14 +237,14 @@
 - chatgpt-auth.ts
 - F-053 - Ícones de integração nas raízes da biblioteca
 - M22 — Chat answer formatting
-- Biblioteca: experiência e gestão por pasta
-- scope-check.cjs
+- test_mcp_auth.py
+- session
 - motion.manifest.json
 - library-height/shots.cjs
 - test_agent_flow.py
-- _run_worker
-- test_onboarding_migration.py
-- F-056 - Deduplicação de fontes citadas
+- _number_answer_sources
+- keys.py
+- test_extraction_spreadsheet.py
 - /graphify
 - F-006 - Semantic questions and citations
 - F-002 - Authentication and invitations foundation
@@ -257,29 +257,29 @@
 - chat-composer-context — Contexto por mensagem no chat
 - F-003 — Celular/tablet: nota "A conversa usa somente as ferramentas…" cortada sob a barra da conversa
 - executor.py
-- Preparar a produção na Railway
+- GoogleDriveProviderAdapter
 - Profile.pdf: reprodução e validação (2026-09-29)
 - arquivio-identity-20261003 - Migração integral da identidade visual Arquivio (LP + app)
-- 01-cobertura-e-nucleo.md
-- dropdown-menu.tsx
+- PARTE B — Google: CASA (`drive.readonly`) vs `drive.file` + Picker
+- bubble.tsx
 - make_ocr_corpus.py
 - F-004 — Tour passo 4 no celular cita "Navegar", mas o botão destacado é só um ícone ">"
 - agent-contextual-followups
-- layout.tsx
+- Integrações
 - F-005 — Ao sair do onboarding com sincronização na fila, a conversa não indica que há sincronização em andamento
 - folder
 - Inventário de motion — extensão H4
 - test_jev_intent.py
 - F-006 — Tela de integrações muda a largura do conteúdo e desloca o stepper em relação a Boas-vindas
-- test_pilot_deployment.py
-- Google Drive: mapa de dados (B1) e checklist de verificação (B0/B4)
-- F-052 - Estruturação de chunks e evidências para bibliotecas heterogêneas
-- .state
+- F-202 — regressão da revisão independente e reprodução pós-correção
+- test_library_sync_permissions.py
+- Runbook — SharePoint: consentimento de administrador e operação
+- google_provider
 - ADR-0011: Formatos e OCR
 - Spike F0.3 — Docling Serve / OCR português
-- DocumentFileFetcher
-- F-065 - Sincronização Google Drive com texto NUL
-- asgi.py
+- .state
+- answer_feedback
+- ingestion/service.py
 - ADR-0012: Núcleo HTTP e erros remotos
 - ADR-0013: Chave por provider
 - ADR-0014: pgvector
@@ -289,66 +289,66 @@
 - F-028 - Gestão de arquivos sincronizados
 - ADR-0017 - Estratégia para o escopo restrito do Google Drive
 - Spike SharePoint / Microsoft 365
-- IntegrationRegistry
-- vite.config.ts
-- CredentialCipher
+- OcrError
+- qa-server.py
+- Settings
 - referencia-v1.md
 - acoes-humanas-externas.md
 - auditoria-prompt-injection-2026-09.md
 - baseline-2026-09-29.md
 - answer-markdown.tsx
 - Verificação dos ajustes existentes do chat — Missão 22
-- install-ci.mjs
+- F-052 - Estruturação de chunks e evidências para bibliotecas heterogêneas
 - text
 - Consolidação entre documentos — 2026-09-30
 - 3. Server-Side Performance
-- Spike F0.4 — pgvector / SQLAlchemy / psycopg3
-- test_sdk_image.py
-- Login personalizado com WorkOS
+- Plano 03 — API pública, MCP remoto somente leitura e canais (Slack, depois Teams) — Implementation Plan
+- docx.py
+- F-070 - Resync incremental do Notion
 - F-007 — Evidência local de correção
 - PlatformStaffAccessService
-- http.py
+- RemoteHttp
 - F-030 - Layout de tela cheia e alertas temporários
-- onedrive.py
+- integrations/google_drive.py
 - Atualização: publicação por pane-500 e verificação independente por pane-501
-- .cipher_keys
+- pdf.py
 - Brief-baseline — Modernização da LP Arquivio (lp-chat-modernization-20261002)
-- Revisão independente final de F-202 — commit 726c04b
+- CachingOcr
 - Recomendações para frescor, credenciais e retenção
 - Claims audit — LP Arquivio chat-first
-- test_oauth_service_contract.py
+- test_chat_composer_context_api.py
 - M31 — Cards de ferramentas: evidência da correção
 - M31 — Integrações disponíveis na LP
 - agent-content-consolidation
-- test_health_and_config.py
-- F-202 — regressão da revisão independente e reprodução pós-correção
-- 3. Resultados (todos em `analysis.md`; dados em `results.csv`, `per_prompt.csv`, `metrics.json`)
-- test_google_client_lists_direct_root_files_with_pagination
-- organizations
-- verification_context.py
+- proxy-headers.mjs
+- attachment.tsx
+- Biblioteca: experiência e gestão por pasta
+- limits.py
+- test_mcp_connection.py
+- automation-recipients.tsx
 - React Best Practices
-- F-007 - Saved queries usage controls and failure visibility
+- JsonFormatter
 - JEV × Liquid d1 como decisor do Overclock — teste comparativo
-- ADR-0020: Escrita pontual no ClickUp — criar tarefa a partir de uma resposta
-- InMemoryRateLimiter
-- tabs.tsx
-- ADR-0006: Company Library as a provider-neutral projection
-- ClickUp — runbook de ativação e piloto
-- PostgreSQLGooglePort
-- evidence.py
+- Missão 19 — diagnóstico local do HTTP 503 do agente
+- 6. Fluxos funcionais
+- Google Drive: mapa de dados (B1) e checklist de verificação (B0/B4)
+- F-063 - Integração OneDrive
+- react
+- test_real_fetcher_preview_returns_none_instead_of_raising
+- F-007 - Saved queries usage controls and failure visibility
 - M27 — Lint do backend no push 4e5ac95
-- GoogleLikePort
-- 7. Regras de negócio e invariantes
-- F-014 - Escopos configuraveis de sincronizacao do Google Drive
-- Security hardening follow-ups
-- bubble.tsx
 - M31 — Notion: conteúdo próprio e hierarquia na biblioteca
-- 4. Client-Side Data Fetching
+- Capture
+- _ctx
+- F-014 - Escopos configuraveis de sincronizacao do Google Drive
+- .cipher_keys
+- F-045 — Perguntas de inventário para fontes Notion
+- AuditWriter
 - onboarding-tool-cards.md
-- OrganizationScope
-- derive-contract.mjs
+- LibraryService
+- insights.py
 - Sections
-- InvitationDeliveryPort
+- ADR-0004 - Acesso de staff da plataforma por grants temporários
 - counts
 - F-007 — Prévia da LP esconde logos das fontes em ≤720px
 - google-drive-incremental-resync - Google Drive incremental resync
@@ -357,8 +357,8 @@
 - F-008 — Grade da Biblioteca estica cards e linha da ferramenta corta o nome
 - QA final — Arquivio LP, direção A / Contexto vivo
 - Re-review final — Arquivio LP direção A / Contexto vivo
-- A.5 Fase A0 — Pré-requisitos e spike (0,5–1 d + externo)
-- test_each_extracted_file_reports_progress_on_the_worker_thread
+- clickup
+- navigation-menu.tsx
 - arquivio-review-20261003 - Contrato RAG/revogação e revisão por lotes
 - Seguimento coletivo do agente após inventário de pasta
 - canvas
@@ -370,13 +370,20 @@
 - ai-answer-assessment-20261007 - Avaliação da resposta, judge offline e feedback
 - lp-chat-modernization-20261002/review/round2/qa-report.md
 - Design → App — migração futura da direção A (não executada)
+- F-027 - Recuperação RAG de conteúdo e metadados
+- class-variance-authority
+- B.4 Plano de execução da Opção A
 - Design contract — direção, H2 pendente
 - Evidência — implementação LP direção A (pane-361, 2026-10-02)
 - Contrato de motion — Arquivio A + modais existentes
 - pnpm-install.mjs
+- ADR-0006: Company Library as a provider-neutral projection
 - 1. Eliminating Waterfalls
 - 2. Bundle Size Optimization
+- Revisão independente final de F-202 — commit 726c04b
+- FileAccessError
 - Teste local do login Arquivio — 08/10/2026
+- FakeClickUp
 - answer-assessment.md
 - React Best Practices
 - F-043 — Corrigir ingestão de blocos aninhados do Notion
@@ -384,28 +391,31 @@
 - jsDriven
 - reducedMotion
 - I-01 — document-context
-- Step 3 - Extract entities and relationships
-- Threat model: API, MCP e canais
+- Capture
+- F-020 - Operação e consulta na Biblioteca da Company
+- test_access_admin.py
 - Limpeza de artefatos locais — 2026-10-03
 - Conectores e ingestão do Arquivio
 - Avaliação de RAG do Arquivio
 - Isolamento e segurança do Arquivio
-- knowledge/overview.py
+- test_migration_sql.py
 - Handoff operacional — ler após aprovação H2
+- F-033 - Compactar citações por arquivo
 - drawer.tsx
-- ADR-0018: Conector ClickUp (tarefas e Docs, somente leitura)
+- delivery.py
 - F-016 - RAG de produção com embeddings na ingestão e recuperação híbrida
 - async-cheap-condition-before-await.md
 - server-hoist-static-io.md
 - source
 - Arquivio — direção da LP, H2 pendente
 - scale
-- ADR-0019: Conector ClickUp (tarefas e Docs, somente leitura)
+- F-056 - Deduplicação de fontes citadas
 - effectsWhere
 - jsDriven
 - reducedMotion
 - F-208 — Modal da chave de API aparece no canto superior esquerdo
 - F-209 — Histórico M1 mostra rótulo vazio quando `failed` é nulo
+- 14. Arquitetura e stack aprovadas
 - advanced-effect-event-deps.md
 - advanced-event-handler-refs.md
 - advanced-init-once.md
@@ -474,30 +484,44 @@
 - assets/README.md
 - motion-plan.md
 - evidence.md
-- RemoteHttp
+- IntegrationRegistry
+- ADR-0015: Cerca anti prompt injection
+- FASE 0 — Auditoria anti prompt-injection + invariante de escopo (item L) — 1,5–2 d (Revisão: era 3–4 d)
+- PARTE A — SharePoint / Microsoft 365
 - MicrosoftGraphClient
 - F-211 — Evidência final (h-ks/h-kr/h-kq, pane-491)
-- ADR-0004 - Acesso de staff da plataforma por grants temporários
+- Port
 - graphify reference: query, path, explain
 - AuthRoute
-- react
+- FakeInvitationSession
+- SourceItemUnavailable
 - F-211 — Login WorkOS: correção final de h-ks/h-kr/h-kq
-- manual_sync.py
+- test_pilot_deployment.py
+- 7. Regras de negócio e invariantes
+- Security hardening follow-ups
+- conftest.py
+- 8. Advanced Patterns
+- F-065 - Sincronização Google Drive com texto NUL
+- test_onboarding_migration.py
+- Spike F0.4 — pgvector / SQLAlchemy / psycopg3
+- Evidência F6 — 2026-09-30
+- F-205 | categoria: funcional | severidade: média | status: corrigido
+- Step 3 - Extract entities and relationships
 - Avaliação de respostas: rollout sem transferência adicional
 - F-212 — Callback ClickUp de produção com prefixo do proxy
 - path
 
 ## God Nodes (most connected - your core abstractions)
-1. `OrganizationScope` - 444 edges
-2. `select()` - 352 edges
+1. `OrganizationScope` - 451 edges
+2. `select()` - 362 edges
 3. `cn()` - 327 edges
-4. `User` - 270 edges
-5. `Document` - 258 edges
-6. `DataSource` - 195 edges
-7. `WorkspaceFolder` - 194 edges
-8. `LibraryService` - 192 edges
+4. `User` - 272 edges
+5. `Document` - 261 edges
+6. `LibraryService` - 202 edges
+7. `WorkspaceFolder` - 202 edges
+8. `DataSource` - 201 edges
 9. `Membership` - 157 edges
-10. `IngestionService` - 147 edges
+10. `IngestionService` - 150 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Task A5: Auditoria de chamadas (sem conteúdo)` --references--> `database_session()`  [INFERRED]
@@ -514,79 +538,83 @@
 ## Import Cycles
 - None detected.
 
-## Communities (526 total, 173 thin omitted)
+## Communities (550 total, 178 thin omitted)
 
 ### Community 0 - "test_semantic_questions.py"
-Cohesion: 0.06
-Nodes (90): AgentLimits, ConversationService, _latest_answer_index(), _planner_history(), _previous_turn_mentions(), ConversationMessage, _is_document_inventory_summary_question(), _is_selection_summary_question() (+82 more)
+Cohesion: 0.10
+Nodes (57): _is_document_inventory_question(), _is_document_inventory_summary_question(), claim(), SummaryProvider, test_duplicate_names_remain_separate_and_cross_document_claim_rejected(), test_file_scoped_fact_question_still_uses_relevance(), test_file_scoped_summary_follow_up_does_not_depend_on_semantic_threshold(), test_passage_selection_prefers_substance_and_preserves_sentence_boundary() (+49 more)
 
 ### Community 1 - "cn"
-Cohesion: 0.05
-Nodes (66): AvatarBadge(), AvatarFallback(), AvatarGroup(), AvatarGroupCount(), AvatarImage(), BreadcrumbEllipsis(), BreadcrumbItem(), BreadcrumbLink() (+58 more)
+Cohesion: 0.04
+Nodes (65): Avatar(), AvatarBadge(), AvatarFallback(), AvatarGroup(), AvatarGroupCount(), AvatarImage(), BreadcrumbEllipsis(), BreadcrumbItem() (+57 more)
 
 ### Community 2 - "integrations.py"
-Cohesion: 0.05
-Nodes (63): callback(), clickup_callback(), clickup_remote_folders(), clickup_service(), disconnect_source(), FolderInput, folders(), _microsoft_callback() (+55 more)
+Cohesion: 0.13
+Nodes (39): callback(), clickup_callback(), clickup_remote_folders(), clickup_service(), disconnect_source(), FolderInput, folders(), _microsoft_callback() (+31 more)
 
-### Community 3 - "Membership"
-Cohesion: 0.04
-Nodes (85): AuthGateway, ApiKeyAuthenticator, advance_onboarding(), complete_tour(), onboarding_state(), OnboardingInput, VerifiedIdentity, AuthIdentity (+77 more)
+### Community 3 - "test_auth_and_invitations.py"
+Cohesion: 0.06
+Nodes (38): AuthGateway, PendingEmailVerification, VerifiedIdentity, UserSession, _configure_signed_proxy(), FakeAuthGateway, password_gateway(), _signed_proxy_headers() (+30 more)
 
 ### Community 4 - "sidebar.tsx"
-Cohesion: 0.07
-Nodes (39): Sheet(), SheetContent(), SheetDescription(), SheetFooter(), SheetHeader(), SheetOverlay(), SheetPortal(), SheetTitle() (+31 more)
+Cohesion: 0.09
+Nodes (30): SidebarContent(), SidebarContext, SidebarContextProps, SidebarFooter(), SidebarGroup(), SidebarGroupAction(), SidebarGroupContent(), SidebarGroupLabel() (+22 more)
 
 ### Community 5 - "test_agent_revocation_review.py"
-Cohesion: 0.10
-Nodes (37): test_moved_listed_file_name_never_reaches_the_classifier(), test_unmoved_listing_still_hands_names_to_the_classifier(), Case, follow(), make_case(), make_policy_case(), no_external_ai(), persisted_snapshot() (+29 more)
+Cohesion: 0.09
+Nodes (38): AuthorizedCatalog, test_moved_listed_file_name_never_reaches_the_classifier(), test_unmoved_listing_still_hands_names_to_the_classifier(), Case, follow(), make_case(), make_policy_case(), no_external_ai() (+30 more)
 
-### Community 6 - "test_workos_sdk_contract.py"
-Cohesion: 0.13
-Nodes (10): HostedAuthenticationRequired, PendingEmailVerification, sdk_gateway(), test_credentials_and_outages_remain_errors_even_with_pending_context(), test_pending_authentication_and_resend_use_documented_sdk_resources(), test_radar_and_pending_challenges_use_hosted_fallback(), test_sdk_429_preserves_actual_retry_after_without_returning_raw_error(), test_signup_sdk_http_never_transmits_a_password_before_inbox_ownership() (+2 more)
+### Community 6 - "integrations-screen.tsx"
+Cohesion: 0.07
+Nodes (29): CatalogFolder, catalogItemPath(), ExistingSpace, NewSpaceFolder, newSpaceOptions(), IntegrationCatalog(), IntegrationScreen(), connectOneDrive() (+21 more)
 
-### Community 8 - "SourceItemUnavailable"
-Cohesion: 0.13
-Nodes (11): SourceItemUnavailable, FakeCipher, RestrictedList, account_email(), doc_pages(), test_clickup_partial_reads_never_become_a_full_snapshot(), test_notion_restricted_page_is_dropped_from_the_index_without_failing_the_sync(), list_pages() (+3 more)
+### Community 7 - "MembershipRole"
+Cohesion: 0.08
+Nodes (33): AuditLog, TenantScopeRequired, MembershipRole, MembershipAlreadyExists, auth_api(), callback(), FakeInvitationDelivery, invitation_token() (+25 more)
+
+### Community 8 - "OrganizationScope"
+Cohesion: 0.06
+Nodes (63): select(), UsageLimitExceeded, OrganizationScope, ProcessingJob, DiscoveredDocument, IngestionService, _previous_cited_files(), Document (+55 more)
 
 ### Community 9 - "automations-screen.tsx"
-Cohesion: 0.07
-Nodes (63): filterRecipients(), normalizeSearch(), validateWebhookUrl(), automationButton, AutomationEditor(), next(), steps, AutomationFolderPicker() (+55 more)
+Cohesion: 0.14
+Nodes (38): validateWebhookUrl(), automationButton, automationDate(), AutomationHistory(), download(), tick(), safeSourceUrl(), AutomationReportView() (+30 more)
 
 ### Community 10 - "file-viewer.tsx"
-Cohesion: 0.07
-Nodes (57): DocxViewer(), hardenLinks(), ChunkBody(), ChunkPage, DocxViewer, EvidencePassage, EvidenceTab(), fetchFileBlob() (+49 more)
+Cohesion: 0.06
+Nodes (65): DocxViewer(), hardenLinks(), ChunkBody(), ChunkPage, DocxViewer, EvidencePassage, EvidenceTab(), fetchFileBlob() (+57 more)
 
 ### Community 11 - "automations.py"
-Cohesion: 0.14
-Nodes (27): AutomationCreate, AutomationPatch, create_automation(), delete_automation(), EnabledInput, get_automation(), get_run(), _is_admin() (+19 more)
+Cohesion: 0.13
+Nodes (29): AutomationCreate, AutomationPatch, create_automation(), delete_automation(), EnabledInput, get_automation(), get_run(), _is_admin() (+21 more)
 
 ### Community 12 - "test_file_summaries.py"
-Cohesion: 0.20
-Nodes (14): _catalog_item_row(), FileSummaries, _ask(), BriefProvider, _folder_with_files(), InventoryClassifier, _row(), test_catalog_row_without_summary_is_sentence_bounded_not_a_wall() (+6 more)
-
-### Community 13 - "tasks.py"
-Cohesion: 0.05
-Nodes (21): UsageLimitExceeded, _as_utc(), reconcile_workspace_folder(), discovering_progress(), refresh_followed_after_sync(), schedule_connected_source_reconciliations(), _semantic_provider(), trigger_automations_after_sync() (+13 more)
-
-### Community 14 - "Document-AI (Arquivio) — Análise de integrações e roadmap"
-Cohesion: 0.05
-Nodes (38): 10. Fontes (URLs), 1. Resumo executivo, 2.1 Proposta e premissas de produto, 2.3 Comparativo dos três conectores, 2.5 Lacunas transversais, 2. Proposta do app e arquitetura atual de conectores, 3.1 Contexto de mercado, 3.2 Por ramo (ferramentas prováveis onde vivem os documentos) (+30 more)
-
-### Community 15 - "RemoteFolder"
 Cohesion: 0.16
-Nodes (21): RemoteFolder, seed_company(), seed_document(), session(), test_children_are_bounded_and_stably_paged(), test_empty_folder_pruning_uses_bounded_queries(), test_library_metadata_search_and_sync_statuses_are_member_scoped(), test_notion_legacy_folder_collision_is_repaired_without_changing_document_id() (+13 more)
+Nodes (17): _catalog_item_row(), _complete_summary(), _extractive_row(), FileSummaries, _sentence_preview(), _ask(), BriefProvider, _folder_with_files() (+9 more)
+
+### Community 13 - "chat-ui/visual-check.cjs"
+Cohesion: 0.05
+Nodes (29): assert, { chromium }, fixture, fs, messages, response, answer, assert (+21 more)
+
+### Community 14 - "_extract_blocks"
+Cohesion: 0.05
+Nodes (41): _extract_blocks(), _extract_text(), test_structured_extraction_preserves_markdown_sections_and_docx_headings_tables(), 10. Fontes (URLs), 1. Resumo executivo, 2.1 Proposta e premissas de produto, 2.3 Comparativo dos três conectores, 2.5 Lacunas transversais (+33 more)
+
+### Community 15 - "test_ingestion_embeddings.py"
+Cohesion: 0.14
+Nodes (33): AIProviderRateLimited, EmbeddingService, test_task_force_reads_newly_eligible_ignored_files_and_orphan_catalog_files(), document(), FakeEmbeddingProvider, finish_sync(), session(), stage_sync() (+25 more)
 
 ### Community 16 - "library-screen.tsx"
-Cohesion: 0.10
-Nodes (28): DEFAULT_LIBRARY_VIEW, EXTENSIONS, FILE_KIND_LABEL, fileKind, LIBRARY_BATCH_SIZE, LIBRARY_VIEW_KEY, LibraryGridSize, LibraryLoadState (+20 more)
+Cohesion: 0.05
+Nodes (49): indexed, IndexingPresentation, LibraryIndexingFields, libraryIndexingPresentation(), LibraryIndexingState, reasons, StatusInput, DEFAULT_LIBRARY_VIEW (+41 more)
 
 ### Community 17 - "F-038 — Aplicativo alinhado ao exemplo da landing"
 Cohesion: 0.22
 Nodes (8): Acceptance criteria, Concurrent editing boundary (2026-09-22), F-038 — Aplicativo alinhado ao exemplo da landing, Gate, Ownership, Ready checklist, Source and decisions, Validation
 
 ### Community 18 - "GoogleDriveDocumentProvider"
-Cohesion: 0.11
-Nodes (36): GoogleDriveDocumentProvider, GoogleChangesPage, GoogleCursorInvalid, docx_bytes(), encrypted_credentials(), expiring_credentials(), remote_file(), selection() (+28 more)
+Cohesion: 0.05
+Nodes (59): GoogleDriveDocumentProvider, GoogleChangesPage, GoogleCursorInvalid, GoogleItemTooLarge, GoogleItemUnavailable, GoogleRemoteUnauthorized, RemoteFile, test_each_extracted_file_reports_progress_on_the_worker_thread() (+51 more)
 
 ### Community 19 - "_run_remote_fault"
 Cohesion: 0.10
@@ -594,27 +622,27 @@ Nodes (5): _run_remote_fault(), discover(), scalars(), test_persistent_source_un
 
 ### Community 20 - "package.json"
 Cohesion: 0.04
-Nodes (40): ResizableHandle(), ResizablePanelGroup(), eslintConfig, engines, node, name, private, scripts (+32 more)
+Nodes (45): metadata, RootLayout(), viewport, THEME_STORAGE_KEY, ThemeProvider(), ResizableHandle(), ResizablePanelGroup(), eslintConfig (+37 more)
 
 ### Community 21 - "test_sharepoint_integration.py"
-Cohesion: 0.16
-Nodes (16): connect_sharepoint(), create_organization(), FakeAuthGateway, login(), owner_org(), sharepoint_api(), start(), test_member_cannot_start_sharepoint_oauth() (+8 more)
+Cohesion: 0.14
+Nodes (20): connect_sharepoint(), create_organization(), FakeAuthGateway, login(), owner_org(), sharepoint_api(), start(), test_library_root_label_for_sharepoint() (+12 more)
 
 ### Community 22 - "questions.py"
-Cohesion: 0.02
-Nodes (96): SynthesisAdapter, _consolidate_content_citations(), replace_group(), _cross_document_pool(), _deterministic_options(), _document_inventory_fallback(), _equivalent_passages(), _evaluate_summary_claims() (+88 more)
+Cohesion: 0.03
+Nodes (67): UsageService, _answer_provenance(), _document_citations(), _evidence_draft(), _evidence_payload(), LibraryToolExecutor, _planner_history(), _snapshot_citations() (+59 more)
 
 ### Community 23 - "field.tsx"
 Cohesion: 0.10
 Nodes (22): Field(), FieldContent(), FieldDescription(), FieldError(), FieldGroup(), FieldLabel(), FieldLegend(), FieldSet() (+14 more)
 
 ### Community 24 - "dependencies"
-Cohesion: 0.04
-Nodes (46): dependencies, @base-ui/react, class-variance-authority, clsx, cmdk, date-fns, docx-preview, drizzle-orm (+38 more)
+Cohesion: 0.07
+Nodes (27): dependencies, @base-ui/react, class-variance-authority, clsx, cmdk, date-fns, docx-preview, drizzle-orm (+19 more)
 
-### Community 25 - "User"
-Cohesion: 0.06
-Nodes (68): UsageRecord, User, WorkspaceFolder, admin_api(), test_key_lifecycle_is_one_time_fail_closed_and_audited(), test_export_endpoint_returns_md_docx_pdf_with_sources_and_guards_access(), test_feedback_denies_other_user_even_when_member(), test_feedback_rejects_invalid_vote_user_message_foreign_tenant_and_missing_id() (+60 more)
+### Community 25 - "test_multiscope_questions_api.py"
+Cohesion: 0.11
+Nodes (27): test_export_endpoint_returns_md_docx_pdf_with_sources_and_guards_access(), test_feedback_denies_other_user_even_when_member(), test_feedback_rejects_invalid_vote_user_message_foreign_tenant_and_missing_id(), test_feedback_replaces_vote_preserves_response_and_exports_calibration(), transcript(), test_citation_evidence_returns_chunk_for_member_and_hides_foreign(), test_list_rename_delete_own_conversations(), test_other_member_cannot_see_rename_or_delete() (+19 more)
 
 ### Community 26 - "Button"
 Cohesion: 0.06
@@ -624,57 +652,57 @@ Nodes (41): AlertDialogAction(), AlertDialogCancel(), AlertDialogContent(), Aler
 Cohesion: 0.15
 Nodes (17): Command(), CommandDialog(), CommandGroup(), CommandInput(), CommandItem(), CommandList(), CommandSeparator(), CommandShortcut() (+9 more)
 
-### Community 28 - "test_automations_api.py"
-Cohesion: 0.13
-Nodes (29): AutomationRun, test_recipient_catalog_hides_other_organizations_members(), test_recipient_catalog_lists_members_with_folder_access(), add_member(), body(), create(), node_body(), relogin_owner() (+21 more)
+### Community 28 - "interface-motion.ts"
+Cohesion: 0.09
+Nodes (27): isSafeCut(), openSpanLength(), revealDurationMs(), revealedText(), revealedUnits(), revealPlan(), prefersReducedMotion(), REVEAL_MAX_MS (+19 more)
 
 ### Community 29 - "AIProviderUnavailable"
-Cohesion: 0.06
-Nodes (26): EvalCase, EvalRun, feedback_calibration(), load_cases(), main(), markdown_report(), run_all(), run_case() (+18 more)
+Cohesion: 0.07
+Nodes (14): AIProviderUnavailable, RecordingProvider, FakeClock, test_explicit_agent_deadline_after_slow_model_stage(), test_fallback_http_timeout_uses_remaining_budget(), test_provider_refuses_request_if_deadline_already_passed(), timed_out_answer(), test_agent_logs_elapsed_remaining_and_explicit_deadline() (+6 more)
 
 ### Community 30 - "GoogleDriveOAuthClient"
-Cohesion: 0.10
-Nodes (8): _google_retryable(), GoogleDriveOAuthClient, GoogleDrivePort, raise_for_google(), RemoteFile, test_google_export_size_limit_is_item_failure(), test_google_native_formats_export_to_office(), Task 1.2: Erros neutros e classificação do Drive (403-quota × 403-arquivo × 403-auth)
+Cohesion: 0.07
+Nodes (21): google_error_reason(), _google_retryable(), GoogleDriveOAuthClient, raise_for_google(), test_google_changes_api_follows_pages_and_returns_latest_start_token(), test_google_changes_api_marks_expired_page_token_for_snapshot_recovery(), test_google_client_marks_unauthorized_account_metadata_as_remote_unauthorized(), test_google_client_reads_authorized_account_email_without_expanding_scope() (+13 more)
 
-### Community 31 - "main.py"
-Cohesion: 0.04
-Nodes (23): NoRedirect, delivered_invitations(), current_user(), database_session(), _chunks_of(), document_chunks(), document_file(), document_preview() (+15 more)
+### Community 31 - "test_document_view_api.py"
+Cohesion: 0.24
+Nodes (14): content_disposition(), safe_filename(), OpenedFile, citation_for(), FakeFetcher, test_chunks_are_ordered_paginated_and_can_land_on_the_cited_chunk(), test_file_failures_are_logged_with_provider_and_code(), test_file_is_hidden_from_a_non_member() (+6 more)
 
 ### Community 32 - "test_answer_assessment.py"
-Cohesion: 0.06
-Nodes (55): provider_call_count(), assessment_state(), AssessmentSettings, catalog_metadata(), JevAnswerAssessor, load_assessment_settings(), OfflineAnswerJudge, probability() (+47 more)
+Cohesion: 0.05
+Nodes (58): current_request_id(), provider_call_count(), assessment_state(), AssessmentSettings, catalog_metadata(), JevAnswerAssessor, load_assessment_settings(), OfflineAnswerJudge (+50 more)
 
 ### Community 33 - "types-and-api.tsx"
 Cohesion: 0.05
-Nodes (65): Estado implementado no repositório, Landing e autenticação, Produto e UX, cleanAnswerForDisplay(), isSourceLinkLine(), stripMarkdownLinks(), isHighlighted(), ViewerCitation (+57 more)
+Nodes (60): render(), cleanAnswerForDisplay(), isSourceLinkLine(), stripMarkdownLinks(), errorDetail(), EnterKeyEvent, shouldSubmitOnEnter(), isHighlighted() (+52 more)
 
-### Community 34 - "integrations-screen.tsx"
-Cohesion: 0.03
-Nodes (71): answerPlain(), AnswerSegments, AnswerWords(), CITED_ROW, countWords(), CursorTarget, LandingPage(), LandingPageProps (+63 more)
+### Community 34 - "landing-page.tsx"
+Cohesion: 0.08
+Nodes (30): answerPlain(), AnswerSegments, AnswerWords(), CITED_ROW, countWords(), CursorTarget, LandingPage(), LandingPageProps (+22 more)
 
-### Community 35 - "Document"
-Cohesion: 0.10
-Nodes (53): ProcessingJobStatus, _chunk_document(), DiscoveredDocument, IngestionService, Document, DocumentChunk, _has_distinctive_exact_term(), main() (+45 more)
+### Community 35 - "LibraryNode"
+Cohesion: 0.16
+Nodes (26): AgentLimits, ConversationService, LibraryNode, add(), cited_history(), file_node(), test_content_llm_decides_on_low_score_evidence_and_abstention_keeps_consulted_sources(), test_current_file_still_overrides_cited_history_with_autonomous_query() (+18 more)
 
 ### Community 36 - "compilerOptions"
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+11 more)
 
-### Community 37 - "AuthenticationUnavailable"
-Cohesion: 0.09
-Nodes (16): AuthenticationRateLimited, AuthenticationRejected, AuthenticationUnavailable, canonical_email(), WorkOSAuthKitGateway, FakeAuthGateway, google_api(), test_canonical_email_and_hash_are_deterministic() (+8 more)
+### Community 37 - "identity/auth.py"
+Cohesion: 0.06
+Nodes (32): AuthenticationRateLimited, AuthenticationRejected, AuthenticationUnavailable, canonical_email(), hash_secret(), IdentityService, workos_session_id(), WorkOSAuthKitGateway (+24 more)
 
 ### Community 38 - "developer-screen.tsx"
-Cohesion: 0.08
-Nodes (24): AccessSettings(), Api, dateLabel(), Key, ScopeChips(), scopeOptions, Status(), EnterKeyEvent (+16 more)
-
-### Community 39 - "Arquivio"
-Cohesion: 0.17
-Nodes (12): Architecture, Arquivio, Backend, Configuration, Contributing, Documentation, Frontend, Highlights (+4 more)
-
-### Community 40 - "test_identity_auth.py"
 Cohesion: 0.10
-Nodes (15): IdentityService, workos_session_id(), FakeSession, test_created_session_persists_only_hash_and_sets_future_expiration(), test_establish_identity_creates_canonical_user_and_identity(), test_establish_identity_is_idempotent_for_provider_subject(), test_establish_identity_rejects_orphaned_external_identity(), test_missing_or_altered_session_secret_authenticates_no_user() (+7 more)
+Nodes (18): AccessSettings(), Api, dateLabel(), Key, ScopeChips(), scopeOptions, Status(), mcpClientExamples() (+10 more)
+
+### Community 39 - "organizations"
+Cohesion: 0.07
+Nodes (28): organizations(), Causa raiz comprovada, Correção na origem, Follow-ups contextuais e fontes — 2026-09-29, Mini eval real antes/depois, Repetir e aplicar, Replay com LLM real, Verificação (+20 more)
+
+### Community 40 - "test_onedrive_integration.py"
+Cohesion: 0.18
+Nodes (15): connect_onedrive(), create_organization(), FakeAuthGateway, login(), onedrive_api(), test_member_cannot_select_notion_scope(), test_member_cannot_start_onedrive_or_read_or_create_its_scopes(), test_onedrive_callback_rejects_missing_or_mismatched_state_without_exchange() (+7 more)
 
 ### Community 41 - "components.json"
 Cohesion: 0.11
@@ -684,49 +712,49 @@ Nodes (17): aliases, components, hooks, lib, ui, utils, registries, rsc (+9 more
 Cohesion: 0.22
 Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions, F-055 - Loadings da aplicação e citações concisas, Ownership, Ready checklist, Source and outcome, Validator report
 
-### Community 43 - "GoogleRemoteUnauthorized"
-Cohesion: 0.12
-Nodes (12): GooglePort, GoogleRefreshTokenInvalid, GoogleRemoteUnauthorized, FakeGooglePort, read_file(), __init__(), __init__(), test_provider_propagates_invalid_refresh_token_after_one_attempt() (+4 more)
+### Community 43 - "extraction/__init__.py"
+Cohesion: 0.09
+Nodes (24): ExtractedBlock, sanitize_blocks(), csv_blocks(), decode_text(), google_doc_blocks(), markdown_blocks(), markdown_blocks_from_bytes(), text_plain_blocks() (+16 more)
 
-### Community 44 - "knowledge/presentation.py"
-Cohesion: 0.16
-Nodes (12): answer_without_source_links(), _remove_url_preserving_punctuation(), serialize_question_result(), short_citation_excerpt(), strip_answer_links(), _strip_markdown_links(), test_images_and_links(), test_markers_and_filenames() (+4 more)
+### Community 44 - "OpenAIQuestionProvider"
+Cohesion: 0.11
+Nodes (9): _consolidate_content_citations(), _deterministic_options(), OpenAIQuestionProvider, _response_output_text(), _retry_after_seconds(), EvalProvider, test_topic_adapter_uses_closed_schema_and_drops_out_of_range_files(), test_synthesis_request_contains_full_evidence_and_allows_cited_enumeration() (+1 more)
 
 ### Community 45 - "api-docs-logic.ts"
-Cohesion: 0.12
-Nodes (27): BODY_EXAMPLES, bodyFields(), codeSample(), constraints(), Endpoint, endpointsFrom(), Field, genericExample() (+19 more)
+Cohesion: 0.13
+Nodes (25): BODY_EXAMPLES, bodyFields(), codeSample(), constraints(), Endpoint, endpointsFrom(), Field, genericExample() (+17 more)
 
 ### Community 46 - "5. Inventário literal completo"
 Cohesion: 0.06
 Nodes (33): 1. Regra de uso deste contrato, 2. Voz da marca e público, 3. Oferta preservada, 4.1 Mapa de conteúdo aprovado, 4.2 Coreografia da demonstração de conversa, 4.3 Distinção entre as duas sequências de três passos, 4. Narrativa e hierarquia para o redesign chat-first, 5.10 Nomes acessíveis existentes (+25 more)
 
-### Community 47 - "ScopedAccess"
-Cohesion: 0.23
-Nodes (9): ScopedAccess, factory(), _file_node(), _principal(), test_a_node_of_another_organization_is_denied_not_ignored(), test_restricted_credential_cannot_widen_beyond_its_roots(), test_restricted_credential_is_confined_to_its_nodes(), test_unrestricted_credential_selects_the_whole_organization() (+1 more)
+### Community 47 - "test_text_search.py"
+Cohesion: 0.11
+Nodes (25): FetchedDocument, RetrievalService, SearchHit, _excerpt(), TextSearchHit, TextSearchPage, TextSearchService, _validate_query() (+17 more)
 
 ### Community 48 - "SyncAccessDenied"
-Cohesion: 0.09
-Nodes (37): ask_organization_question(), ask_question(), document_failures(), documents(), enqueue_sync(), get_conversation(), QuestionInput, QuestionMention (+29 more)
-
-### Community 49 - "library/service.py"
-Cohesion: 0.06
-Nodes (52): DiscoveryResult, run_mode(), LibraryExclusion, ManualSyncRun, CatalogFileSnapshot, LibraryContext, LibrarySync, question_coverage() (+44 more)
-
-### Community 50 - "ingestion/service.py"
 Cohesion: 0.10
-Nodes (13): ProcessingJob, _chunk_block(), _empty_text_code(), is_empty_content(), ManagedDocument, outcome_for(), RemovedWorkspace, record_sync() (+5 more)
+Nodes (23): _cooldown(), _dispatch_manual_jobs(), _documents_by_workspace(), _indexing(), library_children(), library_mention_candidates(), library_question_contexts(), library_roots() (+15 more)
+
+### Community 49 - "seed"
+Cohesion: 0.09
+Nodes (46): request_run(), test_repair_is_idempotent_and_preserves_real_failures(), test_n06_file_scopes_on_postgres(), test_embedding_stage_is_visible_without_committing_pending_documents(), doc(), exclude(), seed(), session() (+38 more)
+
+### Community 50 - "test_workspace_folder_management_api.py"
+Cohesion: 0.24
+Nodes (11): create_organization(), login(), management_api(), RecordingDispatcher, seed_folder(), test_delete_folder_denies_member_foreign_unknown_and_active_scope_without_mutation(), test_delete_folder_removes_its_local_graph_and_preserves_source_and_other_scope(), test_resync_denies_member_foreign_and_unknown_folders_without_enqueuing() (+3 more)
 
 ### Community 51 - "OAuthCredentials"
-Cohesion: 0.08
-Nodes (11): ClickUpOAuthClient, ClickUpOAuthUnavailable, ClickUpRemoteUnauthorized, ClickUpOAuthClient, OAuthCredentials, ServiceClient, test_clickup_client_uses_bearer_header_and_normalizes_the_account_email(), get() (+3 more)
-
-### Community 52 - ".ask"
 Cohesion: 0.11
-Nodes (17): UsageService, metadata(), _all_document_inventory_evidence(), _deduplicate_indexed_copies(), _document_inventory_evidence(), _document_recency(), _document_summary_evidence(), _embedding_input() (+9 more)
+Nodes (8): ClickUpOAuthClient, OAuthCredentials, ServiceClient, test_clickup_client_uses_bearer_header_and_normalizes_the_account_email(), get(), test_clickup_list_tasks_paginates_until_last_page_and_requests_markdown(), get(), test_clickup_member_and_status_reads()
+
+### Community 52 - "test_notion_integration.py"
+Cohesion: 0.10
+Nodes (23): _blocks_to_text(), _reply(), test_notion_403_and_404_are_item_failures_and_401_is_auth(), test_notion_429_is_retried_with_retry_after(), test_notion_authorization_url_contains_state_and_redirect(), test_notion_blocks_are_normalized_to_searchable_text(), test_notion_child_pages_are_boundaries_not_parent_content(), test_notion_client_reads_the_oauth_owner_email_from_its_bot_profile() (+15 more)
 
 ### Community 53 - "test_mcp_server.py"
-Cohesion: 0.11
-Nodes (27): finish_jobs(), _bind(), call(), client(), factory(), _make_client(), rpc(), rpc_raw() (+19 more)
+Cohesion: 0.10
+Nodes (25): finish_jobs(), _bind(), call(), client(), factory(), _make_client(), rpc(), rpc_raw() (+17 more)
 
 ### Community 54 - "chart.tsx"
 Cohesion: 0.20
@@ -736,37 +764,37 @@ Nodes (13): ChartConfig, ChartContainer(), ChartContext, ChartContextProps, Char
 Cohesion: 0.14
 Nodes (13): HOME, MINIFLARE_REGISTRY_PATH, npm_config_audit, npm_config_cache, npm_config_fund, npm_config_update_notifier, sites-env.sh script, SITES_ENV_READY (+5 more)
 
-### Community 56 - "server.py"
-Cohesion: 0.07
-Nodes (24): API movida, Arquivos desta entrega, MCP real, Página Desenvolvedor — validação, Validação visual, Verificações finais, run_tool(), build_server() (+16 more)
-
-### Community 57 - "context-menu.tsx"
-Cohesion: 0.12
-Nodes (9): ContextMenuCheckboxItem(), ContextMenuContent(), ContextMenuItem(), ContextMenuLabel(), ContextMenuRadioItem(), ContextMenuSeparator(), ContextMenuShortcut(), ContextMenuSubContent() (+1 more)
-
-### Community 58 - "sqlalchemy"
+### Community 56 - "asgi.py"
 Cohesion: 0.05
-Nodes (37): AuditLog, Base, CreatedAtMixin, UUIDPrimaryKeyMixin, ClickUpAccessDenied, authorship_footer(), _clean(), suggested_title() (+29 more)
+Nodes (29): API movida, Arquivos desta entrega, MCP real, Página Desenvolvedor — validação, Validação visual, Verificações finais, build_mcp_app(), run_sync() (+21 more)
 
-### Community 59 - "search.py"
-Cohesion: 0.33
-Nodes (4): _excerpt(), TextSearchHit, TextSearchPage, _validate_query()
+### Community 57 - "test_text_search_api.py"
+Cohesion: 0.16
+Nodes (23): admin_api(), as_user(), corpus(), create_organization(), FakeIngestionDispatcher, FakeSemanticProvider, login(), search_api() (+15 more)
+
+### Community 58 - "WorkspaceFolder"
+Cohesion: 0.05
+Nodes (54): UsageRecord, Base, CreatedAtMixin, UUIDPrimaryKeyMixin, purge_cache(), ExtractionCache, authorship_footer(), _clean() (+46 more)
+
+### Community 59 - "WorkspaceService"
+Cohesion: 0.07
+Nodes (13): SavedQuery, SavedQueryService, SemanticProvider, build_digest(), digest_text(), send_weekly_digests(), answer_changed(), _aware() (+5 more)
 
 ### Community 60 - "seed_tenant"
-Cohesion: 0.11
-Nodes (39): ApiAuditEvent, bearer(), mint_key(), seed_tenant(), Tenant, test_plan_c_obeys_mcp_toggle_on_every_request(), test_plan_c_static_api_key_is_off_by_default(), _app_with() (+31 more)
+Cohesion: 0.13
+Nodes (34): ApiAuditEvent, bearer(), mint_key(), seed_tenant(), Tenant, test_plan_c_obeys_mcp_toggle_on_every_request(), test_plan_c_static_api_key_is_off_by_default(), test_plan_c_static_api_key_works_when_enabled_and_stays_scoped() (+26 more)
 
 ### Community 61 - "What You Must Do When Invoked"
 Cohesion: 0.18
 Nodes (11): Step 0 - GitHub repos and multi-path merge (only if a URL or several paths), Step 1 - Ensure graphify is installed, Step 2.5 - Video and audio (only if video files detected), Step 2 - Detect files, Step 4.5 - Graph health check (read-only integrity gate), Step 4 - Build graph, cluster, analyze, generate outputs, Step 5 - Label communities, Step 6 - Generate Obsidian vault (opt-in) + HTML (+3 more)
 
-### Community 62 - "RetrievalService"
-Cohesion: 0.11
-Nodes (30): RetrievalService, run_fetch(), run_list_sources(), run_search(), _selection(), ToolNotFound, test_fts_search_ranks_and_confines_real_postgres(), factory() (+22 more)
+### Community 62 - "test_mcp_tools.py"
+Cohesion: 0.19
+Nodes (22): run_fetch(), run_list_sources(), run_search(), _selection(), factory(), _principal(), test_fetch_of_other_tenant_or_garbage_id_is_not_found(), test_fetch_returns_text_with_untrusted_marker_and_metadata() (+14 more)
 
 ### Community 63 - "test_exhausted_embedding_rate_limit_rolls_back_and_marks_job_failed"
-Cohesion: 0.08
-Nodes (6): AIProviderRateLimited, embed(), test_exhausted_embedding_rate_limit_rolls_back_and_marks_job_failed(), discover(), embed_workspace(), scalars()
+Cohesion: 0.11
+Nodes (3): test_exhausted_embedding_rate_limit_rolls_back_and_marks_job_failed(), discover(), scalars()
 
 ### Community 64 - "F-044 — Inicialização resiliente do container frontend"
 Cohesion: 0.40
@@ -781,8 +809,8 @@ Cohesion: 0.29
 Nodes (6): Acceptance, Concurrent changes / remaining gate, F-039 — Compose unificado e imagens Arquivio, Ownership, Request / approved design, Validation and gate
 
 ### Community 67 - "test_clickup_tasks_api.py"
-Cohesion: 0.08
-Nodes (24): ClickUpOutcomeUnknown, ClickUpRateLimited, ClickUpWriteRejected, ClickUpTaskCreation, body(), FakeClickUp, post(), test_answer_of_another_user_or_a_user_message_is_a_404() (+16 more)
+Cohesion: 0.09
+Nodes (23): ClickUpOutcomeUnknown, ClickUpRateLimited, ClickUpWriteRejected, ClickUpTaskCreation, body(), post(), test_answer_of_another_user_or_a_user_message_is_a_404(), test_chat_context_exposes_the_clickup_connection_state_without_calling_clickup() (+15 more)
 
 ### Community 68 - "install-pnpm.sh"
 Cohesion: 0.39
@@ -792,33 +820,33 @@ Nodes (7): acquire_shared_lock(), can_write_directory(), release_shared_lock(), 
 Cohesion: 0.11
 Nodes (28): ADR-0020, AnswerActions(), copy(), ExportFormat, FORMATS, Source, answerWithSources(), buildTaskPayload() (+20 more)
 
-### Community 70 - "OrganizationService"
-Cohesion: 0.09
-Nodes (16): TenantScopeRequired, _canonical_email(), _hash_token(), InvitationInvalid, MembershipAlreadyExists, OrganizationService, FakeInvitationSession, test_owner_role_cannot_be_invited() (+8 more)
+### Community 70 - "Membership"
+Cohesion: 0.19
+Nodes (8): Membership, _canonical_email(), _hash_token(), InvitationInvalid, OrganizationService, test_mcp_info_requires_admin_membership_and_session(), test_mcp_info_uses_runtime_configuration_and_excludes_private_settings(), test_owner_role_cannot_be_invited()
 
-### Community 71 - "sqlalchemy_dialects"
-Cohesion: 0.08
-Nodes (3): _offline_backfill(), _online_backfill(), upgrade()
+### Community 71 - ".__init__"
+Cohesion: 0.17
+Nodes (4): AnswerAssessor, FileSummaryAdapter, FileTopicAdapter, IntentClassifierAdapter
 
-### Community 72 - "test_structured_logging.py"
+### Community 72 - "Preparar a produção na Railway"
+Cohesion: 0.11
+Nodes (16): Configuração e validação externas, Contrato de emissão de token e entrega de e-mail, Fluxos, Fronteira de confiança do IP, Login personalizado com WorkOS, Token de reset e Referer, 1. Definir os valores de produção, 2. Criar o projeto e os serviços (+8 more)
+
+### Community 73 - "scoped_document"
 Cohesion: 0.15
-Nodes (9): liveness(), readiness(), database_is_ready(), event_record(), ListHandler, make_application(), test_health_request_emits_structured_request_record(), test_readiness_emits_structured_result_and_duration() (+1 more)
-
-### Community 73 - "test_onedrive_integration.py"
-Cohesion: 0.18
-Nodes (15): connect_onedrive(), create_organization(), FakeAuthGateway, login(), onedrive_api(), test_member_cannot_select_notion_scope(), test_member_cannot_start_onedrive_or_read_or_create_its_scopes(), test_onedrive_callback_rejects_missing_or_mismatched_state_without_exchange() (+7 more)
+Nodes (9): _chunks_of(), document_chunks(), document_file(), document_preview(), document_view(), PreviewRequest, _source_of(), citation_evidence() (+1 more)
 
 ### Community 74 - "test_sharepoint.py"
-Cohesion: 0.06
-Nodes (40): OneDriveCursorInvalid, OneDriveDeltaExpired, OneDriveOAuthInvalid, composite_id(), _drive(), SharePointDocumentProvider, SharePointGraphClient, SharePointIdInvalid (+32 more)
+Cohesion: 0.05
+Nodes (42): ProviderCapabilities, OneDriveDeltaExpired, OneDriveProviderAdapter, SharePointProviderAdapter, composite_id(), _drive(), SharePointDocumentProvider, SharePointGraphClient (+34 more)
 
 ### Community 76 - "test_company_library_api.py"
-Cohesion: 0.09
-Nodes (41): Dispatcher, api(), _clickup_source(), _fake_clickup_registry(), FakeAuthGateway, login(), _nest_file_under_folder(), seed_library() (+33 more)
+Cohesion: 0.10
+Nodes (42): Dispatcher, api(), _clickup_source(), _fake_clickup_registry(), FakeAuthGateway, login(), _nest_file_under_folder(), seed_library() (+34 more)
 
-### Community 77 - "NotionPage"
-Cohesion: 0.03
-Nodes (53): _blocks_to_text(), notion_item_id(), NotionDocumentProvider, read_page(), NotionOAuthClient, NotionPage, _property_text(), _rich_text() (+45 more)
+### Community 77 - "devDependencies"
+Cohesion: 0.11
+Nodes (19): devDependencies, @cloudflare/vite-plugin, @cloudflare/workers-types, drizzle-kit, eslint, eslint-config-next, react-server-dom-webpack, tailwindcss (+11 more)
 
 ### Community 78 - "001 - MVP: Document Intelligence para pastas de trabalho"
 Cohesion: 0.10
@@ -828,29 +856,29 @@ Nodes (21): 001 - MVP: Document Intelligence para pastas de trabalho, 10. Requis
 Cohesion: 0.40
 Nodes (4): NPM_CONFIG_FETCH_RETRIES, NPM_CONFIG_FETCH_TIMEOUT, NPM_CONFIG_MAXSOCKETS, install-ci.sh script
 
-### Community 80 - "interface-motion.ts"
-Cohesion: 0.09
-Nodes (27): isSafeCut(), openSpanLength(), revealDurationMs(), revealedText(), revealedUnits(), revealPlan(), prefersReducedMotion(), REVEAL_MAX_MS (+19 more)
+### Community 80 - "automation-editor.tsx"
+Cohesion: 0.15
+Nodes (21): AutomationEditor(), next(), steps, AutomationFolderPicker(), Candidate, Choose, folderName(), LibraryFetch (+13 more)
 
-### Community 81 - "test_text_search.py"
-Cohesion: 0.31
-Nodes (14): TextSearchService, run_alembic(), test_foundation_migration_applies_and_reverts_on_disposable_postgres(), add_document(), create_context(), search(), session(), test_inactive_member_cannot_search_their_former_organization() (+6 more)
+### Community 81 - "User"
+Cohesion: 0.10
+Nodes (31): ask_organization_question(), ask_question(), document_failures(), documents(), enqueue_sync(), get_conversation(), QuestionInput, QuestionMention (+23 more)
 
 ### Community 82 - "2. Invariantes críticos de microcopy"
 Cohesion: 0.08
 Nodes (24): 1. Regra de comparação literal, 2. Invariantes críticos de microcopy, 3. Invariantes de ação e destino, 4. Invariantes acessíveis, 5. Invariantes responsivos e de hierarquia, 6. Critérios Given/When/Then para validação futura, 7. Evidência baseline para comparação, ACT-01 — Âncoras públicas (+16 more)
 
 ### Community 83 - "test_inventory_followups.py"
-Cohesion: 0.12
-Nodes (31): add_file(), CatalogAI, setup(), test_byte_limit_is_explicit_partial_list_with_exact_catalog_total(), test_current_selection_overrides_history(), test_deindexing_changes_content_coverage_but_keeps_file_count(), test_empty_topic_selection_stays_empty_on_next_count(), test_folder_provenance_survives_statistics_and_rejects_moved_file() (+23 more)
+Cohesion: 0.14
+Nodes (32): add_file(), setup(), test_byte_limit_is_explicit_partial_list_with_exact_catalog_total(), test_current_selection_overrides_history(), test_deindexing_changes_content_coverage_but_keeps_file_count(), test_empty_topic_selection_stays_empty_on_next_count(), test_folder_provenance_survives_statistics_and_rejects_moved_file(), test_followups_revalidate_removed_files_without_widening() (+24 more)
 
-### Community 84 - "EmbeddingService"
-Cohesion: 0.23
-Nodes (17): EmbeddingService, document(), FakeEmbeddingProvider, finish_sync(), session(), stage_sync(), test_embedding_batches_overlap_without_sharing_the_database_session(), __init__() (+9 more)
+### Community 84 - "request_context"
+Cohesion: 0.14
+Nodes (9): request_context(), Capture, _middleware_client(), probe(), test_hostile_client_request_id_is_replaced(), test_middleware_logs_request_when_handler_raises(), test_provider_failure_categories_are_correlated_and_sanitized(), test_provider_preflight_logs_deadline_without_http() (+1 more)
 
 ### Community 85 - "messageFor"
-Cohesion: 0.05
-Nodes (64): Validação independente atual, AdminScreen(), accept(), create(), AnswerFeedback(), submit(), ConversationHistory(), remove() (+56 more)
+Cohesion: 0.06
+Nodes (51): AdminScreen(), hostedLoginQuery(), safeInvitationReturnTo(), AnswerFeedback(), submit(), ConversationHistory(), remove(), rename() (+43 more)
 
 ### Community 86 - "F-041 — Dimensões uniformes nas páginas internas"
 Cohesion: 0.29
@@ -860,49 +888,49 @@ Nodes (6): Acceptance, F-041 — Dimensões uniformes nas páginas internas, Fin
 Cohesion: 0.08
 Nodes (23): card, components, method, risks, $schema, source, capturedAt, captureMode (+15 more)
 
-### Community 92 - "test_workspace_folder_management_api.py"
-Cohesion: 0.18
-Nodes (13): SavedQuery, create_organization(), FakeAuthGateway, login(), management_api(), RecordingDispatcher, seed_folder(), test_delete_folder_denies_member_foreign_unknown_and_active_scope_without_mutation() (+5 more)
+### Community 92 - "NotionPage"
+Cohesion: 0.05
+Nodes (27): notion_item_id(), NotionDocumentProvider, read_page(), NotionOAuthClient, NotionPage, NotionRemoteUnauthorized, _property_text(), _rich_text() (+19 more)
 
-### Community 93 - "test_remote_http.py"
-Cohesion: 0.24
-Nodes (19): RetryPolicy, test_prompt_asks_for_a_target_length_in_one_schema_bound_call(), fake_post(), Clock, http(), reply(), script(), test_429_with_retry_after_waits_that_long_then_succeeds() (+11 more)
+### Community 93 - "RemoteThrottled"
+Cohesion: 0.20
+Nodes (20): RemoteThrottled, RetryPolicy, test_prompt_asks_for_a_target_length_in_one_schema_bound_call(), fake_post(), Clock, http(), reply(), script() (+12 more)
 
 ### Community 94 - "product-app.tsx"
 Cohesion: 0.05
-Nodes (70): Brand(), AdminPage(), AutomationsPage(), DeveloperPage(), IntegrationsPage(), LibraryPage(), CompanyPage(), ProfilePage() (+62 more)
+Nodes (55): Automática, Browser com dados sintéticos locais, Contexto do Graphify e delegação econômica, Estado de Git, Estado implementado no repositório, Evidência já coletada, Handoff — F-037 Arquivio: produto, UI e landing page, Landing e autenticação (+47 more)
 
 ### Community 102 - "F-037 - Revisão do MVP, experiência de produto e landing page Arquivio"
 Cohesion: 0.14
 Nodes (13): Acceptance criteria and test matrix, Browser evidence (root, synthetic local providers), Commands and results, Decisions, F-037 - Revisão do MVP, experiência de produto e landing page Arquivio, Final continuation (2026-09-21), Independent backend/route pass (Luna, 2026-09-20), Independent final gate (validator, 2026-09-21) (+5 more)
 
 ### Community 103 - "export.py"
-Cohesion: 0.18
-Nodes (16): export_answer(), _sources(), _cells(), ExportBlock, ExportSource, _latin1(), parse_blocks(), plain() (+8 more)
+Cohesion: 0.27
+Nodes (14): _cells(), ExportBlock, ExportSource, _latin1(), parse_blocks(), plain(), render(), _source_line() (+6 more)
 
 ### Community 104 - "automation_webhooks.py"
-Cohesion: 0.10
-Nodes (25): _active_count(), create_endpoint(), EndpointCreate, EndpointPatch, _iso(), list_deliveries(), list_endpoints(), _load() (+17 more)
+Cohesion: 0.18
+Nodes (19): _active_count(), create_endpoint(), EndpointCreate, EndpointPatch, _iso(), list_deliveries(), list_endpoints(), _load() (+11 more)
 
 ### Community 105 - "DataSource"
-Cohesion: 0.04
-Nodes (63): ClickUpConnectionService, ClickUpOAuthInvalid, GoogleConnectionService, DataSource, OAuthConnectionState, NotionConnectionService, OAuthConnectionServiceBase, OneDriveConnectionService (+55 more)
+Cohesion: 0.13
+Nodes (29): DataSource, create_organization(), google_api(), login(), test_admin_creates_one_workspace_scope_from_multiple_folders_and_root_files(), test_admin_lists_remote_folders_only_for_own_connected_source(), test_callback_rejects_oauth_state_when_initiating_server_session_is_no_longer_active(), test_cross_tenant_source_cannot_be_selected_as_workspace_folder() (+21 more)
 
 ### Community 106 - "Piloto gratuito temporário: Render, Supabase e Upstash"
 Cohesion: 0.20
 Nodes (9): 1. Defina os dois endereços públicos, 2. Crie os dados gerenciados, 3. Publique API e frontend no Render, 4. Atualize os callbacks externos, 5. Rode o worker local contra os mesmos serviços, Limites assumidos, pgvector (F5), Piloto gratuito temporário: Render, Supabase e Upstash (+1 more)
 
 ### Community 107 - "ref_node_assert"
-Cohesion: 0.03
-Nodes (65): assert, { chromium }, fixture, fs, messages, response, answer, assert (+57 more)
+Cohesion: 0.05
+Nodes (22): evidence, evidence, contract, editor, screen, webhooks, sources, targets (+14 more)
 
 ### Community 108 - "F-026 - Consolidação da navegação e telas legadas"
 Cohesion: 0.20
 Nodes (9): Acceptance criteria and test matrix, Commands and results, Decisions, F-026 - Consolidação da navegação e telas legadas, Impact assessment, Ownership, Ready checklist, Source and outcome (+1 more)
 
 ### Community 109 - "api/auth.py"
-Cohesion: 0.13
-Nodes (32): accept_invitation(), callback(), confirm_password_reset(), create_invitation(), create_organization(), _custom_auth_result(), deactivate_membership(), _gateway_call() (+24 more)
+Cohesion: 0.09
+Nodes (36): accept_invitation(), callback(), confirm_password_reset(), create_invitation(), create_organization(), _custom_auth_result(), database_session(), deactivate_membership() (+28 more)
 
 ### Community 110 - "F-029 - Biblioteca dedicada e gestão por escopo"
 Cohesion: 0.20
@@ -924,9 +952,9 @@ Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions,
 Cohesion: 0.22
 Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions, F-005 - Folder-scoped textual search, Ownership, Ready checklist, Source and outcome, Validator report
 
-### Community 115 - "ClickUpDocumentProvider"
-Cohesion: 0.13
-Nodes (10): _aware(), _Catalog, ClickUpDocumentProvider, collect(), unchanged(), _custom_field_text(), _doc_text(), _name_of() (+2 more)
+### Community 115 - "RemoteFolder"
+Cohesion: 0.05
+Nodes (28): _aware(), _Catalog, ClickUpAccessDenied, ClickUpDocumentProvider, collect(), unchanged(), _custom_field_text(), _doc_text() (+20 more)
 
 ### Community 116 - "F-008 - Interface web do MVP Document Intelligence"
 Cohesion: 0.22
@@ -1012,17 +1040,13 @@ Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions,
 Cohesion: 0.40
 Nodes (4): Critérios de aceitação, Evidências, F-048 — Ações uniformes nos cards de integrações, Objetivo
 
-### Community 137 - "test_extraction_providers.py"
-Cohesion: 0.17
-Nodes (10): GoogleItemTooLarge, GoogleItemUnavailable, test_google_export_size_limit_maps_to_file_too_large_code(), read_file(), test_google_mime_normalization_and_flag_prevent_download(), test_google_propagates_encrypted_pdf_code(), FakeGoogleDriveClient, fresh_credentials() (+2 more)
-
 ### Community 138 - "F-051 - Cards de integrações compactos e uniformes"
 Cohesion: 0.22
 Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions, F-051 - Cards de integrações compactos e uniformes, Ownership, Ready checklist, Source and outcome, Validator report
 
-### Community 139 - "test_real_fetcher_preview_returns_none_instead_of_raising"
-Cohesion: 0.17
-Nodes (15): FakeSession, fetcher(), google_provider(), remote_call(), make_document(), make_source(), microsoft_provider(), Recorder (+7 more)
+### Community 139 - "preview"
+Cohesion: 0.19
+Nodes (7): create_task(), CreateTaskInput, list_options(), _own_answer(), preview(), _refuse(), _service()
 
 ### Community 140 - "Deploy do piloto na Oracle Always Free"
 Cohesion: 0.25
@@ -1033,28 +1057,28 @@ Cohesion: 0.17
 Nodes (10): ADR-0007 — Escopos de perguntas sobre conteúdo indexado, Extensão aprovada para contexto no compositor (2026-09-27), Acceptance, Contracts / design, F-042 — Perguntas por pasta, ferramenta e todas as ferramentas, Findings, Independent validator — 2026-09-22, Ownership (+2 more)
 
 ### Community 142 - "notifications.py"
-Cohesion: 0.23
-Nodes (9): get_preferences(), list_notifications(), mark_notifications_read(), MarkReadInput, _member_scope(), PreferencesInput, _serialize(), set_preferences() (+1 more)
+Cohesion: 0.20
+Nodes (10): get_preferences(), list_notifications(), mark_notifications_read(), MarkReadInput, _member_scope(), PreferencesInput, _serialize(), set_preferences() (+2 more)
 
 ### Community 144 - "F-054 - Cor do foco em campos de entrada"
 Cohesion: 0.22
 Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions, F-054 - Cor do foco em campos de entrada, Ownership, Ready checklist, Source and outcome, Validator report
 
-### Community 145 - "conversations.py"
-Cohesion: 0.22
-Nodes (7): delete_conversation(), _item(), list_conversations(), _member(), _owned(), rename_conversation(), RenameInput
+### Community 145 - "Acceptance criteria and test matrix"
+Cohesion: 0.12
+Nodes (26): ClickUpConnectionService, ClickUpOAuthInvalid, ClickUpRemoteUnauthorized, url(), test_clickup_oauth_round_trip_stores_only_encrypted_credentials(), test_clickup_oauth_start_requires_configuration(), _member(), _service_fixture() (+18 more)
 
-### Community 146 - "registry.py"
-Cohesion: 0.06
-Nodes (27): ProviderCapabilities, OneDriveProviderAdapter, SharePointProviderAdapter, SharePointConnectionService, test_sharepoint_scope_catalog_lists_sites_libraries_and_disables_all_accessible(), test_sharepoint_settings_defaults(), A.10 Fase A5 — Registry, worker, serviço OAuth e API (1 d), A.12 Fase A7 — Refinamentos de UX e escala (opcional, 1 d) (+19 more)
+### Community 146 - "FakeClient"
+Cohesion: 0.09
+Nodes (10): FakeCipher, FakeClient, _known(), _states(), _sync_once(), folderless_lists(), folders(), test_clickup_sync_persists_documents_projects_the_hierarchy_and_prunes_deleted_tasks() (+2 more)
 
-### Community 147 - "test_content_consolidation.py"
-Cohesion: 0.25
-Nodes (11): evidence(), MockLLM, test_both_generation_stages_receive_shared_pool_and_complete_passages(), test_equivalence_does_not_make_invalid_citations_valid(), test_explicit_per_document_synthesis_preserves_separate_citations(), test_identical_passages_collapse_citations_but_not_differing_dates(), test_prompts_require_sequential_numbering_without_new_detail_restrictions(), test_real_profile_through_mocked_llm_is_complete_consolidated_and_linked() (+3 more)
+### Community 147 - "triggers.py"
+Cohesion: 0.12
+Nodes (14): aware(), compute_next_run(), InvalidTriggerConfig, normalize_trigger_config(), changed_document_ids(), enqueue_due_schedules(), enqueue_folder_changed(), _latest_change() (+6 more)
 
-### Community 148 - "Automation"
-Cohesion: 0.23
-Nodes (8): Automation, enqueue_due_schedules(), enqueue_folder_changed(), _latest_change(), queue_run(), hook(), hook(), test_tick_queues_due_schedule_once_and_advances()
+### Community 148 - "sqlalchemy_dialects"
+Cohesion: 0.08
+Nodes (3): _offline_backfill(), _online_backfill(), upgrade()
 
 ### Community 149 - "Subagentes do Arquivio"
 Cohesion: 0.50
@@ -1072,37 +1096,33 @@ Nodes (3): For git commit hook, For native CLAUDE.md integration, graphify refer
 Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
-### Community 153 - "compute_next_run"
-Cohesion: 0.23
-Nodes (7): _validate_trigger(), aware(), compute_next_run(), InvalidTriggerConfig, normalize_trigger_config(), test_next_run_is_computed_in_the_automation_timezone(), test_trigger_config_validation()
+### Community 153 - "test_automations_api.py"
+Cohesion: 0.13
+Nodes (33): test_recipient_catalog_hides_other_organizations_members(), test_recipient_catalog_lists_members_with_folder_access(), add_member(), body(), create(), node_body(), relogin_owner(), run_pending() (+25 more)
 
 ### Community 154 - "F-059 - Fontes citadas como lista compacta de documentos"
 Cohesion: 0.33
 Nodes (5): Acceptance and test matrix, Decisions, F-059 - Fontes citadas como lista compacta de documentos, Ownership and gates, Source and outcome
 
-### Community 156 - "OcrError"
-Cohesion: 0.07
-Nodes (34): FallbackOcr, DoclingServeEngine, pages_from_docling(), build_ocr(), budget(), OcrBudget, OcrBudgetExceeded, OcrEngine (+26 more)
+### Community 156 - "knowledge/presentation.py"
+Cohesion: 0.16
+Nodes (12): answer_without_source_links(), _remove_url_preserving_punctuation(), serialize_question_result(), short_citation_excerpt(), strip_answer_links(), _strip_markdown_links(), test_images_and_links(), test_markers_and_filenames() (+4 more)
 
 ### Community 159 - "F-040 — Mais espaço para a conversa"
 Cohesion: 0.33
 Nodes (5): Acceptance, Approved scope, F-040 — Mais espaço para a conversa, Ownership and concurrency, Validation and gate
 
-### Community 162 - "test_google_error_classification.py"
-Cohesion: 0.38
-Nodes (10): google_error_reason(), client(), drive_error(), test_429_without_retry_after_backs_off_and_recovers(), test_bare_403_401_and_unknown_403_remain_unauthorized(), test_daily_limit_is_not_retried_inside_the_request(), test_file_level_403_is_an_item_failure_not_a_source_failure(), test_quota_403_is_retried_and_never_becomes_reauth() (+2 more)
-
 ### Community 168 - "access_admin.py"
-Cohesion: 0.07
-Nodes (37): ApiKey, McpConnection, OrganizationAccessSettings, _audit(), create_key(), _date(), get_access_settings(), KeyInput (+29 more)
+Cohesion: 0.10
+Nodes (24): ApiKey, OrganizationAccessSettings, _audit(), create_key(), _date(), get_access_settings(), KeyInput, list_keys() (+16 more)
 
 ### Community 172 - "ai-answer-assessment-20261007 - Avaliação da resposta, judge offline e feedback"
 Cohesion: 0.12
 Nodes (15): Acceptance criteria and test matrix, ai-answer-assessment-20261007 - Avaliação da resposta, judge offline e feedback, Commands and results, Complemento local e incidente confirmado (2026-10-07), Data validation, Decisions, Limitações e rollout, Ownership (+7 more)
 
-### Community 173 - "MonkeyPatch"
-Cohesion: 0.18
-Nodes (8): test_google_changes_api_follows_pages_and_returns_latest_start_token(), test_google_changes_api_marks_expired_page_token_for_snapshot_recovery(), test_google_client_marks_unauthorized_account_metadata_as_remote_unauthorized(), test_google_client_reads_authorized_account_email_without_expanding_scope(), get(), test_google_client_refresh_persists_rotated_refresh_token_and_maps_invalid_grant(), invalid(), test_google_client_refreshes_access_token_and_preserves_original_refresh_token()
+### Community 173 - "test_workos_sdk_contract.py"
+Cohesion: 0.13
+Nodes (17): sdk_gateway(), make(), test_credentials_and_outages_remain_errors_even_with_pending_context(), test_pending_authentication_and_resend_use_documented_sdk_resources(), test_radar_and_pending_challenges_use_hosted_fallback(), test_sdk_429_preserves_actual_retry_after_without_returning_raw_error(), test_signup_sdk_http_never_transmits_a_password_before_inbox_ownership(), handler() (+9 more)
 
 ### Community 174 - "F-069 - Integração frontend/backend Origin e autenticação"
 Cohesion: 0.22
@@ -1112,29 +1132,25 @@ Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions,
 Cohesion: 0.12
 Nodes (16): Acceptance criteria and test matrix, Commands and results, Critérios de aceite H4 (Given/When/Then) e estado, Critérios Given/When/Then (H2), Decisions, Extensão H4 — motion LP + cinco modais existentes (aprovada pelo dono, implementada por pane-361), Frontend principal (localhost:3000) atualizado — 2026-10-03, Implementação (pane-361) (+8 more)
 
-### Community 176 - "Settings"
-Cohesion: 0.08
-Nodes (18): Settings, agent_service_from_settings(), test_cookie_mutation_origin_gate(), test_cross_site_fetch_metadata_blocks_even_with_allowed_origin(), _use_empty_database(), test_agent_service_from_settings_preserves_limits_and_models(), test_settings_have_no_planner_flag(), test_development_can_run_without_proxy_configuration() (+10 more)
-
 ### Community 177 - "F-049 - Card Notion alinhado ao Google Drive"
 Cohesion: 0.22
 Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions, F-049 - Card Notion alinhado ao Google Drive, Ownership, Ready checklist, Source and outcome, Validator report
 
 ### Community 178 - "AgentService"
-Cohesion: 0.04
-Nodes (47): log_agent_phase(), AgentRequest, AgentRun, AgentService, result_size(), _answer_provenance(), AnswerAssessor, _catalog_question_result() (+39 more)
+Cohesion: 0.05
+Nodes (36): log_agent_phase(), AgentRequest, AgentRun, AgentService, result_size(), _catalog_question_result(), _catalog_references(), ConversationState (+28 more)
 
-### Community 179 - "combobox.tsx"
+### Community 179 - "_run_worker"
 Cohesion: 0.10
-Nodes (25): ComboboxChip(), ComboboxChips(), ComboboxChipsInput(), ComboboxClear(), ComboboxContent(), ComboboxEmpty(), ComboboxGroup(), ComboboxInput() (+17 more)
+Nodes (3): _run_worker(), scalars(), test_worker_uses_folders_for_selections_when_provider_supports_it()
 
 ### Community 180 - "sync-status-logic.ts"
-Cohesion: 0.09
-Nodes (58): OrganizationOnboarding(), STEPS, SyncProgress(), SyncRow(), OAUTH_ERRORS, oauthErrorMessage(), PROVIDER_LABELS, providerLabel() (+50 more)
+Cohesion: 0.08
+Nodes (59): OrganizationOnboarding(), STEPS, SyncProgress(), SyncRow(), OAUTH_ERRORS, oauthErrorMessage(), PROVIDER_LABELS, providerLabel() (+51 more)
 
 ### Community 181 - "5. Re-render Optimization"
-Cohesion: 0.11
-Nodes (18): Avatar(), 5.10 Subscribe to Derived State, 5.11 Use Functional setState Updates, 5.12 Use Lazy State Initialization, 5.13 Use Transitions for Non-Urgent Updates, 5.14 Use useDeferredValue for Expensive Derived Renders, 5.15 Use useRef for Transient Values, 5.1 Calculate Derived State During Rendering (+10 more)
+Cohesion: 0.12
+Nodes (16): 5.10 Subscribe to Derived State, 5.11 Use Functional setState Updates, 5.12 Use Lazy State Initialization, 5.13 Use Transitions for Non-Urgent Updates, 5.14 Use useDeferredValue for Expensive Derived Renders, 5.15 Use useRef for Transient Values, 5.1 Calculate Derived State During Rendering, 5.2 Defer State Reads to Usage Point (+8 more)
 
 ### Community 183 - "F-046 — Biblioteca fixa na conversa"
 Cohesion: 0.50
@@ -1149,8 +1165,8 @@ Cohesion: 0.25
 Nodes (7): Acceptance criteria, Decisions and scope, Evidence and gate, F-057 - Conversa, controle de acesso e ingestão concorrente, Ownership, Ready checklist, Source and outcome
 
 ### Community 186 - "ClickUpTaskService"
-Cohesion: 0.07
-Nodes (17): _citations(), create_task(), CreateTaskInput, list_options(), _own_answer(), preview(), _refuse(), _service() (+9 more)
+Cohesion: 0.16
+Nodes (3): AvailableList, ClickUpTaskError, ClickUpTaskService
 
 ### Community 187 - "F-058 - Componentes consistentes em Conversa e Biblioteca"
 Cohesion: 0.40
@@ -1160,13 +1176,13 @@ Nodes (4): Acceptance and ownership, F-058 - Componentes consistentes em Convers
 Cohesion: 0.16
 Nodes (11): test_notion_synced_child_links_preserve_reference_without_importing_target(), list_databases(), list_pages(), target(), Achados confirmados no commit original, Evidência nova e regressões, Limitações, Referências oficiais conferidas (+3 more)
 
-### Community 189 - "Integrações"
-Cohesion: 0.14
-Nodes (8): Formatos indexáveis, Histórico de implementação, Integrações, OneDrive, Organização do catálogo, ADR-0002 - Conexão somente leitura com Google Drive, Consequências, Decisão
+### Community 189 - "Arquivio"
+Cohesion: 0.17
+Nodes (12): Architecture, Arquivio, Backend, Configuration, Contributing, Documentation, Frontend, Highlights (+4 more)
 
-### Community 190 - "test_agent_observability.py"
-Cohesion: 0.06
-Nodes (28): current_request_id(), request_context(), RequestTrace, CookieOriginMiddleware, RequestLogMiddleware, log_complete(), Capture, _middleware_client() (+20 more)
+### Community 190 - "strip_invisible"
+Cohesion: 0.23
+Nodes (17): _normalize_topic_text(), fence_sources(), clean(), neutralize(), safe_label(), strip_invisible(), evidence(), test_fencing() (+9 more)
 
 ### Community 191 - "F-060 - Links somente nas referências da resposta"
 Cohesion: 0.33
@@ -1180,17 +1196,25 @@ Nodes (25): accent_recall(), _accents(), cer(), _edit_distance(), evaluate(), ma
 Cohesion: 0.13
 Nodes (15): 7.10 Hoist RegExp Creation, 7.11 Use flatMap to Map and Filter in One Pass, 7.12 Use Loop for Min/Max Instead of Sort, 7.13 Use Set/Map for O(1) Lookups, 7.14 Use toSorted() Instead of sort() for Immutability, 7.1 Avoid Layout Thrashing, 7.2 Build Index Maps for Repeated Lookups, 7.3 Cache Property Access in Loops (+7 more)
 
-### Community 196 - "test_ingestion_scheduler.py"
+### Community 195 - "automation_email.py"
+Cohesion: 0.15
+Nodes (12): EmailContent, paragraph_html(), render_automation_email(), safe_url(), summary_paragraphs(), ResendEmailDelivery, test_email_delivery_without_resend_key_is_a_noop(), render() (+4 more)
+
+### Community 196 - "Rotas"
 Cohesion: 0.07
-Nodes (46): beat_schedule(), create_celery_app(), create_workspace(), schedule(), session(), settings(), test_active_job_is_not_duplicated(), test_celery_beat_uses_the_configured_scheduler_interval() (+38 more)
+Nodes (31): getDb(), GET(), POST(), toRouteErrorMessage(), notes, drizzle-orm, Automações — contrato da API interna (MVP), Comportamento dos gatilhos (para a UI explicar) (+23 more)
 
 ### Community 197 - "F-061 - Remover referências inline da resposta exibida"
 Cohesion: 0.33
 Nodes (5): Acceptance, Decisions and ownership, Evidence and gate, F-061 - Remover referências inline da resposta exibida, Source and outcome
 
-### Community 198 - "test_document_view_api.py"
-Cohesion: 0.19
-Nodes (15): content_disposition(), safe_filename(), FileAccessError, OpenedFile, citation_for(), FakeFetcher, test_chunks_are_ordered_paginated_and_can_land_on_the_cited_chunk(), test_file_failures_are_logged_with_provider_and_code() (+7 more)
+### Community 198 - "01-cobertura-e-nucleo.md"
+Cohesion: 0.05
+Nodes (31): EmbeddingVector, test_database_url(), test_sqlite_vector_round_trip(), 0. Sumário executivo, 11. Riscos, 12. Rollout e rollback por release, 13. Cronograma sugerido (1–2 devs), 14.1 Externa (oficial) (+23 more)
+
+### Community 199 - "main.py"
+Cohesion: 0.06
+Nodes (18): current_user(), liveness(), readiness(), library_overview(), create_saved_query(), delete_saved_query(), follow_saved_query(), list_saved_queries() (+10 more)
 
 ### Community 200 - "select.tsx"
 Cohesion: 0.22
@@ -1200,89 +1224,93 @@ Nodes (7): SelectContent(), SelectItem(), SelectLabel(), SelectScrollDownButton(
 Cohesion: 0.13
 Nodes (14): 1. Eliminating Waterfalls (CRITICAL), 2. Bundle Size Optimization (CRITICAL), 3. Server-Side Performance (HIGH), 4. Client-Side Data Fetching (MEDIUM-HIGH), 5. Re-render Optimization (MEDIUM), 6. Rendering Performance (MEDIUM), 7. JavaScript Performance (LOW-MEDIUM), 8. Advanced Patterns (LOW) (+6 more)
 
-### Community 203 - "session"
-Cohesion: 0.05
-Nodes (40): cosine_similarity_expr(), EmbeddingVector, _cosine_similarity(), default_similarity(), PgVectorSimilarity, PythonSimilarity, no_manual_sync_cooldown(), pytest_configure() (+32 more)
+### Community 202 - "lucide-react"
+Cohesion: 0.06
+Nodes (59): Brand(), API_BASE, DownloadSpec(), ApiDocsPage(), metadata, toc, LegalLayout(), chatSelector() (+51 more)
+
+### Community 203 - "conversations.py"
+Cohesion: 0.22
+Nodes (7): delete_conversation(), _item(), list_conversations(), _member(), _owned(), rename_conversation(), RenameInput
 
 ### Community 204 - "_run_task"
 Cohesion: 0.09
 Nodes (14): _indexed(), _run_task(), discover(), scalars(), test_manual_full_run_forces_full_discovery(), test_manual_incremental_run_of_a_space_without_data_still_discovers_everything(), test_manual_incremental_run_uses_the_provider_delta(), test_worker_forces_full_discovery_for_space_without_data() (+6 more)
 
-### Community 205 - "test_clickup_sync_persists_documents_projects_the_hierarchy_and_prunes_deleted_tasks"
-Cohesion: 0.60
-Nodes (4): _known(), _states(), _sync_once(), test_clickup_sync_persists_documents_projects_the_hierarchy_and_prunes_deleted_tasks()
+### Community 205 - "CookieOriginMiddleware"
+Cohesion: 0.12
+Nodes (12): CookieOriginMiddleware, RequestLogMiddleware, log_complete(), Domínio arquivio.com.br (HostGator DNS), FASE C — Bot Slack como canal de perguntas (item H) — 5–8 d + revisão externa — **ADIADA**, Task A9: Administração de chaves e chaves de acesso (rotas de sessão, Owner/Admin), Task C0 (dia 1 da onda; caminho crítico externo): app Slack, manifesto e pacote de submissão, Task C1: Modelos e migração dos canais (`channel_installations`, `channel_user_links`, `channel_link_codes`) (+4 more)
 
 ### Community 206 - "test_clickup_integration.py"
+Cohesion: 0.11
+Nodes (37): _cursor(), CursorSelection, discover(), ids(), _post_stub(), _response(), Selection, test_clickup_all_accessible_reads_every_list_and_workspace_docs() (+29 more)
+
+### Community 207 - "menubar.tsx"
+Cohesion: 0.12
+Nodes (12): Menubar(), MenubarCheckboxItem(), MenubarContent(), MenubarItem(), MenubarLabel(), MenubarPortal(), MenubarRadioItem(), MenubarSeparator() (+4 more)
+
+### Community 208 - "onedrive.py"
 Cohesion: 0.06
-Nodes (60): ClickUpRemoteUnauthorized, _doc_text(), url(), test_clickup_oauth_round_trip_stores_only_encrypted_credentials(), test_clickup_oauth_start_requires_configuration(), _cursor(), CursorSelection, discover() (+52 more)
-
-### Community 207 - "JsonFormatter"
-Cohesion: 0.21
-Nodes (4): JsonFormatter, test_google_connection_logs_render_operational_fields_without_oauth_secrets(), test_json_logging_does_not_emit_auth_or_invitation_secrets(), test_json_formatter_allows_safe_retrieval_metrics_without_serializing_content()
-
-### Community 208 - "attachment.tsx"
-Cohesion: 0.20
-Nodes (11): Attachment(), AttachmentAction(), AttachmentActions(), AttachmentContent(), AttachmentDescription(), AttachmentGroup(), AttachmentMedia(), attachmentMediaVariants (+3 more)
+Nodes (28): normalize_mime_type(), ClickUpRemoteUnauthorized, SourceRemoteUnauthorized, build_fernet(), rotate_token(), OneDriveAccountMismatch, OneDriveConnectionService, SharePointConnectionService (+20 more)
 
 ### Community 209 - "work-item.md"
 Cohesion: 0.20
 Nodes (5): Antes → depois, O que foi feito (só o serviço `frontend`), Persistência e parada, Rebuild do frontend principal (localhost:3000) — 2026-10-03, Verificação fresca, sem mocks
 
-### Community 210 - "authenticate"
-Cohesion: 0.29
-Nodes (5): add_private_document(), authenticate(), platform_api(), test_platform_staff_cannot_use_tenant_content_or_drive_apis_and_overview_redacts_document_data(), test_regular_user_and_forged_company_uuid_cannot_use_platform_support()
+### Community 210 - "OAuthConnectionServiceBase"
+Cohesion: 0.11
+Nodes (11): NotionConnectionService, OAuthConnectionServiceBase, test_complete_rejects_mismatched_state_without_exchanging_code(), test_notion_oauth_cannot_reconnect_a_google_source(), FASE 2 — Base OAuth única e chave de cifra por provider (≈ 3 d), Task 2.1: Testes de contrato (caracterização) dos três serviços — antes de refatorar, Task 2.2: `OAuthConnectionServiceBase` + Notion migrado (e `disconnect` do Notion corrigido), Task 2.3: OneDrive sobre a base (+3 more)
 
 ### Community 211 - "test_automation_webhooks_api.py"
+Cohesion: 0.09
+Nodes (27): WebhookDelivery, attempt_delivery(), BlockedDestination, build_payload(), _check_ip(), _iso(), retry_delay(), send_request() (+19 more)
+
+### Community 212 - "Integrações — índice dos planos de desenvolvimento"
 Cohesion: 0.12
-Nodes (22): attempt_delivery(), BlockedDestination, _check_ip(), sign(), validate_destination(), endpoints_url(), FakeSender, finished_run() (+14 more)
+Nodes (14): 1. Visão geral das três frentes, 2. Grafo de dependências, 3. Ordem recomendada e paralelismo, 4.1 Migrações Alembic (numeração global), 4.2 ADRs, 4.4 Arquivos tocados por mais de um plano (ordem de merge), 4. Colisões resolvidas nesta revisão, 5. Decisões pendentes do dono (com prazo) (+6 more)
 
-### Community 212 - "postgres_api"
-Cohesion: 0.20
-Nodes (3): FakeAuthGateway, _login(), postgres_api()
+### Community 213 - "test_principal.py"
+Cohesion: 0.22
+Nodes (9): ApiKeyAuthenticator, InsufficientScope, InvalidCredential, _auth(), factory(), test_every_failure_is_the_same_invalid_credential(), test_review_6_demoted_creator_invalidates_existing_keys(), test_valid_key_yields_a_scoped_principal() (+1 more)
 
-### Community 213 - "F-063 - Integração OneDrive"
-Cohesion: 0.25
-Nodes (7): Decisões de produto e escopo, Evidência e gate, F-063 - Integração OneDrive, Fonte e resultado, Invariantes e estados, Matriz mínima de testes, Propriedade e arquivos candidatos
-
-### Community 214 - "Handoff — F-037 Arquivio: produto, UI e landing page"
-Cohesion: 0.18
-Nodes (10): Automática, Browser com dados sintéticos locais, Contexto do Graphify e delegação econômica, Estado de Git, Evidência já coletada, Handoff — F-037 Arquivio: produto, UI e landing page, Objetivo aprovado, Onde o Astra parou (+2 more)
+### Community 214 - "DocumentFileFetcher"
+Cohesion: 0.17
+Nodes (4): file_fetcher(), DocumentFileFetcher, call(), _stream_size()
 
 ### Community 215 - "chat-available-tools-count - Contagem de ferramentas disponíveis no compositor"
 Cohesion: 0.20
 Nodes (9): Acceptance criteria and test matrix, Aplicação na instância Docker, chat-available-tools-count - Contagem de ferramentas disponíveis no compositor, Commands and results, Decisions, Ownership, Ready checklist, Source and outcome (+1 more)
 
-### Community 216 - "test_ocr_cache.py"
-Cohesion: 0.24
-Nodes (7): CachingOcr, purge_cache(), ExtractionCache, Engine, factory(), test_cache_tenant_version_and_none(), test_expired_cache_is_miss_and_purge_only_old()
+### Community 216 - "test_content_consolidation.py"
+Cohesion: 0.25
+Nodes (11): evidence(), MockLLM, test_both_generation_stages_receive_shared_pool_and_complete_passages(), test_equivalence_does_not_make_invalid_citations_valid(), test_explicit_per_document_synthesis_preserves_separate_citations(), test_identical_passages_collapse_citations_but_not_differing_dates(), test_prompts_require_sequential_numbering_without_new_detail_restrictions(), test_real_profile_through_mocked_llm_is_complete_consolidated_and_linked() (+3 more)
 
-### Community 217 - "ClickUpDocumentProvider"
-Cohesion: 0.09
-Nodes (11): _aware(), _Catalog, ClickUpDocumentProvider, collect(), unchanged(), _custom_field_text(), _name_of(), _task_text() (+3 more)
+### Community 217 - "test_structured_logging.py"
+Cohesion: 0.23
+Nodes (7): database_is_ready(), event_record(), ListHandler, make_application(), test_health_request_emits_structured_request_record(), test_readiness_emits_structured_result_and_duration(), UnavailableEngine
 
-### Community 218 - "get_settings"
-Cohesion: 0.06
-Nodes (25): get_settings(), build_engine(), build_session_factory(), _register_vector(), session_dependency(), configure_observability(), CeleryIngestionDispatcher, IngestionDispatcher (+17 more)
+### Community 218 - "DocumentChunk"
+Cohesion: 0.03
+Nodes (72): NoRedirect, export_answer(), _sources(), _citations(), get_settings(), build_engine(), build_session_factory(), _register_vector() (+64 more)
 
 ### Community 219 - "Frontend do Arquivio"
 Cohesion: 0.25
 Nodes (7): Checagens, Estrutura relevante, Frontend do Arquivio, Limites de responsabilidade, Provedores exibidos no produto, Rotas e fluxos implementados, Stack e execução
 
-### Community 220 - "F-033 - Compactar citações por arquivo"
-Cohesion: 0.22
-Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions, F-033 - Compactar citações por arquivo, Ownership, Ready checklist, Source and outcome, Validator report
+### Community 220 - "report_pdf.py"
+Cohesion: 0.21
+Nodes (13): _blocks(), _format_when(), _inline(), ReportMeta, ReportSource, _text(), to_report_pdf(), header() (+5 more)
 
-### Community 221 - "6. Fluxos funcionais"
-Cohesion: 0.25
-Nodes (8): 6. Fluxos funcionais, Entrada pública e ativação, F1 - Criar organização e convidar membros, F2 - Conectar Google Drive, F2a - Conectar OneDrive, F3 - Selecionar escopo e sincronizar, F4 - Pesquisar e fazer perguntas, F5 - Salvar consulta
+### Community 221 - "ref_node_fs"
+Cohesion: 0.05
+Nodes (28): assert, component, contexts, filename, fs, mixed, Module, path (+20 more)
 
 ### Community 222 - "extract_blocks"
-Cohesion: 0.03
-Nodes (87): ExtractedBlock, _cell(), docx_blocks(), _visible(), ExtractionError, eligible_mime_types(), extract_blocks(), sanitize_blocks() (+79 more)
+Cohesion: 0.10
+Nodes (26): ExtractionError, extract_blocks(), test_zero_byte_file_extracts_as_empty_not_corrupt(), test_corrupt_files_have_safe_codes(), test_invalid_xml_inside_office_zip_has_safe_code(), test_password_protected_pdf_has_explicit_code(), test_hidden_docx_runs_and_invisible_text_are_not_indexed(), test_slide_text_table_and_notes_are_extracted_with_slide_numbers() (+18 more)
 
-### Community 223 - "public_v1.py"
-Cohesion: 0.07
-Nodes (35): AuditWriter, Principal, ask(), AskInput, _audit_allowed(), AuditedRoute, handler(), document() (+27 more)
+### Community 223 - "Principal"
+Cohesion: 0.12
+Nodes (24): Principal, ScopedAccess, ask(), AskInput, _audit_allowed(), document(), guarded(), dependency() (+16 more)
 
 ### Community 224 - "Refinamento de respostas: inventário, contagem e seleção temática"
 Cohesion: 0.29
@@ -1292,9 +1320,9 @@ Nodes (6): Diagnóstico confirmado, Implementação e critérios, Limitações e
 Cohesion: 0.14
 Nodes (12): 1. Visual Theme & Atmosphere, 2. Color, 3. Typography, 4. Spacing & Grid, 5. Layout & Composition, 6. Components, 7. Motion & Interaction, 8. Voice & Brand (+4 more)
 
-### Community 226 - "radix-ui"
-Cohesion: 0.06
-Nodes (32): Badge(), badgeVariants, ButtonGroup(), ButtonGroupSeparator(), ButtonGroupText(), buttonGroupVariants, FieldSeparator(), Item() (+24 more)
+### Community 226 - "combobox.tsx"
+Cohesion: 0.10
+Nodes (25): ComboboxChip(), ComboboxChips(), ComboboxChipsInput(), ComboboxClear(), ComboboxContent(), ComboboxEmpty(), ComboboxGroup(), ComboboxInput() (+17 more)
 
 ### Community 227 - "F-003 - Google Drive OAuth and workspace folders"
 Cohesion: 0.22
@@ -1328,13 +1356,13 @@ Nodes (8): chatGPTSignInPath(), chatGPTSignOutPath(), ChatGPTUser, getChatGPTUse
 Cohesion: 0.22
 Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions, F-053 - Ícones de integração nas raízes da biblioteca, Ownership, Ready checklist, Source and outcome, Validator report
 
-### Community 237 - "Biblioteca: experiência e gestão por pasta"
-Cohesion: 0.33
-Nodes (5): Aceite e testes, Biblioteca: experiência e gestão por pasta, Decisões, impacto e propriedade, Fonte e resultado esperado, Validação
+### Community 237 - "test_mcp_auth.py"
+Cohesion: 0.09
+Nodes (21): McpAuthMiddleware, AuthKitTokenVerifier, InvalidToken, McpPrincipalResolver, VerifiedToken, factory(), _link(), test_alg_none_and_hs256_are_rejected() (+13 more)
 
-### Community 238 - "scope-check.cjs"
-Cohesion: 0.13
-Nodes (12): assert, component, contexts, filename, fs, mixed, Module, path (+4 more)
+### Community 238 - "session"
+Cohesion: 0.15
+Nodes (8): create_user(), session(), test_cross_organization_membership_lookup_returns_no_result(), test_membership_creation_writes_a_scoped_audit_record(), test_membership_is_unique_per_organization_but_not_globally(), _login(), postgres_api(), test_postgres_worker_folder_pruning_uses_bounded_reads()
 
 ### Community 239 - "motion.manifest.json"
 Cohesion: 0.14
@@ -1345,12 +1373,20 @@ Cohesion: 0.11
 Nodes (14): { chromium }, items, providers, sources, { chromium }, items, providers, sources (+6 more)
 
 ### Community 241 - "test_agent_flow.py"
-Cohesion: 0.09
-Nodes (45): GeneratedAnswer, CaptureProvider, _ask(), _folder_with_files(), _history(), _intent(), IntentProvider, _linked() (+37 more)
+Cohesion: 0.07
+Nodes (55): FlowModels, file_summary_instructions(), GeneratedAnswer, CaptureProvider, test_offline_judge_records_failure_and_rolls_back(), judge(), _ask(), _folder_with_files() (+47 more)
 
-### Community 244 - "F-056 - Deduplicação de fontes citadas"
-Cohesion: 0.22
-Nodes (8): Acceptance criteria and evidence plan, Commands and results, Decisions, F-056 - Deduplicação de fontes citadas, Ownership, Ready checklist, Source and outcome, Validator report
+### Community 242 - "_number_answer_sources"
+Cohesion: 0.21
+Nodes (11): replace_group(), _number_answer_sources(), evidence(), test_answer_without_model_markers_is_preserved(), test_evidence_indexes_map_to_unique_display_documents(), test_uncited_valid_index_does_not_create_reference(), FASE 6 — Auditoria e cerca anti prompt-injection do RAG (≈ 3,5 d), Task 6.1: Corpus de ataques e testes que exibem a falha atual (+3 more)
+
+### Community 243 - "keys.py"
+Cohesion: 0.24
+Nodes (7): generate_api_key(), GeneratedKey, split_api_key(), _aware(), test_generated_key_has_public_prefix_and_hashed_secret(), test_keys_are_unique(), test_malformed_keys_do_not_parse()
+
+### Community 244 - "test_extraction_spreadsheet.py"
+Cohesion: 0.23
+Nodes (11): _cell(), rows_to_blocks(), test_csv_detects_semicolon_and_cp1252(), test_five_thousand_rows_stay_inside_document_text_budget(), test_many_rows_are_grouped_in_blocks_of_25(), test_oversized_and_zip_bomb_inputs_fail_with_a_code(), test_rows_carry_their_header_and_skip_empty_cells(), test_rows_over_the_cap_are_truncated_with_a_citable_notice() (+3 more)
 
 ### Community 245 - "/graphify"
 Cohesion: 0.22
@@ -1377,12 +1413,8 @@ Cohesion: 0.25
 Nodes (7): chat-composer-context — Contexto por mensagem no chat, Contrato proposto: compositor, Decisões protegidas para aprovação, Evidência do estado atual, Fonte e resultado, Ownership e matriz de aceite, Validação e gate
 
 ### Community 258 - "executor.py"
-Cohesion: 0.07
-Nodes (28): accessible_folders(), build_question(), _deliver(), execute_run(), _finish(), _notify_creator(), pdf_path(), changed_document_ids() (+20 more)
-
-### Community 260 - "Preparar a produção na Railway"
-Cohesion: 0.20
-Nodes (10): 1. Definir os valores de produção, 2. Criar o projeto e os serviços, 3. Variáveis da API e do worker, 4. Variável e domínio do frontend, 5. Atualizar os provedores externos, 6. Verificar e liberar, OCR (docling-serve com `por`), pgvector (F5) (+2 more)
+Cohesion: 0.15
+Nodes (20): _folder_labels(), _serialize_scope(), accessible_folders(), build_question(), _deliver(), execute_run(), _finish(), _notify_creator() (+12 more)
 
 ### Community 261 - "Profile.pdf: reprodução e validação (2026-09-29)"
 Cohesion: 0.40
@@ -1392,13 +1424,13 @@ Nodes (4): Executar novamente, Medição real, Profile.pdf: reprodução e valid
 Cohesion: 0.17
 Nodes (11): Acceptance criteria and test matrix, API / data impact, estimates, performance, reversibility, arquivio-identity-20261003 - Migração integral da identidade visual Arquivio (LP + app), Commands and results, Decisions, Definition of ready (implementação), Modules and ownership (pós-H2), Ready checklist (+3 more)
 
-### Community 268 - "01-cobertura-e-nucleo.md"
-Cohesion: 0.05
-Nodes (38): 11. Riscos, 12. Rollout e rollback por release, 13. Cronograma sugerido (1–2 devs), 14.1 Externa (oficial), 14.2 Interna — criar ou atualizar, 14. Documentação necessária, 16. Handoff de execução, 6. Migrações Alembic (ordem proposta) (+30 more)
+### Community 268 - "PARTE B — Google: CASA (`drive.readonly`) vs `drive.file` + Picker"
+Cohesion: 0.15
+Nodes (13): 6. Ordem de execução e calendário sugerido (as duas partes em paralelo), 8. Auto-revisão (oc-route §8), 9. Handoff de execução, B.1 Fatos que sustentam a decisão, B.2 As duas opções, B.3 Recomendação, B.5 Checklist de verificação OAuth do Google (executar; marcar e datar), B.6 Critérios de aceite (Parte B) (+5 more)
 
-### Community 269 - "dropdown-menu.tsx"
-Cohesion: 0.12
-Nodes (9): DropdownMenuCheckboxItem(), DropdownMenuContent(), DropdownMenuItem(), DropdownMenuLabel(), DropdownMenuRadioItem(), DropdownMenuSeparator(), DropdownMenuShortcut(), DropdownMenuSubContent() (+1 more)
+### Community 269 - "bubble.tsx"
+Cohesion: 0.38
+Nodes (6): Bubble(), BubbleContent(), BubbleGroup(), BubbleReactions(), bubbleReactionsVariants, bubbleVariants
 
 ### Community 271 - "make_ocr_corpus.py"
 Cohesion: 0.23
@@ -1408,9 +1440,9 @@ Nodes (5): build(), font(), image_pdf(), render(), text_layer_page()
 Cohesion: 0.50
 Nodes (3): agent-contextual-followups, Entrega local, Reproduction before fix
 
-### Community 276 - "layout.tsx"
-Cohesion: 0.32
-Nodes (5): metadata, RootLayout(), viewport, THEME_STORAGE_KEY, ThemeProvider()
+### Community 276 - "Integrações"
+Cohesion: 0.14
+Nodes (8): Formatos indexáveis, Histórico de implementação, Integrações, OneDrive, Organização do catálogo, ADR-0002 - Conexão somente leitura com Google Drive, Consequências, Decisão
 
 ### Community 278 - "folder"
 Cohesion: 0.25
@@ -1421,24 +1453,24 @@ Cohesion: 0.17
 Nodes (11): 2. Camadas de comportamento existentes, 3. Superfícies usadas — abertura, fechamento, foco e camadas, 4. Estados reais dentro e ao redor das superfícies, 5. Confirmações nativas: nove call sites, sem superfície animável própria, 6. Superfícies semelhantes, limites de escopo e CSS compartilhado, 7. Mapa de flows existentes, 8. Gaps declarados e caminho seguro, C1 — dialog nativo / top layer (+3 more)
 
 ### Community 280 - "test_jev_intent.py"
-Cohesion: 0.06
-Nodes (40): IntentEvalRun, main(), markdown_report(), run_cases(), fallback_intent(), IntentDecision, InvalidIntent, parse_intent() (+32 more)
-
-### Community 282 - "test_pilot_deployment.py"
-Cohesion: 0.80
-Nodes (3): _options_request(), test_pilot_api_allows_only_configured_browser_origin(), test_pilot_api_rejects_other_browser_origin()
-
-### Community 283 - "Google Drive: mapa de dados (B1) e checklist de verificação (B0/B4)"
-Cohesion: 0.20
-Nodes (9): B0 - Registro da decisão, B1 - Mapa do fluxo de dados, B2 - Registro (adiado), B3 - Rascunho da política, B4 - Scans e submissão do CASA, Google Drive: mapa de dados (B1) e checklist de verificação (B0/B4), Pré-requisitos e configuração, Scans e evidências (+1 more)
-
-### Community 284 - "F-052 - Estruturação de chunks e evidências para bibliotecas heterogêneas"
 Cohesion: 0.07
-Nodes (24): 1. Pré-requisitos, 2. Link de consentimento do administrador, 3. Texto sugerido para o e-mail ao TI, 4. Modo restrito `Sites.Selected` (fase A9), 5. Revogação, 6. Troubleshooting, 7. Piloto (pendente — tenant real), Runbook — SharePoint: consentimento de administrador e operação (+16 more)
+Nodes (37): agent_service_from_settings(), IntentEvalRun, main(), markdown_report(), run_cases(), fallback_intent(), InvalidIntent, parse_intent() (+29 more)
 
-### Community 285 - ".state"
-Cohesion: 0.23
-Nodes (7): FASE C — Bot Slack como canal de perguntas (item H) — 5–8 d + revisão externa — **ADIADA**, Task C0 (dia 1 da onda; caminho crítico externo): app Slack, manifesto e pacote de submissão, Task C1: Modelos e migração dos canais (`channel_installations`, `channel_user_links`, `channel_link_codes`), Task C2: Instalação OAuth por Owner/Admin (vincula workspace → organização), Task C3: Vínculo de identidade Slack ↔ membro (código de uso único), Task C5: Aplicativo Bolt (eventos/slash) com ack < 3 s e resposta efêmera, Task C6: Teste de isolamento cross-workspace + hardening + submissão
+### Community 282 - "F-202 — regressão da revisão independente e reprodução pós-correção"
+Cohesion: 0.29
+Nodes (6): Diagnóstico, F-202 — regressão da revisão independente e reprodução pós-correção, Regressão antes da correção, Reprodução real pós-correção, Segunda correção após revisão h-3r, Terceira correção após revisão pane-118
+
+### Community 283 - "test_library_sync_permissions.py"
+Cohesion: 0.27
+Nodes (8): _complete(), _incremental(), test_active_sync_is_reused_instead_of_conflicting(), test_admin_can_run_both(), test_incremental_sync_has_a_cooldown_per_space(), test_member_can_run_an_incremental_sync(), test_member_cannot_run_a_complete_resync(), test_non_member_cannot_sync()
+
+### Community 284 - "Runbook — SharePoint: consentimento de administrador e operação"
+Cohesion: 0.22
+Nodes (8): 1. Pré-requisitos, 2. Link de consentimento do administrador, 3. Texto sugerido para o e-mail ao TI, 4. Modo restrito `Sites.Selected` (fase A9), 5. Revogação, 6. Troubleshooting, 7. Piloto (pendente — tenant real), Runbook — SharePoint: consentimento de administrador e operação
+
+### Community 285 - "google_provider"
+Cohesion: 0.29
+Nodes (10): fetcher(), google_provider(), remote_call(), make_document(), make_source(), Recorder, test_real_fetcher_google_binary_and_native_export(), test_real_fetcher_maps_connector_failures() (+2 more)
 
 ### Community 286 - "ADR-0011: Formatos e OCR"
 Cohesion: 0.29
@@ -1448,17 +1480,13 @@ Nodes (6): ADR-0011: Formatos e OCR, Consequências, Contexto, Decisões, Limita
 Cohesion: 0.29
 Nodes (6): Contrato confirmado, Corpus e medidas, Decisão para F4, Imagem e pré-requisito encontrado, Reprodução, Spike F0.3 — Docling Serve / OCR português
 
-### Community 288 - "DocumentFileFetcher"
-Cohesion: 0.20
-Nodes (3): DocumentFileFetcher, call(), _stream_size()
+### Community 288 - ".state"
+Cohesion: 0.15
+Nodes (7): advance_onboarding(), complete_tour(), onboarding_state(), OnboardingInput, OnboardingNotAllowed, OnboardingPending, OnboardingService
 
-### Community 289 - "F-065 - Sincronização Google Drive com texto NUL"
-Cohesion: 0.40
-Nodes (4): Aceitação e evidência, Escopo e decisões, F-065 - Sincronização Google Drive com texto NUL, Fonte e resultado
-
-### Community 290 - "asgi.py"
-Cohesion: 0.06
-Nodes (21): InsufficientScope, InvalidCredential, RedisRateLimiter, _build_from_settings(), build_mcp_app(), run_sync(), __getattr__(), _uuid() (+13 more)
+### Community 290 - "ingestion/service.py"
+Cohesion: 0.04
+Nodes (49): eligible_mime_types(), ProcessingJobStatus, DiscoveryResult, _empty_text_code(), is_empty_content(), ManagedDocument, outcome_for(), RemovedWorkspace (+41 more)
 
 ### Community 291 - "ADR-0012: Núcleo HTTP e erros remotos"
 Cohesion: 0.33
@@ -1485,8 +1513,8 @@ Cohesion: 0.40
 Nodes (4): Bloqueio de publicação, Conferência frase a frase, Rascunho - política de privacidade: dados do Google (B3), Texto proposto (seção "Integrações e uso de dados do Google")
 
 ### Community 297 - "F-028 - Gestão de arquivos sincronizados"
-Cohesion: 0.20
-Nodes (9): Acceptance criteria and test matrix, Commands and results, Decisions, F-028 - Gestão de arquivos sincronizados, Impact assessment, Ownership, Ready checklist, Source and outcome (+1 more)
+Cohesion: 0.22
+Nodes (8): Acceptance criteria and test matrix, Commands and results, F-028 - Gestão de arquivos sincronizados, Impact assessment, Ownership, Ready checklist, Source and outcome, Validator report
 
 ### Community 299 - "ADR-0017 - Estratégia para o escopo restrito do Google Drive"
 Cohesion: 0.40
@@ -1496,33 +1524,29 @@ Nodes (4): ADR-0017 - Estratégia para o escopo restrito do Google Drive, Conseq
 Cohesion: 0.50
 Nodes (3): Caracterização local A0.3, Publisher verification, Spike SharePoint / Microsoft 365
 
-### Community 301 - "IntegrationRegistry"
-Cohesion: 0.10
-Nodes (17): ProviderNotConfigured, SourceProvider, IntegrationRegistry, test_clickup_registry_adapter_is_wired_with_its_own_key_and_capabilities(), test_all_adapters_accept_known_documents_without_changing_scope(), test_google_registry_binds_database_context_for_deltas(), test_registry_applies_format_flag_to_actual_reader(), 14. Arquitetura e stack aprovadas (+9 more)
+### Community 301 - "OcrError"
+Cohesion: 0.07
+Nodes (33): FallbackOcr, DoclingServeEngine, pages_from_docling(), build_ocr(), budget(), OcrBudget, OcrBudgetExceeded, OcrEngine (+25 more)
 
-### Community 302 - "vite.config.ts"
-Cohesion: 0.25
-Nodes (3): localBindingConfig, vinext, vite
-
-### Community 303 - "CredentialCipher"
-Cohesion: 0.09
-Nodes (7): CredentialCipher, GoogleOAuthUnavailable, GoogleDriveProviderAdapter, UnconfiguredGoogleDrivePort, unavailable(), test_credential_cipher_is_reversible_only_with_key_and_never_returns_plaintext(), test_credential_cipher_requires_configured_key()
+### Community 303 - "Settings"
+Cohesion: 0.07
+Nodes (19): Settings, test_cookie_mutation_origin_gate(), test_cross_site_fetch_metadata_blocks_even_with_allowed_origin(), _use_empty_database(), test_agent_service_from_settings_preserves_limits_and_models(), test_development_can_run_without_proxy_configuration(), test_production_accepts_delimited_ipv4_and_ipv6_peers(), test_production_rejects_invalid_proxy_configuration() (+11 more)
 
 ### Community 310 - "answer-markdown.tsx"
 Cohesion: 0.10
-Nodes (34): Block, CITATION_MARKER, citationNumbers(), directiveBlock(), DIRECTIVES, Field, fileCard(), isTableSeparator() (+26 more)
+Nodes (36): Block, CITATION_MARKER, citationNumbers(), directiveBlock(), DIRECTIVES, Field, fileCard(), isTableSeparator() (+28 more)
 
 ### Community 311 - "Verificação dos ajustes existentes do chat — Missão 22"
 Cohesion: 0.33
 Nodes (5): Causa e comportamento existentes, Comandos e resultados, Estado inicial e busca da outra missão, Evidência visual fresca, Verificação dos ajustes existentes do chat — Missão 22
 
-### Community 312 - "install-ci.mjs"
-Cohesion: 0.20
-Nodes (6): readExecutionProfile(), installed, cli, [command, ...args], authSettings, projectRoot
+### Community 312 - "F-052 - Estruturação de chunks e evidências para bibliotecas heterogêneas"
+Cohesion: 0.22
+Nodes (8): Commands and results, Decisions, F-052 - Estruturação de chunks e evidências para bibliotecas heterogêneas, Known limits, Ownership, Ready checklist, Source and outcome, Validator report
 
 ### Community 313 - "text"
-Cohesion: 0.19
-Nodes (12): test_expand_migration_adds_and_drops_the_vector_column(), box(), brand(), chat(), desktop(), header(), mobile(), para() (+4 more)
+Cohesion: 0.18
+Nodes (13): metadata(), Global constraints, box(), brand(), chat(), desktop(), header(), mobile() (+5 more)
 
 ### Community 314 - "Consolidação entre documentos — 2026-09-30"
 Cohesion: 0.33
@@ -1532,53 +1556,53 @@ Nodes (5): Causa observada, Consolidação entre documentos — 2026-09-30, Corr
 Cohesion: 0.18
 Nodes (10): 3.10 Use after() for Non-Blocking Operations, 3.1 Authenticate Server Actions Like API Routes, 3.2 Avoid Duplicate Serialization in RSC Props, 3.3 Avoid Shared Module State for Request Data, 3.4 Cross-Request LRU Caching, 3.5 Hoist Static I/O to Module Level, 3.6 Minimize Serialization at RSC Boundaries, 3.7 Parallel Data Fetching with Component Composition (+2 more)
 
-### Community 316 - "Spike F0.4 — pgvector / SQLAlchemy / psycopg3"
-Cohesion: 0.50
-Nodes (3): PoC reproduzível, Resultado medido, Spike F0.4 — pgvector / SQLAlchemy / psycopg3
+### Community 316 - "Plano 03 — API pública, MCP remoto somente leitura e canais (Slack, depois Teams) — Implementation Plan"
+Cohesion: 0.07
+Nodes (27): RateLimiter, ToolNotFound, 11. Execução, 4. Migrações (resumo e ordem), 5. Infra e deploy (resumo), 6. Critérios de aceite (globais, verificáveis), 7. Riscos, 8. Estimativa e cronograma (+19 more)
 
-### Community 317 - "test_sdk_image.py"
-Cohesion: 0.26
-Nodes (8): sdk_gateway(), make(), test_credentials_and_outages_remain_errors_even_with_pending_context(), test_pending_authentication_and_resend_use_documented_sdk_resources(), test_radar_and_pending_challenges_use_hosted_fallback(), test_sdk_429_preserves_actual_retry_after_without_returning_raw_error(), test_signup_sdk_http_never_transmits_a_password_before_inbox_ownership(), handler()
+### Community 317 - "docx.py"
+Cohesion: 0.21
+Nodes (3): _cell(), docx_blocks(), _visible()
 
-### Community 318 - "Login personalizado com WorkOS"
-Cohesion: 0.25
-Nodes (6): Configuração e validação externas, Contrato de emissão de token e entrega de e-mail, Fluxos, Fronteira de confiança do IP, Login personalizado com WorkOS, Token de reset e Referer
+### Community 318 - "F-070 - Resync incremental do Notion"
+Cohesion: 0.33
+Nodes (5): Critérios de aceite e evidência, Decisões, F-070 - Resync incremental do Notion, Fonte e resultado, Validação
 
 ### Community 319 - "F-007 — Evidência local de correção"
 Cohesion: 0.33
 Nodes (5): Capturas reais para conferência, Causa e alteração, F-007 — Evidência local de correção, Host/container e preservação, Verificação fresca
 
 ### Community 320 - "PlatformStaffAccessService"
-Cohesion: 0.19
-Nodes (5): supported_companies(), supported_company_overview(), GrantedCompany, PlatformStaffAccessService, SupportedOrganization
+Cohesion: 0.17
+Nodes (6): supported_companies(), supported_company_overview(), GrantedCompany, PlatformStaffAccessService, StaffAccessDenied, SupportedOrganization
 
-### Community 321 - "http.py"
-Cohesion: 0.07
-Nodes (28): DownloadIntegrityError, parse_rate_limit_reset(), parse_retry_after(), quick_xor_hash(), QuickXor, RemoteFileTooLarge, fetch(), _verify_hashes() (+20 more)
+### Community 321 - "RemoteHttp"
+Cohesion: 0.05
+Nodes (47): DownloadIntegrityError, parse_rate_limit_reset(), parse_retry_after(), quick_xor_hash(), QuickXor, RemoteFileTooLarge, RemoteHttp, fetch() (+39 more)
 
 ### Community 322 - "F-030 - Layout de tela cheia e alertas temporários"
 Cohesion: 0.22
 Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions, F-030 - Layout de tela cheia e alertas temporários, Ownership, Ready checklist, Source and outcome, Validator report
 
-### Community 323 - "onedrive.py"
-Cohesion: 0.09
-Nodes (18): SourceRemoteUnauthorized, build_fernet(), rotate_token(), OneDriveAccountMismatch, key(), test_credentials_encrypted_with_the_old_key_still_decrypt_and_rotate_to_the_new_one(), test_disabled_legacy_fallback_does_not_encrypt_with_google_key(), test_no_usable_key_means_not_configured() (+10 more)
+### Community 323 - "integrations/google_drive.py"
+Cohesion: 0.04
+Nodes (35): CredentialCipher, GoogleAccessDenied, GoogleConnectionService, GoogleDrivePort, GoogleOAuthUnavailable, GoogleRefreshTokenInvalid, OAuthConnectionState, UnconfiguredGoogleDrivePort (+27 more)
 
 ### Community 324 - "Atualização: publicação por pane-500 e verificação independente por pane-501"
 Cohesion: 0.13
 Nodes (14): Alteração e verificação, Atualização: publicação por pane-500 e verificação independente por pane-501, Bloqueio de ativação independente, Causa e teste antes da alteração, Consolidação operacional — pane-502 (2026-10-09 UTC), Docs main sem alteração de peers, F-212 — Evidência de diagnóstico e ajuste de configuração, Implantação de h-l7, conferida independentemente (+6 more)
 
-### Community 325 - ".cipher_keys"
-Cohesion: 0.29
-Nodes (5): Chaves de cifra por provider, Migração do Notion, Rotação periódica, 10. Critérios de aceite mensuráveis, Task 2.6: Chave de cifra por provider — `MultiFernet`, fallback controlado e validação em produção
+### Community 325 - "pdf.py"
+Cohesion: 0.21
+Nodes (10): _digest(), pdf_blocks(), _subset(), _worth_ocr(), FASE 3 — Cobertura de formatos: TXT, CSV, XLSX, PPTX, Google Sheets/Slides (≈ 6 d), Task 3.2: `ExtractionError` com código + propagação nos providers, Task 3.4: CSV e XLSX (+ Google Sheets) — linhas com cabeçalho, em blocos citáveis, Task 3.5: PPTX (+ Google Slides) — um bloco por slide, com `page_number` (+2 more)
 
 ### Community 326 - "Brief-baseline — Modernização da LP Arquivio (lp-chat-modernization-20261002)"
 Cohesion: 0.18
 Nodes (11): 10. Próximos passos (gate H2), 1. Escopo aprovado e limites, 2. Stack, comandos e URL, 3. Marca, proposta e público atuais, 4. Copy e preços existentes (verbatim, por seção), 5. Inventário de botões, links e destinos (verificado no navegador), 6. Interações e estados atuais, 7. Limites de arquivos — LP versus app (+3 more)
 
-### Community 327 - "Revisão independente final de F-202 — commit 726c04b"
+### Community 327 - "CachingOcr"
 Cohesion: 0.29
-Nodes (6): Causa final, Decisão, Evidência de código e testes, Limites, Replay Docker e auditoria do conteúdo, Revisão independente final de F-202 — commit 726c04b
+Nodes (3): CachingOcr, Engine, test_cache_tenant_version_and_none()
 
 ### Community 328 - "Recomendações para frescor, credenciais e retenção"
 Cohesion: 0.29
@@ -1588,9 +1612,9 @@ Nodes (6): Alternativas para manter o índice recente, Checklist restante para p
 Cohesion: 0.18
 Nodes (10): 1. Hierarquia de evidência usada, 2. Registro de claims existentes, 3. Claims de integração — limite fechado, 4. Adjacências obrigatórias, 5. Expansões proibidas sem nova aprovação, 6. Auditoria de ausência, 7. Fontes localizadas, Aprovados e já visíveis (+2 more)
 
-### Community 330 - "test_oauth_service_contract.py"
-Cohesion: 0.12
-Nodes (19): generate_api_key(), GeneratedKey, split_api_key(), _aware(), hash_secret(), test_owner_can_disconnect_notion_and_preserve_knowledge(), test_generated_key_has_public_prefix_and_hashed_secret(), test_keys_are_unique() (+11 more)
+### Community 330 - "test_chat_composer_context_api.py"
+Cohesion: 0.30
+Nodes (9): mention(), selection(), test_invalid_selection_contract_stops_before_model(), test_mention_candidates_only_show_indexed_own_nodes(), test_mentioned_file_in_overlapping_folders_is_deduplicated(), test_mentions_revalidate_type_provider_tenant_and_index(), test_selection_accepts_every_supported_tool_at_once(), test_selection_unions_tools_and_filters_file_and_folder_mentions() (+1 more)
 
 ### Community 331 - "M31 — Cards de ferramentas: evidência da correção"
 Cohesion: 0.40
@@ -1604,97 +1628,113 @@ Nodes (4): Correções e evidência da revisão, Evidência, M31 — Integraçõ
 Cohesion: 0.50
 Nodes (3): agent-content-consolidation, Correção e replay, Root cause before correction
 
-### Community 334 - "test_health_and_config.py"
-Cohesion: 0.28
-Nodes (5): make_health_client(), test_liveness_returns_ok_without_database_dependency(), test_railway_postgres_url_selects_installed_psycopg_driver(), test_readiness_failure_is_explainable_without_leaking_driver_details(), test_settings_require_database_url()
+### Community 334 - "proxy-headers.mjs"
+Cohesion: 0.26
+Nodes (6): dynamic, proxy(), FORWARDED_REQUEST_HEADERS, forwardedRequestHeaders(), sessionProbeResponse(), proxyOptions
 
-### Community 335 - "F-202 — regressão da revisão independente e reprodução pós-correção"
+### Community 335 - "attachment.tsx"
+Cohesion: 0.20
+Nodes (11): Attachment(), AttachmentAction(), AttachmentActions(), AttachmentContent(), AttachmentDescription(), AttachmentGroup(), AttachmentMedia(), attachmentMediaVariants (+3 more)
+
+### Community 336 - "Biblioteca: experiência e gestão por pasta"
+Cohesion: 0.33
+Nodes (5): Aceite e testes, Biblioteca: experiência e gestão por pasta, Decisões, impacto e propriedade, Fonte e resultado esperado, Validação
+
+### Community 337 - "limits.py"
+Cohesion: 0.10
+Nodes (19): as_stream(), env_int(), guard_ooxml(), guard_size(), guard_zip(), max_file_bytes_for(), size_of(), TextBudget (+11 more)
+
+### Community 340 - "test_mcp_connection.py"
+Cohesion: 0.33
+Nodes (8): McpConnection, _path(), test_delete_revokes_and_non_member_is_forbidden(), test_enabling_requires_org_mcp_switch_and_replaces_previous_binding(), test_node_ids_are_validated_against_the_organization(), test_only_owner_or_admin_flips_the_org_switch(), test_second_organization_revokes_the_first_binding(), test_unknown_fields_are_rejected()
+
+### Community 341 - "automation-recipients.tsx"
 Cohesion: 0.29
-Nodes (6): Diagnóstico, F-202 — regressão da revisão independente e reprodução pós-correção, Regressão antes da correção, Reprodução real pós-correção, Segunda correção após revisão h-3r, Terceira correção após revisão pane-118
-
-### Community 336 - "3. Resultados (todos em `analysis.md`; dados em `results.csv`, `per_prompt.csv`, `metrics.json`)"
-Cohesion: 0.25
-Nodes (8): 3. Resultados (todos em `analysis.md`; dados em `results.csv`, `per_prompt.csv`, `metrics.json`), Acurácia (todos os 124 prompts), Adversariais (11 prompts, voto majoritário), Desacordos mais relevantes (`disagreements.md` tem o resto), Estabilidade entre repetições, Operacional, Persona: onde cada um erra, Por subconjunto (alt.; task / persona)
-
-### Community 340 - "organizations"
-Cohesion: 0.07
-Nodes (27): organizations(), Correção na origem, Follow-ups contextuais e fontes — 2026-09-29, Mini eval real antes/depois, Repetir e aplicar, Replay com LLM real, Verificação, ADR-0009: Contas pessoais e organizacionais no OneDrive (+19 more)
-
-### Community 341 - "verification_context.py"
-Cohesion: 0.60
-Nodes (3): make_verification_context(), read_verification_context(), _signature()
+Nodes (7): filterRecipients(), normalizeSearch(), AutomationRecipients(), RecipientOption, recipients, items, render()
 
 ### Community 342 - "React Best Practices"
 Cohesion: 0.20
-Nodes (9): 8.1 Do Not Put Effect Events in Dependency Arrays, 8.2 Initialize App Once, Not Per Mount, 8.3 Store Event Handlers in Refs, 8.4 useEffectEvent for Stable Callback Refs, 8. Advanced Patterns, Abstract, React Best Practices, References (+1 more)
+Nodes (9): 4.1 Deduplicate Global Event Listeners, 4.2 Use Passive Event Listeners for Scrolling Performance, 4.3 Use SWR for Automatic Deduplication, 4.4 Version and Minimize localStorage Data, 4. Client-Side Data Fetching, Abstract, React Best Practices, References (+1 more)
 
-### Community 343 - "F-007 - Saved queries usage controls and failure visibility"
-Cohesion: 0.25
-Nodes (7): Commands and results, Decisions, F-007 - Saved queries usage controls and failure visibility, Ownership, Ready checklist, Source and outcome, Validator report
+### Community 343 - "JsonFormatter"
+Cohesion: 0.27
+Nodes (4): JsonFormatter, test_google_connection_logs_render_operational_fields_without_oauth_secrets(), test_json_logging_does_not_emit_auth_or_invitation_secrets(), test_json_formatter_allows_safe_retrieval_metrics_without_serializing_content()
 
 ### Community 344 - "JEV × Liquid d1 como decisor do Overclock — teste comparativo"
+Cohesion: 0.12
+Nodes (16): 0. Resumo, 1. Dataset (`dataset.jsonl`, 124 prompts, rótulos PROVISÓRIOS), 2. Execução, 3. Resultados (todos em `analysis.md`; dados em `results.csv`, `per_prompt.csv`, `metrics.json`), 4. Critério de troca, 5. Limitações, 6. Próximos passos sugeridos, 7. Arquivos (+8 more)
+
+### Community 345 - "Missão 19 — diagnóstico local do HTTP 503 do agente"
+Cohesion: 0.20
+Nodes (9): RequestTrace, Decisões de comportamento e custo em aberto, Evidência do patch de observabilidade, Evidência local, Fonte e limite da conclusão, Hipótese e proposta mínima para próxima etapa, Implementação de observabilidade para validação, Missão 19 — diagnóstico local do HTTP 503 do agente (+1 more)
+
+### Community 346 - "6. Fluxos funcionais"
+Cohesion: 0.25
+Nodes (8): 6. Fluxos funcionais, Entrada pública e ativação, F1 - Criar organização e convidar membros, F2 - Conectar Google Drive, F2a - Conectar OneDrive, F3 - Selecionar escopo e sincronizar, F4 - Pesquisar e fazer perguntas, F5 - Salvar consulta
+
+### Community 347 - "Google Drive: mapa de dados (B1) e checklist de verificação (B0/B4)"
+Cohesion: 0.20
+Nodes (9): B0 - Registro da decisão, B1 - Mapa do fluxo de dados, B2 - Registro (adiado), B3 - Rascunho da política, B4 - Scans e submissão do CASA, Google Drive: mapa de dados (B1) e checklist de verificação (B0/B4), Pré-requisitos e configuração, Scans e evidências (+1 more)
+
+### Community 348 - "F-063 - Integração OneDrive"
 Cohesion: 0.22
-Nodes (8): 0. Resumo, 1. Dataset (`dataset.jsonl`, 124 prompts, rótulos PROVISÓRIOS), 2. Execução, 4. Critério de troca, 5. Limitações, 6. Próximos passos sugeridos, 7. Arquivos, JEV × Liquid d1 como decisor do Overclock — teste comparativo
+Nodes (8): Decisões de produto e escopo, Design e acoplamentos confirmados, Evidência e gate, F-063 - Integração OneDrive, Fonte e resultado, Invariantes e estados, Matriz mínima de testes, Propriedade e arquivos candidatos
 
-### Community 345 - "ADR-0020: Escrita pontual no ClickUp — criar tarefa a partir de uma resposta"
-Cohesion: 0.50
-Nodes (3): ADR-0020: Escrita pontual no ClickUp — criar tarefa a partir de uma resposta, Consequências, Contexto
+### Community 349 - "react"
+Cohesion: 0.04
+Nodes (42): AccordionContent(), AccordionItem(), AccordionTrigger(), ButtonGroup(), ButtonGroupSeparator(), ButtonGroupText(), buttonGroupVariants, Checkbox() (+34 more)
 
-### Community 346 - "InMemoryRateLimiter"
-Cohesion: 0.06
-Nodes (21): _decide(), InMemoryRateLimiter, RateDecision, RateLimiter, McpAuthMiddleware, McpPrincipalResolver, api(), api() (+13 more)
+### Community 350 - "test_real_fetcher_preview_returns_none_instead_of_raising"
+Cohesion: 0.29
+Nodes (5): FakeSession, microsoft_provider(), test_real_fetcher_microsoft_download_and_refreshed_credentials_are_persisted(), test_real_fetcher_preview_returns_none_instead_of_raising(), unauthorized()
 
-### Community 347 - "tabs.tsx"
-Cohesion: 0.40
-Nodes (5): Tabs(), TabsContent(), TabsList(), tabsListVariants, TabsTrigger()
-
-### Community 348 - "ADR-0006: Company Library as a provider-neutral projection"
-Cohesion: 0.33
-Nodes (5): ADR-0006: Company Library as a provider-neutral projection, Consequences, Context, Decision, Status
-
-### Community 349 - "ClickUp — runbook de ativação e piloto"
-Cohesion: 0.22
-Nodes (8): 1. Criar o app OAuth (ação humana, ~10 min), 2. Cota de documentos (decidir antes do piloto), 3. Checklist do piloto (precisa de um workspace real), 3a. Criar tarefa a partir de uma resposta (ADR-0020), 3b. Resync incremental, 4. Diagnóstico, 5. Chave divergente entre API e worker, ClickUp — runbook de ativação e piloto
+### Community 351 - "F-007 - Saved queries usage controls and failure visibility"
+Cohesion: 0.25
+Nodes (7): Commands and results, Decisions, F-007 - Saved queries usage controls and failure visibility, Ownership, Ready checklist, Source and outcome, Validator report
 
 ### Community 352 - "M27 — Lint do backend no push 4e5ac95"
 Cohesion: 0.40
 Nodes (4): Arquivos corrigidos, Erros da reprodução do comando do CI, Evidência final, M27 — Lint do backend no push 4e5ac95
 
-### Community 354 - "7. Regras de negócio e invariantes"
-Cohesion: 0.40
-Nodes (5): 7. Regras de negócio e invariantes, Isolamento, Operação e custo, Qualidade e confiança, Segurança e privacidade
-
-### Community 355 - "F-014 - Escopos configuraveis de sincronizacao do Google Drive"
-Cohesion: 0.25
-Nodes (7): Acceptance criteria and test matrix, Commands and results, F-014 - Escopos configuraveis de sincronizacao do Google Drive, Ownership, Ready checklist, Source and outcome, Validator report
-
-### Community 356 - "Security hardening follow-ups"
-Cohesion: 0.40
-Nodes (4): Retention decision pending, Security hardening follow-ups, SharePoint R-A2 — projection drops nodes from other workspaces, Tenant relationship constraints
-
-### Community 357 - "bubble.tsx"
-Cohesion: 0.38
-Nodes (6): Bubble(), BubbleContent(), BubbleGroup(), BubbleReactions(), bubbleReactionsVariants, bubbleVariants
-
-### Community 358 - "M31 — Notion: conteúdo próprio e hierarquia na biblioteca"
+### Community 353 - "M31 — Notion: conteúdo próprio e hierarquia na biblioteca"
 Cohesion: 0.29
 Nodes (6): Evidência, Limites da validação e da leitura, M31 — Notion: conteúdo próprio e hierarquia na biblioteca, M31 — seleção apenas das páginas pais, Referências oficiais, Revisão independente de c059e1a — pane-299
 
-### Community 359 - "4. Client-Side Data Fetching"
-Cohesion: 0.40
-Nodes (5): 4.1 Deduplicate Global Event Listeners, 4.2 Use Passive Event Listeners for Scrolling Performance, 4.3 Use SWR for Automatic Deduplication, 4.4 Version and Minimize localStorage Data, 4. Client-Side Data Fetching
+### Community 355 - "_ctx"
+Cohesion: 0.53
+Nodes (6): _ctx(), factory(), test_fetch_joins_chunks_and_flags_truncation(), test_fetch_of_a_foreign_document_is_indistinguishable_from_missing(), test_query_without_meaningful_terms_returns_nothing(), test_search_returns_only_the_callers_organization()
 
-### Community 361 - "OrganizationScope"
-Cohesion: 0.05
-Nodes (25): select(), OrganizationScope, _previous_cited_files(), folder_is_queryable(), FetchedDocument, SearchHit, LibraryNode, AuthorizedCatalog (+17 more)
+### Community 356 - "F-014 - Escopos configuraveis de sincronizacao do Google Drive"
+Cohesion: 0.25
+Nodes (7): Acceptance criteria and test matrix, Commands and results, F-014 - Escopos configuraveis de sincronizacao do Google Drive, Ownership, Ready checklist, Source and outcome, Validator report
 
-### Community 362 - "derive-contract.mjs"
-Cohesion: 0.40
-Nodes (4): css, D, out, R
+### Community 357 - ".cipher_keys"
+Cohesion: 0.29
+Nodes (5): Chaves de cifra por provider, Migração do Notion, Rotação periódica, 10. Critérios de aceite mensuráveis, Task 2.6: Chave de cifra por provider — `MultiFernet`, fallback controlado e validação em produção
+
+### Community 358 - "F-045 — Perguntas de inventário para fontes Notion"
+Cohesion: 0.29
+Nodes (6): Alteração, Critérios de aceitação, Evidências, F-045 — Perguntas de inventário para fontes Notion, Problema, Validação independente
+
+### Community 359 - "AuditWriter"
+Cohesion: 0.12
+Nodes (14): AuditWriter, AuditedRoute, handler(), _factory(), test_audit_failure_never_raises(), test_records_hash_and_length_but_never_the_query_text(), test_review_5_audit_retention_removes_only_expired_organization_events(), test_classifier_schema_cannot_carry_scope() (+6 more)
+
+### Community 361 - "LibraryService"
+Cohesion: 0.06
+Nodes (24): folder_is_queryable(), BrowsePage, LibraryContext, LibraryService, newest_jobs(), LibrarySync, MentionCandidate, seed_company() (+16 more)
+
+### Community 362 - "insights.py"
+Cohesion: 0.10
+Nodes (11): answer_stats(), folder_health(), organization_insights(), organization_usage(), require_org_admin(), _usage_row(), usage_summary(), folder_overview() (+3 more)
 
 ### Community 363 - "Sections"
 Cohesion: 0.20
 Nodes (9): 1. Eliminating Waterfalls (async), 2. Bundle Size Optimization (bundle), 3. Server-Side Performance (server), 4. Client-Side Data Fetching (client), 5. Re-render Optimization (rerender), 6. Rendering Performance (rendering), 7. JavaScript Performance (js), 8. Advanced Patterns (advanced) (+1 more)
+
+### Community 364 - "ADR-0004 - Acesso de staff da plataforma por grants temporários"
+Cohesion: 0.40
+Nodes (4): ADR-0004 - Acesso de staff da plataforma por grants temporários, Consequências, Contexto, Decisão
 
 ### Community 365 - "counts"
 Cohesion: 0.20
@@ -1720,9 +1760,13 @@ Nodes (10): Comandos e resultado, Diff e preservação, Evidências, Findings, L
 Cohesion: 0.22
 Nodes (9): Ambiente e preview sem mocks, Checks e exit codes, Evidências fresh, Findings, Lente 1 — direção A, UX e continuidade futura, Lente 2 — acessibilidade, responsividade e assets, Lente 3 — conteúdo, ações, wiring e preservação, Parecer (+1 more)
 
-### Community 373 - "A.5 Fase A0 — Pré-requisitos e spike (0,5–1 d + externo)"
-Cohesion: 0.50
-Nodes (4): A.5 Fase A0 — Pré-requisitos e spike (0,5–1 d + externo), Task A0.1: Registro do app Entra + tenant de teste, Task A0.2: Iniciar verificação de publisher Microsoft (lead time), Task A0.3: Teste de caracterização da projeção com dois espaços na mesma fonte
+### Community 373 - "clickup"
+Cohesion: 0.12
+Nodes (14): clickup(), node(), ADR-0018: Conector ClickUp (tarefas e Docs, somente leitura), Consequências, Contexto, Decisões, ADR-0019: Conector ClickUp (tarefas e Docs, somente leitura), Consequências (+6 more)
+
+### Community 374 - "navigation-menu.tsx"
+Cohesion: 0.24
+Nodes (9): NavigationMenu(), NavigationMenuContent(), NavigationMenuIndicator(), NavigationMenuItem(), NavigationMenuLink(), NavigationMenuList(), NavigationMenuTrigger(), navigationMenuTriggerStyle (+1 more)
 
 ### Community 375 - "arquivio-review-20261003 - Contrato RAG/revogação e revisão por lotes"
 Cohesion: 0.22
@@ -1764,6 +1808,18 @@ Nodes (4): F-206 | categoria: visual | severidade: média | status: reaberto, F-
 Cohesion: 0.25
 Nodes (8): 1. Tokens implementados na LP (fonte: `landing.css`, bloco `.landing-page`), 2.1 Breakpoints implementados (rodada 2), 2. Componentes da LP → equivalentes no app, 3. Estados que a LP **não** implementa (pertencem ao app), 4. Sequência proposta (outro work-item), 5. Riscos conhecidos, 6. Motion H4 — LP e cinco modais existentes (implementado), Design → App — migração futura da direção A (não executada)
 
+### Community 386 - "F-027 - Recuperação RAG de conteúdo e metadados"
+Cohesion: 0.20
+Nodes (9): Acceptance criteria and test matrix, Commands and results, Decisions, F-027 - Recuperação RAG de conteúdo e metadados, Impact assessment, Ownership, Ready checklist, Source and outcome (+1 more)
+
+### Community 387 - "class-variance-authority"
+Cohesion: 0.10
+Nodes (21): Alert(), AlertDescription(), AlertTitle(), alertVariants, Badge(), badgeVariants, Marker(), MarkerContent() (+13 more)
+
+### Community 388 - "B.4 Plano de execução da Opção A"
+Cohesion: 0.22
+Nodes (9): B.4 Plano de execução da Opção A, Task B0: decisão, dono e orçamento, Task B1: mapa de fluxo de dados Google (base para questionário, política e CASA), Task B2: testes e código mínimo antes de submeter (tests-first), Task B3: política de privacidade com declaração de *Limited Use*, Task B4: evidências de segurança para o CASA (sem CI hoje), Task B5: configuração do Google Cloud e submissão (externo), Task B6: pós-aprovação e renovação anual (+1 more)
+
 ### Community 389 - "Design contract — direção, H2 pendente"
 Cohesion: 0.25
 Nodes (7): Design contract — direção, H2 pendente, Evidence table, Goal & target, Keep / Change / Do-not-copy, Quality-gate checklist, Risks & unknowns, Stance
@@ -1780,6 +1836,10 @@ Nodes (7): 1. Intenção e invariantes, 2. Tokens propostos e proveniência, 3. 
 Cohesion: 0.19
 Nodes (10): CACHE_SEEDS, holdInstallLocks(), InstallProgress, main(), openLock(), openReport(), OPERATIONAL_FAILURE_CODES, showLine() (+2 more)
 
+### Community 393 - "ADR-0006: Company Library as a provider-neutral projection"
+Cohesion: 0.33
+Nodes (5): ADR-0006: Company Library as a provider-neutral projection, Consequences, Context, Decision, Status
+
 ### Community 394 - "1. Eliminating Waterfalls"
 Cohesion: 0.29
 Nodes (7): 1.1 Check Cheap Conditions Before Async Flags, 1.2 Defer Await Until Needed, 1.3 Dependency-Based Parallelization, 1.4 Prevent Waterfall Chains in API Routes, 1.5 Promise.all() for Independent Operations, 1.6 Strategic Suspense Boundaries, 1. Eliminating Waterfalls
@@ -1787,6 +1847,10 @@ Nodes (7): 1.1 Check Cheap Conditions Before Async Flags, 1.2 Defer Await Until 
 ### Community 395 - "2. Bundle Size Optimization"
 Cohesion: 0.17
 Nodes (10): 2.1 Avoid Barrel File Imports, 2.2 Conditional Module Loading, 2.3 Defer Non-Critical Third-Party Libraries, 2.4 Dynamic Imports for Heavy Components, 2.5 Prefer Statically Analyzable Paths, 2.6 Preload Based on User Intent, 2. Bundle Size Optimization, File-System Paths (+2 more)
+
+### Community 396 - "Revisão independente final de F-202 — commit 726c04b"
+Cohesion: 0.29
+Nodes (6): Causa final, Decisão, Evidência de código e testes, Limites, Replay Docker e auditoria do conteúdo, Revisão independente final de F-202 — commit 726c04b
 
 ### Community 398 - "Teste local do login Arquivio — 08/10/2026"
 Cohesion: 0.18
@@ -1820,13 +1884,13 @@ Nodes (6): reducedMotion, confidence, respected, ruleCount, sample, source
 Cohesion: 0.33
 Nodes (5): ASSETS — LP Arquivio (direção A, H2 aprovado), I-01 — document-context, Inspeção visual (Read do PNG bruto e do WebP final), Notas para quem integra, Prompt (lint F1–F6 sem falhas, ~85 palavras)
 
-### Community 409 - "Step 3 - Extract entities and relationships"
-Cohesion: 0.50
-Nodes (4): Part A - Structural extraction for code files, Part B - Semantic extraction (parallel subagents), Part C - Merge AST + semantic into final extraction, Step 3 - Extract entities and relationships
+### Community 409 - "F-020 - Operação e consulta na Biblioteca da Company"
+Cohesion: 0.22
+Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions, F-020 - Operação e consulta na Biblioteca da Company, Ownership, Ready checklist, Source and outcome, Validator report
 
-### Community 410 - "Threat model: API, MCP e canais"
-Cohesion: 0.33
-Nodes (5): Ativos e atores, Fronteiras de confiança, Riscos residuais e revisão, STRIDE por canal, Threat model: API, MCP e canais
+### Community 410 - "test_access_admin.py"
+Cohesion: 0.12
+Nodes (12): _decide(), InMemoryRateLimiter, RateDecision, RedisRateLimiter, test_key_lifecycle_is_one_time_fail_closed_and_audited(), test_member_and_foreign_organization_cannot_manage_keys(), test_scope_node_expiry_and_csrf_validation(), api() (+4 more)
 
 ### Community 411 - "Limpeza de artefatos locais — 2026-10-03"
 Cohesion: 0.40
@@ -1844,21 +1908,21 @@ Nodes (4): Avaliação de RAG do Arquivio, Custo e resultado, Escopo e fontes, P
 Cohesion: 0.40
 Nodes (4): Evidências e gate, Isolamento e segurança do Arquivio, Método, Referências
 
-### Community 415 - "knowledge/overview.py"
-Cohesion: 0.21
-Nodes (5): library_overview(), folder_overview(), _questions(), _themes(), _type_label()
-
 ### Community 416 - "Handoff operacional — ler após aprovação H2"
 Cohesion: 0.40
 Nodes (4): Arquivos e aplicação, Contrato de preservação, Handoff operacional — ler após aprovação H2, Proposta de migração futura ao app (não executada)
+
+### Community 417 - "F-033 - Compactar citações por arquivo"
+Cohesion: 0.22
+Nodes (8): Acceptance criteria and test matrix, Commands and results, Decisions, F-033 - Compactar citações por arquivo, Ownership, Ready checklist, Source and outcome, Validator report
 
 ### Community 418 - "drawer.tsx"
 Cohesion: 0.20
 Nodes (8): DrawerContent(), DrawerDescription(), DrawerFooter(), DrawerHeader(), DrawerOverlay(), DrawerPortal(), DrawerTitle(), vaul
 
-### Community 419 - "ADR-0018: Conector ClickUp (tarefas e Docs, somente leitura)"
-Cohesion: 0.50
-Nodes (3): ADR-0018: Conector ClickUp (tarefas e Docs, somente leitura), Consequências, Contexto
+### Community 419 - "delivery.py"
+Cohesion: 0.09
+Nodes (7): InvitationDeliveryPort, InvitationDeliveryUnavailable, ResendInvitationDelivery, ResendRejectingDelivery, test_delivery_provider_rejection_returns_503_and_leaves_no_invitation(), test_delivery_transport_failure_returns_503(), Decisions
 
 ### Community 420 - "F-016 - RAG de produção com embeddings na ingestão e recuperação híbrida"
 Cohesion: 0.25
@@ -1876,9 +1940,9 @@ Nodes (3): Arquivio — direção da LP, H2 pendente, Contrato para o build post
 Cohesion: 0.50
 Nodes (4): scale, delays, durations, easings
 
-### Community 426 - "ADR-0019: Conector ClickUp (tarefas e Docs, somente leitura)"
-Cohesion: 0.50
-Nodes (3): ADR-0019: Conector ClickUp (tarefas e Docs, somente leitura), Consequências, Contexto
+### Community 426 - "F-056 - Deduplicação de fontes citadas"
+Cohesion: 0.22
+Nodes (8): Acceptance criteria and evidence plan, Commands and results, Decisions, F-056 - Deduplicação de fontes citadas, Ownership, Ready checklist, Source and outcome, Validator report
 
 ### Community 427 - "effectsWhere"
 Cohesion: 0.67
@@ -1892,61 +1956,97 @@ Nodes (3): jsDriven, intersectionObservers, waapiCallCount
 Cohesion: 0.67
 Nodes (3): reducedMotion, respected, ruleCount
 
-### Community 505 - "RemoteHttp"
-Cohesion: 0.04
-Nodes (45): RemoteHttp, RemoteThrottled, test_graph_file_download_retries_throttling_with_retry_after(), 1. Criar o app OAuth (ação humana, ~10 min), 2. Cota de documentos (decidir antes do piloto), 3. Checklist do piloto (precisa de um workspace real), 4. Diagnóstico, ClickUp — runbook de ativação e piloto (+37 more)
+### Community 432 - "14. Arquitetura e stack aprovadas"
+Cohesion: 0.33
+Nodes (6): 14. Arquitetura e stack aprovadas, Caminho de escala, Módulos de aplicação, Orçamentos de performance, Princípio arquitetural, Stack
+
+### Community 504 - "IntegrationRegistry"
+Cohesion: 0.13
+Nodes (13): ProviderNotConfigured, SourceProvider, IntegrationRegistry, test_clickup_registry_adapter_is_wired_with_its_own_key_and_capabilities(), test_all_adapters_accept_known_documents_without_changing_scope(), test_google_registry_binds_database_context_for_deltas(), test_registry_reads_new_formats_by_default(), ADR-0008: Conector OneDrive com OAuth delegado e Graph delta (+5 more)
+
+### Community 505 - "ADR-0015: Cerca anti prompt injection"
+Cohesion: 0.33
+Nodes (5): ADR-0015: Cerca anti prompt injection, Consequências, Contexto, Decisões, Referências
+
+### Community 506 - "FASE 0 — Auditoria anti prompt-injection + invariante de escopo (item L) — 1,5–2 d (Revisão: era 3–4 d)"
+Cohesion: 0.33
+Nodes (6): FASE 0 — Auditoria anti prompt-injection + invariante de escopo (item L) — 1,5–2 d (Revisão: era 3–4 d), Task T0.1: Threat model (documento), Task T0.2: Corpus de injeção + teste de caracterização do RAG atual, Task T0.3: `untrusted.py` e uso nos pontos de montagem de prompt, Task T0.5: Teste do invariante "escopo imposto pelo servidor", Task T0.6: Relatório da auditoria (revisão manual dos pontos quentes)
+
+### Community 510 - "PARTE A — SharePoint / Microsoft 365"
+Cohesion: 0.12
+Nodes (17): A.12 Fase A7 — Refinamentos de UX e escala (opcional, 1 d), A.13 Fase A8 — Link de consentimento de administrador (0,5 d), A.14 Fase A9 — Modo `Sites.Selected` (restrito) (1–1,5 d, **depois** da validação com cliente), A.15 Fase A10 — Endurecimento, documentação e piloto (0,5–1 d), A.16 Critérios de aceite (Parte A), A.17 Riscos (Parte A), A.18 Estimativa (Parte A) [ESTIMATIVA], A.2 Permissões: `Sites.Selected` vs `Sites.Read.All` vs `Files.Read.All` (delegadas) (+9 more)
 
 ### Community 511 - "MicrosoftGraphClient"
 Cohesion: 0.04
-Nodes (41): DeltaPage, MicrosoftGraphClient, on_error(), OneDriveCipher, OneDriveCredentials, OneDriveDocumentProvider, test_onedrive_txt_is_sanitized_and_generic_mime_normalized(), GraphPort (+33 more)
+Nodes (45): DeltaPage, MicrosoftGraphClient, on_error(), OneDriveCipher, OneDriveCredentials, OneDriveCursorInvalid, OneDriveDocumentProvider, OneDriveOAuthInvalid (+37 more)
 
 ### Community 512 - "F-211 — Evidência final (h-ks/h-kr/h-kq, pane-491)"
 Cohesion: 0.29
 Nodes (6): Contratos e limites, F-211 — Evidência final (h-ks/h-kr/h-kq, pane-491), Pendências externas precisas, Prévia funcional e reprodução, Resumo de código para a última revisão independente, Verificações frescas
 
-### Community 513 - "ADR-0004 - Acesso de staff da plataforma por grants temporários"
-Cohesion: 0.50
-Nodes (3): ADR-0004 - Acesso de staff da plataforma por grants temporários, Consequências, Contexto
-
 ### Community 514 - "graphify reference: query, path, explain"
 Cohesion: 0.33
 Nodes (5): For /graphify explain, For /graphify path, graphify reference: query, path, explain, Step 0 — Constrained query expansion (REQUIRED before traversal), Step 1 — Traversal
 
-### Community 519 - "react"
-Cohesion: 0.05
-Nodes (27): AccordionContent(), AccordionItem(), AccordionTrigger(), Alert(), AlertDescription(), AlertTitle(), alertVariants, Checkbox() (+19 more)
+### Community 522 - "SourceItemUnavailable"
+Cohesion: 0.07
+Nodes (23): SourceItemUnavailable, RestrictedList, account_email(), doc_pages(), test_clickup_partial_reads_never_become_a_full_snapshot(), test_notion_restricted_page_is_dropped_from_the_index_without_failing_the_sync(), list_pages(), page_blocks() (+15 more)
 
 ### Community 523 - "F-211 — Login WorkOS: correção final de h-ks/h-kr/h-kq"
 Cohesion: 0.50
 Nodes (3): Evidência final, F-211 | categoria: segurança | severidade: alta | status: resolvido localmente, F-211 — Login WorkOS: correção final de h-ks/h-kr/h-kq
 
-### Community 536 - "manual_sync.py"
-Cohesion: 0.13
-Nodes (22): notion_scope_id(), _compact_outcomes(), _containing_workspaces(), chain(), scope_id(), _is_skipped(), request_run(), _require_member() (+14 more)
+### Community 530 - "test_pilot_deployment.py"
+Cohesion: 0.80
+Nodes (3): _options_request(), test_pilot_api_allows_only_configured_browser_origin(), test_pilot_api_rejects_other_browser_origin()
+
+### Community 531 - "7. Regras de negócio e invariantes"
+Cohesion: 0.40
+Nodes (5): 7. Regras de negócio e invariantes, Isolamento, Operação e custo, Qualidade e confiança, Segurança e privacidade
+
+### Community 532 - "Security hardening follow-ups"
+Cohesion: 0.40
+Nodes (4): Retention decision pending, Security hardening follow-ups, SharePoint R-A2 — projection drops nodes from other workspaces, Tenant relationship constraints
+
+### Community 536 - "8. Advanced Patterns"
+Cohesion: 0.40
+Nodes (5): 8.1 Do Not Put Effect Events in Dependency Arrays, 8.2 Initialize App Once, Not Per Mount, 8.3 Store Event Handlers in Refs, 8.4 useEffectEvent for Stable Callback Refs, 8. Advanced Patterns
+
+### Community 537 - "F-065 - Sincronização Google Drive com texto NUL"
+Cohesion: 0.40
+Nodes (4): Aceitação e evidência, Escopo e decisões, F-065 - Sincronização Google Drive com texto NUL, Fonte e resultado
+
+### Community 543 - "Spike F0.4 — pgvector / SQLAlchemy / psycopg3"
+Cohesion: 0.50
+Nodes (3): PoC reproduzível, Resultado medido, Spike F0.4 — pgvector / SQLAlchemy / psycopg3
+
+### Community 546 - "Step 3 - Extract entities and relationships"
+Cohesion: 0.50
+Nodes (4): Part A - Structural extraction for code files, Part B - Semantic extraction (parallel subagents), Part C - Merge AST + semantic into final extraction, Step 3 - Extract entities and relationships
 
 ### Community 569 - "path"
-Cohesion: 0.25
-Nodes (7): test_every_v1_route_requires_a_bearer_token(), path(), Interpreter guard for subcommands, 7. Documentação necessária, (a) Documentação externa (URLs oficiais), (b) Documentação interna a criar, Contrato proposto: descoberta
+Cohesion: 0.17
+Nodes (11): test_every_v1_route_requires_a_bearer_token(), path(), Interpreter guard for subcommands, 7. Documentação necessária, A.5 Fase A0 — Pré-requisitos e spike (0,5–1 d + externo), (a) Documentação externa (URLs oficiais), (b) Documentação interna a criar, Task A0.1: Registro do app Entra + tenant de teste (+3 more)
 
 ## Knowledge Gaps
-- **1798 isolated node(s):** `init-work-item.sh script`, `{ chromium }`, `assert`, `fs`, `path` (+1793 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 3518 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **173 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **1811 isolated node(s):** `init-work-item.sh script`, `{ chromium }`, `assert`, `fs`, `path` (+1806 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 3561 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **178 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Design e acoplamentos confirmados` connect `Document` to `DataSource`, `integrations-screen.tsx`, `F-063 - Integração OneDrive`?**
-  _High betweenness centrality (0.119) - this node is a cross-community bridge._
-- **Why does `IntegrationScreen()` connect `integrations-screen.tsx` to `Document`, `sync-status-logic.ts`, `messageFor`, `product-app.tsx`?**
-  _High betweenness centrality (0.116) - this node is a cross-community bridge._
-- **Why does `ProviderLogoName` connect `integrations-screen.tsx` to `types-and-api.tsx`, `DataSource`?**
+- **Why does `IntegrationScreen()` connect `integrations-screen.tsx` to `library-screen.tsx`, `sync-status-logic.ts`, `messageFor`, `F-063 - Integração OneDrive`, `product-app.tsx`?**
   _High betweenness centrality (0.103) - this node is a cross-community bridge._
+- **Why does `Design e acoplamentos confirmados` connect `F-063 - Integração OneDrive` to `OrganizationScope`, `DataSource`, `integrations-screen.tsx`?**
+  _High betweenness centrality (0.103) - this node is a cross-community bridge._
+- **Why does `ProviderLogoName` connect `landing-page.tsx` to `onedrive.py`, `types-and-api.tsx`, `integrations-screen.tsx`?**
+  _High betweenness centrality (0.099) - this node is a cross-community bridge._
 - **Are the 99 inferred relationships involving `OrganizationScope` (e.g. with `Principal` and `export_answer()`) actually correct?**
   _`OrganizationScope` has 99 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 342 inferred relationships involving `select()` (e.g. with `.authenticate()` and `create_key()`) actually correct?**
-  _`select()` has 342 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 169 inferred relationships involving `User` (e.g. with `create_key()` and `get_access_settings()`) actually correct?**
-  _`User` has 169 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 352 inferred relationships involving `select()` (e.g. with `.authenticate()` and `create_key()`) actually correct?**
+  _`select()` has 352 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 171 inferred relationships involving `User` (e.g. with `create_key()` and `get_access_settings()`) actually correct?**
+  _`User` has 171 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 136 inferred relationships involving `Document` (e.g. with `_source_of()` and `scoped_document()`) actually correct?**
   _`Document` has 136 INFERRED edges - model-reasoned connections that need verification._
