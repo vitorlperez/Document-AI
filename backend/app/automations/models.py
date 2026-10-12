@@ -67,3 +67,37 @@ class AutomationRun(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     questions_used: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     result: Mapped[dict[str, object] | None] = mapped_column(JSON)
     error_code: Mapped[str | None] = mapped_column(String(40))
+
+
+class WebhookEndpoint(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
+    """An organization's outbound webhook; only the SHA-256 of its secret is stored (it is also the HMAC key)."""
+
+    __tablename__ = "webhook_endpoints"
+    __table_args__ = (Index("ix_webhook_endpoints_org", "organization_id", "created_at"),)
+
+    organization_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    created_by_user_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    url: Mapped[str] = mapped_column(String(2048), nullable=False)
+    secret_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    events: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=sql_false())
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class WebhookDelivery(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
+    __tablename__ = "webhook_deliveries"
+    __table_args__ = (
+        UniqueConstraint("endpoint_id", "run_id", "event", name="uq_webhook_deliveries_endpoint_run_event"),
+        CheckConstraint("status IN ('pending', 'delivered', 'failed')", name="ck_webhook_deliveries_status"),
+        Index("ix_webhook_deliveries_endpoint_created", "endpoint_id", "created_at"),
+    )
+
+    endpoint_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("webhook_endpoints.id", ondelete="CASCADE"), nullable=False)
+    organization_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    run_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("automation_runs.id", ondelete="CASCADE"), nullable=False)
+    event: Mapped[str] = mapped_column(String(40), nullable=False)
+    status: Mapped[str] = mapped_column(String(10), nullable=False, default="pending")
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_error: Mapped[str | None] = mapped_column(String(40))
+    last_status_code: Mapped[int | None] = mapped_column(Integer)
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

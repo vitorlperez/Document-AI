@@ -1,6 +1,6 @@
 # Automações — contrato da API interna (MVP)
 
-Status: **contrato v1** (backend em implementação; este arquivo é a fonte de verdade para o frontend).
+Status: **contrato v1.1** (inclui catálogo de destinatários e webhooks de saída; este arquivo é a fonte de verdade para o frontend).
 Autenticação, CSRF/Origin e erros seguem as demais APIs internas autenticadas do app (cookie de sessão,
 `organization_id` no caminho). Não é parte da API pública `/v1`.
 
@@ -135,6 +135,24 @@ Corpo:
 Mesmos campos do `POST`, todos opcionais. Mudar `trigger_kind`/`trigger_config` recalcula `next_run_at`.
 O escopo é validado contra o acesso do **criador** da automação.
 
+### `GET /automation-recipients?workspace_folder_ids=<id>&workspace_folder_ids=<id>`
+Catálogo para o seletor de destinatários. **Somente Owner/Admin** (`403 owner or admin required` para membro comum;
+membro comum só pode notificar a si mesmo, então o seletor não deve ser exibido para ele).
+`workspace_folder_ids` (repetível, 0–20) é o escopo da automação em edição; omitido => `has_access` é `null`.
+Pastas que não existem na organização => `422 scope_not_allowed`. Resposta `200`:
+```json
+{"items": [
+  {"user_id": "…", "name": "ana", "email": "ana@empresa.com", "role": "member",
+   "has_access": true, "is_you": false}
+]}
+```
+- Lista só **membros ativos** da organização (inclui o próprio usuário, com `is_you = true`), ordenados por e-mail.
+- `name`: o app não guarda nome de usuário; é a parte local do e-mail (antes do `@`). Mostre o e-mail como texto principal.
+- `has_access`: `true` se o membro tem acesso a **todas** as pastas informadas; `false` se falta alguma;
+  `null` se nenhuma pasta foi informada. Mostre aviso para `false` (ele seria ignorado na execução, ver Permissões);
+  selecionar esse membro continua permitido.
+- `role`: `owner` | `admin` | `member`.
+
 ### `DELETE /automations/{automation_id}` → `204`
 Apaga a automação e suas execuções.
 
@@ -162,7 +180,7 @@ Formato FastAPI: `{"detail": "<codigo>"}` (validação de corpo do Pydantic devo
 | HTTP | `detail` | Quando |
 |---|---|---|
 | 403 | `not allowed` | Não é membro ativo da organização, ou não é o criador/Owner/Admin |
-| 403 | `owner or admin required` | Tentou notificar outro usuário sendo membro comum |
+| 403 | `owner or admin required` | Tentou notificar outro usuário, listar o catálogo de destinatários ou gerir webhooks sendo membro comum |
 | 404 | `automation not found` | Id inexistente, de outra organização, ou sem permissão de ver |
 | 404 | `run not found` / `run_has_no_result` | Execução inexistente / sem resposta para PDF |
 | 409 | `automation_limit_reached` | Organização já tem 20 automações |
@@ -191,3 +209,57 @@ Formato FastAPI: `{"detail": "<codigo>"}` (validação de corpo do Pydantic devo
 - `schedule`: um tick a cada 5 minutos executa as automações com `next_run_at <= agora`; atraso típico < 5 min.
 - `folder_changed`: depois de cada sync concluído, se alguma pasta do escopo teve documentos indexados/modificados
   desde a última execução, a automação roda uma vez por conjunto de mudanças (sem duplicar se o sync repetir).
+
+## Webhooks de saída
+
+Notificam um sistema externo (Zapier, n8n, serviço próprio) quando uma automação **termina**. Configuração por
+organização; **somente Owner/Admin** (membro comum: `403 owner or admin required`). Prefixo `/organizations/{organization_id}`.
+
+### Objeto `WebhookEndpoint`
+```json
+{"id": "…", "url": "https://hooks.empresa.com/arquivio", "events": ["automation.completed"],
+ "enabled": true, "revoked_at": null, "created_at": "…", "created_by_user_id": "…",
+ "last_delivery": {"id": "…", "status": "delivered", "attempts": 1, "created_at": "…"}}
+```
+`last_delivery` é `null` se nunca houve entrega. O `secret` **nunca** aparece aqui; só nas respostas de criação e
+rotação (campo `secret`, exibido uma única vez; o servidor guarda apenas o hash).
+
+### Rotas
+- `GET /webhook-endpoints` → `200` `{"limit": 5, "items": [WebhookEndpoint, …]}` (inclui revogados no fim).
+- `POST /webhook-endpoints` → `201` `WebhookEndpoint` + `"secret": "whsec_…"`. Corpo:
+  `{"url": "https://…", "events": ["automation.completed"], "enabled": true}` (`events` padrão `["automation.completed"]`;
+  `enabled` padrão `true`). Máximo 5 endpoints ativos (não revogados) por organização (`409 webhook_limit_reached`).
+- `PATCH /webhook-endpoints/{id}` → `200` `WebhookEndpoint`. Campos opcionais `url`, `events`, `enabled`. Endpoint revogado: `409 webhook_revoked`.
+- `POST /webhook-endpoints/{id}/rotate-secret` → `200` `WebhookEndpoint` + `secret` novo (o anterior deixa de valer na hora).
+- `DELETE /webhook-endpoints/{id}` → `204`. Revoga (`revoked_at` preenchido, `enabled = false`); entregas pendentes são canceladas. Idempotente.
+- `GET /webhook-endpoints/{id}/deliveries?limit=20` → `200` `{"items": [Delivery, …]}` (mais recente primeiro, 1–100).
+  `Delivery`: `{"id", "event", "run_id", "status": "pending|delivered|failed", "attempts", "last_error", "last_status_code", "created_at", "delivered_at"}`.
+  `last_error` é um código curto (`http_500`, `timeout`, `connection_error`, `blocked_destination`), nunca o corpo da resposta.
+
+### Validação da URL (proteção SSRF)
+Apenas `https://`, sem credenciais na URL, **somente porta 443**.
+Host que seja IP literal ou que resolva (DNS) para endereço privado, loopback, link-local, multicast, reservado ou
+não especificado (inclui `10/8`, `172.16/12`, `192.168/16`, `127/8`, `169.254/16`, `::1`, `fc00::/7`, `fe80::/10`, IPv4-mapeado) é recusado.
+Na criação/edição: `422 invalid_webhook_url`. A checagem é **refeita a cada entrega** (resolve o DNS e conecta no IP
+validado, contra DNS rebinding); falha => entrega `failed` com `last_error = "blocked_destination"` sem retentativa.
+Redirecionamentos não são seguidos. Timeout de 5 s por tentativa.
+
+### Evento `automation.completed`
+Disparado quando uma execução chega a `ok`, `empty`, `quota` ou `error` (não em `queued`/`running`) para endpoints
+ativos que assinam o evento. Requisição `POST` com `Content-Type: application/json`:
+```json
+{"id": "<delivery_id>", "event": "automation.completed", "created_at": "…", "organization_id": "…",
+ "data": {"automation_id": "…", "automation_name": "…", "run_id": "…", "status": "ok",
+          "error_code": null, "documents_considered": 12, "finished_at": "…",
+          "answer": "Markdown… (até 4000 caracteres)", "citations": [{"document_name": "…", "source_url": "…", "page_number": 3}]}}
+```
+`answer` e `citations` só em `ok` (senão `null`/`[]`). Não envia `excerpt`.
+
+Cabeçalhos: `X-Arquivio-Event`, `X-Arquivio-Delivery` (id, estável entre retentativas — use para deduplicar),
+`X-Arquivio-Timestamp` (epoch em segundos) e `X-Arquivio-Signature: v1=<hex>`.
+Assinatura: `HMAC-SHA256(chave, f"{timestamp}.{corpo_bruto}")` em hex, onde **chave = SHA-256 hex do secret**
+(`hashlib.sha256(secret.encode()).hexdigest()`; o servidor guarda esse mesmo valor em `secret_hash`).
+Recomenda-se rejeitar timestamps com mais de 5 minutos.
+
+Retentativas: resposta 2xx = entregue. Falha de rede/timeout/5xx/429 => até 5 tentativas no total, com backoff
+exponencial (30 s, 60 s, 120 s, 240 s). Outros 4xx = `failed` sem retentativa. Esgotadas as tentativas: `failed`.

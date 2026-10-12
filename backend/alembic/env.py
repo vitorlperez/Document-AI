@@ -3,7 +3,12 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.access.models import ApiKey  # noqa: F401
 from app.audit_usage.models import AuditLog  # noqa: F401
-from app.automations.models import Automation, AutomationRun  # noqa: F401
+from app.automations.models import (  # noqa: F401
+    Automation,
+    AutomationRun,
+    WebhookDelivery,
+    WebhookEndpoint,
+)
 from app.core.config import get_settings
 from app.core.models import Base
 from app.identity.models import User  # noqa: F401

@@ -23,6 +23,7 @@ from app.identity.models import User
 from app.knowledge.export import ExportSource, render
 from app.knowledge.untrusted import sanitize_label
 from app.organizations.models import Membership, MembershipRole
+from app.workspaces.models import WorkspaceFolder
 
 router = APIRouter(tags=["automations"])
 MAX_AUTOMATIONS_PER_ORGANIZATION = 20
@@ -150,6 +151,31 @@ def _refresh_schedule(automation: Automation) -> None:
         automation.next_run_at = compute_next_run(automation.trigger_config, datetime.now(UTC))
     else:
         automation.next_run_at = None
+
+
+@router.get("/organizations/{organization_id}/automation-recipients")
+def list_recipients(organization_id: UUID, workspace_folder_ids: list[UUID] = Query(default_factory=list, max_length=MAX_SCOPE_FOLDERS),
+                    user: User = Depends(current_user), session: Session = Depends(database_session)) -> dict[str, object]:
+    if not _is_admin(_membership(session, organization_id, user)):
+        raise HTTPException(403, "owner or admin required")
+    folders = set(workspace_folder_ids)
+    if folders:
+        known = set(session.scalars(select(WorkspaceFolder.id).where(
+            WorkspaceFolder.organization_id == organization_id, WorkspaceFolder.id.in_(folders))))
+        if known != folders:
+            raise HTTPException(422, "scope_not_allowed")
+    rows = session.execute(select(Membership.user_id, Membership.role, User.email).join(User, User.id == Membership.user_id).where(
+        Membership.organization_id == organization_id, Membership.is_active.is_(True)).order_by(User.email, User.id)).all()
+    scope = OrganizationScope(organization_id)
+    items = []
+    for user_id, role, email in rows:
+        has_access: bool | None = None
+        if folders:
+            allowed = accessible_folders(session, scope, user_id)
+            has_access = allowed is not None and folders <= allowed
+        items.append({"user_id": str(user_id), "name": email.split("@", 1)[0], "email": email, "role": role.value,
+                      "has_access": has_access, "is_you": user_id == user.id})
+    return {"items": items}
 
 
 @router.get("/organizations/{organization_id}/automations")

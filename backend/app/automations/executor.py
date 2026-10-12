@@ -1,5 +1,6 @@
 """Run one automation with its creator's permissions and deliver the cited result."""
 import logging
+from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.audit_usage.service import UsageLimitExceeded
 from app.automations.models import Automation, AutomationRun
 from app.automations.triggers import scope_folder_ids
+from app.automations.webhooks import enqueue_completed
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
 from app.integrations.google_drive import GoogleAccessDenied
@@ -61,7 +63,7 @@ def _notify_creator(session: Session, automation: Automation, run: AutomationRun
 
 
 def execute_run(session: Session, run_id: UUID, *, provider: SemanticProvider | None, email: EmailDeliveryPort | None = None,
-                app_url: str = "") -> str | None:
+                app_url: str = "", send_task: Callable[..., object] | None = None) -> str | None:
     """Claim and execute a queued run; returns its final status (``None`` when it was not claimable)."""
     run = session.scalar(select(AutomationRun).where(AutomationRun.id == run_id).with_for_update())
     if run is None or run.status != "queued":
@@ -117,6 +119,7 @@ def execute_run(session: Session, run_id: UUID, *, provider: SemanticProvider | 
                         body="Não foi possível concluir esta execução. Tente executar de novo.",
                         extra={"error_code": run.error_code}, email=failure_email, app_url=app_url)
     session.commit()
+    enqueue_completed(session, automation, run, send_task)  # outbound webhooks; never fails the run
     return run.status
 
 

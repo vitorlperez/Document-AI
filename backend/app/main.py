@@ -18,6 +18,7 @@ from app.api.answer_export import router as answer_export_router
 from app.api.answer_feedback import router as answer_feedback_router
 from app.api.auth import current_user
 from app.api.auth import router as auth_router
+from app.api.automation_webhooks import router as automation_webhooks_router
 from app.api.automations import router as automations_router
 from app.api.clickup_tasks import router as clickup_tasks_router
 from app.api.conversations import router as conversations_router
@@ -188,6 +189,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(insights_router, dependencies=authenticated)
     app.include_router(notifications_router, dependencies=authenticated)
     app.include_router(automations_router, dependencies=authenticated)
+    app.include_router(automation_webhooks_router, dependencies=authenticated)
     app.include_router(ingestion_router, dependencies=authenticated)
     app.include_router(library_router, dependencies=authenticated)
     app.include_router(answer_feedback_router, dependencies=authenticated)

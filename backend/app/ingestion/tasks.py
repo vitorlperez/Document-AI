@@ -298,7 +298,23 @@ def run_automation_task(run_id: str) -> str | None:
     session_factory = build_session_factory(build_engine(settings))
     with session_factory() as session:
         return execute_run(session, UUID(run_id), provider=_semantic_provider(settings),
-                           email=email_delivery_from_settings(settings), app_url=settings.public_app_url)
+                           email=email_delivery_from_settings(settings), app_url=settings.public_app_url,
+                           send_task=celery_app.send_task)
+
+
+@celery_app.task(bind=True, name="document_intelligence.ingestion.deliver_webhook", max_retries=4)
+def deliver_webhook_task(self, delivery_id: str) -> str:  # type: ignore[no-untyped-def]
+    """Send one signed ``automation.completed`` webhook; exponential backoff (30s, 60s, 120s, 240s) on retryable failures."""
+    from app.automations.webhooks import attempt_delivery, retry_delay
+
+    session_factory = build_session_factory(build_engine(get_settings()))
+    with session_factory() as session:
+        outcome = attempt_delivery(session, UUID(delivery_id))
+        if outcome == "retry":
+            from app.automations.models import WebhookDelivery
+            delivery = session.get(WebhookDelivery, UUID(delivery_id))
+            raise self.retry(countdown=retry_delay(delivery.attempts if delivery else 1))
+        return outcome
 
 
 @celery_app.task(name="document_intelligence.ingestion.weekly_digest")
