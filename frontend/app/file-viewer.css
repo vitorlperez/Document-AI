@@ -5,7 +5,7 @@
 @media (min-width: 768px) {
   /* The third track is always present, so it animates 0 <-> width together with the chat shrinking. */
   .chat-workspace > .workspace-panels { grid-template-columns: var(--tools-sidebar-width) minmax(0, 1fr) var(--file-viewer-col, 0px); }
-  .chat-workspace > .workspace-panels.file-viewer-open { transition-duration: 220ms; }
+  .chat-workspace > .workspace-panels.file-viewer-open { transition-duration: var(--motion-medium); }
   .chat-workspace > .workspace-panels .file-viewer-slot { grid-column: 3; }
   .file-viewer-slot[data-state="closing"] .file-viewer { pointer-events: none; }
   body.fv-resizing { cursor: col-resize; user-select: none; }
@@ -14,15 +14,15 @@
 }
 
 @media (max-width: 767px) {
-  .file-viewer-slot { position: fixed; inset: 0; z-index: 60; background: var(--color-panel); animation: fv-sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; padding-bottom: env(safe-area-inset-bottom); }
-  .file-viewer-slot[data-state="closing"] { animation: fv-sheet-out 200ms ease-in both; pointer-events: none; }
+  .file-viewer-slot { position: fixed; inset: 0; z-index: 60; background: var(--color-panel); animation: fv-sheet-in var(--motion-medium) var(--ease-out) both; padding-bottom: env(safe-area-inset-bottom); }
+  .file-viewer-slot[data-state="closing"] { animation: fv-sheet-out var(--motion-base) var(--ease-in) both; pointer-events: none; }
   .file-viewer { flex: 1 1 auto; width: 100%; border-left: 0; }
 }
 @keyframes fv-sheet-in { from { opacity: 0; transform: translateY(24px); } }
 @keyframes fv-sheet-out { to { opacity: 0; transform: translateY(24px); } }
 
 .fv-resizer { position: absolute; z-index: 2; inset-block: 0; left: -4px; width: 9px; cursor: col-resize; touch-action: none; }
-.fv-resizer::after { content: ""; position: absolute; inset-block: 0; left: 4px; width: 2px; background: transparent; transition: background-color 150ms ease-out; }
+.fv-resizer::after { content: ""; position: absolute; inset-block: 0; left: 4px; width: 2px; background: transparent; transition: background-color var(--motion-fast) var(--ease-out); }
 .fv-resizer:hover::after, .fv-resizer:focus-visible::after, body.fv-resizing .fv-resizer::after { background: var(--color-primary); }
 .fv-resizer:focus-visible { outline: none; }
 

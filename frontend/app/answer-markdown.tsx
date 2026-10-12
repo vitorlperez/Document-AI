@@ -53,13 +53,13 @@ function downloadCsv(header: string[], rows: string[][]) {
   URL.revokeObjectURL(url);
 }
 
-function BlockView({ block, context, blockKey, lead, chips = true, defaultOpen = true }: { block: Block; context: InlineContext; blockKey: string; lead?: boolean; chips?: boolean; defaultOpen?: boolean }): ReactNode {
+function BlockView({ block, context, blockKey, lead, chips = true, defaultOpen = true, trailing }: { block: Block; context: InlineContext; blockKey: string; lead?: boolean; chips?: boolean; defaultOpen?: boolean; trailing?: ReactNode }): ReactNode {
   const inline = (text: string, suffix = "") => renderInline(text, context, `${blockKey}${suffix}`, chips);
   switch (block.kind) {
     case "heading":
       return block.level <= 2
-        ? <h3 className="answer-heading">{inline(block.text)}</h3>
-        : <h4 className="answer-subheading">{inline(block.text)}</h4>;
+        ? <h3 className="answer-heading">{inline(block.text)}{trailing}</h3>
+        : <h4 className="answer-subheading">{inline(block.text)}{trailing}</h4>;
     case "list": {
       const List = block.ordered ? "ol" : "ul";
       return <List start={block.ordered ? block.start : undefined} className={block.ordered ? "answer-list answer-list-ordered" : "answer-list"}><ListItems items={block.items} context={context} keyPrefix={blockKey} chips={chips} /></List>;
@@ -91,7 +91,7 @@ function BlockView({ block, context, blockKey, lead, chips = true, defaultOpen =
     case "file":
       return <FileCard block={block} context={context} blockKey={blockKey} defaultOpen={defaultOpen} />;
     default:
-      return <p className={lead ? "answer-lead" : "answer-paragraph"}>{inline(block.text)}</p>;
+      return <p className={lead ? "answer-lead" : "answer-paragraph"}>{inline(block.text)}{trailing}</p>;
   }
 }
 
@@ -131,14 +131,17 @@ function groupBlocks(blocks: Block[]): (Block | Block[])[] {
   return groups;
 }
 
-function StructuredAnswer({ text, context }: { text: string; context: InlineContext }) {
+function StructuredAnswer({ text, context, cursor }: { text: string; context: InlineContext; cursor?: ReactNode }) {
   const blocks = parseAnswerBlocks(text, { fileNames: context.fileNames });
   const leadIndex = blocks.length > 1 ? blocks.findIndex((block) => block.kind === "paragraph") : -1;
   const leadBlock = leadIndex >= 0 ? blocks[leadIndex] : null;
-  return <div className="answer-body">{groupBlocks(blocks).map((group, index) => {
+  const groups = groupBlocks(blocks);
+  return <div className="answer-body">{groups.map((group, index) => {
     const key = `b${index}`;
-    if (Array.isArray(group)) return <div key={key} className="answer-file-group">{group.map((block, i) => <BlockView key={i} block={block} context={context} blockKey={`${key}-${i}`} defaultOpen={group.length < COLLAPSE_FROM_CARDS} />)}</div>;
-    return <BlockView key={key} block={group} context={context} blockKey={key} lead={group === leadBlock} />;
+    if (Array.isArray(group)) return <div key={key} className="answer-file-group">{group.map((block, i) => <BlockView key={i} block={block} context={context} blockKey={`${key}-${i}`} defaultOpen={group.length < COLLAPSE_FROM_CARDS} />)}{index === groups.length - 1 && cursor}</div>;
+    const inlineCursor = group.kind === "paragraph" || group.kind === "heading";
+    const trailing = index === groups.length - 1 ? cursor : null;
+    return <Fragment key={key}><BlockView block={group} context={context} blockKey={key} lead={group === leadBlock} trailing={inlineCursor ? trailing : undefined} />{!inlineCursor && trailing}</Fragment>;
   })}</div>;
 }
 
@@ -152,7 +155,7 @@ class AnswerBoundary extends Component<{ text: string; children: ReactNode }, { 
   }
 }
 
-export function AnswerMarkdown({ text, fileNames = [], onCite }: { text: string; fileNames?: string[]; onCite?: (number: number) => void }) {
+export function AnswerMarkdown({ text, fileNames = [], onCite, cursor }: { text: string; fileNames?: string[]; onCite?: (number: number) => void; cursor?: ReactNode }) {
   const context: InlineContext = { fileNames: [...new Set(fileNames)], sourceNames: fileNames, onCite };
-  return <AnswerBoundary text={text}><StructuredAnswer text={text} context={context} /></AnswerBoundary>;
+  return <AnswerBoundary text={text}><StructuredAnswer text={text} context={context} cursor={cursor} /></AnswerBoundary>;
 }

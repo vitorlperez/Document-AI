@@ -2,7 +2,7 @@
 
 import { Library } from "lucide-react";
 import { useEffect, useState } from "react";
-import { REDUCED_MOTION_QUERY } from "./interface-motion";
+import { Shimmer, useReducedMotion } from "./ui";
 import { providerKey, toolLabel } from "./question-scope";
 import { ProviderMark } from "./product/types-and-api";
 import "./source-reading.css";
@@ -23,14 +23,7 @@ export function readingSources(providers: readonly string[] | undefined): { key:
 export function SourceReadingStatus({ providers, reading }: { providers?: readonly string[]; reading: boolean }) {
   const sources = readingSources(providers);
   const [step, setStep] = useState(0);
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const query = window.matchMedia(REDUCED_MOTION_QUERY);
-    const sync = () => setReduced(query.matches);
-    sync();
-    query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
-  }, []);
+  const reduced = useReducedMotion();
   const cycling = reading && !reduced && sources.length > 1;
   useEffect(() => {
     if (!cycling) return;
@@ -43,7 +36,7 @@ export function SourceReadingStatus({ providers, reading }: { providers?: readon
   return <div className={`source-reading${reading ? " is-reading" : ""}`} data-motion={reduced ? "reduced" : undefined}>
     <span role="status" className="sr-only">{reading ? "Consultando suas fontes…" : "Fontes consultadas"}</span>
     <span className="source-reading-logos" aria-hidden="true">{sources.map((source, index) => <span key={source.key} className={`source-reading-logo${index === active ? " is-active" : ""}`} title={source.label}>{source.provider ? <ProviderMark provider={source.provider} size="sm" /> : <Library size={16} />}</span>)}</span>
-    <span key={label} className="source-reading-label" aria-hidden="true">{label}</span>
+    <span key={label} className="source-reading-label" aria-hidden="true">{reading ? <Shimmer variant="text">{label}</Shimmer> : label}</span>
   </div>;
 }
 

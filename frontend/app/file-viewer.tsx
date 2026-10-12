@@ -11,11 +11,12 @@ import {
 import { type EvidenceCitation } from "./source-reading";
 import { API_BASE, ProviderMark, api, messageFor } from "./product/types-and-api";
 import "./file-viewer.css";
+import { LoadingBlock, SkeletonBlock, SkeletonText } from "./ui";
 
 // The renderers are fetched only when a file of that kind is actually opened.
 const PdfViewer = lazy(() => import("./pdf-viewer").then((module) => ({ default: module.PdfViewer })));
 const DocxViewer = lazy(() => import("./docx-viewer").then((module) => ({ default: module.DocxViewer })));
-const viewerLoading = <p className="fv-status" role="status">Carregando visualizador…</p>;
+const viewerLoading = <LoadingBlock className="fv-status" label="Carregando visualizador…"><SkeletonBlock height="14rem" /><SkeletonText lines={3} /></LoadingBlock>;
 
 export type ViewerCitation = EvidenceCitation & { source_provider?: string | null };
 export type ViewerTarget = { citation: ViewerCitation; number: number };
@@ -85,7 +86,7 @@ function ViewTab({ organizationId, citation, onOpenTrecho }: { organizationId: s
     console.warn("[file-viewer] could not render the original", { documentId: citation.document_id, code });
     setState({ phase: "text", notice: `${fileErrorMessage(code)} Mostrando o texto extraído.` });
   }, [citation.document_id]);
-  if (state.phase === "loading") return <p className="fv-status" role="status">Carregando arquivo…</p>;
+  if (state.phase === "loading") return <LoadingBlock className="fv-status" label="Carregando arquivo…"><SkeletonBlock height="14rem" /><SkeletonText lines={3} /></LoadingBlock>;
   if (state.phase === "error") return <div className="fv-status" role="alert"><p>{fileErrorMessage(state.code)}</p><div className="fv-actions"><button type="button" onClick={() => setState({ phase: "text", notice: null })}>Ver texto extraído</button><button type="button" onClick={onOpenTrecho}>Ver trecho citado</button></div></div>;
   if (state.phase === "pdf") return <Suspense fallback={viewerLoading}><PdfViewer blob={state.blob} page={citation.page_number} excerpt={citation.excerpt} onFailed={renderFailed} /></Suspense>;
   if (state.phase === "docx") return <Suspense fallback={viewerLoading}><DocxViewer blob={state.blob} onFailed={renderFailed} /></Suspense>;
@@ -137,7 +138,7 @@ function TextViewer({ organizationId, citation, notice, slides }: { organization
     } catch (caught) { setError(messageFor(caught)); } finally { setLoadingMore(false); }
   }
   if (error && pages.length === 0) return <p className="fv-status" role="alert">{error}</p>;
-  if (pages.length === 0) return <p className="fv-status" role="status">Carregando texto…</p>;
+  if (pages.length === 0) return <LoadingBlock className="fv-status" label="Carregando texto…"><SkeletonText lines={6} /></LoadingBlock>;
   const chunks = pages.flatMap((page) => page.chunks);
   const first = pages[0]; const last = pages[pages.length - 1];
   return <div className="fv-text">
@@ -178,7 +179,7 @@ function EvidenceTab({ organizationId, citation }: { organizationId: string; cit
   const loading = Boolean(citation.chunk_id) && !passage && !error;
   return <div className="fv-evidence">
     {page != null && <p className="fv-meta">Página {page}</p>}
-    {loading ? <p role="status" className="fv-status">Carregando trecho…</p> : <p className="fv-passage">{parts ? <>{parts[0]}<mark>{parts[1]}</mark>{parts[2]}</> : text}</p>}
+    {loading ? <LoadingBlock className="fv-status" label="Carregando trecho citado…"><SkeletonText lines={4} /></LoadingBlock> : <p className="fv-passage">{parts ? <>{parts[0]}<mark>{parts[1]}</mark>{parts[2]}</> : text}</p>}
     {error && <p role="alert" className="fv-notice">Não foi possível carregar o trecho completo; mostrando o resumo da citação.</p>}
   </div>;
 }

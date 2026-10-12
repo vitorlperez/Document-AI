@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { REDUCED_MOTION_QUERY } from "./interface-motion";
+import { useReducedMotion } from "./ui";
 import { revealDurationMs, revealPlan, revealedText, revealedUnits } from "./answer-reveal-logic";
 
 /** Upper bound of a reveal, so callers that wait for it can always give up. */
 export const REVEAL_MAX_MS = 3600;
-
-const prefersReducedMotion = () => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(REDUCED_MOTION_QUERY).matches;
 
 /**
  * Shows `text` progressively when `animate` is on (a live answer), instantly otherwise (restored history,
@@ -15,7 +13,8 @@ const prefersReducedMotion = () => typeof window !== "undefined" && typeof windo
  */
 export function useAnswerReveal(text: string, animate: boolean, { onProgress, onDone }: { onProgress?: () => void; onDone?: () => void } = {}) {
   const plan = useMemo(() => revealPlan(text), [text]);
-  const instant = !animate || prefersReducedMotion();
+  const reduced = useReducedMotion();
+  const instant = !animate || reduced;
   const [revealed, setUnits] = useState(0);
   const units = instant ? plan.length : revealed;
   const callbacks = useRef({ onProgress, onDone });
