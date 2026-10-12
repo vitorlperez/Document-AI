@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
+@import "./ui/motion-tokens.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

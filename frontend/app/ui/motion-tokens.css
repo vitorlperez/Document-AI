@@ -1,0 +1,232 @@
+/* Motion foundation [M56]. Única fonte de durações, easings e distâncias do app.
+   Lanes de tela: use var(--motion-*) / var(--ease-*); não escreva `ms` nem `cubic-bezier` literais.
+   Estado por atributo (data-state, data-streaming…), animação só em CSS, opacity/transform apenas.
+   Contrato completo: specs/design/motion-foundation.md */
+
+:root {
+  /* Durações */
+  --motion-instant: 80ms;
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-medium: 280ms;
+  --motion-slow: 420ms;
+  --motion-enter: 600ms;
+  --motion-loop-typing: 1000ms;
+  --motion-loop-shimmer: 2400ms;
+  --motion-loop-pulse: 2000ms;
+  --motion-loop-spin: 800ms;
+  --motion-loop-indeterminate: 1400ms;
+  --motion-caret-blink: 1060ms;
+
+  /* Easings */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+  --ease-standard: cubic-bezier(0.3, 0.8, 0.3, 1);
+  --ease-spring: cubic-bezier(0.25, 1.4, 0.5, 1);
+  --ease-pop: cubic-bezier(0.3, 1.5, 0.5, 1);
+  --ease-linear: linear;
+  --ease-blink: step-end;
+
+  /* Distâncias e escalas */
+  --motion-dist-xs: 2px;
+  --motion-dist-sm: 8px;
+  --motion-dist-md: 14px;
+  --motion-dist-lg: 24px;
+  --motion-scale-press: 0.975;
+  --motion-scale-hover: 1.02;
+  --motion-scale-pop-from: 0.8;
+  --motion-stagger-sm: 30ms;
+  --motion-stagger-md: 80ms;
+  --motion-stagger-lg: 150ms;
+  --motion-blur-glass: 12px;
+
+  /* Foco: mesmo anel para todos os interativos (reaproveita --focus-ring do tema) */
+  --motion-focus-width: 2px;
+  --motion-focus-offset: 2px;
+
+  /* Skeleton / shimmer: tinta do tema em baixo contraste (18% → 38% da referência, escalado) */
+  --skeleton-base: color-mix(in srgb, var(--ink) 7%, transparent);
+  --skeleton-peak: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+/* ---------- Reduced motion: tokens colapsam; loops e deslocamentos desaparecem ---------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-instant: 0.01ms;
+    --motion-fast: 0.01ms;
+    --motion-base: 0.01ms;
+    --motion-medium: 0.01ms;
+    --motion-slow: 0.01ms;
+    --motion-enter: 0.01ms;
+    --motion-dist-xs: 0px;
+    --motion-dist-sm: 0px;
+    --motion-dist-md: 0px;
+    --motion-dist-lg: 0px;
+    --motion-scale-press: 1;
+    --motion-scale-hover: 1;
+    --motion-scale-pop-from: 1;
+    --motion-stagger-sm: 0ms;
+    --motion-stagger-md: 0ms;
+    --motion-stagger-lg: 0ms;
+  }
+  /* Rede de segurança global: qualquer keyframe/transição do app encolhe e roda uma vez. */
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes mo-fade-in { from { opacity: 0; } }
+@keyframes mo-fade-out { to { opacity: 0; } }
+@keyframes mo-slide-in { from { opacity: 0; transform: translateY(var(--motion-dist-md)); } }
+@keyframes mo-slide-out { to { opacity: 0; transform: translateY(var(--motion-dist-sm)); } }
+@keyframes mo-slide-x-in { from { opacity: 0; transform: translateX(var(--motion-dist-md)); } }
+@keyframes mo-scale-in { from { opacity: 0; transform: scale(var(--motion-scale-pop-from)); } }
+@keyframes mo-scale-out { to { opacity: 0; transform: scale(var(--motion-scale-pop-from)); } }
+@keyframes mo-pop-in { from { opacity: 0; transform: scale(var(--motion-scale-pop-from)); } }
+@keyframes mo-rise-sm { from { opacity: 0; transform: translateY(var(--motion-dist-sm)); } }
+@keyframes mo-shimmer { from { background-position-x: 100%; } to { background-position-x: -100%; } }
+@keyframes mo-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes mo-spin { to { transform: rotate(360deg); } }
+@keyframes mo-typing-dot { 0%, 60%, 100% { opacity: 0.25; transform: none; } 30% { opacity: 0.9; transform: translateY(-3px); } }
+@keyframes mo-caret-blink { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes mo-indeterminate { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@keyframes mo-reveal { from { opacity: 0; transform: translate3d(0, var(--motion-dist-lg), 0); } to { opacity: 1; transform: none; } }
+@keyframes mo-check-pop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
+
+/* ---------- Entrada / saída (Enter, Transition) ---------- */
+.mo-enter {
+  animation-duration: var(--motion-medium);
+  animation-timing-function: var(--ease-out);
+  animation-fill-mode: both;
+  animation-delay: var(--mo-delay, 0ms);
+}
+.mo-enter[data-variant="fade"] { animation-name: mo-fade-in; animation-duration: var(--motion-base); }
+.mo-enter[data-variant="slide"] { animation-name: mo-slide-in; }
+.mo-enter[data-variant="slide-x"] { animation-name: mo-slide-x-in; }
+.mo-enter[data-variant="scale"] { animation-name: mo-scale-in; animation-duration: var(--motion-base); }
+.mo-enter[data-variant="pop"] { animation-name: mo-pop-in; animation-duration: var(--motion-slow); animation-timing-function: var(--ease-pop); }
+.mo-enter[data-origin="user"] { transform-origin: 100% 100%; }
+.mo-enter[data-origin="assistant"] { transform-origin: 0 100%; }
+
+/* data-state="closed" é posto por Transition/Presence; o nó fica montado até o fim da saída. */
+.mo-enter[data-state="closed"] { animation-duration: var(--motion-fast); animation-timing-function: var(--ease-in); animation-delay: 0ms; }
+.mo-enter[data-state="closed"][data-variant="fade"] { animation-name: mo-fade-out; }
+.mo-enter[data-state="closed"][data-variant="slide"],
+.mo-enter[data-state="closed"][data-variant="slide-x"] { animation-name: mo-slide-out; }
+.mo-enter[data-state="closed"][data-variant="scale"],
+.mo-enter[data-state="closed"][data-variant="pop"] { animation-name: mo-scale-out; }
+
+/* Item de lista com stagger: --mo-i vem de staggerStyle() (já limitado a STAGGER_MAX). */
+.mo-stagger-item {
+  animation: mo-slide-in var(--motion-medium) var(--ease-out) both;
+  animation-delay: calc(var(--mo-i, 0) * var(--mo-step, var(--motion-stagger-sm)));
+}
+.mo-stagger-item[data-step="md"] { --mo-step: var(--motion-stagger-md); }
+.mo-stagger-item[data-step="lg"] { --mo-step: var(--motion-stagger-lg); }
+
+/* Troca de tela: só entrada (a rota anterior já foi desmontada). */
+.mo-screen { animation: mo-slide-in var(--motion-medium) var(--ease-out) both; --motion-dist-md: var(--motion-dist-sm); }
+
+/* Scroll reveal nativo: só com suporte e sem reduced-motion; fora disso o conteúdo já está visível. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .mo-reveal { animation: mo-reveal linear both; animation-timeline: view(); animation-range: entry 0 entry 45%; }
+    .mo-reveal[data-variant="fade"] { animation-name: mo-fade-in; }
+  }
+}
+
+/* ---------- Skeleton e shimmer ---------- */
+.mo-skeleton, .mo-shimmer {
+  background: linear-gradient(90deg, var(--skeleton-base) 0%, var(--skeleton-peak) 50%, var(--skeleton-base) 100%);
+  background-size: 200% 100%;
+  animation: mo-shimmer var(--motion-loop-shimmer) var(--ease-in-out) infinite;
+}
+.mo-skeleton { display: block; border-radius: 6px; }
+.mo-skeleton[data-shape="line"] { height: 0.75rem; border-radius: 999px; }
+.mo-skeleton[data-shape="circle"] { border-radius: 999px; flex: none; }
+.mo-skeleton-stack { display: flex; flex-direction: column; gap: 0.5rem; }
+.mo-skeleton-card { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.mo-skeleton-row { display: flex; align-items: center; gap: 0.75rem; }
+.mo-skeleton-row > .mo-skeleton-stack { flex: 1; min-width: 0; }
+/* Texto em shimmer (ex.: "Consultando os arquivos…"): a tinta do texto acompanha o gradiente. */
+.mo-shimmer[data-variant="text"] {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ink) 55%, transparent) 0%, var(--ink) 50%, color-mix(in srgb, var(--ink) 55%, transparent) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mo-skeleton, .mo-shimmer { animation: none; }
+  .mo-skeleton { background: var(--skeleton-peak); }
+  .mo-shimmer[data-variant="text"] { background: none; color: var(--ink); }
+}
+
+/* ---------- Spinner e progresso ---------- */
+.mo-spinner { display: inline-block; flex: none; color: currentColor; animation: mo-spin var(--motion-loop-spin) var(--ease-linear) infinite; }
+.mo-spinner circle { fill: none; stroke: currentColor; stroke-width: 3; }
+.mo-spinner .mo-spinner-track { opacity: 0.2; }
+.mo-spinner .mo-spinner-arc { stroke-linecap: round; stroke-dasharray: 15 45; }
+@media (prefers-reduced-motion: reduce) { .mo-spinner { animation: none; } }
+
+.mo-progress { position: relative; overflow: hidden; height: 6px; border-radius: 999px; background: var(--line); }
+.mo-progress-bar { height: 100%; width: 100%; border-radius: inherit; background: var(--primary); transform-origin: 0 50%; transform: scaleX(var(--mo-progress, 0)); transition: transform var(--motion-medium) var(--ease-linear); }
+.mo-progress[data-indeterminate] .mo-progress-bar { width: 40%; transform: none; transition: none; animation: mo-indeterminate var(--motion-loop-indeterminate) var(--ease-in-out) infinite; }
+@media (prefers-reduced-motion: reduce) { .mo-progress[data-indeterminate] .mo-progress-bar { width: 100%; animation: none; opacity: 0.5; } }
+
+/* ---------- Chat: pensando / digitando / streaming ---------- */
+.mo-typing { display: inline-flex; align-items: center; gap: 4px; height: 20px; }
+.mo-typing i { width: 6px; height: 6px; border-radius: 999px; background: currentColor; opacity: 0.25; animation: mo-typing-dot var(--motion-loop-typing) infinite; }
+.mo-typing i:nth-child(2) { animation-delay: var(--motion-stagger-lg); }
+.mo-typing i:nth-child(3) { animation-delay: calc(var(--motion-stagger-lg) * 2); }
+@media (prefers-reduced-motion: reduce) { .mo-typing i { animation: none; opacity: 0.6; } }
+
+.mo-caret { display: inline-block; width: 2px; height: 0.9em; margin-left: 2px; vertical-align: -0.1em; background: currentColor; }
+.mo-caret[data-state="idle"] { animation: mo-caret-blink var(--motion-caret-blink) var(--ease-blink) infinite; }
+.mo-caret[data-state="streaming"] { animation: none; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .mo-caret { display: none; } }
+
+.mo-pulse { animation: mo-pulse var(--motion-loop-pulse) var(--ease-in-out) infinite; }
+@media (prefers-reduced-motion: reduce) { .mo-pulse { animation: none; } }
+
+/* ---------- Estados vazio e de erro ---------- */
+.mo-state { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 2rem 1.5rem; text-align: center; color: var(--ink); animation: mo-rise-sm var(--motion-medium) var(--ease-out) both; }
+.mo-state-icon { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 999px; background: var(--sage); color: var(--primary); animation: mo-pop-in var(--motion-slow) var(--ease-pop) both; animation-delay: var(--motion-stagger-md); }
+.mo-state[data-tone="error"] { border: 1px solid var(--danger-border); border-radius: 10px; background: var(--danger-bg); color: var(--danger-fg); }
+.mo-state[data-tone="error"] .mo-state-icon { background: transparent; color: var(--danger-fg); }
+.mo-state-title { font-size: 0.9375rem; font-weight: 600; }
+.mo-state-description { max-width: 28rem; font-size: 0.8125rem; color: var(--muted-foreground); }
+.mo-state[data-tone="error"] .mo-state-description { color: inherit; opacity: 0.9; }
+.mo-state-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 0.5rem; }
+
+/* ---------- Toast ---------- */
+.mo-toast-viewport { position: fixed; z-index: 70; top: 1rem; right: 1rem; display: flex; flex-direction: column; gap: 0.5rem; width: min(24rem, calc(100vw - 2rem)); pointer-events: none; }
+.mo-toast { pointer-events: auto; display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 0.875rem; border: 1px solid var(--dialog-edge); border-radius: 10px; background: var(--surface-raised); color: var(--ink); box-shadow: 0 12px 32px -16px var(--shadow-ink); font-size: 0.8125rem; }
+.mo-toast[data-tone="success"] { border-color: color-mix(in srgb, var(--primary) 45%, var(--line)); }
+.mo-toast[data-tone="error"] { border-color: var(--danger-border); background: var(--danger-bg); color: var(--danger-fg); }
+.mo-toast-body { flex: 1; min-width: 0; }
+.mo-toast-title { font-weight: 600; }
+.mo-toast-description { margin-top: 0.125rem; opacity: 0.85; }
+
+/* ---------- Hover / press / foco consistentes ---------- */
+.mo-interactive { transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), transform var(--motion-base) var(--ease-out); }
+.mo-interactive:not(:disabled, [aria-disabled="true"]):active { transform: translateY(var(--motion-dist-xs)) scale(var(--motion-scale-press)); }
+.mo-interactive[data-variant="primary"]:not(:disabled):hover { box-shadow: 0 8px 24px -10px color-mix(in srgb, var(--primary) 55%, transparent); }
+.mo-interactive-card { transition: transform var(--motion-base) var(--ease-spring), box-shadow var(--motion-base) var(--ease-out), border-color var(--motion-fast) var(--ease-out); }
+.mo-interactive-card:hover { transform: translateY(calc(var(--motion-dist-xs) * -1)); box-shadow: 0 10px 24px -16px var(--shadow-ink); }
+.mo-interactive-card:active { transform: scale(var(--motion-scale-press)); transition-duration: var(--motion-fast); }
+.mo-field { transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out); }
+.mo-field:focus-visible, .mo-field:focus-within { border-color: var(--focus-ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring) 22%, transparent); }
+/* Hover e foco compartilham a regra; o anel é o mesmo em todos os interativos. */
+.mo-focus:focus-visible, .mo-interactive:focus-visible, .mo-interactive-card:focus-visible { outline: var(--motion-focus-width) solid var(--focus-ring); outline-offset: var(--motion-focus-offset); }
+.mo-arrow { transition: transform var(--motion-fast) var(--ease-out); }
+:is(a, button):is(:hover, :focus-visible) > .mo-arrow { transform: translateX(var(--motion-dist-xs)); }
+.mo-check-pop { animation: mo-check-pop var(--motion-slow) var(--ease-pop) both; }
+@media (prefers-reduced-motion: reduce) { .mo-interactive-card:hover { transform: none; } }
