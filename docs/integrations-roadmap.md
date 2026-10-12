@@ -34,15 +34,15 @@ O produto atual concluiu essa sequência para OneDrive; a lista é mantida como 
 
 | Fonte | Formatos |
 |---|---|
-| Google Drive | Docs (export TXT), PDF, DOCX, Markdown; com `NEW_FORMATS_ENABLED=true`: TXT, CSV, XLSX, PPTX, Sheets (export XLSX), Slides (export PPTX) |
-| OneDrive | PDF, DOCX, Markdown; com `NEW_FORMATS_ENABLED=true`: TXT, CSV, XLSX, PPTX |
+| Google Drive | Docs (export TXT), PDF, DOCX, Markdown, TXT, CSV, XLSX, PPTX, Sheets (export XLSX), Slides (export PPTX) |
+| OneDrive | PDF, DOCX, Markdown, TXT, CSV, XLSX, PPTX |
 | Notion | Markdown do adapter existente |
 | ClickUp | Markdown: uma tarefa ou um Doc por documento (sem comentários nem anexos); escrita só "Criar tarefa a partir da resposta" (ADR-0020) |
 
-Formatos novos permanecem desligados por padrão. `ACTIVE_DOCUMENT_LIMIT` mantém o default 500.
-Extração limita bytes a 25 MiB (ZIP descomprimido 200 MiB e razão 200), texto a 600.000 caracteres e chunks a 2.000 por documento. Planilhas: 20 abas, 5.000 linhas/aba, 60 colunas, 2.000 caracteres/célula; cada bloco carrega cabeçalhos e número das linhas. Abas ocultas são ignoradas; linhas/colunas ocultas são incluídas; fórmulas usam o valor em cache, sem calcular fórmulas. Slides preservam número e título; notas do orador são rotuladas separadamente. Imagens, macros, gráficos e formatos legados continuam fora do escopo.
+Todos os formatos acima são indexados por padrão (a flag `NEW_FORMATS_ENABLED` foi removida na M55; o registry de `extraction/__init__.py` é a única fonte de elegibilidade). `ACTIVE_DOCUMENT_LIMIT` mantém o default 500.
+Extração limita bytes a 100 MiB por arquivo (`MAX_FILE_BYTES`) e, para XLSX/PPTX, 40 MiB (`MAX_OOXML_BYTES`; ZIP descomprimido 120 MiB e razão 200, checado antes de abrir o contêiner), texto a 600.000 caracteres **lidos** (planilhas e apresentações param de ler ao esgotar o orçamento, não só ao gravar) e chunks a 2.000 por documento. Apresentações: até 400 slides. Planilhas: 20 abas, 5.000 linhas/aba, 60 colunas, 2.000 caracteres/célula; cada bloco carrega cabeçalhos e número das linhas. Abas ocultas são ignoradas; linhas/colunas ocultas são incluídas; fórmulas usam o valor em cache, sem calcular fórmulas. Slides preservam número e título; notas do orador são rotuladas separadamente. Imagens, macros, gráficos e formatos legados continuam fora do escopo.
 
 Google limita exportações a 10 MB. `exportSizeLimitExceeded` é falha do arquivo, sem reconectar a fonte.
-Para canário, habilite a flag no ambiente piloto, execute de `backend/`:
+Arquivos que estavam `ignored/unsupported_file_type` e hoje são elegíveis são relidos no próximo sync (o sync força a leitura de ignorados cujo MIME normalizado passou a ser elegível). Para antecipar numa pasta, execute de `backend/`:
 `.venv/bin/python -m scripts.requeue_ignored --folder UUID` (dry-run) e depois `--apply`.
-O script só atua nas pastas explicitamente selecionadas, preserva arquivos não elegíveis e enfileira sincronização após commit. O próximo sync também força a leitura de arquivos ignorados cujo MIME normalizado passou a ser elegível. Compare proporção de ignorados, custo de embeddings e perguntas com citações antes de ampliar o rollout.
+O script só atua nas pastas explicitamente selecionadas, preserva arquivos não elegíveis e enfileira sincronização após commit. Compare proporção de ignorados, custo de embeddings e perguntas com citações antes de ampliar o rollout.

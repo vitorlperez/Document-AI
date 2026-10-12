@@ -30,8 +30,7 @@ import pytest
 
 
 @pytest.mark.parametrize('provider', ['google_drive', 'onedrive'])
-@pytest.mark.parametrize('enabled', [False, True])
-def test_registry_applies_format_flag_to_actual_reader(monkeypatch, provider, enabled):
+def test_registry_reads_new_formats_by_default(monkeypatch, provider):
     from datetime import UTC, datetime, timedelta
     from types import SimpleNamespace
 
@@ -42,8 +41,7 @@ def test_registry_applies_format_flag_to_actual_reader(monkeypatch, provider, en
 
     key = Fernet.generate_key().decode()
     settings = Settings(database_url='postgresql+psycopg://u:p@localhost/db',
-                        google_token_encryption_key=key, microsoft_token_encryption_key=key,
-                        new_formats_enabled=enabled)
+                        google_token_encryption_key=key, microsoft_token_encryption_key=key)
     adapter = IntegrationRegistry(settings).get(provider)
     reader, calls = adapter._provider, []
     monkeypatch.setattr(reader.client, 'read_file', lambda **kw: (calls.append('read'), b'Approved')[1])
@@ -56,5 +54,5 @@ def test_registry_applies_format_flag_to_actual_reader(monkeypatch, provider, en
         document = adapter.discover(encrypted_credentials=credentials,selections=[selection]).documents[0]
     else:
         document = reader._read_one(OneDriveCredentials('a','r',expiry), {'id':'f','name':'f.txt','file':{'mimeType':'text/plain'}})
-    assert calls == (['read'] if enabled else [])
-    assert document.text == ('Approved' if enabled else None)
+    assert calls == ['read']
+    assert document.text == 'Approved'

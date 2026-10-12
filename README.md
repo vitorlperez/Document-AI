@@ -87,7 +87,7 @@ Copy `.env.example` to `.env` and add credentials only for the integrations you 
 | `WORKOS_API_KEY` / `WORKOS_CLIENT_ID` | Enables authentication and organization identity |
 | `RESEND_API_KEY` / `INVITATION_FROM_EMAIL` | Enables email invitations |
 | `PUBLIC_APP_URL` | Public URL allowed by the API CORS policy |
-| `NEW_FORMATS_ENABLED` | Enables TXT/CSV/XLSX/PPTX and Sheets/Slides; default `false`. Formats, caps and backfill: [integration roadmap](docs/integrations-roadmap.md#formatos-indexáveis) |
+| `MAX_OOXML_BYTES` | Largest XLSX/PPTX read by the Worker (default 41943040 = 40 MiB; other files use `MAX_FILE_BYTES`). TXT/CSV/XLSX/PPTX and Sheets/Slides are always indexed. Formats and caps: [integration roadmap](docs/integrations-roadmap.md#formatos-indexáveis) |
 | `ACTIVE_DOCUMENT_LIMIT` | Maximum active indexed documents per organization; default `500` |
 
 Never commit `.env` files or credentials. The repository includes `.env.example` as a safe template.

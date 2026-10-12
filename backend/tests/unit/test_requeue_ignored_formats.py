@@ -30,7 +30,7 @@ def test_requeue_is_dry_run_and_scoped_to_selected_folder(session):
     ]
     session.add_all(documents)
     session.commit()
-    settings = SimpleNamespace(new_formats_enabled=True, active_document_limit=500)
+    settings = SimpleNamespace(active_document_limit=500)
     count, jobs = requeue(session, folder_ids=[folder.id], settings=settings, apply=False)
     assert count == 1 and jobs == []
     assert documents[0].content_hash == "old"

@@ -10,7 +10,7 @@ from pypdf.errors import PdfReadError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.ingestion.extraction import BASE_MIME_TYPES, extract_blocks, limits
+from app.ingestion.extraction import ELIGIBLE_MIME_TYPES, extract_blocks, limits
 from app.ingestion.extraction.errors import ExtractionError
 from app.ingestion.extraction.mime import normalize_mime_type
 from app.ingestion.service import (
@@ -295,7 +295,7 @@ class GoogleDriveDocumentProvider:
     def encrypt_delta_link(self, value: str) -> str:
         return self.cipher.encrypt_cursor(value)
 
-    eligible_mime_types = BASE_MIME_TYPES
+    eligible_mime_types = ELIGIBLE_MIME_TYPES
 
     def _extract(
         self, *, encrypted_credentials: str, remote_file: RemoteFile
@@ -311,7 +311,7 @@ class GoogleDriveDocumentProvider:
         }
         if mime_type not in self.eligible_mime_types:
             return DiscoveredDocument(**base)
-        if remote_file.size is not None and remote_file.size > limits.MAX_FILE_BYTES:
+        if remote_file.size is not None and remote_file.size > limits.max_file_bytes_for(mime_type):
             return DiscoveredDocument(**base, error_code="file_too_large")
         if remote_file.size == 0:
             return DiscoveredDocument(**base, text="")

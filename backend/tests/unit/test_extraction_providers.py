@@ -10,7 +10,7 @@ from test_google_drive_ingestion import (
     selection,
 )
 
-from app.ingestion.extraction import BASE_MIME_TYPES, ELIGIBLE_MIME_TYPES
+from app.ingestion.extraction import ELIGIBLE_MIME_TYPES
 from app.ingestion.extraction.mime import PPTX, SHEETS, SLIDES, XLSX
 from app.ingestion.google_drive import GoogleDriveDocumentProvider
 from app.integrations.google_drive import GoogleCredentials, GoogleDriveOAuthClient, RemoteFile
@@ -61,16 +61,15 @@ def test_google_export_size_limit_is_item_failure():
         )
 
 
-def test_google_mime_normalization_and_flag_prevent_download():
+def test_google_mime_normalization_and_unsupported_types_are_not_downloaded():
+    image = RemoteFile("img", "photo.png", "image/png", "", None)
     remote = RemoteFile("id", "base.csv", "text/plain", "", None)
-    client = FakeGoogleDriveClient([remote], {"id": b"Nome;Valor\nAcme;15"})
+    client = FakeGoogleDriveClient([image, remote], {"id": b"Nome;Valor\nAcme;15"})
     cipher, _ = encrypted_credentials()
     credentials = fresh_credentials(cipher)
-    provider = GoogleDriveDocumentProvider(client, cipher)
-    provider.eligible_mime_types = BASE_MIME_TYPES
-    assert provider._extract(encrypted_credentials=credentials, remote_file=remote).text is None
+    provider = GoogleDriveDocumentProvider(client, cipher)  # default eligibility: every indexable format
+    assert provider._extract(encrypted_credentials=credentials, remote_file=image).text is None
     assert not client.read_calls
-    provider.eligible_mime_types = ELIGIBLE_MIME_TYPES
     result = provider._extract(encrypted_credentials=credentials, remote_file=remote)
     assert result.mime_type == "text/csv"
     assert result.blocks[0].text == "Nome: Acme | Valor: 15"

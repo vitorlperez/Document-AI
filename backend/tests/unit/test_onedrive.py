@@ -390,8 +390,8 @@ def test_root_file_delta_filters_hierarchy_and_merges_selected_folder_moves() ->
     def file_item(item_id: str, parent_id: str) -> dict[str, object]:
         return {
             "id": item_id,
-            "name": f"{item_id}.txt",
-            "file": {"mimeType": "text/plain"},
+            "name": f"{item_id}.bin",
+            "file": {"mimeType": "application/octet-stream"},
             # Microsoft delta responses may omit parentReference.path; the
             # opaque parent ID is enough to distinguish direct root children.
             "parentReference": {"id": parent_id},

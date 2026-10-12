@@ -119,7 +119,7 @@ def docx_bytes(text: str) -> bytes:
 
 
 def test_provider_extracts_google_docs_and_docx_and_skips_unsupported_without_download() -> None:
-    files = [remote_file("google-doc", GOOGLE_DOC), remote_file("word-doc", DOCX), remote_file("slides", "application/vnd.google-apps.presentation")]
+    files = [remote_file("google-doc", GOOGLE_DOC), remote_file("word-doc", DOCX), remote_file("unsupported-form", "application/vnd.google-apps.form")]
     client = FakeGoogleDriveClient(
         files,
         {
@@ -144,7 +144,7 @@ def test_provider_extracts_google_docs_and_docx_and_skips_unsupported_without_do
     assert set(client.read_calls) == {"google-doc", "word-doc"}
     assert [(document.external_file_id, document.text, document.error_code) for document in discovered.documents] == [
         ("google-doc", "Approved marketing scope", None),
-        ("slides", None, None),
+        ("unsupported-form", None, None),
         ("word-doc", "Approved consulting scope", None),
     ]
 
@@ -460,7 +460,7 @@ def test_concurrent_extraction_keeps_per_file_failures_without_cancelling_siblin
         remote_file("good-a", GOOGLE_DOC),
         remote_file("private", GOOGLE_DOC),
         remote_file("bad", GOOGLE_DOC),
-        remote_file("slides", "application/vnd.google-apps.presentation"),
+        remote_file("unsupported-form", "application/vnd.google-apps.form"),
         remote_file("good-b", GOOGLE_DOC),
     ]
 
@@ -488,9 +488,9 @@ def test_concurrent_extraction_keeps_per_file_failures_without_cancelling_siblin
         ("good-a", "Good A", None),
         ("good-b", "Good B", None),
         ("private", None, "source_file_unavailable"),
-        ("slides", None, None),
+        ("unsupported-form", None, None),
     ]
-    assert "slides" not in client.read_calls
+    assert "unsupported-form" not in client.read_calls
 
 
 def test_google_client_lists_direct_root_files_with_pagination(monkeypatch: pytest.MonkeyPatch) -> None:

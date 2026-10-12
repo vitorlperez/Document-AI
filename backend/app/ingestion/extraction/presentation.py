@@ -14,11 +14,14 @@ def _shapes(shapes):
 
 
 def pptx_blocks(content) -> list[ExtractedBlock]:
-    limits.guard_size(content)
-    limits.guard_zip(content)
+    limits.guard_ooxml(content)
     presentation = Presentation(limits.as_stream(content))
     blocks: list[ExtractedBlock] = []
+    budget = limits.TextBudget()
     for number, slide in enumerate(presentation.slides, start=1):
+        if number > limits.MAX_SLIDES or budget.spent:
+            blocks.append(ExtractedBlock(limits.TRUNCATED_NOTICE, page_number=number - 1))
+            break
         title_shape = (
             slide.shapes.title
         )  # a new proxy on every access: compare by shape_id, not identity
@@ -44,6 +47,7 @@ def pptx_blocks(content) -> list[ExtractedBlock]:
                     )
         if lines:
             blocks.append(ExtractedBlock("\n".join(lines), page_number=number, section_path=title))
+            budget.spend(blocks[-1].text)
         if slide.has_notes_slide and slide.notes_slide.notes_text_frame.text.strip():
             blocks.append(
                 ExtractedBlock(
@@ -52,4 +56,5 @@ def pptx_blocks(content) -> list[ExtractedBlock]:
                     section_path=f"{title} › Notas do orador",
                 )
             )
+            budget.spend(blocks[-1].text)
     return blocks

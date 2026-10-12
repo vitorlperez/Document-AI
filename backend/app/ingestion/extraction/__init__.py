@@ -40,13 +40,11 @@ EXTRACTORS = {
 }
 STREAMED = frozenset({PDF, DOCX, XLSX, SHEETS, PPTX, SLIDES})  # extractors that read a seekable file
 ELIGIBLE_MIME_TYPES = frozenset(EXTRACTORS)
-BASE_MIME_TYPES = frozenset({GOOGLE_DOC, PDF, DOCX, "text/markdown"})
 
 
-def eligible_mime_types(settings) -> frozenset[str]:
-    return (
-        ELIGIBLE_MIME_TYPES if getattr(settings, "new_formats_enabled", False) else BASE_MIME_TYPES
-    )
+def eligible_mime_types(settings=None) -> frozenset[str]:
+    """Every format with an extractor is indexable; the registry is the only gate."""
+    return ELIGIBLE_MIME_TYPES
 
 
 def extract_blocks(

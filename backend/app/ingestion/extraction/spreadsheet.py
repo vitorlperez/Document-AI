@@ -29,7 +29,10 @@ def _cell(value: object) -> str:
     return " ".join(str(value).split())[: limits.MAX_CELL_CHARS]
 
 
-def rows_to_blocks(title: str, rows: Iterable[Sequence[object]]) -> list[ExtractedBlock]:
+def rows_to_blocks(
+    title: str, rows: Iterable[Sequence[object]], budget: limits.TextBudget | None = None
+) -> list[ExtractedBlock]:
+    budget = budget or limits.TextBudget()
     header: list[str] | None = None
     blocks: list[ExtractedBlock] = []
     lines: list[str] = []
@@ -63,8 +66,13 @@ def rows_to_blocks(title: str, rows: Iterable[Sequence[object]]) -> list[Extract
             first = number
         lines.append(line)
         last = number
+        budget.spend(line)
         if len(lines) == limits.ROWS_PER_BLOCK:
             flush()
+        if budget.spent:
+            flush()
+            blocks.append(ExtractedBlock(limits.TRUNCATED_NOTICE, section_path=title))
+            return blocks
     flush()
     if header is not None and not blocks:  # a sheet with only one row: keep it searchable
         blocks.append(ExtractedBlock(" | ".join(v for v in header if v), section_path=title))
@@ -88,20 +96,22 @@ def csv_blocks(content: bytes) -> list[ExtractedBlock]:
         dialect = csv.excel_tab if sample.count("\t") > sample.count(",") else csv.excel
         if sample.count(";") > sample.count(","):
             dialect = type("Semicolon", (csv.excel,), {"delimiter": ";"})
-    return rows_to_blocks("Tabela", csv.reader(io.StringIO(text), dialect))
+    return rows_to_blocks("Tabela", csv.reader(io.StringIO(text), dialect), limits.TextBudget())
 
 
 def xlsx_blocks(content) -> list[ExtractedBlock]:
-    limits.guard_size(content)
-    limits.guard_zip(content)
+    limits.guard_ooxml(content)
     workbook = load_workbook(limits.as_stream(content), read_only=True, data_only=True)
     try:
         blocks: list[ExtractedBlock] = []
+        budget = limits.TextBudget()  # shared by every sheet: later sheets are never opened once spent
         for sheet in workbook.worksheets[: limits.MAX_SHEETS]:
             if sheet.sheet_state != "visible":
                 continue
             sheet.reset_dimensions()  # read-only mode trusts a possibly wrong <dimension> tag
-            blocks.extend(rows_to_blocks(sheet.title, sheet.iter_rows(values_only=True)))
+            blocks.extend(rows_to_blocks(sheet.title, sheet.iter_rows(values_only=True), budget))
+            if budget.spent:
+                break
         return blocks
     finally:
         workbook.close()

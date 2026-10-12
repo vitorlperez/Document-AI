@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
-from app.ingestion.extraction import BASE_MIME_TYPES, extract_blocks, limits
+from app.ingestion.extraction import ELIGIBLE_MIME_TYPES, extract_blocks, limits
 from app.ingestion.extraction.errors import ExtractionError
 from app.ingestion.extraction.mime import normalize_mime_type
 from app.ingestion.service import DiscoveredDocument, DiscoveryResult
@@ -617,7 +617,7 @@ class OneDriveDocumentProvider:
                     progress_callback(len(documents), len(files))
             return documents
 
-    eligible_mime_types = BASE_MIME_TYPES
+    eligible_mime_types = ELIGIBLE_MIME_TYPES
 
     def _read_one(
         self, credentials: OneDriveCredentials, item: dict[str, Any]
@@ -637,7 +637,8 @@ class OneDriveDocumentProvider:
         }
         if mime_type not in self.eligible_mime_types:
             return DiscoveredDocument(**base)
-        if self.max_file_bytes and int(item.get("size") or 0) > self.max_file_bytes:
+        if self.max_file_bytes and int(item.get("size") or 0) > min(
+                self.max_file_bytes, limits.max_file_bytes_for(mime_type)):
             return DiscoveredDocument(**base, error_code="file_too_large")
         if item.get("size") is not None and int(item["size"]) == 0:
             return DiscoveredDocument(**base, text="")

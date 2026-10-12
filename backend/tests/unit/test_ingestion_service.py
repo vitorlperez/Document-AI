@@ -417,10 +417,10 @@ def test_document_failures_are_visible_without_failing_eligible_documents(sessio
             ),
             DiscoveredDocument(
                 external_file_id="unsupported",
-                name="Slides.pptx",
-                mime_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                name="Clip.mp4",
+                mime_type="video/mp4",
                 source_url="https://drive.example.test/unsupported",
-                text="This format is unsupported in the MVP.",
+                text="This format has no extractor.",
             ),
         ],
     )
