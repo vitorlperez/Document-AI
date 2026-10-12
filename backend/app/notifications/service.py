@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
+from app.notifications.automation_email import EmailContent
 from app.notifications.models import Notification, NotificationPreference
 from app.organizations.delivery import EmailDeliveryPort
 
@@ -36,7 +37,8 @@ class NotificationService:
         return preference.email_enabled
 
     def notify(self, *, scope: OrganizationScope, user_id: UUID, kind: str, title: str, body: str,
-               data: dict[str, object], email: EmailDeliveryPort | None = None, app_url: str = "") -> Notification:
+               data: dict[str, object], email: EmailDeliveryPort | None = None, app_url: str = "",
+               email_content: EmailContent | None = None) -> Notification:
         """Persist the in-app notification; e-mail it too when the member has not opted out."""
         notification = Notification(organization_id=scope.organization_id, user_id=user_id, kind=kind,
                                     title=title[:200], body=body, data=data)
@@ -46,7 +48,10 @@ class NotificationService:
             address = self.session.scalar(select(User.email).where(User.id == user_id))
             if address:
                 try:
-                    email.send_email(recipient=address, subject=title, html=render_email(title, body, data, app_url))
+                    if email_content is not None:
+                        email.send_email(recipient=address, subject=title, html=email_content.html, text=email_content.text)
+                    else:
+                        email.send_email(recipient=address, subject=title, html=render_email(title, body, data, app_url))
                 except Exception:
                     logger.exception("notification e-mail failed")
         return notification

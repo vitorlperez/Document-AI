@@ -47,7 +47,7 @@ class ResendInvitationDelivery:
 
 
 class EmailDeliveryPort(Protocol):
-    def send_email(self, *, recipient: str, subject: str, html: str) -> bool: ...
+    def send_email(self, *, recipient: str, subject: str, html: str, text: str | None = None) -> bool: ...
 
 
 class ResendEmailDelivery:
@@ -61,13 +61,16 @@ class ResendEmailDelivery:
         self.api_key = api_key
         self.from_email = from_email
 
-    def send_email(self, *, recipient: str, subject: str, html: str) -> bool:
+    def send_email(self, *, recipient: str, subject: str, html: str, text: str | None = None) -> bool:
         if not self.api_key or not self.from_email:
             logger.info("e-mail delivery not configured; skipping notification e-mail")
             return False
         resend.api_key = self.api_key
         try:
-            resend.Emails.send({"from": self.from_email, "to": [recipient], "subject": subject, "html": html})
+            payload = {"from": self.from_email, "to": [recipient], "subject": subject, "html": html}
+            if text is not None:
+                payload["text"] = text
+            resend.Emails.send(payload)
         except requests.RequestException as error:
             logger.error("notification e-mail transport failure: %s", type(error).__name__)
             return False

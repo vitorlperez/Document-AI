@@ -9,7 +9,13 @@ from sqlalchemy.orm import Session
 
 from app.audit_usage.service import UsageLimitExceeded
 from app.automations.models import Automation, AutomationRun
-from app.automations.scope import legacy_folder_ids, node_access, resolve_nodes, scope_node_ids
+from app.automations.scope import (
+    legacy_folder_ids,
+    node_access,
+    node_paths,
+    resolve_nodes,
+    scope_node_ids,
+)
 from app.automations.webhooks import enqueue_completed
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
@@ -17,9 +23,11 @@ from app.integrations.google_drive import GoogleAccessDenied
 from app.knowledge.models import Document
 from app.knowledge.questions import AIProviderUnavailable, QuestionService, SemanticProvider
 from app.library.service import LibraryService
+from app.notifications.automation_email import render_automation_email
 from app.notifications.followed import BODY_CHARS, citation_payload
 from app.notifications.service import NotificationService
 from app.organizations.delivery import EmailDeliveryPort
+from app.workspaces.models import WorkspaceFolder
 
 logger = logging.getLogger(__name__)
 TEMPLATE_HINTS = {
@@ -152,6 +160,21 @@ def _deliver(session: Session, automation: Automation, run: AutomationRun, resul
                                "citations": citations}
     if "pdf" in wants:
         data["pdf_path"] = pdf_path(automation, run)
+    email_content = None
+    if email is not None and "email" in wants:
+        if node_ids:
+            paths = node_paths(session, scope, node_ids)
+            folders = [paths[item] for item in node_ids if item in paths]
+        else:
+            folder_names = dict(session.execute(select(WorkspaceFolder.id, WorkspaceFolder.name).where(
+                WorkspaceFolder.organization_id == automation.organization_id,
+                WorkspaceFolder.id.in_(folder_ids))).all())
+            folders = [folder_names[item] for item in folder_ids if item in folder_names]
+        email_content = render_automation_email(
+            name=automation.name, answer=result.answer, folders=folders, completed_at=datetime.now(UTC),
+            timezone=str((automation.trigger_config or {}).get("timezone") or "America/Sao_Paulo"),
+            citations=citations, organization_id=automation.organization_id, automation_id=automation.id,
+            run_id=run.id, app_url=app_url, pdf_available=True)
     for raw in recipients:
         user_id = UUID(raw)
         if node_ids:
@@ -164,7 +187,7 @@ def _deliver(session: Session, automation: Automation, run: AutomationRun, resul
             continue
         NotificationService(session).notify(
             scope=scope, user_id=user_id, kind="automation_result", title=automation.name,
-            body=result.answer[:BODY_CHARS], data=data, email=email if "email" in wants else None, app_url=app_url)
+            body=result.answer[:BODY_CHARS], data=data, email=email if "email" in wants else None, app_url=app_url, email_content=email_content)
         notified += 1
     if skipped:
         logger.info("automation recipients skipped", extra={"automation_id": str(automation.id), "skipped": len(skipped)})

@@ -199,6 +199,9 @@ def test_run_now_delivers_cited_result_pdf_and_email(corpus):  # noqa: F811
     assert run["status"] == "ok" and run["questions_used"] == 1 and run["documents_considered"] == 1
     assert run["result"]["citations"][0]["document_name"] == "google_drive campaign.pdf" and run["result"]["notified"] == 2
     assert len(mail.sent) == 2
+    assert all("Ver relatório completo" in item[2] and "Baixar PDF" in item[2] for item in mail.sent)
+    assert all(f"automation={created['id']}&run={run['id']}" in text for text in mail.texts)
+    assert all("google_drive campaign.pdf" in text and "America/Sao_Paulo" in text for text in mail.texts)
     notifications = client.get(f"/organizations/{org}/notifications").json()["items"]
     assert notifications[0]["kind"] == "automation_result" and notifications[0]["data"]["pdf_path"].endswith("/pdf")
     pdf = client.get(f"/organizations/{org}/automations/{created['id']}/runs/{run['id']}/pdf")
@@ -386,3 +389,27 @@ def test_recipient_access_is_checked_against_the_chosen_folder(corpus, monkeypat
     with factory() as session:
         result = session.query(AutomationRun).one().result
         assert result["notified"] == 1 and result["skipped_recipients"] == [{"user_id": member_id, "reason": "no_folder_access"}]
+
+
+def test_email_summary_uses_answer_paragraphs_and_node_path_without_expanding_notification(corpus):  # noqa: F811
+    client, factory, _, org, folders, base = corpus
+    nodes = seed_tree(factory, folders)
+    client.app.state.automation_send_task = Sent()
+    created = client.post(f"/organizations/{org}/automations", json=node_body(nodes["year"], output_formats=["email"], template="table", prompt="When does the campaign launch?")).json()
+    response = client.post(f"/organizations/{org}/automations/{created['id']}/run")
+    provider, mail = ScriptedProvider(base), FakeEmail()
+    provider.text = '<script>alert("x")</script>\n\n' + 'Receita em crescimento. ' * 35 + '\n\nÚltimo parágrafo do resumo.'
+    assert run_pending(factory, provider, mail) == ["ok"]
+    assert len(mail.sent) == 1 and "Drive/Projetos/2026" in mail.sent[0][2]
+    assert '<script>' not in mail.sent[0][2] and '&lt;script&gt;' in mail.sent[0][2]
+    assert 'Último parágrafo do resumo.' in mail.sent[0][2]
+    assert 'Baixar PDF' in mail.sent[0][2]  # successful results expose PDF even for e-mail-only delivery
+    notification = client.get(f"/organizations/{org}/notifications").json()["items"][0]
+    assert len(notification["body"]) == 600
+    assert 'Último parágrafo do resumo.' not in notification["body"]
+    run = client.get(f"/organizations/{org}/automations/{created['id']}/runs/{response.json()['id']}").json()
+    assert run['result']['answer'] == provider.text
+    client.put(f"/organizations/{org}/notification-preferences", json={"email_enabled": False})
+    client.post(f"/organizations/{org}/automations/{created['id']}/run")
+    assert run_pending(factory, provider, mail) == ["ok"]
+    assert len(mail.sent) == 1

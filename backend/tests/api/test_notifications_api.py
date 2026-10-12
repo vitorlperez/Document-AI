@@ -16,9 +16,11 @@ from tests.api.test_text_search_api import login, search_api  # noqa: F401
 class FakeEmail:
     def __init__(self):
         self.sent = []
+        self.texts = []
 
-    def send_email(self, *, recipient, subject, html):
+    def send_email(self, *, recipient, subject, html, text=None):
         self.sent.append((recipient, subject, html))
+        self.texts.append(text)
         return True
 
 

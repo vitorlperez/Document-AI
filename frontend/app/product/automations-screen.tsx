@@ -25,10 +25,23 @@ export function AutomationsScreen({ company }: { company: Company }) {
   const [historyId, setHistoryId] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
   const createButton = useRef<HTMLButtonElement>(null);
+  const emailLinkHandled = useRef(false);
+  const [emailRun, setEmailRun] = useState<{ automationId: string; runId: string | null } | null>(null);
   const base = automationPath(company.id);
   const canManage = company.role === "owner" || company.role === "admin";
   const load = useCallback(async (signal?: AbortSignal) => {
-    try { const data = await api<{ items: Automation[]; limit: number }>(base, { signal, cache: "no-store" }); if (!signal?.aborted) { setItems(data.items); setLimit(data.limit); setError(null); } }
+    try { const data = await api<{ items: Automation[]; limit: number }>(base, { signal, cache: "no-store" }); if (!signal?.aborted) { setItems(data.items); setLimit(data.limit); setError(null);
+      // Apply the e-mail deep link once, after the authenticated list arrives.
+      if (!emailLinkHandled.current) {
+        const query = new URLSearchParams(window.location.search);
+        const selected = data.items.find((item) => item.id === query.get("automation"));
+        emailLinkHandled.current = true;
+        if (selected) {
+          setHistoryId(selected.id);
+          setEmailRun({ automationId: selected.id, runId: query.get("run") });
+          if (query.get("edit") === "1") setEditor({ id: selected.id, draft: automationToDraft(selected) });
+        }
+      } } }
     catch (caught) { if (!signal?.aborted) setError(automationError(caught)); }
     finally { if (!signal?.aborted) setLoading(false); }
   }, [base]);
@@ -91,7 +104,7 @@ export function AutomationsScreen({ company }: { company: Company }) {
       const running = item.last_run?.status === "queued" || item.last_run?.status === "running";
       return <li key={item.id} className="min-w-0 rounded-lg border border-line bg-panel p-4 sm:p-5"><div className="flex items-start justify-between gap-3"><h2 className="min-w-0 break-words text-lg font-semibold">{item.name}</h2><label className="flex min-h-11 shrink-0 items-center gap-2 text-sm"><input type="checkbox" role="switch" aria-label={`Ativar automação ${item.name}`} checked={item.enabled} disabled={busy !== null} onChange={() => void toggle(item)} />{item.enabled ? "Ligada" : "Desligada"}</label></div><p className="mt-2 break-words text-sm">{triggerLabel(draft, folderNames)}{item.trigger_kind === "schedule" ? ` (${draft.timezone})` : ""}</p>{folderNames.length > 0 && <p className="mt-1 break-words text-sm text-muted-foreground">{folderNames.length === 1 ? "Pasta" : "Pastas"}: {draft.scopeFolders.length ? draft.scopeFolders.map((folder) => folder.path).join(" · ") : folderNames.join(" · ")}</p>}<p className="mt-3 text-sm text-muted-foreground">Última execução: {automationDate(item.last_run_at)}{item.last_run ? ` · ${runStatusLabel(item.last_run.status)}` : ""}</p>{item.next_run_at && <p className="mt-1 text-sm text-muted-foreground">Próxima: {automationDate(item.next_run_at)}</p>}<div className="mt-4 flex flex-wrap gap-2"><button disabled={busy !== null || running || editor !== null} className={automationButton} aria-label={`Executar agora: ${item.name}`} onClick={() => void run(item)}>{busy === item.id ? "Aguarde…" : running ? "Execução em andamento" : "Executar agora"}</button><button disabled={busy !== null || editor !== null} className={automationButton} aria-label={`Editar automação: ${item.name}`} onClick={() => { setSaveError(null); setEditor({ id: item.id, draft }); }}>Editar</button><button className={automationButton} aria-label={`Ver histórico: ${item.name}`} aria-expanded={historyId === item.id} onClick={() => setHistoryId(historyId === item.id ? null : item.id)}>Ver histórico</button></div></li>;
     })}</ul>}
-    {history && <AutomationHistory key={history.id} organizationId={company.id} automation={history} revision={revision} onClose={() => setHistoryId(null)} onSettled={historySettled} />}
+    {history && <AutomationHistory key={history.id} organizationId={company.id} automation={history} revision={revision} targetRunId={emailRun?.automationId === history.id ? emailRun.runId : null} onClose={() => setHistoryId(null)} onSettled={historySettled} />}
     {canManage && <AutomationWebhooks key={company.id} organizationId={company.id} />}
   </div>;
 }
