@@ -6,15 +6,12 @@ import "./interface-motion.css";
 import { playSurfaceEntry } from "./interface-motion";
 
 const steps = [
-  { target: "composer", title: "Pergunte aos seus documentos", description: "Escreva uma pergunta em linguagem natural e envie. A resposta usa conteúdo já indexado e traz fontes para você conferir. Digite @ para mencionar um arquivo ou pasta." },
-  { target: "suggestions", title: "Perguntas sugeridas", description: "Sem ideia por onde começar? Toque em uma pergunta sugerida para preencher o campo com ela e ajuste o texto antes de enviar." },
+  { target: "composer", title: "Pergunte aos seus documentos", description: "Escreva uma pergunta em linguagem natural e envie. A resposta usa o conteúdo já indexado. Digite @ para mencionar um arquivo ou pasta." },
   { target: "tools", title: "Escolha onde procurar", description: "Use o seletor de ferramentas para limitar as fontes da pergunta. As menções a arquivos e pastas refinam ainda mais esse escopo." },
-  { target: "sources", title: "Confira as fontes", description: "Cada resposta lista os documentos usados. Clique em um número ou arquivo em Fontes para abrir o documento ao lado da conversa e verificar o trecho citado. Esse passo aparece destacado depois da sua primeira resposta." },
-  { target: "answer-actions", title: "Copie, exporte e crie tarefas", description: "Abaixo de cada resposta, copie com as fontes ou exporte em Markdown, Word (DOCX) ou PDF. Com o ClickUp conectado, também dá para criar uma tarefa a partir da resposta." },
   { target: "history", title: "Histórico de conversas", description: "Abra Conversas para retomar, renomear ou apagar consultas anteriores. No celular, ele fica no menu ☰." },
   { target: "new-conversation", title: "Um novo assunto, uma nova conversa", description: "Nova conversa limpa o contexto do assunto anterior. Use-a quando quiser começar uma consulta independente." },
   { target: "tool-sidebar", title: "Seu conhecimento, organizado", description: "Escolha uma ferramenta na barra lateral ou na aba Biblioteca para abrir a Biblioteca já com ela selecionada e acompanhar as sincronizações. Responsáveis e administradores também encontram Integrações para conectar fontes." },
-  { target: "notifications", title: "Notificações e perguntas vivas", description: "Ao seguir uma pergunta salva, ela vira uma pergunta viva: o sino avisa quando a resposta muda (e você pode receber um resumo semanal por e-mail)." },
+  { target: "notifications", title: "Notificações e resumo semanal", description: "O sino reúne os avisos do seu espaço e permite gerar o resumo da semana na hora ou recebê-lo por e-mail." },
   { target: "account", title: "Conta e configurações", description: "Clique no seu avatar com a engrenagem para abrir o menu: Perfil para todos e, conforme sua permissão, Equipe, Administração (uso, cotas e qualidade das respostas), Desenvolvedor (API e MCP) e Sair." },
   { target: "navigation", title: "Navegue pelo seu espaço", description: "Use as abas no topo — ou o menu ☰ no celular — para alternar entre Conversa e Biblioteca. Conforme sua permissão, Integrações conecta fontes." },
 ];
