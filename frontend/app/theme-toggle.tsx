@@ -18,6 +18,6 @@ export function ThemeToggle({ className = "", showLabels = false }: { className?
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
   const current = mounted ? (theme ?? "system") : "system";
   return <div role="radiogroup" aria-label="Aparência" className={`theme-toggle ${className}`.trim()}>
-    {options.map(({ value, label, short, icon: Icon }) => <button key={value} type="button" role="radio" aria-checked={current === value} aria-label={label} title={label} onClick={() => setTheme(value)} className="theme-toggle-option"><Icon size={16} aria-hidden="true" />{showLabels && <span>{short}</span>}</button>)}
+    {options.map(({ value, label, short, icon: Icon }) => <button key={value} type="button" role="radio" aria-checked={current === value} aria-label={label} title={label} onClick={() => setTheme(value)} className="theme-toggle-option mo-interactive"><Icon size={16} aria-hidden="true" />{showLabels && <span>{short}</span>}</button>)}
   </div>;
 }

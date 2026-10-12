@@ -20,7 +20,9 @@
   border: 1px solid var(--color-line); background: var(--panel); color: var(--color-ink);
   font-size: 13px; font-weight: 600;
 }
-.mobile-header-new:active { transform: scale(0.97); }
+.mobile-header-new { transition: background-color var(--motion-fast, 120ms) var(--ease-out, ease-out), transform var(--motion-fast, 120ms) var(--ease-out, ease-out); }
+.mobile-header-new:active, .mobile-header-button:active { transform: scale(var(--motion-scale-press, 0.975)); }
+.mobile-header-button { transition: background-color var(--motion-fast, 120ms) var(--ease-out, ease-out), transform var(--motion-fast, 120ms) var(--ease-out, ease-out); }
 .mobile-header :is(button):focus-visible, .mobile-drawer :is(button, select):focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
 
 /* ---- Drawer (Radix Sheet portal: not inside .product-app) ---- */
@@ -28,7 +30,7 @@
   width: min(88vw, 340px); max-width: none; gap: 0; padding: 0;
   height: var(--app-vh, 100dvh); background: var(--color-paper); color: var(--color-ink);
   padding-bottom: env(safe-area-inset-bottom);
-  transition-duration: 220ms;
+  transition-duration: var(--motion-base, 220ms);
 }
 .mobile-drawer-head { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; padding: calc(6px + env(safe-area-inset-top)) 8px 6px max(16px, env(safe-area-inset-left)); border-bottom: 1px solid var(--color-line); }
 .mobile-drawer-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 16px; }
@@ -41,7 +43,10 @@
 }
 .mobile-drawer-nav button svg, .mobile-drawer-foot > button svg { color: var(--color-primary); flex-shrink: 0; }
 .mobile-drawer-nav button:hover, .mobile-drawer-foot > button:hover { background: var(--color-sage); }
-.mobile-drawer-nav button[aria-current="page"] { background: var(--color-sage-selected); }
+.mobile-drawer-nav button[aria-current="page"] { background: var(--color-sage-selected); box-shadow: inset 3px 0 0 var(--color-primary); }
+.mobile-drawer-nav button, .mobile-drawer-foot > button { transition: background-color var(--motion-fast, 120ms) var(--ease-out, ease-out), transform var(--motion-fast, 120ms) var(--ease-out, ease-out); }
+.mobile-drawer-nav button:active, .mobile-drawer-foot > button:active { transform: scale(var(--motion-scale-press, 0.975)); }
+.mobile-drawer-nav button.mo-stagger-item { animation-name: mo-slide-x-in; animation-fill-mode: backwards; }
 .mobile-drawer-section .tools-list { border-radius: 10px; padding-inline: 6px; }
 .mobile-drawer-section .tools-list .ts-head { padding-left: 6px; }
 .mobile-drawer-section .tools-list :is(button, a) { min-height: 44px; }
@@ -112,7 +117,7 @@
   .product-app .library-panels[data-mobile-level="list"] > aside:first-child { flex: 1; overflow-y: auto; border-bottom: 0; }
   .product-app .page-surface { padding-inline: 12px; }
   /* Toasts sit below the 52px header. */
-  .product-app > .pointer-events-none.fixed { top: calc(60px + env(safe-area-inset-top)); }
+  .product-app > .mo-toast-viewport { top: calc(60px + env(safe-area-inset-top)); right: 1rem; left: 1rem; width: auto; }
 }
 
 @media (min-width: 768px) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { Clock3, FolderOpen, HardDrive, HelpCircle, History, Menu, Plus, ShieldCheck, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Brand } from "./brand";
 import { ThemeToggle } from "./theme-toggle";
@@ -9,6 +9,7 @@ import { NotificationBell } from "./product/notification-bell";
 import { AccountMenu } from "./product/account-menu";
 import { SyncBanner, useSyncStatus } from "./sync-status";
 import { ToolsSidebar, type ToolSelection } from "./tools-sidebar";
+import { staggerStyle } from "./ui";
 import { type Company, type LibraryNode, type LibraryPage, type User, api, companyPath, roleLabel } from "./product/types-and-api";
 import "./mobile-chat.css";
 import "./interface-motion.css";
@@ -118,9 +119,9 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
             <select aria-label="Organização ativa" value={company.id} onChange={(event) => { setOpen(false); onCompanyChange(event.target.value); }}>{companies.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
           </label>
           <nav aria-label="Navegação principal" className="mobile-drawer-nav">
-            {navItems.map(({ key, label, icon: Icon, path }) => <button key={key} type="button" onClick={() => go(path)} aria-current={activePath.replace(/\/$/, "") === path ? "page" : undefined}><Icon size={18} aria-hidden="true" />{label}</button>)}
-            {screen === "chat" && <button type="button" data-testid="drawer-history" onClick={showHistory}><History size={18} aria-hidden="true" />Conversas</button>}
-            {screen === "chat" && <button type="button" onClick={showTour}><HelpCircle size={18} aria-hidden="true" />Conhecer o app</button>}
+            {navItems.map(({ key, label, icon: Icon, path }, index) => <button key={key} type="button" className="mo-stagger-item" style={staggerStyle(index) as CSSProperties} onClick={() => go(path)} aria-current={activePath.replace(/\/$/, "") === path ? "page" : undefined}><Icon size={18} aria-hidden="true" />{label}</button>)}
+            {screen === "chat" && <button type="button" data-testid="drawer-history" className="mo-stagger-item" style={staggerStyle(navItems.length) as CSSProperties} onClick={showHistory}><History size={18} aria-hidden="true" />Conversas</button>}
+            {screen === "chat" && <button type="button" className="mo-stagger-item" style={staggerStyle(navItems.length + 1) as CSSProperties} onClick={showTour}><HelpCircle size={18} aria-hidden="true" />Conhecer o app</button>}
           </nav>
           <section aria-label="Ferramentas" className="mobile-drawer-section">
             <ToolsSidebar variant="list" orgId={company.id} canManage={canManage} collapsed={false} onToggle={() => undefined} onSelectTool={selectTool} onAdd={() => go(companyPath(company.id, "/integrations"))} tools={sync.tools} loading={sync.loading} libraryRoots={roots} />

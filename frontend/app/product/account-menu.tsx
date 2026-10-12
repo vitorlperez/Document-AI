@@ -4,9 +4,11 @@ import { BarChart3, Code2, LogOut, Settings, UserRound, Users } from "lucide-rea
 import { useEffect, useId, useRef, useState } from "react";
 import { accountMenuItems, avatarInitial, displayNameFromEmail } from "./account-helpers";
 import { type Company, type User, companyPath } from "./types-and-api";
+import { Transition } from "../ui";
+import "./shell-motion.css";
 
 const icons = { profile: UserRound, team: Users, admin: BarChart3, developer: Code2 };
-const itemClass = "flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 text-left text-sm font-medium text-ink hover:bg-sage focus-visible:bg-sage focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary";
+const itemClass = "shell-menu-item flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 text-left text-sm font-medium text-ink hover:bg-sage focus-visible:bg-sage focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary";
 
 export function AvatarBadge({ user, size = 32 }: { user: User; size?: number }) {
   return <span aria-hidden="true" style={{ width: size, height: size, fontSize: size * 0.45 }} className="inline-flex shrink-0 select-none items-center justify-center rounded-full bg-primary font-semibold leading-none text-primary-foreground">{avatarInitial(displayNameFromEmail(user.email), user.email)}</span>;
@@ -49,13 +51,13 @@ export function AccountMenu({ user, company, onNavigate, onLogout }: { user: Use
   const choose = (action: () => void) => () => { setOpen(false); action(); };
 
   return <div ref={root} className="relative" onKeyDown={open ? onKeyDown : undefined}>
-    <button ref={trigger} type="button" onClick={() => setOpen((value) => !value)} onKeyDown={(event) => { if (event.key === "ArrowDown" && !open) { event.preventDefault(); setOpen(true); } }} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined} aria-label={`Conta e configurações de ${name}`} title="Conta e configurações" data-tour="account" data-testid="account-menu-trigger" className="inline-flex size-11 items-center justify-center rounded-full hover:bg-sage focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary min-[768px]:size-10"><AvatarWithGear user={user} /></button>
-    {open && <div ref={menu} id={menuId} role="menu" aria-label="Conta" className="absolute right-0 top-full z-50 mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-[var(--card-edge)] bg-[var(--surface-raised)] p-1.5 shadow-xl">
+    <button ref={trigger} type="button" onClick={() => setOpen((value) => !value)} onKeyDown={(event) => { if (event.key === "ArrowDown" && !open) { event.preventDefault(); setOpen(true); } }} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined} aria-label={`Conta e configurações de ${name}`} title="Conta e configurações" data-tour="account" data-testid="account-menu-trigger" className="shell-avatar-trigger inline-flex size-11 items-center justify-center rounded-full hover:bg-sage focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary min-[768px]:size-10"><AvatarWithGear user={user} /></button>
+    <Transition show={open} variant="scale" exitMs={120} className="shell-popover absolute right-0 top-full z-50 mt-2 w-[min(18rem,calc(100vw-2rem))]"><div ref={menu} id={menuId} role="menu" aria-label="Conta" className="rounded-lg border border-[var(--card-edge)] bg-[var(--surface-raised)] p-1.5 shadow-xl">
       <div className="px-3 py-2.5"><p className="truncate text-sm font-semibold text-ink">{name}</p><p className="truncate text-xs text-muted-foreground" title={user.email}>{user.email}</p></div>
       <div role="separator" className="my-1 border-t border-[var(--card-edge)]" />
       {items.map((item) => { const Icon = icons[item.key]; return <button key={item.key} type="button" role="menuitem" tabIndex={-1} onClick={choose(() => onNavigate(companyPath(company.id, item.suffix)))} className={itemClass}><Icon size={17} aria-hidden="true" />{item.label}</button>; })}
       <div role="separator" className="my-1 border-t border-[var(--card-edge)]" />
       <button type="button" role="menuitem" tabIndex={-1} onClick={choose(onLogout)} className={itemClass}><LogOut size={17} aria-hidden="true" />Sair</button>
-    </div>}
+    </div></Transition>
   </div>;
 }

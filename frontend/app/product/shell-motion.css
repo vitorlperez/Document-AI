@@ -1,0 +1,31 @@
+/* Lane 1 [M56] — motion da casca: indicador de aba, popovers, sino, toast. Só tokens --motion-* e --ease-*; só opacity/transform. */
+
+/* Indicador deslizante sob a aba ativa (posição vem de --tab-x/--tab-w, medidos em shell.tsx). */
+.product-app .primary-tabs { position: relative; }
+.product-app .primary-tabs .primary-tab[aria-current="page"] { border-bottom-color: transparent; }
+.primary-tab-indicator {
+  position: absolute; left: 0; bottom: 0; width: 1px; height: 2px; border-radius: 2px; background: var(--primary);
+  transform-origin: 0 50%; transform: translateX(var(--tab-x, 0px)) scaleX(var(--tab-w, 0)); opacity: 0; pointer-events: none;
+}
+.primary-tab-indicator[data-ready="true"] { opacity: 1; }
+.primary-tab-indicator[data-animate="true"] { transition: transform var(--motion-medium) var(--ease-standard), opacity var(--motion-fast) var(--ease-out); }
+.product-app .primary-tab:not([aria-current="page"]):hover .primary-tab-label { color: var(--foreground); }
+
+/* Popovers (conta e sino): nascem do canto do gatilho; durante a saída não recebem cliques. */
+.shell-popover { transform-origin: top right; }
+.shell-popover[data-state="closed"] { pointer-events: none; }
+.shell-menu-item { transition: background-color var(--motion-fast) var(--ease-out); }
+.shell-menu-item:active { transform: scale(var(--motion-scale-press)); }
+
+/* Sino: selo de não lidas faz pop quando o número muda (remonta por key). */
+.shell-bell-badge { transform-origin: 50% 50%; }
+.shell-notification { animation: mo-slide-in var(--motion-medium) var(--ease-out) both; animation-delay: calc(var(--mo-i, 0) * var(--motion-stagger-sm)); transition: background-color var(--motion-base) var(--ease-out); }
+.shell-bell-empty { padding: 0.75rem 0.5rem; }
+.shell-bell-empty .mo-state-description { max-width: 18rem; }
+
+/* Toast: ação "Abrir Biblioteca". Cores vêm do tom do Toast (tokens). */
+.shell-toast-action { display: inline-block; margin-top: 0.25rem; font-weight: 600; text-decoration: underline; color: inherit; }
+
+/* Menu da conta mobile/desktop: gatilho com press. */
+.shell-avatar-trigger { transition: background-color var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out); }
+.shell-avatar-trigger:active { transform: scale(var(--motion-scale-press)); }

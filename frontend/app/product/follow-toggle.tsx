@@ -1,6 +1,7 @@
 "use client";
 
 import { BellRing } from "lucide-react";
+import { Spinner } from "../ui";
 import { useState } from "react";
 import { api, messageFor } from "./types-and-api";
 
@@ -13,5 +14,5 @@ export function FollowToggle({ organizationId, savedQueryId, followed, onChange,
     try { const saved = await api<{ followed: boolean }>(`/saved-queries/${savedQueryId}/follow?organization_id=${organizationId}`, { method: "PUT", body: JSON.stringify({ followed: !value }) }); setValue(saved.followed); onChange?.(saved.followed); }
     catch (caught) { onError?.(messageFor(caught)); } finally { setBusy(false); }
   }
-  return <button type="button" role="switch" aria-checked={value} disabled={busy} onClick={() => void toggle()} title={value ? "Parar de seguir" : "Seguir: avisar quando a resposta mudar"} className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold ${value ? "border-primary text-primary" : "border-line text-muted-foreground"}`}><BellRing size={14} aria-hidden="true" />{value ? "Seguindo" : "Seguir"}</button>;
+  return <button type="button" role="switch" aria-checked={value} disabled={busy} onClick={() => void toggle()} title={value ? "Parar de seguir" : "Seguir: avisar quando a resposta mudar"} className={`mo-interactive inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold ${value ? "border-primary text-primary" : "border-line text-muted-foreground"}`}>{busy ? <Spinner size={14} /> : <BellRing key={String(value)} className={value ? "mo-check-pop" : undefined} size={14} aria-hidden="true" />}{value ? "Seguindo" : "Seguir"}</button>;
 }

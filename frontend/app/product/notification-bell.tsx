@@ -1,7 +1,9 @@
 "use client";
 
 import { Bell, CalendarClock, ExternalLink } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { EmptyState, Enter, LoadingBlock, SkeletonList, Spinner, STAGGER_MAX, Transition } from "../ui";
+import "./shell-motion.css";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { type Company, api, messageFor } from "./types-and-api";
 
 type Citation = { document_name: string; source_url: string | null };
@@ -22,12 +24,13 @@ export function NotificationBell({ company }: { company: Company }) {
   const [data, setData] = useState<NotificationList>({ unread: 0, items: [] });
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [digest, setDigest] = useState<Digest | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const base = `/organizations/${company.id}`;
   const load = useCallback(async (signal?: AbortSignal) => {
-    try { setData(await api<NotificationList>(`${base}/notifications`, { signal, cache: "no-store" })); } catch { /* the bell is secondary UI: stay quiet when polling fails */ }
+    try { setData(await api<NotificationList>(`${base}/notifications`, { signal, cache: "no-store" })); } catch { /* the bell is secondary UI: stay quiet when polling fails */ } finally { if (!signal?.aborted) setLoaded(true); }
   }, [base]);
   useEffect(() => {
     const controller = new AbortController();
@@ -54,19 +57,20 @@ export function NotificationBell({ company }: { company: Company }) {
     try { setDigest(await api<Digest>(`${base}/digest/weekly`, { method: "POST" })); } catch (caught) { setError(messageFor(caught)); } finally { setBusy(false); }
   }
   return <div ref={root} className="relative">
-    <button type="button" data-tour="notifications" onClick={() => setOpen((value) => !value)} aria-haspopup="dialog" aria-expanded={open} aria-label={data.unread ? `Notificações, ${data.unread} não lidas` : "Notificações"} title="Notificações" className="relative rounded-lg p-2 text-muted-foreground hover:bg-sage"><Bell size={18} aria-hidden="true" />{data.unread > 0 && <span className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-semibold leading-4 text-primary-foreground">{data.unread > 9 ? "9+" : data.unread}</span>}</button>
-    {open && <div role="dialog" aria-label="Notificações" className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-[var(--card-edge)] bg-[var(--surface-raised)] p-3 shadow-xl">
-      <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-semibold">Notificações</h2><button type="button" onClick={() => void markAllRead()} disabled={!data.unread} className="min-h-8 text-xs font-semibold text-primary underline disabled:opacity-50">Marcar todas como lidas</button></div>
-      {error && <p role="alert" className="mt-2 text-xs text-rose-700">{error}</p>}
-      <ul className="mt-2 max-h-80 space-y-2 overflow-y-auto">
-        {data.items.length === 0 && <li className="py-4 text-center text-sm text-muted-foreground">Nenhuma notificação por enquanto. Siga uma pergunta salva para ser avisado quando a resposta mudar.</li>}
-        {data.items.map((item) => <li key={item.id} className={`rounded-lg p-2.5 text-sm ${item.read ? "" : "bg-sage"}`}><p className="font-semibold">{item.title}</p>{item.kind === "weekly_digest" ? item.data.sections?.map((section) => <div key={section.name} className="mt-1"><p className="text-xs font-semibold">{section.name}</p><p className="line-clamp-3 text-xs text-muted-foreground">{section.summary}</p><Sources citations={section.citations} /></div>) : <><p className="mt-0.5 line-clamp-4 text-xs text-muted-foreground">{item.body}</p><Sources citations={item.data.citations} /></>}<time dateTime={item.created_at} className="mt-1 block text-[11px] text-muted-foreground">{new Date(item.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</time></li>)}
-      </ul>
+    <button type="button" data-tour="notifications" onClick={() => setOpen((value) => !value)} aria-haspopup="dialog" aria-expanded={open} aria-label={data.unread ? `Notificações, ${data.unread} não lidas` : "Notificações"} title="Notificações" className="mo-interactive relative rounded-lg p-2 text-muted-foreground hover:bg-sage"><Bell size={18} aria-hidden="true" />{data.unread > 0 && <Enter key={data.unread} as="span" variant="pop" className="shell-bell-badge absolute right-0.5 top-0.5 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-semibold leading-4 text-primary-foreground">{data.unread > 9 ? "9+" : data.unread}</Enter>}</button>
+    <Transition show={open} variant="scale" exitMs={120} className="shell-popover absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))]"><div role="dialog" aria-label="Notificações" className="rounded-lg border border-[var(--card-edge)] bg-[var(--surface-raised)] p-3 shadow-xl">
+      <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-semibold">Notificações</h2><button type="button" onClick={() => void markAllRead()} disabled={!data.unread} className="mo-interactive min-h-8 text-xs font-semibold text-primary underline disabled:opacity-50">Marcar todas como lidas</button></div>
+      {error && <p role="alert" className="mt-2 text-xs text-[var(--danger-fg)]">{error}</p>}
+      {!loaded ? <LoadingBlock label="Carregando notificações…" className="mt-2"><SkeletonList rows={3} /></LoadingBlock>
+      : data.items.length === 0 ? <EmptyState className="shell-bell-empty" icon={<Bell size={22} />} title="Nenhuma notificação por enquanto" description="Siga uma pergunta salva para ser avisado quando a resposta mudar." />
+      : <ul className="mt-2 max-h-80 space-y-2 overflow-y-auto">
+        {data.items.map((item, index) => <li key={item.id} style={{ "--mo-i": Math.min(index, STAGGER_MAX) } as CSSProperties} className={`shell-notification rounded-lg p-2.5 text-sm ${item.read ? "" : "bg-sage"}`}><p className="font-semibold">{item.title}</p>{item.kind === "weekly_digest" ? item.data.sections?.map((section) => <div key={section.name} className="mt-1"><p className="text-xs font-semibold">{section.name}</p><p className="line-clamp-3 text-xs text-muted-foreground">{section.summary}</p><Sources citations={section.citations} /></div>) : <><p className="mt-0.5 line-clamp-4 text-xs text-muted-foreground">{item.body}</p><Sources citations={item.data.citations} /></>}<time dateTime={item.created_at} className="mt-1 block text-[11px] text-muted-foreground">{new Date(item.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</time></li>)}
+      </ul>}
       <div className="mt-3 border-t border-line-soft pt-3">
-        <button type="button" onClick={() => void loadDigest()} disabled={busy} className="inline-flex min-h-9 items-center gap-1.5 text-xs font-semibold text-primary underline disabled:opacity-50"><CalendarClock size={14} aria-hidden="true" />{busy ? "Gerando resumo…" : "Resumo da semana agora"}</button>
+        <button type="button" onClick={() => void loadDigest()} disabled={busy} className="mo-interactive inline-flex min-h-9 items-center gap-1.5 text-xs font-semibold text-primary underline disabled:opacity-50">{busy ? <Spinner size={14} /> : <CalendarClock size={14} aria-hidden="true" />}{busy ? "Gerando resumo…" : "Resumo da semana agora"}</button>
         {digest && (digest.sections.length === 0 ? <p className="mt-2 text-xs text-muted-foreground">Nada mudou nos seus documentos esta semana.</p> : <ul className="mt-2 space-y-2">{digest.sections.map((section) => <li key={section.workspace_folder_id} className="text-xs"><p className="font-semibold">{section.name}</p><p className="text-muted-foreground">{section.summary}</p><Sources citations={section.citations} /></li>)}</ul>)}
         <label className="mt-3 flex min-h-9 items-center gap-2 text-xs"><input type="checkbox" checked={emailEnabled} onChange={() => void toggleEmail()} />Receber também por e-mail</label>
       </div>
-    </div>}
+    </div></Transition>
   </div>;
 }
