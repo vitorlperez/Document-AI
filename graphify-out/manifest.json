@@ -1,7 +1,7 @@
 {
   ".codex/hooks.json": {
-    "mtime": 1791722492.3149354,
-    "seen": 1791739790.385414,
+    "mtime": 1791765063.8407812,
+    "seen": 1791766317.190861,
     "ast_hash": "210195a924b18bb9a5377154e942da0b",
     "semantic_hash": ""
   },
@@ -3864,9 +3864,9 @@
     "semantic_hash": ""
   },
   "frontend/app/conversation-tour.tsx": {
-    "mtime": 1791551003.6030529,
-    "seen": 1791551422.046134,
-    "ast_hash": "82bebec092b71d402e3ff679a9ba0a8e",
+    "mtime": 1791766184.1674736,
+    "seen": 1791766317.1910698,
+    "ast_hash": "997d93277f8a4ba0eed831ab2972305d",
     "semantic_hash": ""
   },
   "frontend/app/organization-onboarding.tsx": {
@@ -4512,9 +4512,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/chat-workspace.tsx": {
-    "mtime": 1791741810.7974122,
-    "seen": 1791742013.382983,
-    "ast_hash": "edc7daa1f74e04c73160b6253ae30d48",
+    "mtime": 1791766184.1680388,
+    "seen": 1791766317.191085,
+    "ast_hash": "b27970ce460e6e4a45769f6248fe6f30",
     "semantic_hash": ""
   },
   "frontend/app/product/integrations-screen.tsx": {
@@ -7050,9 +7050,9 @@
     "semantic_hash": ""
   },
   "frontend/app/answer-actions.tsx": {
-    "mtime": 1791739356.536182,
-    "seen": 1791739790.3856099,
-    "ast_hash": "72728565d211314a26aed486f22bbf38",
+    "mtime": 1791766184.1672096,
+    "seen": 1791766317.19106,
+    "ast_hash": "19a23b3dd1445f1b17325b0b5437bf9b",
     "semantic_hash": ""
   },
   "frontend/app/companies/[companyId]/admin/page.tsx": {
@@ -7110,9 +7110,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/notification-bell.tsx": {
-    "mtime": 1791739356.5368724,
-    "seen": 1791739790.385638,
-    "ast_hash": "da9da48cd36fc59eec4409a9c2d7c109",
+    "mtime": 1791766184.168304,
+    "seen": 1791766317.191089,
+    "ast_hash": "487fe1151724c4195ed7b8c27e13b2c5",
     "semantic_hash": ""
   },
   "backend/tests/integration/test_sync_retest_status_postgres.py": {
@@ -7152,9 +7152,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/account-menu.tsx": {
-    "mtime": 1791687325.0116599,
-    "seen": 1791687375.2306209,
-    "ast_hash": "4cc6e0fae59586e4648a6d4a152a1b25",
+    "mtime": 1791766184.1676676,
+    "seen": 1791766317.191082,
+    "ast_hash": "80dff2af69097a41cc3036b3c5d925c1",
     "semantic_hash": ""
   },
   "frontend/app/product/profile-screen.tsx": {
@@ -7317,6 +7317,12 @@
     "mtime": 1791745939.3710647,
     "seen": 1791747287.15779,
     "ast_hash": "42dc46b6e45ffde7ff7103c02e01928e",
+    "semantic_hash": ""
+  },
+  "frontend/tests/conversation-tour.test.mjs": {
+    "mtime": 1791765885.0087855,
+    "seen": 1791766317.191135,
+    "ast_hash": "5b2c54e4e79e52f9a71d9273b438041a",
     "semantic_hash": ""
   }
 }
