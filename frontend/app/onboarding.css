@@ -71,10 +71,7 @@
 .sync-row-logo { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; background: var(--color-sage); flex-shrink: 0; }
 .sync-row-body { flex: 1; min-width: 0; }
 .sync-row-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; font-size: 15px; }
-.sync-track { height: 6px; margin-top: 14px; border-radius: 3px; background: var(--color-line-soft); overflow: hidden; position: relative; }
-.sync-track > span { display: block; height: 100%; background: var(--primary); border-radius: 3px; transition: width .5s cubic-bezier(.33, 1, .68, 1); }
-.sync-track-indeterminate > span { width: 35% !important; position: absolute; animation: sync-slide 1.4s ease-in-out infinite; }
-@keyframes sync-slide { from { left: -35%; } to { left: 100%; } }
+.onboarding-sync-progress { margin-top: 14px; }
 .sync-steps { display: flex; gap: 8px 20px; flex-wrap: wrap; margin: 12px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--color-muted-foreground); }
 .sync-steps li { position: relative; padding-left: 14px; }
 .sync-steps li::before { content: ""; position: absolute; left: 0; top: 5px; width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--color-line); }
@@ -90,7 +87,7 @@
 .sync-callout svg { flex-shrink: 0; margin-top: 2px; }
 .sync-callout[data-tone="success"] { background: var(--color-sage-selected); color: var(--primary); }
 .sync-callout[data-tone="warning"] { border: 1px solid var(--color-line); }
-@media (prefers-reduced-motion: reduce) { .sync-track > span { transition: none; } .sync-track-indeterminate > span { animation: none; width: 100% !important; opacity: .35; position: static; } }
+
 @media (max-width: 639px) {
   .onboarding-progress { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .onboarding-progress li { flex-direction: column; align-items: center; gap: 6px; text-align: center; }
@@ -101,3 +98,13 @@
   .sync-row { padding: 16px; gap: 12px; }
 }
 @media (max-width: 639px) { .onboarding-integrations { padding-bottom: calc(180px + env(safe-area-inset-bottom)); } .onboarding-integrations .onboarding-actions { padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); } }
+
+/* Lane 4: state changes use the shared motion tokens and primitives. */
+.onboarding-progress li { transition: color var(--motion-fast) var(--ease-out); }
+.onboarding-progress span { transition: background var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out); }
+.onboarding-progress li[data-complete] { color: var(--primary); }
+.onboarding-progress li[data-complete] span { background: var(--sage-selected); border-color: var(--primary); }
+.onboarding-benefits article { border-radius: 16px; }
+.onboarding-primary { min-width: 180px; }
+.onboarding-actions .mo-spinner { flex-shrink: 0; }
+.sync-loading { border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
