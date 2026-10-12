@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AutomationEditor } from "../app/product/automation-editor.tsx";
 import { newAutomationDraft } from "../app/product/automations-model.ts";
-const render = (initial) => renderToStaticMarkup(createElement(AutomationEditor, { initial, folders: [], recipients: [], canChooseRecipients: false, saving: false, serverError: null, onSave() {}, onCancel() {} }));
+const render = (initial) => renderToStaticMarkup(createElement(AutomationEditor, { initial, folders: [], loadRecipients: async () => [], canChooseRecipients: false, saving: false, serverError: null, onSave() {}, onCancel() {} }));
 test("editor apresenta quatro passos, nome rotulado e horário de hora cheia", () => {
   const html = render(newAutomationDraft());
   for (const text of ["1. Quando", "2. Onde", "3. O que fazer", "4. Entregar"]) assert.ok(html.includes(text));

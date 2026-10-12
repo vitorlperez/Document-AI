@@ -2,16 +2,36 @@
 
 import { useEffect, useRef, useState } from "react";
 import { type AutomationDraft, promptTemplates, validateAutomationStep, weekdays } from "./automations-model";
+import { AutomationRecipients, type RecipientOption } from "./automation-recipients";
 import type { Folder } from "./types-and-api";
 
 const control = "mt-2 min-h-11 w-full rounded-lg border border-line bg-panel px-3 py-2 focus-visible:outline-2 focus-visible:outline-primary";
 export const automationButton = "min-h-11 rounded-lg border border-line px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
 const steps = ["Quando", "Onde", "O que fazer", "Entregar"];
 
-export function AutomationEditor({ initial, folders, saving, serverError, onSave, onCancel, recipients, canChooseRecipients }: { recipients: { user_id: string; email: string }[]; canChooseRecipients: boolean; initial: AutomationDraft; folders: Folder[]; saving: boolean; serverError: string | null; onSave: (draft: AutomationDraft) => void; onCancel: () => void }) {
+export function AutomationEditor({ initial, folders, saving, serverError, onSave, onCancel, loadRecipients, canChooseRecipients }: { loadRecipients: (query: string, signal: AbortSignal) => Promise<RecipientOption[]>; canChooseRecipients: boolean; initial: AutomationDraft; folders: Folder[]; saving: boolean; serverError: string | null; onSave: (draft: AutomationDraft) => void; onCancel: () => void }) {
   const [draft, setDraft] = useState(initial);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [recipients, setRecipients] = useState<RecipientOption[]>([]);
+  const [recipientLoading, setRecipientLoading] = useState(true);
+  const [recipientError, setRecipientError] = useState<string | null>(null);
+  const [recipientRevision, setRecipientRevision] = useState(0);
+  const scopeQuery = new URLSearchParams(draft.folderIds.map((id) => ["workspace_folder_ids", id])).toString();
+  useEffect(() => {
+    if (!canChooseRecipients || step !== 3) return;
+    const controller = new AbortController();
+    void Promise.resolve().then(async () => {
+      if (controller.signal.aborted) return;
+      setRecipientLoading(true); setRecipientError(null);
+      try {
+        const items = await loadRecipients(scopeQuery, controller.signal);
+        if (!controller.signal.aborted) setRecipients(items);
+      } catch (caught) { if (!controller.signal.aborted) setRecipientError(caught instanceof Error ? caught.message : "Tente novamente."); }
+      finally { if (!controller.signal.aborted) setRecipientLoading(false); }
+    });
+    return () => controller.abort();
+  }, [loadRecipients, canChooseRecipients, step, scopeQuery, recipientRevision]);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { heading.current?.focus(); }, [step]);
   function update<K extends keyof AutomationDraft>(key: K, value: AutomationDraft[K]) { setDraft((current) => ({ ...current, [key]: value })); setError(null); }
@@ -50,7 +70,7 @@ export function AutomationEditor({ initial, folders, saving, serverError, onSave
         <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked disabled />Sino de notificações do app (sempre ativo)</label>
         <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={draft.email} onChange={(event) => update("email", event.target.checked)} />E-mail</label>
         <p className="text-sm text-muted-foreground">O criador sempre recebe o resultado. O e-mail respeita as preferências de notificação de cada usuário.</p>
-        {canChooseRecipients && <fieldset><legend>Outros destinatários da organização</legend>{recipients.length ? recipients.map((recipient) => <label key={recipient.user_id} className="flex min-h-11 items-center gap-3 break-all"><input type="checkbox" checked={draft.recipientIds.includes(recipient.user_id)} onChange={(event) => update("recipientIds", event.target.checked ? [...draft.recipientIds, recipient.user_id] : draft.recipientIds.filter((id) => id !== recipient.user_id))} />{recipient.email}</label>) : <p className="mt-2 text-sm text-muted-foreground">A seleção de outros destinatários ficará disponível quando o serviço fornecer o catálogo de usuários.</p>}</fieldset>}
+        {canChooseRecipients && <AutomationRecipients items={recipients} selected={draft.recipientIds} loading={recipientLoading} error={recipientError} onChange={(ids) => update("recipientIds", ids)} onRetry={() => setRecipientRevision((value) => value + 1)} />}
         <p className="text-sm text-muted-foreground">Os resultados também ficam no histórico desta automação.</p>
       </fieldset>}
       {(error || serverError) && <p role="alert" className="mt-4 rounded-lg border border-rose-200 p-3 text-sm text-rose-700">{error || serverError}</p>}

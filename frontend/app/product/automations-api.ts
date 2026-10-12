@@ -23,3 +23,13 @@ export async function downloadRunPdf(organizationId: string, automationId: strin
 export { api };
 
 export { automationPayload, automationToDraft } from "./automations-model";
+
+export type WebhookDeliveryStatus = "pending" | "delivered" | "failed";
+export type WebhookEndpoint = { id: string; url: string; events: string[]; enabled: boolean; revoked_at: string | null; created_at: string; last_delivery: { id: string; status: WebhookDeliveryStatus; attempts: number; created_at: string } | null };
+export type WebhookDelivery = { id: string; event: string; run_id: string; status: WebhookDeliveryStatus; attempts: number; last_error: string | null; last_status_code: number | null; created_at: string; delivered_at: string | null };
+export const webhookPath = (organizationId: string, endpointId?: string) => `/organizations/${organizationId}/webhook-endpoints${endpointId ? `/${endpointId}` : ""}`;
+export const webhookStatusLabel = (status: WebhookDeliveryStatus) => ({ pending: "Pendente", delivered: "Entregue", failed: "Falhou" })[status];
+export const webhookDeliveryError = (code: string | null) => code?.startsWith("http_") ? `Resposta HTTP ${code.slice(5)}` : ({ timeout: "Tempo de resposta esgotado", connection_error: "Falha de conexão", blocked_destination: "Destino bloqueado por segurança" } as Record<string, string>)[code ?? ""] ?? (code ? "Falha na entrega" : null);
+export function webhookError(error: unknown) {
+  return ({ webhook_limit_reached: "O limite de webhooks ativos foi atingido. Revogue um existente para cadastrar outro.", webhook_revoked: "Este webhook já foi revogado. Atualize a lista.", invalid_webhook_url: "Use uma URL HTTPS pública na porta 443, sem credenciais. Endereços locais ou privados não são permitidos.", "webhook not found": "Este webhook não está disponível. Atualize a lista." } as Record<string, string>)[error instanceof Error ? error.message : ""] ?? automationError(error);
+}
