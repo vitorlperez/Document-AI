@@ -120,7 +120,7 @@ test("modal seams only add opt-in markers; dismissal and secret handling stay as
   assert.match(library, /useDialogBackdropClose\(syncDialog, closeSpacesPanel, busyNodeId !== null \|\| busyFolderId !== null\)/);
   assert.match(library, /if \(spacesPanelOpen\) dialog\?\.showModal\(\); else dialog\?\.close\(\);/);
   const integrations = read("../app/product/integrations-screen.tsx");
-  assert.match(integrations, /<ModalOverlay onClose=\{closeTool\} busy=\{busy\} labelledBy="sync-tool-title" className="aq-motion-overlay /);
+  assert.match(integrations, /<ModalOverlay onClose=\{closeTool\} busy=\{busy\} labelledBy="sync-tool-title" className="(?:integration-modal )?aq-motion-overlay /);
   const access = read("../app/access-settings.tsx");
   assert.match(access, /function closeSecret\(\) \{\n    dialog\.current\?\.close\(\); setSecret\(null\); setCopied\(false\);/);
   assert.match(access, /onCancel=\{closeSecret\} onClose=\{\(\) => setSecret\(null\)\}/);
