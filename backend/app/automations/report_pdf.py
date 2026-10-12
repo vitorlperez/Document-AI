@@ -18,6 +18,7 @@ from app.knowledge.untrusted import sanitize_label, strip_invisible
 LOGO = Path(__file__).parent / "assets" / "arquivio-logo.png"  # copy of frontend/public/arquivio-logo-120.png
 DEFAULT_TIMEZONE = "America/Sao_Paulo"
 # Frontend tokens (frontend/app/globals.css, light theme)
+BRAND = (0x24, 0x5B, 0x45)  # wordmark colour, same as the e-mail header
 PRIMARY, PRIMARY_DARK = (0x1C, 0x60, 0x52), (0x12, 0x4B, 0x3F)
 INK, MUTED_INK = (0x24, 0x3B, 0x35), (0x65, 0x70, 0x69)
 BORDER, SURFACE, PAPER = (0xDE, 0xDF, 0xD5), (0xF5, 0xF5, 0xF5), (0xFA, 0xF9, 0xF5)
@@ -134,11 +135,11 @@ def to_report_pdf(meta: ReportMeta, answer: str, sources: list[ReportSource]) ->
         def header(self) -> None:
             if self.page_no() == 1:
                 return
-            self.image(str(LOGO), x=self.l_margin, y=9, w=6)
-            self.set_xy(self.l_margin + 8, 9)
-            self.set_font("Helvetica", "B", 9)
-            self.set_text_color(*PRIMARY)
-            self.cell(30, 6, "ArquivIO")
+            self.image(str(LOGO), x=self.l_margin, y=8.5, w=7)
+            self.set_xy(self.l_margin + 9, 9)
+            self.set_font("Helvetica", "B", 12)
+            self.set_text_color(*BRAND)
+            self.cell(30, 6, "arquivio.")
             self.set_font("Helvetica", "", 9)
             self.set_text_color(*MUTED_INK)
             self.cell(0, 6, _text(title), align="R")
@@ -179,9 +180,9 @@ def to_report_pdf(meta: ReportMeta, answer: str, sources: list[ReportSource]) ->
     top = pdf.get_y()
     pdf.image(str(LOGO), x=pdf.l_margin, y=top, w=13)
     pdf.set_xy(pdf.l_margin + 16, top + 1.5)
-    pdf.set_font("Helvetica", "B", 17)
-    pdf.set_text_color(*PRIMARY)
-    pdf.cell(60, 7, "ArquivIO", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.set_font("Helvetica", "B", 22)
+    pdf.set_text_color(*BRAND)
+    pdf.cell(60, 7, "arquivio.", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.set_x(pdf.l_margin + 16)
     pdf.set_font("Helvetica", "", 9)
     pdf.set_text_color(*MUTED_INK)

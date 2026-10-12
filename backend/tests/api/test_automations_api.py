@@ -413,3 +413,39 @@ def test_email_summary_uses_answer_paragraphs_and_node_path_without_expanding_no
     client.post(f"/organizations/{org}/automations/{created['id']}/run")
     assert run_pending(factory, provider, mail) == ["ok"]
     assert len(mail.sent) == 1
+
+
+def test_recipients_read_run_and_pdf_read_only_with_live_folder_access(corpus, monkeypatch):  # noqa: F811
+    from app.api import automations as automations_api
+    client, factory, gateway, org, folders, base = corpus
+    folder = folders["google_drive"]
+    recipient = add_member(client, factory, gateway, org, "recipient@example.test")
+    denied = add_member(client, factory, gateway, org, "denied@example.test")
+    add_member(client, factory, gateway, org, "stranger@example.test")
+    relogin_owner(client, gateway)
+    created = create(client, org, folder, output_formats=["email", "pdf"], recipient_user_ids=[recipient, denied])
+    run_id = client.post(f"/organizations/{org}/automations/{created['id']}/run").json()["id"]
+    assert run_pending(factory, ScriptedProvider(base), FakeEmail()) == ["ok"]
+    root = f"/organizations/{org}/automations/{created['id']}"
+    real = automations_api.accessible_folders
+    monkeypatch.setattr(automations_api, "accessible_folders",
+                        lambda session, scope, user_id: set() if str(user_id) == denied else real(session, scope, user_id))
+
+    def as_user(email):
+        login(client, gateway, code=email, email=email, subject=email)
+
+    as_user("recipient@example.test")
+    view = client.get(f"{root}/runs/{run_id}/view")
+    assert view.status_code == 200 and view.json()["automation"]["name"] == "Relatório semanal" and view.json()["run"]["result"]["answer"]
+    assert client.get(f"{root}/runs/{run_id}").status_code == 200
+    pdf = client.get(f"{root}/runs/{run_id}/pdf")
+    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+    assert client.get(root).status_code == 404 and client.get(f"{root}/runs").status_code == 404  # management stays closed
+    assert client.post(f"{root}/run").status_code == 404
+    assert client.patch(root, json={"name": "x"}).status_code == 404 and client.delete(root).status_code == 404
+    as_user("denied@example.test")
+    assert client.get(f"{root}/runs/{run_id}/view").status_code == 404 and client.get(f"{root}/runs/{run_id}/pdf").status_code == 404
+    as_user("stranger@example.test")
+    assert client.get(f"{root}/runs/{run_id}/view").status_code == 404 and client.get(f"{root}/runs/{run_id}/pdf").status_code == 404
+    relogin_owner(client, gateway)  # the owner (creator/admin) still reads
+    assert client.get(f"{root}/runs/{run_id}/view").status_code == 200

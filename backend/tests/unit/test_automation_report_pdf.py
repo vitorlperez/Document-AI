@@ -33,7 +33,7 @@ def test_report_pdf_has_header_sources_and_footer():
     sources = [ReportSource("Contrato.pdf", "https://x.test/a", "Trecho citado do contrato", 4), ReportSource("Planilha.xlsx")]
     reader = PdfReader(BytesIO(to_report_pdf(meta, ANSWER, sources)))
     text = "\n".join(page.extract_text() for page in reader.pages)
-    for expected in ("ArquivIO", "Relatório semanal", "Drive/Financeiro", "12/10/2026 às 08:30", "Execução manual",
+    for expected in ("arquivio.", "ArquivIO", "Relatório semanal", "Drive/Financeiro", "12/10/2026 às 08:30", "Execução manual",
                      "Resumo", "Fontes", "Contrato.pdf", "Trecho citado", "Planilha.xlsx", "Gerado por ArquivIO", "Página 1 de 1"):
         assert expected in text
     assert len(reader.pages[0].images) >= 1

@@ -108,6 +108,30 @@ def _load(session: Session, organization_id: UUID, automation_id: UUID, user: Us
     return automation, member
 
 
+def _load_reader(session: Session, organization_id: UUID, automation_id: UUID, user: User) -> Automation:
+    """Read-only access: creator/admin, or a listed recipient who still has access to every scope folder right now."""
+    member = _membership(session, organization_id, user)
+    automation = session.scalar(select(Automation).where(
+        Automation.id == automation_id, Automation.organization_id == organization_id))
+    if automation is None:
+        raise HTTPException(404, "automation not found")
+    if _is_admin(member) or automation.created_by_user_id == user.id:
+        return automation
+    if str(user.id) not in {str(item) for item in automation.recipients or []}:
+        raise HTTPException(404, "automation not found")
+    scope = OrganizationScope(organization_id)
+    nodes = scope_node_ids(automation.scope)
+    if nodes:
+        allowed = node_access(session, scope, user.id, nodes) == "ok"
+    else:
+        folders = set(legacy_folder_ids(automation.scope))
+        folder_access = accessible_folders(session, scope, user.id)
+        allowed = bool(folders) and folder_access is not None and folders <= folder_access
+    if not allowed:
+        raise HTTPException(404, "automation not found")
+    return automation
+
+
 def _iso(value: datetime | None) -> str | None:
     if value is None:
         return None
@@ -363,14 +387,24 @@ def list_runs(organization_id: UUID, automation_id: UUID, limit: int = Query(20,
 @router.get("/organizations/{organization_id}/automations/{automation_id}/runs/{run_id}")
 def get_run(organization_id: UUID, automation_id: UUID, run_id: UUID, user: User = Depends(current_user),
             session: Session = Depends(database_session)) -> dict[str, object]:
-    automation, _ = _load(session, organization_id, automation_id, user)
+    automation = _load_reader(session, organization_id, automation_id, user)
     return _serialize_run(_run_of(session, automation, run_id))
+
+
+@router.get("/organizations/{organization_id}/automations/{automation_id}/runs/{run_id}/view")
+def view_run(organization_id: UUID, automation_id: UUID, run_id: UUID, user: User = Depends(current_user),
+             session: Session = Depends(database_session)) -> dict[str, object]:
+    """Read-only report view for e-mail links (recipients included): name, folders and the run, nothing editable."""
+    automation = _load_reader(session, organization_id, automation_id, user)
+    return {"automation": {"id": str(automation.id), "name": automation.name,
+                           "folders": list(_folder_labels(session, automation))},
+            "run": _serialize_run(_run_of(session, automation, run_id))}
 
 
 @router.get("/organizations/{organization_id}/automations/{automation_id}/runs/{run_id}/pdf")
 def run_pdf(organization_id: UUID, automation_id: UUID, run_id: UUID, user: User = Depends(current_user),
             session: Session = Depends(database_session)) -> Response:
-    automation, _ = _load(session, organization_id, automation_id, user)
+    automation = _load_reader(session, organization_id, automation_id, user)
     run = _run_of(session, automation, run_id)
     answer = (run.result or {}).get("answer")
     if not isinstance(answer, str) or not answer:
