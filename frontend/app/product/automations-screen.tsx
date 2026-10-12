@@ -1,0 +1,95 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { Clock3, Plus } from "lucide-react";
+import { type Company, type Folder, companyPath } from "./types-and-api";
+import { AutomationEditor, automationButton } from "./automation-editor";
+import { AutomationHistory, automationDate } from "./automation-history";
+import { newAutomationDraft, triggerLabel, type AutomationDraft } from "./automations-model";
+import { api, automationError, automationPath, automationPayload, automationToDraft, runStatusLabel, type Automation, type AutomationRun } from "./automations-api";
+
+type Recipient = { user_id: string; email: string };
+export function AutomationsScreen({ company }: { company: Company }) {
+  const [items, setItems] = useState<Automation[]>([]);
+  const [limit, setLimit] = useState(20);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [recipients, setRecipients] = useState<Recipient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [folderError, setFolderError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [editor, setEditor] = useState<{ id: string | null; draft: AutomationDraft } | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [historyId, setHistoryId] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
+  const createButton = useRef<HTMLButtonElement>(null);
+  const base = automationPath(company.id);
+  const canManage = company.role !== "member";
+  const load = useCallback(async (signal?: AbortSignal) => {
+    try { const data = await api<{ items: Automation[]; limit: number }>(base, { signal, cache: "no-store" }); if (!signal?.aborted) { setItems(data.items); setLimit(data.limit); setError(null); } }
+    catch (caught) { if (!signal?.aborted) setError(automationError(caught)); }
+    finally { if (!signal?.aborted) setLoading(false); }
+  }, [base]);
+  const loadOptions = useCallback(async (signal?: AbortSignal) => {
+    try { const data = await api<Folder[]>(`/workspace-folders?organization_id=${company.id}`, { signal, cache: "no-store" }); if (!signal?.aborted) { setFolders(data); setFolderError(null); } }
+    catch (caught) { if (!signal?.aborted) setFolderError(automationError(caught)); }
+    if (canManage) {
+      try { const members = await api<{ user_id?: string; email: string }[]>(`/organizations/${company.id}/members`, { signal, cache: "no-store" }); if (!signal?.aborted) setRecipients(members.filter((member): member is Recipient => typeof member.user_id === "string")); }
+      catch { /* The optional recipient catalog does not block the creator's automation. */ }
+    }
+  }, [company.id, canManage]);
+  useEffect(() => { const controller = new AbortController(); void Promise.resolve().then(() => { if (!controller.signal.aborted) { void load(controller.signal); void loadOptions(controller.signal); } }); return () => controller.abort(); }, [load, loadOptions]);
+  const hasPendingRuns = items.some((item) => item.last_run?.status === "queued" || item.last_run?.status === "running");
+  useEffect(() => {
+    if (!hasPendingRuns) return;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    async function tick() { await load(controller.signal); if (!controller.signal.aborted) timer = setTimeout(() => void tick(), 3000); }
+    timer = setTimeout(() => void tick(), 3000);
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [hasPendingRuns, load]);
+  const history = items.find((item) => item.id === historyId);
+  const historySettled = useCallback(() => { void load(); }, [load]);
+  function closeEditor() { setEditor(null); setSaveError(null); requestAnimationFrame(() => createButton.current?.focus()); }
+  async function save(draft: AutomationDraft) {
+    if (!editor || busy) return;
+    setBusy("save"); setSaveError(null);
+    try {
+      const item = await api<Automation>(editor.id ? `${base}/${editor.id}` : base, { method: editor.id ? "PATCH" : "POST", body: JSON.stringify(automationPayload(draft)) });
+      setItems((current) => editor.id ? current.map((existing) => existing.id === item.id ? item : existing) : [item, ...current]);
+      closeEditor(); setNotice("Automação salva. Você pode executá-la agora ou aguardar o próximo gatilho.");
+    } catch (caught) { setSaveError(automationError(caught)); } finally { setBusy(null); }
+  }
+  async function toggle(item: Automation) {
+    if (busy) return;
+    setBusy(item.id); setError(null);
+    try { const updated = await api<Automation>(`${base}/${item.id}/enabled`, { method: "PUT", body: JSON.stringify({ enabled: !item.enabled }) }); setItems((current) => current.map((existing) => existing.id === updated.id ? updated : existing)); setNotice(updated.enabled ? "Automação ligada." : "Automação desligada. Você ainda pode executá-la manualmente."); }
+    catch (caught) { setError(automationError(caught)); } finally { setBusy(null); }
+  }
+  async function run(item: Automation) {
+    if (busy) return;
+    setBusy(item.id); setError(null);
+    try {
+      const started = await api<AutomationRun>(`${base}/${item.id}/run`, { method: "POST" });
+      setItems((current) => current.map((existing) => existing.id === item.id ? { ...existing, last_run: { id: started.id, status: started.status, finished_at: started.finished_at } } : existing));
+      setHistoryId(item.id); setRevision((value) => value + 1); setNotice("Execução solicitada. Acompanhe o resultado no histórico abaixo.");
+    } catch (caught) { setError(automationError(caught)); } finally { setBusy(null); }
+  }
+  return <div className="min-w-0">
+    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div><h1 className="flex items-center gap-3 text-2xl font-semibold"><Clock3 aria-hidden="true" size={26} />Automações</h1><p className="mt-2 max-w-2xl text-sm text-muted-foreground">Transforme suas pastas em resumos, tabelas e alertas recorrentes, com as fontes de cada resultado.</p></div><button ref={createButton} disabled={loading || busy !== null || editor !== null || items.length >= limit} className={`${automationButton} inline-flex shrink-0 items-center justify-center gap-2 bg-primary text-primary-foreground`} onClick={() => { setSaveError(null); setEditor({ id: null, draft: newAutomationDraft() }); }}><Plus size={16} aria-hidden="true" />Criar automação</button></div>
+    {notice && <p role="status" className="mt-4 rounded-lg bg-sage p-3 text-sm">{notice}</p>}
+    {error && <div role="alert" className="mt-4 rounded-lg border border-rose-200 p-3 text-sm text-rose-700"><p>{error}</p><button className={`${automationButton} mt-2`} onClick={() => void load()}>Atualizar lista</button></div>}
+    {folderError && <div role="alert" className="mt-4 text-sm text-rose-700"><p>Não foi possível carregar as pastas: {folderError}</p><button className={`${automationButton} mt-2`} onClick={() => void loadOptions()}>Tentar carregar pastas novamente</button></div>}
+    {items.length >= limit && <p role="status" className="mt-4 text-sm">Limite de {limit} automações atingido. Você pode editar as existentes.</p>}
+    {editor && <AutomationEditor key={editor.id ?? "new"} initial={editor.draft} folders={folders} recipients={recipients} canChooseRecipients={canManage} saving={busy === "save"} serverError={saveError} onSave={(draft) => void save(draft)} onCancel={closeEditor} />}
+    {loading ? <p role="status" className="mt-6">Carregando automações…</p> : !items.length && !error ? <section className="mt-6 rounded-lg border border-dashed border-line p-6"><h2 className="text-lg font-semibold">Seu próximo relatório pode chegar sozinho</h2><p className="mt-2 text-sm text-muted-foreground">Escolha uma agenda ou uma mudança de pasta, escreva o que quer descobrir e receba o resultado com fontes.</p><Link href={companyPath(company.id, "/integrations")} className="mt-3 inline-flex min-h-11 items-center text-sm text-primary underline">Conectar pastas em Integrações</Link></section> : <ul aria-label="Automações" className="mt-6 grid min-w-0 gap-4 lg:grid-cols-2">{items.map((item) => {
+      const draft = automationToDraft(item);
+      const folderNames = draft.folderIds.map((id) => folders.find((folder) => folder.id === id)?.name).filter((name): name is string => !!name);
+      const running = item.last_run?.status === "queued" || item.last_run?.status === "running";
+      return <li key={item.id} className="min-w-0 rounded-lg border border-line bg-panel p-4 sm:p-5"><div className="flex items-start justify-between gap-3"><h2 className="min-w-0 break-words text-lg font-semibold">{item.name}</h2><label className="flex min-h-11 shrink-0 items-center gap-2 text-sm"><input type="checkbox" role="switch" aria-label={`Ativar automação ${item.name}`} checked={item.enabled} disabled={busy !== null} onChange={() => void toggle(item)} />{item.enabled ? "Ligada" : "Desligada"}</label></div><p className="mt-2 break-words text-sm">{triggerLabel(draft, folderNames)}{item.trigger_kind === "schedule" ? ` (${draft.timezone})` : ""}</p><p className="mt-3 text-sm text-muted-foreground">Última execução: {automationDate(item.last_run_at)}{item.last_run ? ` · ${runStatusLabel(item.last_run.status)}` : ""}</p>{item.next_run_at && <p className="mt-1 text-sm text-muted-foreground">Próxima: {automationDate(item.next_run_at)}</p>}<div className="mt-4 flex flex-wrap gap-2"><button disabled={busy !== null || running || editor !== null} className={automationButton} aria-label={`Executar agora: ${item.name}`} onClick={() => void run(item)}>{busy === item.id ? "Aguarde…" : running ? "Execução em andamento" : "Executar agora"}</button><button disabled={busy !== null || editor !== null} className={automationButton} aria-label={`Editar automação: ${item.name}`} onClick={() => { setSaveError(null); setEditor({ id: item.id, draft }); }}>Editar</button><button className={automationButton} aria-label={`Ver histórico: ${item.name}`} aria-expanded={historyId === item.id} onClick={() => setHistoryId(historyId === item.id ? null : item.id)}>Ver histórico</button></div></li>;
+    })}</ul>}
+    {history && <AutomationHistory key={history.id} organizationId={company.id} automation={history} revision={revision} onClose={() => setHistoryId(null)} onSettled={historySettled} />}
+  </div>;
+}

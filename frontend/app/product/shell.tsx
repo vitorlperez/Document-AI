@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CircleAlert, CircleCheck, FolderOpen, HardDrive, ShieldCheck, Sparkles, X } from "lucide-react";
+import { Clock3, CircleAlert, CircleCheck, FolderOpen, HardDrive, ShieldCheck, Sparkles, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { Brand } from "../brand";
@@ -25,7 +25,7 @@ export function NotificationToast({ message, tone, onDismiss, action }: { messag
 
 export function Shell({ user, company, companies, children, alertMessage, alertTone, alertAction, fillViewport, pageSurface, onDismiss, onCompanyChange, onNavigate, onLogout }: { user: User; company: Company; companies: Company[]; children: ReactNode; alertMessage: string | null; alertTone: "notice" | "error"; alertAction?: ToastAction | null; fillViewport: boolean; pageSurface: boolean; onDismiss: () => void; onCompanyChange: (id: string) => void; onNavigate: (path: string) => void; onLogout: () => void }) {
   const pathname = usePathname();
-  const chatScreen = !/\/(library|team|integrations|developer|admin|profile)\/?$/.test(pathname ?? "");
+  const chatScreen = !/\/(library|team|integrations|automations|developer|admin|profile)\/?$/.test(pathname ?? "");
   const mobile = useIsMobileShell();
   useVisualViewportHeight(mobile, Boolean(fillViewport));
   const canManage = company.role !== "member";
@@ -33,6 +33,7 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
   const tabs = [
     { label: "Conversa", suffix: "", icon: Sparkles },
     { label: "Biblioteca", suffix: "/library", icon: FolderOpen },
+    { label: "Automações", suffix: "/automations", icon: Clock3 },
     ...(canManage ? [{ label: "Integrações", suffix: "/integrations", icon: HardDrive }] : []),
   ];
   return <main data-mobile-shell={mobile ? "true" : undefined} className={`product-app ${fillViewport ? "flex h-dvh flex-col overflow-hidden" : "min-h-screen"} bg-paper text-ink`}>

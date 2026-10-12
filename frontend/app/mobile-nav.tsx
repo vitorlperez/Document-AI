@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderOpen, HardDrive, HelpCircle, History, Menu, Plus, ShieldCheck, Sparkles, X } from "lucide-react";
+import { Clock3, FolderOpen, HardDrive, HelpCircle, History, Menu, Plus, ShieldCheck, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Brand } from "./brand";
@@ -93,6 +93,7 @@ export function MobileShellHeader({ user, company, companies, screen, activePath
   const navItems = [
     { key: "chat", label: "Consultas", icon: Sparkles, path: companyPath(company.id) },
     { key: "library", label: "Biblioteca", icon: FolderOpen, path: companyPath(company.id, "/library") },
+    { key: "automations", label: "Automações", icon: Clock3, path: companyPath(company.id, "/automations") },
     ...(canManage ? [{ key: "integrations", label: "Integrações", icon: HardDrive, path: companyPath(company.id, "/integrations") }] : []),
   ];
 

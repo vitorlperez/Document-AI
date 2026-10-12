@@ -14,7 +14,7 @@ export const SESSION_PATH = API_BASE.replace(/\/$/, "") === "/api" ? "/session" 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type Role = "owner" | "admin" | "member";
-export type Screen = "home" | "company" | "library" | "team" | "integrations" | "developer" | "admin" | "profile" | "staff" | "invitation";
+export type Screen = "home" | "company" | "library" | "team" | "integrations" | "developer" | "automations" | "admin" | "profile" | "staff" | "invitation";
 export type Company = { id: string; name: string; membership_id: string; role: Role };
 export type User = { id: string; email: string; created_at?: string; is_platform_staff?: boolean };
 export type Folder = { id: string; name: string; status: string; last_synced_at: string | null; source_id?: string; external_folder_id?: string; selection_kind?: string; selection_folder_ids?: string[] };
