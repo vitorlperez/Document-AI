@@ -1,5 +1,5 @@
 /** Pure helpers that turn the public /v1 OpenAPI document into what the docs page renders. */
-export const API_BASE = "https://www.arquivio.com.br/api";
+export const API_BASE = "https://api.arquivio.com.br";
 export const SPEC_URL = "/api/v1/openapi.json";
 
 type Json = Record<string, unknown>;

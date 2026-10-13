@@ -25,13 +25,13 @@ test("request bodies and path parameters come from the schema", () => {
 test("code samples keep the key as a placeholder and the contract's URL", () => {
   const search = endpoints.find((e) => e.path === "/v1/search");
   const curl = codeSample(search, "curl");
-  assert.match(curl, /-X POST "https:\/\/www\.arquivio\.com\.br\/api\/v1\/search"/);
+  assert.match(curl, /-X POST "https:\/\/api\.arquivio\.com\.br\/v1\/search"/);
   assert.match(curl, /Bearer \$KEY/);
   assert.match(curl, /'\{"query":"Aurora","limit":10\}'/);
   assert.match(codeSample(search, "python"), /json=\{"query": "Aurora", "limit": 10\}/);
   const document = endpoints.find((e) => e.path.startsWith("/v1/documents"));
   assert.match(codeSample(document, "javascript"), /\$\{documentId\}/);
-  assert.match(codeSample(document, "python"), /f"https:\/\/www\.arquivio\.com\.br\/api\/v1\/documents\/\{document_id\}"/);
+  assert.match(codeSample(document, "python"), /f"https:\/\/api\.arquivio\.com\.br\/v1\/documents\/\{document_id\}"/);
 });
 
 test("an unexpected document yields no endpoints instead of throwing", () => {

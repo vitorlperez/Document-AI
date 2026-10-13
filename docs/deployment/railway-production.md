@@ -91,7 +91,7 @@ Adicione os endereços públicos ao frontend e à API. Para domínio próprio, c
 
 ## Domínio arquivio.com.br (HostGator DNS)
 
-Topologia: frontend em `https://www.arquivio.com.br` (origem canônica única = `PUBLIC_APP_URL`; `CookieOriginMiddleware` e CORS aceitam só essa origem), a raiz `arquivio.com.br` redireciona 301 para o `www` (redirecionamento do cPanel, pois a HostGator não aceita CNAME na raiz) e a API continua privada via `API_UPSTREAM_URL` (sem `api.` público). Registros `*.mail.arquivio.com.br` e `_dmarc` (Resend) não são alterados.
+Topologia: frontend em `https://www.arquivio.com.br` (origem canônica única = `PUBLIC_APP_URL`; `CookieOriginMiddleware` e CORS aceitam só essa origem), a raiz `arquivio.com.br` redireciona 301 para o `www` (redirecionamento do cPanel, pois a HostGator não aceita CNAME na raiz) e a API tem o subdomínio público `https://api.arquivio.com.br` (CNAME `api` → domínio `*.up.railway.app` da API e TXT `_railway-verify.api`, ambos na HostGator; o domínio `*.up.railway.app` é mantido). As rotas `/v1` ficam na raiz desse host (ex.: `https://api.arquivio.com.br/v1/whoami`, `/health/ready`) e são a URL base da documentação pública `/docs/api`. O navegador continua usando `/api` no `www` (proxy do frontend) para a sessão por cookie; a origem canônica de cookies/CORS não muda. Registros `*.mail.arquivio.com.br` e `_dmarc` (Resend) não são alterados.
 
 Troca de envs após o DNS responder (Frontend e API/Worker, nessa ordem; `PUBLIC_APP_URL` e redirect URIs em API+Frontend+Worker):
 
