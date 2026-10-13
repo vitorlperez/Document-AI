@@ -44,3 +44,14 @@
     padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
   }
 }
+
+/* Confirmação de exclusão: mesmo modal, mais estreito. */
+.automation-modal.automation-modal-confirm { width: min(460px, calc(100% - 48px)); }
+@media (max-width: 639px) {
+  dialog.automation-modal.automation-modal-confirm.automation-modal-confirm[open]:not(.s_) { width: calc(100% - 32px); height: fit-content; max-height: calc(100dvh - 32px); margin: auto; border-radius: var(--modal-radius); }
+  .automation-modal-confirm .automation-modal-panel { min-height: 0; padding: 20px; }
+}
+
+/* Remoção animada do card (opacity/transform; duração do token). */
+.automation-card.automation-card-leaving { animation: automation-card-out var(--motion-base) var(--ease-in) forwards; pointer-events: none; }
+@keyframes automation-card-out { to { opacity: 0; transform: translateY(var(--motion-dist-sm)) scale(0.97); } }

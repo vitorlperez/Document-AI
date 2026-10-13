@@ -57,3 +57,8 @@ export function automationToDraft(item: Automation): AutomationDraft {
 export function automationPayload(draft: AutomationDraft) {
   return { name: draft.name.trim(), trigger_kind: draft.trigger === "folder_change" ? "folder_changed" : "schedule", trigger_config: draft.trigger === "folder_change" ? {} : { frequency: draft.frequency, hour: Number(draft.time.split(":")[0]), timezone: draft.timezone.trim(), ...(draft.frequency === "weekly" ? { weekday: (draft.weekday + 6) % 7 } : {}), ...(draft.frequency === "monthly" ? { day: draft.monthDay } : {}) }, scope: draft.scopeFolders.length ? { node_ids: draft.scopeFolders.map((folder) => folder.id) } : { workspace_folder_ids: draft.legacyFolderIds }, prompt: draft.prompt.trim(), template: draft.template, output_formats: draft.email ? ["email", "pdf"] : ["pdf"], recipient_user_ids: draft.recipientIds };
 }
+
+/** Mesma regra do backend (_load): criador, Owner ou Admin podem editar/excluir; os demais nem veem o botão. */
+export function canEditAutomation(role: string, createdByUserId: string, userId?: string | null): boolean {
+  return role === "owner" || role === "admin" || (!!userId && createdByUserId === userId);
+}
