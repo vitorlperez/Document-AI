@@ -1,4 +1,4 @@
-/* Automação: superfície overlay; motion visual herda a fundação. */
+/* Automação: geometria e motion locais; paleta compartilhada em surfaces.css. */
 .automation-modal {
   --aq-motion-enter: var(--motion-medium);
   --aq-motion-exit: var(--motion-base);
@@ -11,15 +11,15 @@
   padding: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: var(--surface-overlay);
-  color: var(--foreground);
-  border: 1px solid var(--edge-strong);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--elev-3);
+  background: var(--modal-bg);
+  color: var(--modal-fg);
+  border: var(--modal-border);
+  border-radius: var(--modal-radius);
+  box-shadow: var(--modal-shadow);
 }
 .automation-modal::backdrop {
-  background: var(--scrim);
-  backdrop-filter: blur(var(--motion-blur-glass));
+  background: var(--modal-backdrop);
+  backdrop-filter: var(--modal-backdrop-filter);
 }
 .automation-modal-panel { padding: 24px; }
 .automation-modal[data-arquivio-motion-root][open]::backdrop {
@@ -31,7 +31,7 @@
   animation-timing-function: var(--ease-in);
 }
 @media (max-width: 639px) {
-  dialog.automation-modal[open] {
+  dialog.automation-modal.automation-modal[open]:not(.s_) {
     width: 100%;
     max-width: none;
     height: 100dvh;

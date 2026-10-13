@@ -35,7 +35,7 @@ test("modal reutiliza dismiss e saída da fundação, confirma alterações e re
 });
 test("superfície overlay usa tokens de motion e versão mobile em tela cheia", () => {
   const css = read("../app/product/automation-modal.css");
-  for (const token of ["surface-overlay", "elev-3", "edge-strong", "motion-base", "ease-out", "ease-in", "scrim"]) assert.ok(css.includes(`var(--${token})`), token);
+  for (const token of ["modal-bg", "modal-border", "modal-shadow", "modal-backdrop", "modal-backdrop-filter", "motion-base", "ease-out", "ease-in"]) assert.ok(css.includes(`var(--${token})`), token);
   assert.match(css, /@media.*max-width/);
   assert.match(css, /100dvh/);
   assert.doesNotMatch(css, /\d+ms|cubic-bezier/);

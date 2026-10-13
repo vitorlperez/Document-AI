@@ -26,7 +26,7 @@
 .integration-tool-card:not(.s_),
 .org-picker-option:not(.s_),
 .library-card:not(.s_),
-.product-app .page-surface :is(.bg-panel, .bg-raised):is(.border, [class*="border-line"], [class*="border-card-edge"], [class*="border-[var(--card-edge)]"]):not(.s_),
+.product-app .page-surface :is(.bg-panel, .bg-raised):not(dialog, [role="dialog"], [role="alertdialog"]):is(.border, [class*="border-line"], [class*="border-card-edge"], [class*="border-[var(--card-edge)]"]):not(.s_),
 .staff-app > .grid > section:not(.s_) {
   background: var(--surface-raised);
   border: 1px solid var(--edge-subtle);
@@ -127,19 +127,47 @@
   box-shadow: var(--elev-3);
 }
 .session-error:not(.s_) { background: var(--danger-bg); border-color: var(--danger-border); }
-dialog[open]:not(.s_),
+/* Dialog surface contract — reference: Gerenciar integração. Geometry remains owned by each screen.
+   Overlay wrappers are explicitly marked: never paint their first child as a second modal. */
+dialog[open]:not(.conversation-tour):not(.s_),
+[role="dialog"]:not(dialog):not([data-modal-overlay]):not(.s_),
+[role="alertdialog"]:not(.s_),
 .mobile-drawer.mobile-drawer:not(.s_),
-.library-sync-dialog:not(.s_),
-.conversation-tour:not(.s_) {
-  background: var(--surface-overlay);
-  border: 1px solid var(--dialog-edge);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--elev-3);
-  color: var(--foreground);
+[data-modal-overlay] > :is(section, div):not(.s_),
+.conversation-tour .tour-card:not(.s_) {
+  background: var(--modal-bg);
+  color: var(--modal-fg);
+  border: var(--modal-border);
+  border-radius: var(--modal-radius);
+  box-shadow: var(--modal-shadow);
 }
-[role="dialog"] > section:not(.s_),
-[role="dialog"] > div:first-child:not([class*="fixed"]):not(.s_) { background-color: var(--surface-overlay); }
-dialog:not(.s_)::backdrop { background: var(--scrim); }
+:is(dialog, [role="dialog"], [role="alertdialog"]) :is(header, footer, [data-slot$="-header"], [data-slot$="-footer"]):not(.s_) {
+  background: var(--modal-header-bg);
+}
+:is(dialog, [role="dialog"], [role="alertdialog"]) :is(footer, [data-slot$="-footer"]):not(.s_) {
+  background: var(--modal-footer-bg);
+}
+[data-modal-overlay]:not(.s_),
+[data-slot$="dialog-overlay"]:not(.s_),
+[data-slot="sheet-overlay"]:not(.s_),
+[data-slot="drawer-overlay"]:not(.s_) {
+  background: var(--modal-backdrop);
+  backdrop-filter: var(--modal-backdrop-filter);
+}
+dialog:not(.conversation-tour):not(.s_)::backdrop {
+  background: var(--modal-backdrop);
+  backdrop-filter: var(--modal-backdrop-filter);
+}
+/* Tour keeps its full-screen transparent hit area and spotlight; only the card is a surface. */
+dialog.conversation-tour[open]:not(.s_) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.conversation-tour:not(.s_)::backdrop { background: transparent; }
+.conversation-tour .tour-highlight:not(.s_) { box-shadow: 0 0 0 9999px var(--modal-backdrop); }
+.conversation-tour .tour-highlight-fallback:not(.s_) { background: var(--modal-backdrop); box-shadow: none; }
 
 /* Tables / lists: header row tone + hairline rows. */
 .product-app table:not(.s_) { border-collapse: separate; border-spacing: 0; border: 1px solid var(--edge-subtle); border-radius: var(--radius-card); overflow: hidden; background: var(--surface-raised); }
@@ -158,3 +186,5 @@ dialog:not(.s_)::backdrop { background: var(--scrim); }
 .workspace-frame:not(.s_) { border-radius: var(--radius-card); }
 .product-app .page-surface:not(.s_) { border-inline: 1px solid var(--edge-subtle); border-radius: var(--radius-card); }
 }
+/* The narrow file viewer is a full-screen dialog; preserve its edge-to-edge geometry. */
+.file-viewer[role="dialog"]:not(.s_) { border-radius: 0; }

@@ -50,7 +50,7 @@ export function ModalOverlay({ onClose, busy = false, labelledBy, className, chi
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   };
-  return <div ref={root} role="dialog" aria-modal="true" aria-labelledby={labelledBy} aria-busy={busy || undefined} tabIndex={-1} className={className} onKeyDown={keyDown}
+  return <div ref={root} data-modal-overlay="" role="dialog" aria-modal="true" aria-labelledby={labelledBy} aria-busy={busy || undefined} tabIndex={-1} className={className} onKeyDown={keyDown}
     onMouseDown={(event: MouseEvent<HTMLDivElement>) => { press.current = event.target === event.currentTarget; }}
     onMouseUp={(event: MouseEvent<HTMLDivElement>) => { const started = press.current; press.current = false; if (started && event.target === event.currentTarget && !busyRef.current) closeRef.current(); }}>
     {children}

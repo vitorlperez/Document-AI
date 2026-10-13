@@ -72,3 +72,15 @@ Capturas (não versionadas): antes em `/private/tmp/claude-501/ui-final/` (claro
 - Telas públicas (landing, docs, legais, login custom) têm CSS próprio (`landing.css`, `legal.css`, `custom-login*.css`); só herdam os tokens de canvas/borda via `--paper`/`--line`. Não receberam as regras de card.
 - Screenshots estáticos: o hover (lift) foi validado por regra CSS/tokens, não por captura em movimento.
 - O contraste de bordas decorativas (card/painel) é perceptível mas < 3:1; só bordas de controle (`--control-edge`, em inputs) seguem o critério de 3:1 onde ele é exigido.
+
+## 7. Paleta compartilhada de modais [M56]
+
+Referência: **Gerenciar integração**, `IntegrationScreen` (`integration-modal`, contrato de dismiss em 9223e9e). A captura local antes da alteração confirmou corpo `#ffffff` claro / `#243730` escuro, sombra `--elev-3`, raio 10px, borda ausente no claro / 1px `#4a6458` no escuro. Cabeçalho e área final transparentes sobre o corpo, sem faixa de cor adicional. Backdrop = `--primary` a 40%, sem blur (inclusive no escuro, onde `--primary` é `#6fc2ab`).
+
+Tokens da fundação em `globals.css`: `--modal-bg` = `--surface-overlay`; `--modal-fg` = `--foreground`; `--modal-border` = `0px solid --edge-strong` claro / `1px solid --edge-strong` escuro; `--modal-shadow` = `--elev-3`; `--modal-radius` = `--radius` (10px); `--modal-header-bg` e `--modal-footer-bg` = corpo; `--modal-backdrop` = `color-mix(in oklab, var(--primary) 40%, transparent)`; `--modal-backdrop-filter` = `none`. Estes tokens substituem o padrão genérico overlay + scrim nos diálogos. Popovers/menus/toasts mantêm seus próprios papéis de superfície.
+
+Aplicação central em `surfaces.css`: dialogs nativos, conteúdo `role=dialog`/`role=alertdialog`, painel filho de `ModalOverlay` (marcado `data-modal-overlay`), overlays Radix Dialog/AlertDialog/Sheet e Vaul Drawer, cabeçalhos/rodapés semânticos e `data-slot`. O wrapper de overlay nunca recebe fundo de painel. Geometria, rolagem, foco, dismiss, motion e confirmação permanecem locais; automação conserva tela cheia no mobile.
+
+Inventário de telas: gerenciar integração, criar/editar automação (quatro etapas), sincronizações da Biblioteca, exibição de chave da API, criar tarefa ClickUp, tour da conversa, notificações, menu mobile e visualizador de arquivo em tela estreita (`role` condicional). Primitivas: Dialog, AlertDialog, CommandDialog (usa DialogContent), Sheet e Drawer. O tour mantém o wrapper de tela cheia transparente e o spotlight; somente `.tour-card` recebe a superfície compartilhada, e a sombra externa do spotlight usa `--modal-backdrop`. O drawer mobile mantém posição e tamanho definidos pelo layout.
+
+Evidências locais: `/private/tmp/claude-501/modal-standard/` contém referências claro/escuro anteriores, capturas posteriores, estilos computados e contact sheet em PDF. Os fluxos de chave API e tarefa ClickUp podem usar respostas locais simuladas para inspeção sem gerar credenciais nem criar tarefas externas; a evidência identifica esses casos.

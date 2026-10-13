@@ -98,10 +98,21 @@
   --radius-control: 8px;
   --radius-card: 12px;
   --radius-panel: 14px;
+  /* Shared dialog palette, extracted from Gerenciar integração (9223e9e). */
+  --modal-bg: var(--surface-overlay);
+  --modal-fg: var(--foreground);
+  --modal-border: 0px solid var(--edge-strong);
+  --modal-shadow: var(--elev-3);
+  --modal-radius: var(--radius);
+  --modal-header-bg: var(--modal-bg);
+  --modal-footer-bg: var(--modal-bg);
+  --modal-backdrop: color-mix(in oklab, var(--primary) 40%, transparent);
+  --modal-backdrop-filter: none;
 }
 
 .dark {
   color-scheme: dark;
+  --modal-border: 1px solid var(--edge-strong);
   --background: var(--surface-canvas);
   --foreground: #e6eee9;
   --card: var(--surface-raised);

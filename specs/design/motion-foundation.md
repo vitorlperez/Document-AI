@@ -80,3 +80,7 @@ Todos aceitam `className`; os com `as` aceitam o elemento (`"li"`, `"span"`…).
 ## 6. Vitrine e verificação
 
 `npm run dev` → `http://localhost:5173/ui-demo` (em produção = 404). Para testar reduced-motion: DevTools → Rendering → "Emulate prefers-reduced-motion". Verificação da entrega: lint exit 0, `tsc --noEmit` exit 0, build exit 0, `node --experimental-strip-types --test tests/*.test.mjs`: 190 pass / 4 fail (as mesmas 4 falhas — `answer-markdown`, `automation-editor`, `automation-recipients`, `library-indexing-badge` — existem sem estas mudanças; linha de base 180/4). Screenshots da vitrine em `/private/tmp/claude-501/motion-foundation/` (não versionados). Limite honesto: screenshots estáticos não provam as animações em movimento (validadas por tokens/CSS e testes, não por vídeo) e só foi inspecionado o tema escuro; o claro usa os mesmos tokens.
+
+## Modais: superfície compartilhada [M56]
+
+A paleta base de todos os dialogs agora vem de Gerenciar integração (`integration-modal`): tokens `--modal-*` em `globals.css`, consumo central em `surfaces.css`. Contrato completo, inventário e evidências em `surfaces-elevation.md`, seção 7. Backdrop usa primary a 40% sem blur nos dois temas. Cada modal conserva seus tempos, variantes, saída, foco e layout; `automation-modal.css` mantém geometria/mobile e usa a mesma paleta. Novos dialogs devem usar `<dialog>`, `ModalOverlay` ou as primitivas Dialog/AlertDialog para herdar automaticamente o padrão.
