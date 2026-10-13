@@ -28,3 +28,18 @@ def no_manual_sync_cooldown(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.library import manual_sync
 
     monkeypatch.setattr(manual_sync, "SYNC_COOLDOWN_SECONDS", 0)
+
+
+@pytest.fixture(autouse=True)
+def stub_google_revocation(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Existing disconnect tests must never revoke credentials over the network."""
+    import httpx
+
+    original = httpx.post
+
+    def post(url, **kwargs):
+        if url == "https://oauth2.googleapis.com/revoke":
+            return httpx.Response(200, request=httpx.Request("POST", url))
+        return original(url, **kwargs)
+
+    monkeypatch.setattr(httpx, "post", post)

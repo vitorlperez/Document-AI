@@ -11,6 +11,8 @@ export function providerLabel(provider: string | null | undefined): string {
 }
 
 const OAUTH_ERRORS: Record<string, string> = {
+  google_cancelled: "A conexão com o Google Drive foi cancelada. Você pode tentar novamente quando quiser.",
+  google: "Não foi possível conectar o Google Drive. Tente novamente.",
   onedrive_account_mismatch: "Esta fonte já pertence a outra conta OneDrive. Reconecte com a mesma conta para preservar as pastas indexadas.",
   onedrive: "Não foi possível conectar o OneDrive. Tente novamente.",
   sharepoint_tenant_mismatch: "Esta fonte SharePoint pertence a outra organização Microsoft 365 (outro tenant). Reconecte com uma conta da mesma organização.",

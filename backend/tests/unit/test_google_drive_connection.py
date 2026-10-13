@@ -349,3 +349,50 @@ def test_google_changes_api_marks_expired_page_token_for_snapshot_recovery(
         client.changes(
             credentials=GoogleCredentials("access-token", None, None), page_token="expired"
         )
+
+
+@pytest.mark.parametrize("refresh_token", ["refresh-secret", None])
+@pytest.mark.parametrize("outcome", ["ok", "invalid_token", "network"])
+def test_disconnect_revokes_best_effort_without_logging_tokens(monkeypatch, caplog, refresh_token, outcome):
+    import logging
+
+    from app.integrations.models import DataSource
+
+    monkeypatch.setattr(logging.getLogger("document_intelligence"), "propagate", True)
+    organization_id, user_id = uuid4(), uuid4()
+    cipher = CredentialCipher(Fernet.generate_key().decode())
+    source = DataSource(
+        id=uuid4(), organization_id=organization_id, provider="google_drive",
+        status="connected", account_email="owner@example.test",
+        encrypted_credentials=cipher.encrypt(GoogleCredentials("access-secret", refresh_token, None)),
+    )
+    session = FakeSession([active_member(organization_id, user_id, MembershipRole.ADMIN), source])
+    session.execute = lambda statement: None
+    calls = []
+
+    def post(url, **kwargs):
+        calls.append((url, kwargs))
+        if outcome == "network":
+            raise httpx.ConnectError("access-secret refresh-secret")
+        return httpx.Response(
+            400 if outcome == "invalid_token" else 200,
+            json={"error": "invalid_token", "secret": "access-secret refresh-secret"},
+            request=httpx.Request("POST", url),
+        )
+
+    monkeypatch.setattr(httpx, "post", post)
+    result = GoogleConnectionService(session, cipher).disconnect(
+        scope=OrganizationScope(organization_id), user_id=user_id, source_id=source.id,
+    )
+
+    assert calls == [("https://oauth2.googleapis.com/revoke", {
+        "data": {"token": refresh_token or "access-secret"},
+        "headers": {"Content-Type": "application/x-www-form-urlencoded"}, "timeout": 10,
+    })]
+    assert result.status == "disconnected" and result.encrypted_credentials is None
+    assert result.account_email is None
+    assert session.flush_count == 1
+    if outcome != "ok":
+        assert "google token revocation failed" in caplog.text
+    assert "access-secret" not in str([record.__dict__ for record in caplog.records])
+    assert "refresh-secret" not in str([record.__dict__ for record in caplog.records])

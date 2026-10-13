@@ -755,3 +755,63 @@ def test_notion_disconnect_uses_notion_service(google_api):
     with factory() as session:
         source = session.get(DataSource,source_id)
         assert source.status == 'disconnected' and source.encrypted_credentials is None
+
+
+def test_google_cancelled_callback_redirects_and_consumes_state(google_api):
+    client, factory, auth_gateway, port = google_api
+    login(client, auth_gateway, code="owner", email="owner@example.test", subject="owner")
+    organization_id = create_organization(client)
+    started = client.post("/data-sources/google/oauth/start",
+                          json={"organization_id": str(organization_id)}, follow_redirects=False)
+    state = parse_qs(urlparse(started.headers["location"]).query)["state"][0]
+    response = client.get("/data-sources/google/oauth/callback",
+                          params={"error": "access_denied", "state": state}, follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == (
+        f"http://app.example.test/companies/{organization_id}/integrations?error=google_cancelled"
+    )
+    assert port.exchange_calls == []
+    with factory() as session:
+        assert session.scalar(select(OAuthConnectionState)).consumed_at is not None
+        assert session.scalar(select(func.count(DataSource.id))) == 0
+    replay = client.get("/data-sources/google/oauth/callback",
+                        params={"code": "late-code", "state": state}, follow_redirects=False)
+    assert replay.status_code == 401
+
+
+@pytest.mark.parametrize("state", [None, "", "invalid-state"])
+def test_google_cancelled_callback_rejects_invalid_state(google_api, state):
+    client, _, auth_gateway, port = google_api
+    login(client, auth_gateway, code="owner", email="owner@example.test", subject="owner")
+    params = {"error": "access_denied"}
+    if state is not None:
+        params["state"] = state
+    response = client.get("/data-sources/google/oauth/callback", params=params, follow_redirects=False)
+    assert response.status_code == 401
+    assert "location" not in response.headers
+    assert port.exchange_calls == []
+
+
+@pytest.mark.parametrize("invalidated", ["expired", "revoked_session", "non_admin"])
+def test_google_cancellation_requires_live_state_session_and_admin(google_api, invalidated):
+    client, factory, auth_gateway, port = google_api
+    login(client, auth_gateway, code="owner", email="owner@example.test", subject="owner")
+    organization_id = create_organization(client)
+    started = client.post("/data-sources/google/oauth/start",
+                          json={"organization_id": str(organization_id)}, follow_redirects=False)
+    state = parse_qs(urlparse(started.headers["location"]).query)["state"][0]
+    with factory() as session:
+        if invalidated == "expired":
+            session.scalar(select(OAuthConnectionState)).expires_at = datetime(2000, 1, 1, tzinfo=UTC)
+        elif invalidated == "revoked_session":
+            session.scalar(select(UserSession)).revoked_at = datetime.now(UTC)
+        else:
+            session.scalar(select(Membership)).role = MembershipRole.MEMBER
+        session.commit()
+    response = client.get("/data-sources/google/oauth/callback",
+                          params={"error": "access_denied", "state": state}, follow_redirects=False)
+    assert response.status_code == 401
+    assert "location" not in response.headers
+    assert port.exchange_calls == []
+    with factory() as session:
+        assert session.scalar(select(OAuthConnectionState)).consumed_at is None

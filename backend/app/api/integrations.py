@@ -457,12 +457,30 @@ def start_from_browser_navigation(
 
 @router.get("/data-sources/google/oauth/callback", response_model=None)
 def callback(
-    code: str, state: str, request: Request, session: Session = Depends(database_session)
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    session: Session = Depends(database_session),
 ) -> dict[str, str] | RedirectResponse:
     secret = request.cookies.get(request.app.state.settings.auth_session_cookie_name)
     if not secret:
         raise HTTPException(401, "authentication failed")
+    if not state:
+        raise HTTPException(401, "authentication failed")
     try:
+        if error:
+            organization_id = service(request, session).cancel(
+                raw_state=state, session_secret=secret,
+            )
+            app_url = request.app.state.settings.public_app_url.rstrip("/")
+            outcome = "google_cancelled" if error == "access_denied" else "google"
+            return RedirectResponse(
+                f"{app_url}/companies/{organization_id}/integrations?error={outcome}",
+                status_code=status.HTTP_303_SEE_OTHER,
+            )
+        if not code:
+            raise HTTPException(401, "authentication failed")
         source = service(request, session).complete(
             raw_state=state,
             code=code,

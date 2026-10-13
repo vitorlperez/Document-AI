@@ -511,6 +511,32 @@ class GoogleConnectionService(OAuthConnectionServiceBase):
     def __init__(self, session: Session, cipher: CredentialCipher):
         super().__init__(session, cipher)
 
+    def _before_disconnect(self, source: DataSource) -> None:
+        if not source.encrypted_credentials:
+            return
+        try:
+            credentials = self.cipher.decrypt(source.encrypted_credentials)
+            response = RemoteHttp().request(
+                "POST", "https://oauth2.googleapis.com/revoke",
+                data={"token": credentials.refresh_token or credentials.access_token},
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                timeout=10,
+            )
+            response.raise_for_status()
+        except (httpx.HTTPError, RemoteThrottled, GoogleOAuthInvalid, GoogleOAuthUnavailable):
+            # Provider errors may echo credentials: never log the exception or body.
+            logger.warning(
+                "google token revocation failed",
+                extra={"event": "google_connection", "provider": self.provider,
+                       "action": "revoke", "result": "failed"},
+            )
+
+    def cancel(self, *, raw_state: str, session_secret: str) -> UUID:
+        state = self._consume_state(raw_state=raw_state, session_secret=session_secret)
+        state.consumed_at = datetime.now(UTC)
+        self.session.flush()
+        return state.organization_id
+
     def begin(
         self,
         *,

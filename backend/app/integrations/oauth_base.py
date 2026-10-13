@@ -103,6 +103,9 @@ class OAuthConnectionServiceBase:
             )
         )
 
+    def _before_disconnect(self, source: DataSource) -> None:  # hook with credentials intact
+        return None
+
     def _on_disconnect(self, source: DataSource) -> None:  # hook
         return None
 
@@ -111,6 +114,7 @@ class OAuthConnectionServiceBase:
         source = self._own_source(organization_id=scope.organization_id, source_id=source_id)
         if source is None:
             raise self.access_denied("source access denied")
+        self._before_disconnect(source)
         source.encrypted_credentials = None
         source.status = "disconnected"
         if not self.retain_identity_on_disconnect:

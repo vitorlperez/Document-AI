@@ -24,3 +24,7 @@ test("oauthErrorMessage explains unconfigured Microsoft providers", () => {
   assert.match(oauthErrorMessage("sharepoint_unavailable"), /SharePoint.*não está configurada/i);
   assert.match(oauthErrorMessage("onedrive_unavailable"), /OneDrive.*não está configurada/i);
 });
+
+test("Google OAuth cancellation has a friendly retry message", () => {
+  assert.equal(oauthErrorMessage("google_cancelled"), "A conexão com o Google Drive foi cancelada. Você pode tentar novamente quando quiser.");
+});
