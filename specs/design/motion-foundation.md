@@ -84,3 +84,7 @@ Todos aceitam `className`; os com `as` aceitam o elemento (`"li"`, `"span"`…).
 ## Modais: superfície compartilhada [M56]
 
 A paleta base de todos os dialogs agora vem de Gerenciar integração (`integration-modal`): tokens `--modal-*` em `globals.css`, consumo central em `surfaces.css`. Contrato completo, inventário e evidências em `surfaces-elevation.md`, seção 7. Backdrop usa primary a 40% sem blur nos dois temas. Cada modal conserva seus tempos, variantes, saída, foco e layout; `automation-modal.css` mantém geometria/mobile e usa a mesma paleta. Novos dialogs devem usar `<dialog>`, `ModalOverlay` ou as primitivas Dialog/AlertDialog para herdar automaticamente o padrão.
+
+## Botões [M56]
+
+Variantes de botão (primary, secondary, ghost, destructive, danger-soft, danger-ghost, success, info) com estados hover/press/focus/disabled/loading usam os tokens de motion (`--motion-fast`, `--motion-base`, `--motion-loop-spin`, `--motion-dist-xs`, `--motion-scale-press`). Contrato e hierarquia por tela: `surfaces-elevation.md`, seção 8.

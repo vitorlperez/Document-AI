@@ -3,6 +3,7 @@
 @import "../vendor/shadcn-tailwind-4.13.0.css";
 @import "./ui/motion-tokens.css";
 @import "./surfaces.css";
+@import "./buttons.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -108,9 +109,29 @@
   --modal-footer-bg: var(--modal-bg);
   --modal-backdrop: color-mix(in oklab, var(--primary) 40%, transparent);
   --modal-backdrop-filter: none;
+  /* Botões [M56] — variantes semânticas, ver specs/design/surfaces-elevation.md §8. Pares texto/fundo ≥ 4,5:1 (tests/button-variants.test.mjs). */
+  --btn-primary-bg: #1c6052; --btn-primary-fg: #ffffff; --btn-primary-hover: #124b3f; --btn-primary-active: #0d3a31;
+  --btn-secondary-bg: #dcebe3; --btn-secondary-fg: #124b3f; --btn-secondary-hover: #cde2d7; --btn-secondary-active: #bcd7c8;
+  --btn-ghost-fg: #1c6052; --btn-ghost-hover: #e3ece6; --btn-ghost-active: #d3e3da;
+  --btn-destructive-bg: #b42318; --btn-destructive-fg: #ffffff; --btn-destructive-hover: #9a1d14; --btn-destructive-active: #7f1810;
+  --btn-danger-soft-bg: #fde7e4; --btn-danger-soft-fg: #8f1d14; --btn-danger-soft-hover: #fbd5d0; --btn-danger-soft-active: #f8c2bb;
+  --btn-danger-ghost-fg: #b42318;
+  --btn-success-bg: #d6efde; --btn-success-fg: #14532d; --btn-success-hover: #c5e6d0; --btn-success-active: #b2dcc0;
+  --btn-info-bg: #dde9f8; --btn-info-fg: #1d4a85; --btn-info-hover: #cddff4; --btn-info-active: #bad2ee;
+  --btn-disabled-bg: #e4e7dc; --btn-disabled-fg: #6b756f;
 }
 
 .dark {
+  /* Botões [M56] — escuro. */
+  --btn-primary-bg: #6fc2ab; --btn-primary-fg: #08140f; --btn-primary-hover: #8ad3be; --btn-primary-active: #a3dfcd;
+  --btn-secondary-bg: #1f3a31; --btn-secondary-fg: #b6e3d4; --btn-secondary-hover: #27483d; --btn-secondary-active: #305a4c;
+  --btn-ghost-fg: #8ad3be; --btn-ghost-hover: #1f3a31; --btn-ghost-active: #27483d;
+  --btn-destructive-bg: #ef6b72; --btn-destructive-fg: #1f0507; --btn-destructive-hover: #f48a90; --btn-destructive-active: #f7a3a8;
+  --btn-danger-soft-bg: #4a2029; --btn-danger-soft-fg: #fecdd3; --btn-danger-soft-hover: #5a2832; --btn-danger-soft-active: #6b303c;
+  --btn-danger-ghost-fg: #fda4af;
+  --btn-success-bg: #123a2b; --btn-success-fg: #a7f3d0; --btn-success-hover: #184a37; --btn-success-active: #1f5c45;
+  --btn-info-bg: #16304a; --btn-info-fg: #bcd9fb; --btn-info-hover: #1d3d5d; --btn-info-active: #254b72;
+  --btn-disabled-bg: #17241e; --btn-disabled-fg: #8a9a92;
   color-scheme: dark;
   --modal-border: 1px solid var(--edge-strong);
   --background: var(--surface-canvas);

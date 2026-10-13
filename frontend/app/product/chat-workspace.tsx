@@ -22,7 +22,7 @@ import { usageLimitMessage } from "./usage-limit";
 import { type Company, type LibraryNode, type LibraryPage, type LibraryContext, type LibrarySync, type SavedQuery, type Evidence, type Answer, type ConversationMessage as BaseConversationMessage, type PersistedConversationMessage as BasePersistedConversationMessage, api, messageFor, useLatestRequest, answerText, citationSourceKey, compactCitations, libraryPath } from "./types-and-api";
 import { NewConversationButton } from "./shared-ui";
 import { ConversationHistory } from "./conversation-history";
-import { Enter, LoadingBlock, SkeletonLine, SkeletonList, SkeletonText, StreamingText, TypingIndicator, Transition, staggerStyle } from "../ui";
+import { Enter, LoadingBlock, SkeletonLine, SkeletonList, SkeletonText, StreamingText, TypingIndicator, Transition, btn, staggerStyle } from "../ui";
 
 type ConversationMessage = BaseConversationMessage & { feedback?: "up" | "down"; persisted?: boolean; fresh?: boolean };
 type PersistedConversationMessage = Omit<BasePersistedConversationMessage, "context"> & {
@@ -298,7 +298,7 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
             <MentionComposer organizationId={company.id} value={question} onChange={setQuestion} mentions={mentions} onMentionsChange={setMentions} all={allTools} providers={queryProviders} disabled={asking || restoringConversation} textareaRef={composerRef} onSubmit={() => composerRef.current?.form?.requestSubmit()} />
             <div className="composer-toolbar flex items-center justify-between gap-2 border-t border-line-soft px-2 pt-2">
               <div data-tour="tools"><QuestionScopePicker syncInProgress={syncInProgress || syncStatus.anySyncing} all={allTools} providers={queryProviders} contexts={contexts} loading={contextLoading} disabled={asking} error={contextError} onRetry={loadOperations} onChange={(all, providers) => { setAllTools(all); setQueryProviders(providers); }} /></div>
-              <div className="flex shrink-0 items-center gap-2"><span className="text-xs text-muted-foreground">{question.length}/1000</span><button disabled={!canAsk || !question.trim() || asking} aria-label={asking ? "Aguardando resposta" : "Enviar"} aria-busy={asking} className="composer-send mo-interactive inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-forest-hover disabled:cursor-not-allowed disabled:opacity-40"><Send size={15} aria-hidden="true" /><span className="composer-send-label">{asking ? "Aguarde" : "Enviar"}</span></button></div>
+              <div className="flex shrink-0 items-center gap-2"><span className="text-xs text-muted-foreground">{question.length}/1000</span><button disabled={!canAsk || !question.trim() || asking} aria-label={asking ? "Aguardando resposta" : "Enviar"} aria-busy={asking} className={btn("primary", "md", "composer-send")}><Send size={15} aria-hidden="true" /><span className="composer-send-label">{asking ? "Aguarde" : "Enviar"}</span></button></div>
             </div>
           </div>
           {mentionsOutsideSelection.length > 0 && <p role="alert" className="mt-2 text-xs text-amber-800">Marque {mentionsOutsideSelection.map((item) => toolLabel(item.source_provider)).join(", ")} ou remova a menção antes de enviar.</p>}

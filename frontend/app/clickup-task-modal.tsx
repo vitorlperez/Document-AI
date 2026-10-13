@@ -3,6 +3,7 @@
 import { CircleAlert, ExternalLink, X } from "lucide-react";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { ModalOverlay } from "./modal-dismiss";
+import { btn } from "./ui";
 import { ApiError, api, messageFor } from "./product/types-and-api";
 import { PRIORITIES, buildTaskPayload, initialForm, newIdempotencyKey, validateForm, type TaskForm, type TaskMember, type TaskPreview } from "./clickup-task-logic";
 
@@ -61,7 +62,7 @@ export function ClickUpTaskModal({ base, onClose }: { base: string; onClose: () 
           <h2 id={titleId} className="text-xl font-semibold text-ink">Criar tarefa no ClickUp</h2>
           <p className="mt-1 text-sm text-muted-foreground">Revise o rascunho. Nada é criado até você confirmar.</p>
         </div>
-        <button type="button" onClick={onClose} disabled={busy} aria-label="Fechar" className="rounded-lg p-2 text-muted-foreground hover:bg-sage disabled:opacity-40"><X size={18} aria-hidden="true" /></button>
+        <button type="button" onClick={onClose} disabled={busy} aria-label="Fechar" className={btn("ghost", "icon")}><X size={18} aria-hidden="true" /></button>
       </div>
       {loadError && <p role="alert" className="mt-4 flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"><CircleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" /><span className="min-w-0 break-words">{loadError}</span></p>}
       {!loadError && !form && <p role="status" className="mt-4 text-sm text-muted-foreground">Preparando o rascunho…</p>}
@@ -100,11 +101,11 @@ export function ClickUpTaskModal({ base, onClose }: { base: string; onClose: () 
           <p role="note" className="rounded-md border border-line bg-sage p-3 text-xs leading-5 text-ink">O conteúdo será visível para quem acessa esta lista no ClickUp.</p>
           {error && <p role="alert" className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"><CircleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" /><span className="min-w-0 break-words">{error}</span></p>}
           <div className="flex flex-wrap justify-end gap-2">
-            <button type="button" onClick={onClose} disabled={busy} className="min-h-10 rounded-md border border-line px-4 text-sm font-semibold text-ink hover:bg-sage disabled:opacity-40">Cancelar</button>
-            <button type="submit" disabled={busy} className="min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">{busy ? "Criando…" : "Criar"}</button>
+            <button type="button" onClick={onClose} disabled={busy} className={btn("secondary", "sm")}>Cancelar</button>
+            <button type="submit" disabled={busy} className={btn("primary", "sm")}>{busy ? "Criando…" : "Criar"}</button>
           </div>
         </form>)}
-      {created && <div className="mt-4 flex justify-end"><button type="button" onClick={onClose} className="min-h-10 rounded-md border border-line px-4 text-sm font-semibold text-ink hover:bg-sage">Fechar</button></div>}
+      {created && <div className="mt-4 flex justify-end"><button type="button" onClick={onClose} className={btn("secondary", "sm")}>Fechar</button></div>}
     </section>
   </ModalOverlay>;
 }

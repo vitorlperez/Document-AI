@@ -84,3 +84,28 @@ Aplicação central em `surfaces.css`: dialogs nativos, conteúdo `role=dialog`/
 Inventário de telas: gerenciar integração, criar/editar automação (quatro etapas), sincronizações da Biblioteca, exibição de chave da API, criar tarefa ClickUp, tour da conversa, notificações, menu mobile e visualizador de arquivo em tela estreita (`role` condicional). Primitivas: Dialog, AlertDialog, CommandDialog (usa DialogContent), Sheet e Drawer. O tour mantém o wrapper de tela cheia transparente e o spotlight; somente `.tour-card` recebe a superfície compartilhada, e a sombra externa do spotlight usa `--modal-backdrop`. O drawer mobile mantém posição e tamanho definidos pelo layout.
 
 Evidências locais: `/private/tmp/claude-501/modal-standard/` contém referências claro/escuro anteriores, capturas posteriores, estilos computados e contact sheet em PDF. Os fluxos de chave API e tarefa ClickUp podem usar respostas locais simuladas para inspeção sem gerar credenciais nem criar tarefas externas; a evidência identifica esses casos.
+
+## 8. Botões: variantes e hierarquia [M56]
+
+Tokens `--btn-*` em `frontend/app/globals.css` (claro e `.dark`), estilos em `frontend/app/buttons.css`, helper `btn(variant, size?, extra?)` em `frontend/app/ui/button-variants.ts` (reexportado por `app/ui`). Uso: `className={btn("primary")}` → `btn btn-primary`. Telas de CSS próprio (login, onboarding) consomem os mesmos tokens.
+
+| Variante | Visual | Quando usar |
+|---|---|---|
+| `primary` | verde da marca preenchido + `elev-1` | **uma** ação principal por contexto (tela, card, modal): Criar, Salvar, Executar agora, Enviar |
+| `secondary` | verde suave (tonal) | ação importante que não é a principal: Editar, Voltar (etapa), Atualizar, modelos |
+| `ghost` | sem fundo, texto verde; hover tonal | terciária: Cancelar, Ver histórico, Fechar, ações de barra |
+| `destructive` | vermelho preenchido | **confirmação** de ação irreversível, dentro do modal (Excluir, Confirmar revogação) |
+| `danger-soft` | vermelho tonal | ação de risco com destaque médio |
+| `danger-ghost` | texto vermelho; hover tonal | gatilho de ação destrutiva fora de confirmação: Excluir, Revogar, Desconectar, Remover |
+| `success` / `info` | verde / azul tonais | confirmações e avisos acionáveis (sem uso obrigatório hoje) |
+
+Tamanhos: `md` (44 px, padrão), `sm` (40 px), `icon` (quadrado 44 px; sempre com `aria-label`). `btn-block` ocupa a largura.
+
+**Estados**: hover e press trocam o fundo (`--btn-*-hover` / `-active`; press também desloca 2 px e escala 0,975 pelos tokens de motion); foco = anel `--focus-ring` de 2 px (claro) / cor da marca (escuro) com offset 2 px; `disabled` = fundo `--btn-disabled-bg`, texto `--btn-disabled-fg`, sem sombra; **loading** = `aria-busy="true"` + `disabled`: conserva a cor da variante, ganha spinner CSS (`--motion-loop-spin`) e ignora cliques (o botão do composer do chat usa `aria-busy` sem spinner).
+
+**Contraste**: todo par texto/fundo de `primary`, `secondary`, `destructive`, `danger-soft`, `success` e `info` (repouso, hover e press) tem ≥ 4,5:1 nos dois temas; texto de `ghost`/`danger-ghost` ≥ 4,5:1 sobre canvas, painel, raised, sunken e overlay; fundo de `primary`/`destructive` ≥ 3:1 contra o painel (WCAG 1.4.11). Verificado por `frontend/tests/button-variants.test.mjs`.
+
+**Mapa nas telas**: Automações — Criar automação = primary; no card, Executar agora = primary, Editar = secondary, Ver histórico = ghost, Excluir = danger-ghost (à direita); modal de exclusão: Cancelar = ghost, Excluir = destructive; editor: Cancelar = ghost, Voltar = secondary, Próximo/Salvar = primary. Integrações — Gerenciar/Conectar = primary, Desconectar = danger-ghost, Atualizar = secondary. Biblioteca — Conectar uma fonte = primary, Sincronizar/Atualizar = secondary, Remover = danger-ghost. Equipe/Chaves/ClickUp/convite — ação do formulário = primary, Revogar/Remover = danger-ghost, Cancelar/Fechar = ghost ou secondary. Login e onboarding mantêm classes próprias (`.login-*`, `.onboarding-*`), alimentadas pelos mesmos tokens.
+
+### Excluir automação
+`DELETE /organizations/{org}/automations/{id}` (204; apaga também as execuções). Botão visível só para criador, Owner e Admin (`canEditAutomation`, mesma regra do backend). Abre `AutomationDeleteDialog` (`alertdialog` sobre `<dialog>` nativo: nome da automação, aviso de que histórico e PDFs deixam de ficar acessíveis, ESC/backdrop bloqueados durante a chamada). Sucesso: toast, card sai com `automation-card-leaving` (`--motion-base`, opacity+transform) e é removido da lista após o tempo do token; erro: toast persistente + alerta no modal, que continua aberto.

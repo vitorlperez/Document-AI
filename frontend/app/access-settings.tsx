@@ -3,7 +3,7 @@
 import { AlertTriangle, Check, ExternalLink, KeyRound } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { MentionComposer, type MentionCandidate } from "./mention-composer";
-import { EmptyState, ErrorState, LoadingBlock, SkeletonBlock, SkeletonLine, SkeletonList, Spinner, StaggerItem } from "./ui";
+import { EmptyState, ErrorState, LoadingBlock, SkeletonBlock, SkeletonLine, SkeletonList, Spinner, StaggerItem, btn } from "./ui";
 import "./interface-motion.css";
 
 type Api = <T>(path: string, init?: RequestInit) => Promise<T>;
@@ -95,7 +95,7 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
   const tooManyNodes = nodes.length > MAX_NODES;
   const formProblem = noScope ? "Selecione ao menos um escopo." : tooManyNodes ? `Selecione no máximo ${MAX_NODES} pastas ou arquivos.` : null;
   const isExpired = (key: Key) => Boolean(key.expires_at) && new Date(key.expires_at as string).getTime() < now;
-  const revokeButton = (key: Key) => <button type="button" disabled={busy} onClick={() => void revoke(key)} aria-label={`Revogar a chave ${key.name}`} className="mo-interactive inline-flex items-center justify-center gap-2 min-h-11 rounded-lg border border-[var(--danger-border)] px-4 text-sm font-semibold text-[var(--danger-fg)] disabled:opacity-50">Revogar</button>;
+  const revokeButton = (key: Key) => <button type="button" disabled={busy} onClick={() => void revoke(key)} aria-label={`Revogar a chave ${key.name}`} className={btn("danger-ghost")}>Revogar</button>;
   return <section className="mt-6 rounded-lg border border-line-soft bg-panel p-4 sm:p-6" aria-labelledby="api-keys-title" aria-busy={busy || loading}>
     <div className="flex items-center gap-3"><KeyRound size={22} className="text-primary" aria-hidden="true" /><h2 id="api-keys-title" ref={heading} tabIndex={-1} className="text-xl font-semibold outline-none">Chaves de API</h2></div>
     <p className="mt-2 text-sm text-muted-foreground">Crie chaves para que automações e integrações leiam os documentos desta organização pela API pública. Cada chave só funciona enquanto quem a criou tiver acesso ativo.</p>
@@ -124,7 +124,7 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
         <label className="block font-medium">Expiração (opcional)<input type="datetime-local" value={expiry} onChange={(event) => setExpiry(event.target.value)} className={`${fieldClass} font-normal sm:w-auto`} /><span className="mt-1 block text-sm font-normal text-muted-foreground">Sem data, a chave não expira.</span></label>
         <fieldset><legend className="font-medium">Pastas ou arquivos (opcional)</legend><p className="mb-2 text-sm text-muted-foreground">Digite @ e o nome para escolher até {MAX_NODES}. Sem seleção, a chave acessa toda a organização.</p><div className="rounded-lg border border-[color:var(--control-edge)] bg-paper px-2 py-1"><MentionComposer organizationId={organizationId} value={nodeQuery} onChange={setNodeQuery} mentions={nodes} onMentionsChange={setNodes} all={true} providers={[]} disabled={busy} textareaRef={selector} onSubmit={() => {}} label="Pastas ou arquivos da chave" placeholder="Digite @ e o nome de uma pasta ou arquivo" /></div></fieldset>
         {formProblem && <p id="key-form-problem" role="alert" className="text-sm text-[var(--danger-fg)]">{formProblem}</p>}
-        <button ref={createButton} disabled={busy || !name.trim() || Boolean(formProblem)} className="mo-interactive inline-flex items-center justify-center gap-2 min-h-11 rounded-lg bg-primary px-5 py-2 font-semibold text-primary-foreground disabled:opacity-50">{busy && <Spinner size={16} />}{busy ? "Salvando…" : "Criar chave"}</button>
+        <button ref={createButton} disabled={busy || !name.trim() || Boolean(formProblem)} className={btn("primary", "md")}>{busy && <Spinner size={16} />}{busy ? "Salvando…" : "Criar chave"}</button>
       </form>
     </>}
     {secret && <dialog ref={dialog} onCancel={closeSecret} onClose={() => setSecret(null)} aria-labelledby="api-secret-title" className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-lg border border-line-soft bg-panel p-4 text-foreground backdrop:bg-black/40 sm:p-6" data-arquivio-motion-root=""><div data-arquivio-motion="panel">
@@ -132,7 +132,7 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
       <p className="mt-3 flex gap-2 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] p-3 text-sm text-[var(--danger-fg)]"><AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" /><span>Esta é a única vez que a chave aparece. Guarde-a em um local seguro (gerenciador de senhas ou variável de ambiente) e nunca a coloque em URLs ou repositórios.</span></p>
       <textarea ref={secretField} readOnly rows={3} aria-label="Chave de API" value={secret} onFocus={(event) => event.currentTarget.select()} className="mt-4 w-full break-all rounded-lg border border-[color:var(--control-edge)] bg-paper p-3 font-mono text-sm" />
       <p className="mt-2 text-sm text-muted-foreground">Envie a chave no cabeçalho <code>Authorization: Bearer</code>. <a href="/docs/api" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-4">Ver documentação<span className="sr-only"> (abre em nova aba)</span></a></p>
-      <div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => void copy()} className="mo-interactive inline-flex items-center justify-center gap-2 min-h-11 rounded-lg bg-primary px-5 font-semibold text-primary-foreground">{copied && <Check size={16} className="mo-check-pop" aria-hidden="true" />}{copied ? "Chave copiada" : "Copiar chave"}</button><button type="button" onClick={closeSecret} className="mo-interactive inline-flex items-center justify-center gap-2 min-h-11 rounded-lg border border-[color:var(--control-edge)] px-5 font-semibold">Já guardei, fechar</button></div>
+      <div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => void copy()} className="mo-interactive inline-flex items-center justify-center gap-2 min-h-11 rounded-lg bg-primary px-5 font-semibold text-primary-foreground">{copied && <Check size={16} className="mo-check-pop" aria-hidden="true" />}{copied ? "Chave copiada" : "Copiar chave"}</button><button type="button" onClick={closeSecret} className={btn("secondary", "md")}>Já guardei, fechar</button></div>
       <p role="status" className="sr-only">{copied ? "Chave copiada para a área de transferência." : ""}</p>
     </div></dialog>}
   </section>;

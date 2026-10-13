@@ -36,10 +36,10 @@
 .login-label-row .login-text-button { min-height: 24px; }
 .login-hint { margin-top: 8px; color: var(--muted-foreground); font-size: 11px; }
 .login-primary, .login-secondary { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; width: 100%; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600; transition: background var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), transform var(--motion-base) var(--ease-out); }
-.login-primary { background: var(--primary); color: var(--primary-foreground); }
-.login-primary:hover { background: var(--primary-hover); }
-.login-secondary { border: 1px solid var(--line); background: transparent; color: var(--ink); }
-.login-secondary:hover { background: var(--sage); }
+.login-primary { background: var(--btn-primary-bg); color: var(--btn-primary-fg); }
+.login-primary:hover { background: var(--btn-primary-hover); }
+.login-secondary { border: 1px solid transparent; background: var(--btn-secondary-bg); color: var(--btn-secondary-fg); }
+.login-secondary:hover { background: var(--btn-secondary-hover); }
 .login-divider { display: flex; align-items: center; gap: 14px; margin-block: 24px; color: var(--muted-foreground); font-size: 11px; }
 .login-divider::before, .login-divider::after { content: ""; height: 1px; background: var(--line); flex: 1; }
 .login-switch { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 20px; font-size: 12px; color: var(--muted-foreground); }

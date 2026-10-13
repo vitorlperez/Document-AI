@@ -20,9 +20,10 @@
 .onboarding-hint svg { flex-shrink: 0; margin-top: 2px; }
 .onboarding-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; align-items: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
 .onboarding-primary, .onboarding-text-button { min-height: 44px; border-radius: 8px; padding: 10px 16px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
-.onboarding-primary { background: var(--primary); color: var(--primary-foreground); }
-.onboarding-primary:hover { background: var(--primary-hover); }
-.onboarding-text-button:hover { background: var(--sage-selected); }
+.onboarding-primary { background: var(--btn-primary-bg); color: var(--btn-primary-fg); }
+.onboarding-primary:hover { background: var(--btn-primary-hover); }
+.onboarding-text-button { color: var(--btn-ghost-fg); }
+.onboarding-text-button:hover { background: var(--btn-ghost-hover); }
 .onboarding-primary:disabled, .onboarding-text-button:disabled { opacity: .55; cursor: wait; }
 .onboarding-primary:focus-visible, .onboarding-text-button:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
 .onboarding-error { color: var(--danger-fg); background: var(--danger-bg); padding: 12px; border-radius: 6px; font-size: 14px; }
@@ -48,8 +49,8 @@
   .onboarding-progress { gap: 16px; font-size: 12px; }
 }
 
-.onboarding-primary-quiet { background: var(--color-sage); color: var(--primary); border: 1px solid var(--color-line); }
-.onboarding-primary-quiet:hover { background: var(--color-sage-selected); }
+.onboarding-primary-quiet { background: var(--btn-secondary-bg); color: var(--btn-secondary-fg); border: 1px solid transparent; }
+.onboarding-primary-quiet:hover { background: var(--btn-secondary-hover); }
 .onboarding-link { text-decoration: underline; font-weight: 600; cursor: pointer; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* Step 2: same fixed action bar as step 3, so the CTA is never below the fold. */

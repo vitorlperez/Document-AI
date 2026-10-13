@@ -5,7 +5,7 @@ import { Check, ClipboardCopy, Download, ListPlus } from "lucide-react";
 import { answerWithSources } from "./answer-blocks";
 import { API_BASE } from "./product/types-and-api";
 import { ClickUpTaskModal } from "./clickup-task-modal";
-import { Spinner, Transition } from "./ui";
+import { Spinner, Transition, btn } from "./ui";
 
 type Source = { document_name: string; source_url: string | null };
 type ExportFormat = "md" | "docx" | "pdf";
@@ -57,7 +57,7 @@ export function AnswerActions({ organizationId, conversationId, messageId, text,
     finally { setBusy(false); }
   }
 
-  const button = "mo-interactive inline-flex min-h-11 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-muted-foreground hover:bg-sage hover:text-ink disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary";
+  const button = btn("ghost", "sm", "gap-1.5 text-xs font-medium");
   return <div ref={root} className="relative mt-3 flex flex-wrap items-center gap-1" role="group" aria-label="Ações da resposta">
     <button type="button" className={button} onClick={() => { void copy(); }}>{copied ? <Check size={14} className="mo-check-pop" aria-hidden="true" /> : <ClipboardCopy size={14} aria-hidden="true" />}{copied ? "Copiado" : "Copiar com fontes"}</button>
     <span role="status" className="sr-only">{copied ? "Resposta copiada com as fontes." : busy ? "Exportando resposta…" : ""}</span>

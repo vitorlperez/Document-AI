@@ -1,0 +1,39 @@
+/* Botões [M56] — sistema de variantes. Tokens --btn-* em globals.css; doc em specs/design/surfaces-elevation.md §8.
+   Uso: className="btn btn-primary" (ou btn("primary") de app/ui/button-variants.ts). Regra: 1 ação primária por contexto.
+   Estados: hover / active (press) / focus-visible / disabled / loading (aria-busy="true", spinner CSS). Só tokens de motion. */
+.btn {
+  --btn-bg: transparent; --btn-fg: var(--foreground); --btn-hover: var(--btn-ghost-hover); --btn-active: var(--btn-ghost-active); --btn-edge: transparent;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; position: relative;
+  min-height: 2.75rem; padding: 0.5rem 1rem; border: 1px solid var(--btn-edge); border-radius: var(--radius-control);
+  background: var(--btn-bg); color: var(--btn-fg); font-size: 0.875rem; font-weight: 600; line-height: 1.25; text-decoration: none;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), transform var(--motion-base) var(--ease-out);
+}
+.btn:not(:disabled, [aria-disabled="true"]):hover { background: var(--btn-hover); }
+.btn:not(:disabled, [aria-disabled="true"]):active { background: var(--btn-active); transform: translateY(var(--motion-dist-xs)) scale(var(--motion-scale-press)); }
+.btn:focus-visible { outline: var(--motion-focus-width) solid var(--focus-ring); outline-offset: var(--motion-focus-offset); }
+.dark .btn:focus-visible { outline-color: var(--btn-primary-bg); }
+.btn-sm { min-height: 2.5rem; padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+.btn-icon { padding: 0; width: 2.75rem; }
+.btn-block { width: 100%; }
+
+.btn-primary { --btn-bg: var(--btn-primary-bg); --btn-fg: var(--btn-primary-fg); --btn-hover: var(--btn-primary-hover); --btn-active: var(--btn-primary-active); box-shadow: var(--elev-1); }
+.btn-primary:not(:disabled, [aria-disabled="true"]):hover { box-shadow: var(--elev-2); }
+.btn-secondary { --btn-bg: var(--btn-secondary-bg); --btn-fg: var(--btn-secondary-fg); --btn-hover: var(--btn-secondary-hover); --btn-active: var(--btn-secondary-active); }
+.btn-ghost { --btn-fg: var(--btn-ghost-fg); }
+.btn-destructive { --btn-bg: var(--btn-destructive-bg); --btn-fg: var(--btn-destructive-fg); --btn-hover: var(--btn-destructive-hover); --btn-active: var(--btn-destructive-active); box-shadow: var(--elev-1); }
+.btn-danger-soft { --btn-bg: var(--btn-danger-soft-bg); --btn-fg: var(--btn-danger-soft-fg); --btn-hover: var(--btn-danger-soft-hover); --btn-active: var(--btn-danger-soft-active); }
+.btn-danger-ghost { --btn-fg: var(--btn-danger-ghost-fg); --btn-hover: var(--btn-danger-soft-bg); --btn-active: var(--btn-danger-soft-hover); }
+.btn-success { --btn-bg: var(--btn-success-bg); --btn-fg: var(--btn-success-fg); --btn-hover: var(--btn-success-hover); --btn-active: var(--btn-success-active); }
+.btn-info { --btn-bg: var(--btn-info-bg); --btn-fg: var(--btn-info-fg); --btn-hover: var(--btn-info-hover); --btn-active: var(--btn-info-active); }
+.btn-danger-ghost:focus-visible { outline-color: var(--btn-danger-ghost-fg); }
+.btn-destructive:focus-visible, .btn-danger-soft:focus-visible { outline-color: var(--btn-destructive-bg); }
+
+.btn:disabled, .btn[aria-disabled="true"] { background: var(--btn-disabled-bg); color: var(--btn-disabled-fg); border-color: transparent; box-shadow: none; cursor: not-allowed; transform: none; }
+.btn-ghost:disabled, .btn-danger-ghost:disabled { background: transparent; }
+
+/* Loading: o botão fica desabilitado mas conserva a cor da variante; spinner gira (reduced motion: estático via rede global). */
+.btn[aria-busy="true"] { cursor: progress; pointer-events: none; }
+.btn[aria-busy="true"]:disabled { background: var(--btn-bg); color: var(--btn-fg); box-shadow: none; }
+.btn-ghost[aria-busy="true"]:disabled, .btn-danger-ghost[aria-busy="true"]:disabled { background: transparent; color: var(--btn-fg); }
+.btn[aria-busy="true"]:not(.composer-send)::before { content: ""; width: 0.95em; height: 0.95em; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: btn-spin var(--motion-loop-spin) var(--ease-linear) infinite; }
+@keyframes btn-spin { to { transform: rotate(360deg); } }

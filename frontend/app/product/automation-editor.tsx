@@ -7,10 +7,9 @@ import { AutomationRecipients, type RecipientOption } from "./automation-recipie
 import type { Folder } from "./types-and-api";
 import { X } from "lucide-react";
 import { useDialogBackdropClose } from "../modal-dismiss";
-import { closeDialogAnimated, Enter, ProgressIndicator, Spinner } from "../ui";
+import { btn, closeDialogAnimated, Enter, ProgressIndicator, Spinner } from "../ui";
 
 const control = "mo-field mt-2 min-h-11 w-full rounded-lg border border-line bg-panel px-3 py-2 focus-visible:outline-2 focus-visible:outline-primary";
-export const automationButton = "mo-interactive min-h-11 rounded-lg border border-line px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
 const steps = ["Quando", "Onde", "O que fazer", "Entregar"];
 
 export function AutomationEditor({ fetchJson, organizationId, initial, folders, editing = false, isOpen = true, returnFocus, saving, serverError, onSave, onCancel, loadRecipients, canChooseRecipients }: { fetchJson: LibraryFetch; organizationId: string; loadRecipients: (query: string, signal: AbortSignal) => Promise<RecipientOption[]>; canChooseRecipients: boolean; initial: AutomationDraft; folders: Folder[]; editing?: boolean; isOpen?: boolean; returnFocus?: HTMLElement | null; saving: boolean; serverError: string | null; onSave: (draft: AutomationDraft) => void; onCancel: () => void }) {
@@ -88,7 +87,7 @@ export function AutomationEditor({ fetchJson, organizationId, initial, folders, 
   }
   return <dialog ref={dialog} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-busy={saving} className="automation-modal" data-arquivio-motion-root="" onKeyDown={trapFocus} onCancel={(event) => { event.preventDefault(); requestClose(); }}>
     <section data-arquivio-motion="panel" className="automation-modal-panel">
-    <header className="mb-5 flex items-start justify-between gap-4"><div><p className="text-sm text-muted-foreground">Relatórios, tabelas e alertas recorrentes</p><h2 id={titleId} className="mt-1 text-xl font-semibold">{editing ? "Editar automação" : "Criar automação"}</h2></div><button type="button" className={`${automationButton} grid size-11 shrink-0 place-items-center px-0`} aria-label="Fechar automação" disabled={saving} onClick={requestClose}><X size={20} aria-hidden="true" /></button></header>
+    <header className="mb-5 flex items-start justify-between gap-4"><div><p className="text-sm text-muted-foreground">Relatórios, tabelas e alertas recorrentes</p><h2 id={titleId} className="mt-1 text-xl font-semibold">{editing ? "Editar automação" : "Criar automação"}</h2></div><button type="button" className={btn("ghost", "icon", "shrink-0")} aria-label="Fechar automação" disabled={saving} onClick={requestClose}><X size={20} aria-hidden="true" /></button></header>
     <ol aria-label="Etapas da automação" className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">{steps.map((label, index) => <li key={label} aria-current={index === step ? "step" : undefined} className={`rounded-lg px-3 py-3 transition-[background-color,color] duration-[var(--motion-base)] ease-[var(--ease-out)] ${index === step ? "bg-sage font-semibold text-primary" : "text-muted-foreground"}`}>{index + 1}. {label}</li>)}</ol>
     <ProgressIndicator value={((step + 1) / steps.length) * 100} label={`Etapa ${step + 1} de ${steps.length}`} className="mt-3" />
     <form onSubmit={(event) => { event.preventDefault(); next(); }} className="mt-6">
@@ -109,7 +108,7 @@ export function AutomationEditor({ fetchJson, organizationId, initial, folders, 
       {step === 1 && <section className="mt-4" aria-label="Pastas da automação"><p className="text-sm text-muted-foreground">Quais pastas a automação deve consultar?</p><AutomationFolderPicker fetchJson={fetchJson} organizationId={organizationId} selected={draft.scopeFolders} onChange={(next) => update("scopeFolders", next)} legacyNames={draft.legacyFolderIds.map((id) => folders.find((folder) => folder.id === id)?.name ?? "pasta")} /></section>}
       {step === 2 && <div className="mt-4">
         <p className="text-sm text-muted-foreground">Escreva o resultado que você quer receber ou comece com um modelo.</p>
-        <div className="mt-3 flex flex-wrap gap-2">{Object.entries(promptTemplates).map(([name, prompt]) => <button type="button" key={name} className={automationButton} onClick={() => { update("prompt", prompt); update("template", name === "tabela" ? "table" : name === "alerta" ? "alert" : "summary"); }}>Usar modelo de {name}</button>)}</div>
+        <div className="mt-3 flex flex-wrap gap-2">{Object.entries(promptTemplates).map(([name, prompt]) => <button type="button" key={name} className={btn("secondary", "sm")} onClick={() => { update("prompt", prompt); update("template", name === "tabela" ? "table" : name === "alerta" ? "alert" : "summary"); }}>Usar modelo de {name}</button>)}</div>
         <label className="mt-4 block">Formato do resultado<select className={control} value={draft.template} onChange={(event) => update("template", event.target.value as AutomationDraft["template"])}><option value="summary">Resumo</option><option value="table">Tabela</option><option value="alert">Alerta (só notificar se houver algo a reportar)</option></select></label>
         <label className="mt-4 block">Pergunta ou instrução<textarea className={`${control} min-h-40`} maxLength={1000} value={draft.prompt} aria-describedby="prompt-count" onChange={(event) => update("prompt", event.target.value)} placeholder="Ex.: Quais prazos vencem nesta semana? Liste responsáveis e cite os documentos." /></label>
         <p id="prompt-count" className="mt-2 text-sm text-muted-foreground">{draft.prompt.length}/1000 caracteres. O resultado deve se apoiar nos arquivos das pastas escolhidas.</p>
@@ -123,7 +122,7 @@ export function AutomationEditor({ fetchJson, organizationId, initial, folders, 
       </fieldset>}
       </Enter>
       {(error || serverError) && <Enter key={error || serverError} variant="slide"><p role="alert" className="mt-4 rounded-lg border border-rose-200 p-3 text-sm text-rose-700">{error || serverError}</p></Enter>}
-      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={saving} className={automationButton} onClick={requestClose}>Cancelar</button>{step > 0 && <button type="button" disabled={saving} className={automationButton} onClick={() => { setError(null); setDirection("back"); setStep(step - 1); }}>Voltar</button>}<button type="submit" disabled={saving} className={`${automationButton} bg-primary text-primary-foreground`}>{saving ? <span className="inline-flex items-center gap-2"><Spinner size={14} />Salvando…</span> : step === 3 ? editing ? "Salvar automação" : "Criar automação" : "Próximo"}</button></div>
+      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={saving} className={btn("ghost")} onClick={requestClose}>Cancelar</button>{step > 0 && <button type="button" disabled={saving} className={btn("secondary")} onClick={() => { setError(null); setDirection("back"); setStep(step - 1); }}>Voltar</button>}<button type="submit" disabled={saving} className={btn("primary")} aria-busy={saving}>{saving ? <span className="inline-flex items-center gap-2"><Spinner size={14} />Salvando…</span> : step === 3 ? editing ? "Salvar automação" : "Criar automação" : "Próximo"}</button></div>
     </form>
   </section></dialog>;
 }
