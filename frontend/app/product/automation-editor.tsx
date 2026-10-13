@@ -1,18 +1,59 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { type AutomationDraft, promptTemplates, validateAutomationStep, weekdays } from "./automations-model";
 import { AutomationFolderPicker, type LibraryFetch } from "./automation-folder-picker";
 import { AutomationRecipients, type RecipientOption } from "./automation-recipients";
 import type { Folder } from "./types-and-api";
-import { Enter, ProgressIndicator, Spinner } from "../ui";
+import { X } from "lucide-react";
+import { useDialogBackdropClose } from "../modal-dismiss";
+import { closeDialogAnimated, Enter, ProgressIndicator, Spinner } from "../ui";
 
 const control = "mo-field mt-2 min-h-11 w-full rounded-lg border border-line bg-panel px-3 py-2 focus-visible:outline-2 focus-visible:outline-primary";
 export const automationButton = "mo-interactive min-h-11 rounded-lg border border-line px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
 const steps = ["Quando", "Onde", "O que fazer", "Entregar"];
 
-export function AutomationEditor({ fetchJson, organizationId, initial, folders, saving, serverError, onSave, onCancel, loadRecipients, canChooseRecipients }: { fetchJson: LibraryFetch; organizationId: string; loadRecipients: (query: string, signal: AbortSignal) => Promise<RecipientOption[]>; canChooseRecipients: boolean; initial: AutomationDraft; folders: Folder[]; saving: boolean; serverError: string | null; onSave: (draft: AutomationDraft) => void; onCancel: () => void }) {
+export function AutomationEditor({ fetchJson, organizationId, initial, folders, editing = false, isOpen = true, returnFocus, saving, serverError, onSave, onCancel, loadRecipients, canChooseRecipients }: { fetchJson: LibraryFetch; organizationId: string; loadRecipients: (query: string, signal: AbortSignal) => Promise<RecipientOption[]>; canChooseRecipients: boolean; initial: AutomationDraft; folders: Folder[]; editing?: boolean; isOpen?: boolean; returnFocus?: HTMLElement | null; saving: boolean; serverError: string | null; onSave: (draft: AutomationDraft) => void; onCancel: () => void }) {
   const [draft, setDraft] = useState(initial);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  const closing = useRef(false);
+  const onClosed = useRef(onCancel);
+  const origin = useRef(returnFocus);
+  useEffect(() => { onClosed.current = onCancel; }, [onCancel]);
+  useEffect(() => {
+    const element = dialog.current;
+    const trigger = origin.current ?? document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    if (element && !element.open) element.showModal();
+    return () => {
+      document.body.style.overflow = overflow;
+      requestAnimationFrame(() => { if (trigger?.isConnected) trigger.focus({ preventScroll: true }); });
+    };
+  }, []);
+  function finishClose() {
+    if (closing.current) return;
+    closing.current = true;
+    closeDialogAnimated(dialog.current, () => onClosed.current());
+  }
+  function requestClose() {
+    if (saving || closing.current) return;
+    if (JSON.stringify(draft) !== JSON.stringify(initial) && !window.confirm("Descartar as alterações não salvas desta automação?")) return;
+    finishClose();
+  }
+  useDialogBackdropClose(dialog, requestClose, saving);
+  function trapFocus(event: KeyboardEvent<HTMLDialogElement>) {
+    if (event.key !== "Tab") return;
+    const items = Array.from(dialog.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])') ?? []).filter((item) => item.getClientRects().length > 0);
+    const current = items.indexOf(document.activeElement as HTMLElement);
+    const next = event.shiftKey ? (current <= 0 ? items.length - 1 : current - 1) : (current + 1) % items.length;
+    event.preventDefault();
+    (items[next] ?? dialog.current)?.focus();
+  }
+  useEffect(() => {
+    if (!isOpen) closeDialogAnimated(dialog.current, () => onClosed.current());
+  }, [isOpen]);
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [error, setError] = useState<string | null>(null);
@@ -45,11 +86,13 @@ export function AutomationEditor({ fetchJson, organizationId, initial, folders, 
     for (let index = 0; index < 4; index++) { const message = validateAutomationStep(draft, index); if (message) { setDirection("back"); setStep(index); setError(message); return; } }
     onSave(draft);
   }
-  return <section className="mo-enter mt-6 rounded-lg border border-line bg-panel p-4 sm:p-6" data-variant="slide" aria-busy={saving}>
+  return <dialog ref={dialog} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-busy={saving} className="automation-modal" data-arquivio-motion-root="" onKeyDown={trapFocus} onCancel={(event) => { event.preventDefault(); requestClose(); }}>
+    <section data-arquivio-motion="panel" className="automation-modal-panel">
+    <header className="mb-5 flex items-start justify-between gap-4"><div><p className="text-sm text-muted-foreground">Relatórios, tabelas e alertas recorrentes</p><h2 id={titleId} className="mt-1 text-xl font-semibold">{editing ? "Editar automação" : "Criar automação"}</h2></div><button type="button" className={`${automationButton} grid size-11 shrink-0 place-items-center px-0`} aria-label="Fechar automação" disabled={saving} onClick={requestClose}><X size={20} aria-hidden="true" /></button></header>
     <ol aria-label="Etapas da automação" className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">{steps.map((label, index) => <li key={label} aria-current={index === step ? "step" : undefined} className={`rounded-lg px-3 py-3 transition-[background-color,color] duration-[var(--motion-base)] ease-[var(--ease-out)] ${index === step ? "bg-sage font-semibold text-primary" : "text-muted-foreground"}`}>{index + 1}. {label}</li>)}</ol>
     <ProgressIndicator value={((step + 1) / steps.length) * 100} label={`Etapa ${step + 1} de ${steps.length}`} className="mt-3" />
-    <form onSubmit={(event) => { event.preventDefault(); next(); }} className="mt-6 max-w-2xl">
-      <h2 ref={heading} tabIndex={-1} className="text-xl font-semibold outline-none">{steps[step]}</h2>
+    <form onSubmit={(event) => { event.preventDefault(); next(); }} className="mt-6">
+      <h3 ref={heading} tabIndex={-1} className="text-xl font-semibold outline-none">{steps[step]}</h3>
       <Enter key={step} variant={direction === "forward" ? "slide-x" : "fade"}>
       {step === 0 && <div className="mt-4 space-y-4">
         <label className="block">Nome da automação<input autoComplete="off" maxLength={160} className={control} value={draft.name} onChange={(event) => update("name", event.target.value)} placeholder="Ex.: Resumo semanal de projetos" /></label>
@@ -80,7 +123,7 @@ export function AutomationEditor({ fetchJson, organizationId, initial, folders, 
       </fieldset>}
       </Enter>
       {(error || serverError) && <Enter key={error || serverError} variant="slide"><p role="alert" className="mt-4 rounded-lg border border-rose-200 p-3 text-sm text-rose-700">{error || serverError}</p></Enter>}
-      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={saving} className={automationButton} onClick={onCancel}>Cancelar</button>{step > 0 && <button type="button" disabled={saving} className={automationButton} onClick={() => { setError(null); setDirection("back"); setStep(step - 1); }}>Voltar</button>}<button type="submit" disabled={saving} className={`${automationButton} bg-primary text-primary-foreground`}>{saving ? <span className="inline-flex items-center gap-2"><Spinner size={14} />Salvando…</span> : step === 3 ? "Salvar automação" : "Continuar"}</button></div>
+      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={saving} className={automationButton} onClick={requestClose}>Cancelar</button>{step > 0 && <button type="button" disabled={saving} className={automationButton} onClick={() => { setError(null); setDirection("back"); setStep(step - 1); }}>Voltar</button>}<button type="submit" disabled={saving} className={`${automationButton} bg-primary text-primary-foreground`}>{saving ? <span className="inline-flex items-center gap-2"><Spinner size={14} />Salvando…</span> : step === 3 ? editing ? "Salvar automação" : "Criar automação" : "Próximo"}</button></div>
     </form>
-  </section>;
+  </section></dialog>;
 }

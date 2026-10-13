@@ -1,0 +1,46 @@
+/* Automação: superfície overlay; motion visual herda a fundação. */
+.automation-modal {
+  --aq-motion-enter: var(--motion-medium);
+  --aq-motion-exit: var(--motion-base);
+  --aq-motion-ease-enter: var(--ease-out);
+  --aq-motion-ease-exit: var(--ease-in);
+  --aq-motion-offset: var(--motion-dist-sm);
+  width: min(720px, calc(100% - 48px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface-overlay);
+  color: var(--foreground);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--elev-3);
+}
+.automation-modal::backdrop {
+  background: var(--scrim);
+  backdrop-filter: blur(var(--motion-blur-glass));
+}
+.automation-modal-panel { padding: 24px; }
+.automation-modal[data-arquivio-motion-root][open]::backdrop {
+  animation-duration: var(--motion-medium);
+  animation-timing-function: var(--ease-out);
+}
+.automation-modal[data-arquivio-motion-root][data-closing]::backdrop {
+  animation-duration: var(--motion-base);
+  animation-timing-function: var(--ease-in);
+}
+@media (max-width: 639px) {
+  dialog.automation-modal[open] {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+  .automation-modal-panel {
+    min-height: 100%;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  }
+}

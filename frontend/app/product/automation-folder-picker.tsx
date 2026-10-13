@@ -1,18 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronRight, Folder as FolderIcon, X } from "lucide-react";
+import { ChevronRight, Folder as FolderIcon, HardDrive, X } from "lucide-react";
+import type { LibraryNode } from "./types-and-api";
+import { ProviderLogo, type ProviderLogoName } from "../provider-logo";
 import type { ScopeFolder } from "./automations-model";
 import { Enter, LoadingBlock, SkeletonList, SkeletonText, StaggerItem } from "../ui";
 
 export const MAX_SCOPE_FOLDERS = 20;
-type LibraryNode = { id: string; kind: "source" | "folder" | "file"; name: string };
 type Candidate = { node_id: string; kind: "folder" | "file"; path: string };
 const small = "min-h-11 rounded-lg border border-line px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
 const folderName = (path: string) => path.split("/").pop() || path;
 
 export type LibraryFetch = <T>(path: string, signal: AbortSignal) => Promise<T>;
 type Choose = { selected: ScopeFolder[]; onToggle: (folder: ScopeFolder) => void };
+
+export function AutomationSourceIcon({ node }: { node: Pick<LibraryNode, "name" | "source_provider"> }) {
+  const provider = node.source_provider ?? ({ "google drive": "google_drive", onedrive: "onedrive", sharepoint: "sharepoint", notion: "notion", clickup: "clickup" } as Record<string, string | undefined>)[node.name.trim().toLowerCase()];
+  return provider && ["google", "google_drive", "onedrive", "sharepoint", "notion", "clickup", "github", "teams"].includes(provider)
+    ? <ProviderLogo provider={provider as ProviderLogoName} size={18} />
+    : <HardDrive aria-hidden="true" size={18} />;
+}
 
 function TreeNode({ fetchJson, organizationId, node, path, depth, selected, onToggle }: Choose & { fetchJson: LibraryFetch; organizationId: string; node: LibraryNode; path: string; depth: number }) {
   const [open, setOpen] = useState(false);
@@ -34,7 +42,7 @@ function TreeNode({ fetchJson, organizationId, node, path, depth, selected, onTo
   return <li role="treeitem" aria-expanded={open} aria-selected={chosen}>
     <div className="flex min-h-11 items-center gap-1" style={{ paddingLeft: depth * 16 }}>
       <button type="button" aria-label={`${open ? "Recolher" : "Expandir"} ${node.name}`} className="grid size-11 shrink-0 place-items-center rounded-lg focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setOpen(!open)}><ChevronRight aria-hidden="true" size={16} className={`transition-transform duration-[var(--motion-base)] ease-[var(--ease-out)] ${open ? "rotate-90" : ""}`} /></button>
-      {node.kind === "folder" ? <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2"><input type="checkbox" checked={chosen} disabled={!chosen && selected.length >= MAX_SCOPE_FOLDERS} onChange={() => onToggle({ id: node.id, name: node.name, path })} /><FolderIcon aria-hidden="true" size={16} className="shrink-0" /><span className="min-w-0 break-words">{node.name}</span></label> : <span className="min-w-0 break-words font-semibold">{node.name}</span>}
+      {node.kind === "folder" ? <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2"><input type="checkbox" checked={chosen} disabled={!chosen && selected.length >= MAX_SCOPE_FOLDERS} onChange={() => onToggle({ id: node.id, name: node.name, path })} /><FolderIcon aria-hidden="true" size={16} className="shrink-0" /><span className="min-w-0 break-words">{node.name}</span></label> : <span className="flex min-w-0 items-center gap-2 font-semibold"><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-sage" aria-hidden="true"><AutomationSourceIcon node={node} /></span><span className="min-w-0 break-words">{node.name}</span></span>}
     </div>
     {open && (error ? <p role="alert" className="text-sm text-rose-700" style={{ paddingLeft: depth * 16 + 44 }}>Não foi possível abrir esta pasta. <button type="button" className="underline" onClick={() => setRevision((value) => value + 1)}>Tentar novamente</button></p> : children === null ? <LoadingBlock label="Carregando…" className="py-1"><div style={{ paddingLeft: depth * 16 + 44 }}><SkeletonText lines={2} /></div></LoadingBlock> : !children.length ? <p className="text-sm text-muted-foreground" style={{ paddingLeft: depth * 16 + 44 }}>Sem subpastas.</p> : <ul role="group" className="mo-enter" data-variant="slide">{children.map((child) => <TreeNode key={child.id} fetchJson={fetchJson} organizationId={organizationId} node={child} path={`${path}/${child.name}`} depth={depth + 1} selected={selected} onToggle={onToggle} />)}</ul>)}
   </li>;
