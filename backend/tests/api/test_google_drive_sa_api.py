@@ -342,3 +342,200 @@ def test_enable_uses_warm_robot_instantly_and_failed_can_retry(google_api):
     assert client.get(f"/data-sources/google-sa/{pending['source_id']}/status?organization_id={other}").json()["status"] == "failed"
     retry = client.post(f"/data-sources/google-sa/enable?organization_id={other}").json()
     assert retry["status"] == "provisioning" and sent[-1][0].endswith("provision_drive_sa_robot")
+
+
+class TreeClient:
+    """Fake robot Drive: `tree` maps folder id -> (name, parent ids); `visible` is what this robot can open."""
+
+    def __init__(self, tree, visible=None, blocked=None):
+        self.tree, self.visible, self.blocked = tree, visible, blocked or {}
+
+    def _meta(self, folder_id):
+        name, parents = self.tree[folder_id]
+        return {
+            "id": folder_id,
+            "name": name,
+            "parents": parents,
+            "mimeType": "application/vnd.google-apps.folder",
+            "sharedWithMeTime": "2026-10-14T00:00:00Z",
+        }
+
+    def verify_folder(self, credentials, folder_id):
+        if folder_id not in self.tree or (self.visible is not None and folder_id not in self.visible):
+            raise FolderAccessLost(folder_id)
+        item = self._meta(folder_id)
+        return item, item
+
+    def ancestors(self, credentials, root, max_hops=10):
+        chain, current = [], root
+        while current.get("parents") and len(chain) < max_hops:
+            parent = current["parents"][0]
+            if parent not in self.tree:
+                break
+            current = self._meta(parent)
+            chain.append({"id": parent, "name": current["name"]})
+        return chain
+
+    def list_folder_files(self, credentials, root_folder_id, root_verified=False):
+        from app.integrations.google_drive import RemoteFile
+
+        count = self.blocked.get(root_folder_id, 0)
+        return [
+            RemoteFile(
+                id=f"{root_folder_id}-f{n}", name=f"f{n}.pdf", mime_type="application/pdf",
+                source_url="", modified_at=None, can_download=False,
+            )
+            for n in range(count)
+        ]
+
+    def inbox(self, credentials):
+        return [
+            {**self._meta(x), "sharingUser": {"emailAddress": "boss@example.test"}}
+            for x in self.tree
+            if self.visible is None or x in self.visible
+        ]
+
+
+def batch_setup(google_api, monkeypatch, tree, **kw):
+    client, factory, org = prepare(google_api)
+    from app.integrations.google_drive_sa_service import DriveSaConnectionService
+
+    monkeypatch.setattr(DriveSaConnectionService, "credentials", lambda *a: None)
+    client.app.state.drive_sa_client = TreeClient(tree, **kw)
+    source_id = client.post(f"/data-sources/google-sa/enable?organization_id={org}").json()[
+        "source_id"
+    ]
+    return client, factory, org, source_id
+
+
+def test_batch_links_many_and_reports_per_folder(google_api, monkeypatch):
+    tree = {
+        "contracts_0001": ("Contratos", ["root_000000"]),
+        "finance_00001": ("Financeiro", []),
+        "hr_0000000001": ("RH", []),
+    }
+    client, factory, org, source_id = batch_setup(
+        google_api, monkeypatch, tree, blocked={"hr_0000000001": 2}
+    )
+    result = client.post(
+        f"/data-sources/google-sa/{source_id}/folders/batch?organization_id={org}",
+        json={"folder_ids": ["contracts_0001", "finance_00001", "hr_0000000001", "missing_000001"]},
+    )
+    assert result.status_code == 200
+    rows = result.json()["results"]
+    assert [x["folder_id"] for x in rows] == [
+        "contracts_0001", "finance_00001", "hr_0000000001", "missing_000001",
+    ]
+    assert [x["status"] for x in rows] == ["ok", "ok", "ok", "error"]
+    assert rows[2]["code"] == "download_blocked_partial" and rows[2]["blocked_download_count"] == 2
+    assert rows[3]["code"] == "not_shared"
+    assert all(x["workspace_folder_id"] for x in rows[:3])
+    listing = client.get(f"/data-sources/google-sa/{source_id}/folders?organization_id={org}")
+    assert {x["name"] for x in listing.json()["folders"]} == {"Contratos", "Financeiro", "RH"}
+    catalog = client.get(f"/data-sources/{source_id}/scope-catalog?organization_id={org}").json()
+    parents = {x["id"]: x["parent_ids"] for x in catalog["folders"]}
+    assert parents["contracts_0001"] == ["root_000000"] and parents["finance_00001"] == []
+    # Idempotent: a second batch is all ok and creates no duplicates.
+    again = client.post(
+        f"/data-sources/google-sa/{source_id}/folders/batch?organization_id={org}",
+        json={"folder_ids": ["finance_00001", "finance_00001"]},
+    )
+    assert [x["status"] for x in again.json()["results"]] == ["ok"]
+    with factory() as session:
+        assert len(list(session.scalars(select(DriveFolderLink)))) == 3
+
+
+def test_batch_nested_folder_is_not_linked_twice(google_api, monkeypatch):
+    tree = {
+        "parent_000001": ("Parent", []),
+        "child_0000001": ("Child", ["parent_000001"]),
+        "grand_0000001": ("Grand", ["child_0000001"]),
+        "other_0000001": ("Other", []),
+    }
+    client, factory, org, source_id = batch_setup(google_api, monkeypatch, tree)
+    # Child and grandchild listed BEFORE the parent: the parent still wins.
+    first = client.post(
+        f"/data-sources/google-sa/{source_id}/folders/batch?organization_id={org}",
+        json={"folder_ids": ["grand_0000001", "child_0000001", "parent_000001", "other_0000001"]},
+    ).json()["results"]
+    by_id = {x["folder_id"]: x for x in first}
+    assert by_id["parent_000001"]["status"] == "ok" and by_id["other_0000001"]["status"] == "ok"
+    for nested in ("grand_0000001", "child_0000001"):
+        assert by_id[nested]["status"] == "nested"
+        assert by_id[nested]["code"] == "nested_in_linked"
+    assert by_id["child_0000001"]["parent_name"] == "Parent"
+    assert by_id["grand_0000001"]["parent_name"] == "Parent"
+    with factory() as session:
+        names = {x.folder_name for x in session.scalars(select(DriveFolderLink))}
+    assert names == {"Parent", "Other"}
+    # Later single link of a nested folder: stable code + 409.
+    single = client.post(
+        f"/data-sources/google-sa/{source_id}/folders?organization_id={org}",
+        json={"folder_id": "child_0000001"},
+    )
+    assert single.status_code == 409
+    assert single.json()["detail"] == {
+        "code": "nested_in_linked", "parent_id": "parent_000001", "parent_name": "Parent",
+    }
+
+
+def test_inbox_exposes_parents_and_nesting(google_api, monkeypatch):
+    tree = {
+        "parent_000001": ("Parent", []),
+        "child_0000001": ("Child", ["parent_000001"]),
+        "solo_00000001": ("Solo", ["unknown_00001"]),
+    }
+    client, _, org, source_id = batch_setup(google_api, monkeypatch, tree)
+    rows = {
+        x["id"]: x
+        for x in client.get(
+            f"/data-sources/google-sa/{source_id}/inbox?organization_id={org}"
+        ).json()["folders"]
+    }
+    assert rows["child_0000001"]["parent_ids"] == ["parent_000001"]
+    assert rows["child_0000001"]["nested_in"] == {
+        "id": "parent_000001", "name": "Parent", "linked": False,
+    }
+    assert rows["parent_000001"]["nested_in"] is None and rows["solo_00000001"]["nested_in"] is None
+    client.post(
+        f"/data-sources/google-sa/{source_id}/folders?organization_id={org}",
+        json={"folder_id": "parent_000001"},
+    )
+    rows = {
+        x["id"]: x
+        for x in client.get(
+            f"/data-sources/google-sa/{source_id}/inbox?organization_id={org}"
+        ).json()["folders"]
+    }
+    assert rows["child_0000001"]["nested_in"]["linked"] is True
+    assert rows["parent_000001"]["linked"] is True
+
+
+def test_batch_is_tenant_isolated_and_validated(google_api, monkeypatch):
+    tree = {"secret_000001": ("Secret", [])}
+    client, factory, _org_a, source_a = batch_setup(google_api, monkeypatch, tree)
+    org_b = create_organization(client)
+    source_b = client.post(f"/data-sources/google-sa/enable?organization_id={org_b}").json()[
+        "source_id"
+    ]
+    # Org B cannot use org A's source, even with a valid folder id.
+    cross = client.post(
+        f"/data-sources/google-sa/{source_a}/folders/batch?organization_id={org_b}",
+        json={"folder_ids": ["secret_000001"]},
+    )
+    assert (cross.status_code, cross.json()) == (404, {"detail": {"code": "not_shared"}})
+    # Org B's own robot cannot see org A's folder: per-folder not_shared, nothing linked.
+    client.app.state.drive_sa_client = TreeClient(tree, visible=set())
+    own = client.post(
+        f"/data-sources/google-sa/{source_b}/folders/batch?organization_id={org_b}",
+        json={"folder_ids": ["secret_000001"]},
+    )
+    assert own.status_code == 200
+    assert own.json()["results"][0]["code"] == "not_shared"
+    for body in ({"folder_ids": []}, {"folder_ids": ["x" * 11] * 21}, {}):
+        bad = client.post(
+            f"/data-sources/google-sa/{source_b}/folders/batch?organization_id={org_b}", json=body
+        )
+        assert (bad.status_code, bad.json()) == (422, {"detail": {"code": "invalid_request"}})
+    with factory() as session:
+        assert session.scalar(select(DriveFolderLink)) is None

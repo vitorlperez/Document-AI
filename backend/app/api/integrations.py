@@ -634,7 +634,8 @@ def scope_catalog(
         with api_errors():
             sa = drive_sa_service(request, session)
             sa.source(scope=OrganizationScope(organization_id), user_id=user.id, source_id=source_id)
-            return {"folders": [{"id": x.id, "name": x.name, "kind": "folder", "parent_ids": []}
+            return {"folders": [{"id": x.id, "name": x.name, "kind": "folder",
+                                 "parent_ids": list(x.parent_ids)}
                                 for x in sa.linked_folders(source)],
                     "root_files": {"available": False, "label": "Arquivos avulsos da raiz"},
                     "all_accessible": {"available": False, "label": "Pastas vinculadas ao robô"}}

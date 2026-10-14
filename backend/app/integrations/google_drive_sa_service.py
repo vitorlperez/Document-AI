@@ -10,6 +10,7 @@ from app.core.scoping import OrganizationScope
 from app.integrations.google_drive import RemoteFolder
 from app.integrations.google_drive_sa import (
     FolderAccessLost,
+    NestedInLinked,
     RobotUnavailable,
     SaDriveClient,
     SaRequestError,
@@ -179,15 +180,25 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
         return {"status": "ready", "robot_email": source.account_email}
 
     def inbox(self, source):
-        linked = set(
+        links = list(
             self.session.scalars(
-                select(DriveFolderLink.external_folder_id).where(
+                select(DriveFolderLink).where(
                     DriveFolderLink.organization_id == source.organization_id,
                     DriveFolderLink.data_source_id == source.id,
                     DriveFolderLink.status != "removed",
                 )
             )
         )
+        linked = {x.external_folder_id for x in links}
+        items = [
+            x
+            for x in self.client.inbox(credentials=self.credentials(source))
+            if x.get("sharedWithMeTime")
+        ]
+        # Hierarchy known without extra Drive calls: shared folders + current links.
+        known = {x["id"]: (x["name"], x.get("parents") or []) for x in items}
+        for x in links:
+            known.setdefault(x.external_folder_id, (x.folder_name, x.parent_external_ids or []))
         return [
             {
                 "id": x["id"],
@@ -195,10 +206,37 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
                 "shared_by_email": x.get("sharingUser", {}).get("emailAddress"),
                 "shared_at": x.get("sharedWithMeTime"),
                 "linked": x["id"] in linked,
+                "parent_ids": x.get("parents") or [],
+                "nested_in": self._nested_in(x["id"], known, linked),
             }
-            for x in self.client.inbox(credentials=self.credentials(source))
-            if x.get("sharedWithMeTime")
+            for x in items
         ]
+
+    @staticmethod
+    def _nested_in(folder_id, known, linked):
+        """Nearest known ancestor (shared folder or link) of `folder_id`, `None` when it is a top-level share."""
+        seen, current = {folder_id}, folder_id
+        for _ in range(10):
+            parents = known.get(current, ("", []))[1]
+            if not parents or parents[0] in seen:
+                return None
+            current = parents[0]
+            seen.add(current)
+            if current in known:
+                return {"id": current, "name": known[current][0], "linked": current in linked}
+        return None
+
+    def check_nested(self, source, root, chain=None):
+        """Reject a folder whose ancestor is already a verified link (its files are already included)."""
+        if chain is None:
+            chain = self.client_ancestors(source, root)
+        verified = {
+            x.external_folder_id: x.folder_name for x in self.links(source) if x.status == "verified"
+        }
+        for ancestor in chain:
+            if ancestor["id"] in verified and ancestor["id"] != root.get("id"):
+                raise NestedInLinked(ancestor["id"], verified[ancestor["id"]])
+        return chain
 
     SAMPLE_FILES = 3
     SAMPLE_MAX_BYTES = 10 * 1024 * 1024
@@ -259,6 +297,9 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
         # Serialize link creation against recheck and unlink in this source.
         self.session.scalar(select(DataSource).where(DataSource.id == source.id).with_for_update())
         data, root = self.verify(source, folder_id, sample=False, count=False)
+        return self._connect(source, scope, user_id, data, root)
+
+    def _connect(self, source, scope, user_id, data, root, *, blocked=None, chain=None):
         link = self.session.scalar(
             select(DriveFolderLink).where(
                 DriveFolderLink.organization_id == scope.organization_id,
@@ -267,6 +308,7 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
         )
         if link and link.status == "verified":
             return link
+        self.check_nested(source, root, chain)
         source.status = "connected"
         self.session.flush()  # select_scope re-reads the source; sessions run with autoflush=False
         folder = WorkspaceService(self.session).select_scope(
@@ -290,15 +332,99 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
             self.session.add(link)
         link.shared_by_email = data["shared_by_email"]
         link.shared_at = datetime.fromisoformat(data["shared_at"]) if data["shared_at"] else None
+        link.parent_external_ids = list(root.get("parents") or [])
+        if blocked is not None:
+            link.blocked_download_count = blocked
         # verify (count=False) skips the listing; the blocked count was reported by the earlier verify call.
         self.restore(link)
         self.session.flush()
         self.audit(source, user_id, "drive_sa.folder_linked", link.id)
         return link
 
+    MAX_BATCH = 20
+
+    def link_batch(self, *, scope, user_id, source_id, folder_ids):
+        """Verify + link several folders; one result per requested folder, a failure never aborts the rest."""
+        source = self.source(scope=scope, user_id=user_id, source_id=source_id)
+        ids = list(dict.fromkeys(x.strip() for x in folder_ids if x and x.strip()))
+        if not ids or len(ids) > self.MAX_BATCH:
+            raise SaRequestError("invalid_request")
+        self.session.scalar(select(DataSource).where(DataSource.id == source.id).with_for_update())
+        results, ready, chains = {}, [], {}
+        for folder_id in ids:
+            try:
+                data, root = self.verify(source, folder_id)
+                chain = self.client_ancestors(source, root)
+                chains[folder_id] = chain
+                ready.append((len(chain), folder_id, data, root))
+            except Exception as error:  # noqa: BLE001 - classified below, never leaks details
+                results[folder_id] = self._failure(folder_id, error)
+        # Shallowest first: if a selected folder holds another selected folder, the parent wins.
+        for _, folder_id, data, root in sorted(ready, key=lambda x: x[0]):
+            try:
+                with self.session.begin_nested():
+                    link = self._connect(
+                        source,
+                        scope,
+                        user_id,
+                        data,
+                        root,
+                        blocked=data["blocked_download_count"],
+                        chain=chains[folder_id],
+                    )
+                results[folder_id] = {
+                    "folder_id": data["folder_id"],
+                    "name": data["name"],
+                    "status": "ok",
+                    "code": data["code"],
+                    "link_id": str(link.id),
+                    "workspace_folder_id": str(link.workspace_folder_id),
+                    "file_count": data["file_count"],
+                    "blocked_download_count": data["blocked_download_count"],
+                }
+            except Exception as error:  # noqa: BLE001
+                results[folder_id] = self._failure(folder_id, error, name=data["name"])
+        return [results[x] for x in ids]
+
+    def client_ancestors(self, source, root):
+        ancestors = getattr(self.client, "ancestors", None)
+        return ancestors(credentials=self.credentials(source), root=root) if ancestors else []
+
+    @staticmethod
+    def _failure(folder_id, error, *, name=None):
+        import httpx
+        import redis
+
+        from app.integrations.http import RemoteThrottled
+
+        extra = {}
+        if isinstance(error, NestedInLinked):
+            code = error.code
+            extra = {"parent_id": error.parent_id, "parent_name": error.parent_name}
+        elif isinstance(error, SaRequestError):
+            code = error.code
+        elif isinstance(error, FolderAccessLost):
+            code = "not_shared"
+        elif isinstance(error, RobotUnavailable):
+            code = "robot_unavailable"
+        elif isinstance(error, RemoteThrottled):
+            code = "rate_limited"
+        elif isinstance(error, (httpx.HTTPError, redis.RedisError)):
+            code = "provider_unavailable"
+        else:
+            logger.warning("drive_sa batch folder failed", extra={"event": "drive_sa.batch_failed"})
+            code = "provider_unavailable"
+        return {
+            "folder_id": folder_id,
+            "name": name,
+            "status": "nested" if code == "nested_in_linked" else "error",
+            "code": code,
+            **extra,
+        }
+
     def linked_folders(self, source):
         return [
-            RemoteFolder(x.external_folder_id, x.folder_name)
+            RemoteFolder(x.external_folder_id, x.folder_name, tuple(x.parent_external_ids or ()))
             for x in self.links(source)
             if x.status == "verified"
         ]

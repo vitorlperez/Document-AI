@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -75,6 +76,8 @@ class DriveFolderLink(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     shared_by_email: Mapped[str | None] = mapped_column(String(320))
     shared_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     blocked_download_count: Mapped[int] = mapped_column(Integer, default=0)
+    # Drive parents of the root as seen by the robot (hierarchy for the scope catalog).
+    parent_external_ids: Mapped[list[str] | None] = mapped_column(JSON)
     suspect_since: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     access_lost_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     purge_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)

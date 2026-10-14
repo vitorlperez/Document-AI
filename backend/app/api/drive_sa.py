@@ -15,7 +15,12 @@ from sqlalchemy.orm import Session
 from app.api.auth import current_user, database_session
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
-from app.integrations.google_drive_sa import FolderAccessLost, RobotUnavailable, SaRequestError
+from app.integrations.google_drive_sa import (
+    FolderAccessLost,
+    NestedInLinked,
+    RobotUnavailable,
+    SaRequestError,
+)
 from app.integrations.google_drive_sa_service import DriveSaConnectionService
 from app.integrations.http import RemoteThrottled
 
@@ -59,10 +64,19 @@ class LinkInput(BaseModel):
     folder_id: str = Field(min_length=10, max_length=128)
 
 
+class BatchInput(BaseModel):
+    folder_ids: list[str] = Field(min_length=1, max_length=20)
+
+
 @contextmanager
 def api_errors():
     try:
         yield
+    except NestedInLinked as error:
+        raise HTTPException(
+            error.status,
+            {"code": error.code, "parent_id": error.parent_id, "parent_name": error.parent_name},
+        ) from None
     except SaRequestError as error:
         raise HTTPException(error.status, {"code": error.code}) from None
     except FolderAccessLost:
@@ -202,6 +216,29 @@ def link(
             "workspace_folder_id": str(linked.workspace_folder_id),
             "folder_id": linked.external_folder_id,
             "status": linked.status,
+        }
+
+
+@router.post("/{source_id}/folders/batch")
+def link_batch(
+    source_id: UUID,
+    organization_id: UUID,
+    payload: BatchInput,
+    request: Request,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+):
+    with api_errors():
+        service = build_service(request, session)
+        service.source(scope=OrganizationScope(organization_id), user_id=user.id, source_id=source_id)
+        limit(request, organization_id, operation="batch", limit=6)
+        return {
+            "results": service.link_batch(
+                scope=OrganizationScope(organization_id),
+                user_id=user.id,
+                source_id=source_id,
+                folder_ids=payload.folder_ids,
+            )
         }
 
 

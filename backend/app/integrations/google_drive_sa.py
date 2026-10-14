@@ -49,6 +49,14 @@ class SaRequestError(RuntimeError):
         self.code, self.status = code, status
 
 
+class NestedInLinked(SaRequestError):
+    """The folder lives inside a folder that is already linked: its files are included there."""
+
+    def __init__(self, parent_id, parent_name):
+        super().__init__("nested_in_linked", 409)
+        self.parent_id, self.parent_name = parent_id, parent_name
+
+
 def parse_folder_id(value):
     value = value.strip()
     if ID_PATTERN.fullmatch(value):
@@ -235,6 +243,22 @@ class SaDriveClient:
                         (self.metadata(credentials=credentials, file_id=parent), depth + 1)
                     )
         raise FolderAccessLost(folder_id)
+
+    def ancestors(self, *, credentials, root, max_hops=10):
+        """Ancestor chain (nearest first) the robot can see, following the first parent.
+        `root` is the folder metadata already fetched; stops at the first hidden/trashed ancestor."""
+        chain, seen, current = [], {root.get("id")}, root
+        for _ in range(max_hops):
+            parents = current.get("parents") or []
+            if not parents or parents[0] in seen:
+                break
+            seen.add(parents[0])
+            try:
+                current = self.metadata(credentials=credentials, file_id=parents[0])
+            except FolderAccessLost:
+                break
+            chain.append({"id": current["id"], "name": current.get("name")})
+        return chain
 
     def inbox(self, *, credentials):
         return self._list(
