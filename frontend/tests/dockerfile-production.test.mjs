@@ -14,3 +14,13 @@ test("production image starts the lightweight Node server, not the wrangler dev 
   assert.doesNotMatch(runtimeStage, /wrangler/);
   assert.doesNotMatch(runtimeStage, /npm start/);
 });
+
+test("build stage declares NEXT_PUBLIC_DRIVE_SHARE_ENABLED so Railway passes it as a build arg (vinext inlines NEXT_PUBLIC_* at build)", () => {
+  const buildStage = dockerfile.split("FROM node:22-bookworm-slim AS runtime\n")[0];
+  assert.match(buildStage, /^ARG NEXT_PUBLIC_DRIVE_SHARE_ENABLED$/m);
+  assert.match(buildStage, /^ENV NEXT_PUBLIC_DRIVE_SHARE_ENABLED=\$NEXT_PUBLIC_DRIVE_SHARE_ENABLED$/m);
+  assert.ok(
+    buildStage.indexOf("ENV NEXT_PUBLIC_DRIVE_SHARE_ENABLED") < buildStage.indexOf("RUN npm run build"),
+    "ENV must be set before npm run build",
+  );
+});
