@@ -1,0 +1,106 @@
+{
+  "phase": "baseline",
+  "at": "2026-10-13T20:38:57-0300",
+  "picks": {
+    "folder-mode": [
+      {
+        "picked": {
+          "name": "poc-drivefile",
+          "mimeType": "application/vnd.google-apps.folder"
+        },
+        "files.get": {
+          "http": 200,
+          "reason": null
+        },
+        "files.list_calls": [
+          {
+            "call": "files.list q='<folder>' in parents",
+            "http": 200,
+            "reason": null,
+            "count": 0
+          }
+        ],
+        "descendants_total": 0,
+        "by_depth": {},
+        "descendants": [],
+        "reads": [],
+        "reads_ok": 0,
+        "reads_fail": 0
+      }
+    ],
+    "folders-view": [
+      {
+        "picked": {
+          "name": "poc-drivefile",
+          "mimeType": "application/vnd.google-apps.folder"
+        },
+        "files.get": {
+          "http": 200,
+          "reason": null
+        },
+        "files.list_calls": [
+          {
+            "call": "files.list q='<folder>' in parents",
+            "http": 200,
+            "reason": null,
+            "count": 0
+          }
+        ],
+        "descendants_total": 0,
+        "by_depth": {},
+        "descendants": [],
+        "reads": [],
+        "reads_ok": 0,
+        "reads_fail": 0
+      }
+    ],
+    "multi-files": [
+      {
+        "picked": {
+          "name": "solto-1.txt",
+          "mimeType": "text/plain"
+        },
+        "files.get": {
+          "http": 200,
+          "reason": null
+        },
+        "read": {
+          "op": "files.get alt=media",
+          "http": 200,
+          "bytes": 269,
+          "reason": null
+        }
+      },
+      {
+        "picked": {
+          "name": "solto-2.txt",
+          "mimeType": "text/plain"
+        },
+        "files.get": {
+          "http": 200,
+          "reason": null
+        },
+        "read": {
+          "op": "files.get alt=media",
+          "http": 200,
+          "bytes": 269,
+          "reason": null
+        }
+      }
+    ]
+  },
+  "files.list_all": {
+    "http": 200,
+    "calls": 1,
+    "visible_total": 3,
+    "names": [
+      "poc-drivefile",
+      "solto-1.txt",
+      "solto-2.txt"
+    ]
+  },
+  "changes.startPageToken": {
+    "http": 200,
+    "reason": null
+  }
+}

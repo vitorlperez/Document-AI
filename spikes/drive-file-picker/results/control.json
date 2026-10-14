@@ -1,0 +1,19 @@
+{
+  "phase": "control",
+  "at": "2026-10-13T22:59:11-0300",
+  "files.create_in_picked_folder": {
+    "http": 200
+  },
+  "files.list_after_create": {
+    "http": 200,
+    "children": [
+      "criado-pelo-app.txt"
+    ]
+  },
+  "read_back": {
+    "op": "files.get alt=media",
+    "http": 200,
+    "bytes": 24,
+    "reason": null
+  }
+}

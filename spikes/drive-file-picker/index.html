@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>PoC drive.file + Picker</title>
+<style>body{font:15px system-ui;max-width:760px;margin:2rem auto;padding:0 1rem}button{margin:.25rem .5rem .25rem 0;padding:.5rem .9rem}pre{background:#f4f4f4;padding:.7rem;overflow:auto}</style></head>
+<body>
+<h1>PoC B7.0 — escopo drive.file + Picker</h1>
+<p>Escopo solicitado: <code>https://www.googleapis.com/auth/drive.file</code> (único).</p>
+<ol>
+<li><button id="login">1. Login Google (drive.file)</button> <button id="loginRedirect">1b. Login (redirect, se o popup falhar)</button></li>
+<li><button id="pickFolder">2a. Picker: PASTA (setSelectFolderEnabled)</button>
+    <button id="pickFolders">2b. Picker: visão só de pastas</button>
+    <button id="pickFiles">2c. Picker: vários ARQUIVOS (multiselect)</button></li>
+<li><a href="/verify?phase=baseline" target="_blank">3. Verificar baseline</a> (depois de escolher; crie um arquivo NOVO na pasta no Drive)</li>
+<li><a href="/verify?phase=after" target="_blank">4. Verificar após arquivo novo</a></li>
+</ol>
+<pre id="log">pronto.</pre>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script src="https://apis.google.com/js/api.js"></script>
+<script>
+const $ = id => document.getElementById(id), log = t => $('log').textContent += '\n' + t;
+let cfg, token, tc;
+fetch('/config').then(r => r.json()).then(c => { cfg = c; log('clientId: ' + (c.clientId ? 'ok' : 'FALTA') + ' | apiKey: ' + (c.apiKey ? 'ok' : 'FALTA') + ' | appId: ' + (c.appId || 'FALTA')); });
+gapi.load('picker', () => log('picker lib carregada'));
+window.addEventListener('error', e => log('ERRO JS: ' + e.message));
+const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+async function gotToken(tok, scope) {
+  token = tok; log('escopos concedidos: ' + scope);
+  await fetch('/token', {method: 'POST', body: JSON.stringify({token})}); log('token enviado ao servidor local (memória)');
+}
+// retorno do fluxo por redirecionamento (#access_token=...)
+if (location.hash.includes('access_token')) {
+  const h = new URLSearchParams(location.hash.slice(1)); history.replaceState(null, '', '/');
+  gotToken(h.get('access_token'), h.get('scope'));
+} else if (location.hash.includes('error')) { log('erro OAuth: ' + location.hash); }
+function initGis() {
+  if (tc || !cfg || !window.google || !google.accounts) return;
+  tc = google.accounts.oauth2.initTokenClient({
+    client_id: cfg.clientId, scope: SCOPE,
+    error_callback: e => log('erro GIS: type=' + e.type + ' msg=' + (e.message || '') + ' -> use o botão "Login (redirect)"'),
+    callback: r => r.error ? log('erro: ' + r.error) : gotToken(r.access_token, r.scope)
+  });
+}
+setTimeout(initGis, 1500); setInterval(initGis, 2000);
+$('login').onclick = () => {
+  if (!tc) { initGis(); if (!tc) return log('GIS ainda nao carregou (bloqueador/rede?)'); }
+  tc.requestAccessToken({prompt: 'consent'});
+};
+$('loginRedirect').onclick = () => {
+  const q = new URLSearchParams({client_id: cfg.clientId, redirect_uri: location.origin + '/', response_type: 'token', scope: SCOPE, prompt: 'consent', include_granted_scopes: 'false'});
+  location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + q;
+};
+function open(label, build) {
+  if (!token) return log('faça login primeiro');
+  const b = build(new google.picker.PickerBuilder()).setOAuthToken(token).setDeveloperKey(cfg.apiKey).setAppId(cfg.appId)
+    .setCallback(async d => {
+      if (d.action !== google.picker.Action.PICKED) return;
+      const docs = d.docs.map(x => ({id: x.id, name: x.name, mimeType: x.mimeType}));
+      log(label + ': ' + docs.length + ' item(s) escolhido(s): ' + docs.map(x => x.name + ' [' + x.mimeType + ']').join(', '));
+      await fetch('/picks', {method: 'POST', body: JSON.stringify({label, docs})});
+    });
+  b.build().setVisible(true);
+}
+$('pickFolder').onclick = () => open('folder-mode', b => b.addView(new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setSelectFolderEnabled(true).setParent('root')));
+$('pickFolders').onclick = () => open('folders-view', b => b.addView(new google.picker.DocsView(google.picker.ViewId.FOLDERS).setSelectFolderEnabled(true)));
+$('pickFiles').onclick = () => open('multi-files', b => b.enableFeature(google.picker.Feature.MULTISELECT_ENABLED).addView(new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(false)));
+</script></body></html>
