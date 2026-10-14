@@ -1,0 +1,56 @@
+{
+  "measured_at": "2026-10-14T16:02:26-0300",
+  "robot": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+  "folders": {
+    "poc-notify-on": {
+      "status": 200,
+      "robot_role": [],
+      "canEdit": false,
+      "canComment": false,
+      "canDownload": true,
+      "canCopy": false,
+      "permissions_visible": 0
+    },
+    "poc-notify-off": {
+      "status": 200,
+      "robot_role": [],
+      "canEdit": false,
+      "canComment": false,
+      "canDownload": true,
+      "canCopy": false,
+      "permissions_visible": 0
+    },
+    "poc-main": {
+      "status": 200,
+      "robot_role": [],
+      "canEdit": false,
+      "canComment": false,
+      "canDownload": true,
+      "canCopy": false,
+      "permissions_visible": 0
+    },
+    "arvore-1000": {
+      "status": 200,
+      "robot_role": [],
+      "canEdit": false,
+      "canComment": false,
+      "canDownload": true,
+      "canCopy": false,
+      "permissions_visible": 0
+    },
+    "poc-sem-download": {
+      "status": 200,
+      "robot_role": [],
+      "canEdit": false,
+      "canComment": false,
+      "canDownload": true,
+      "canCopy": false,
+      "permissions_visible": 0
+    }
+  },
+  "write_attempt_with_readonly_scope": {
+    "status": 403,
+    "reason": "insufficientPermissions",
+    "message": "Request had insufficient authentication scopes."
+  }
+}

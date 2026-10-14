@@ -1,0 +1,282 @@
+{
+  "measured_at": "2026-10-14T16:03:32-0300",
+  "parser_cases": [
+    {
+      "case": "pasta /drive/folders",
+      "kind": "folder",
+      "expected": "folder",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "pasta ?usp=sharing",
+      "kind": "folder",
+      "expected": "folder",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "pasta ?usp=drive_link",
+      "kind": "folder",
+      "expected": "folder",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "pasta com resourcekey",
+      "kind": "folder",
+      "expected": "folder",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "pasta /drive/u/0/folders",
+      "kind": "folder",
+      "expected": "folder",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "pasta /drive/u/2/folders ?authuser",
+      "kind": "folder",
+      "expected": "folder",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "pasta /drive/mobile/folders",
+      "kind": "folder",
+      "expected": "folder",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "pasta http sem s",
+      "kind": "folder",
+      "expected": "folder",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "pasta /a/dominio/ legado",
+      "kind": "folder",
+      "expected": "folder",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "folderview?id=",
+      "kind": "folder",
+      "expected": "folder",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "folderview?usp=&id=",
+      "kind": "folder",
+      "expected": "folder",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "open?id= (pasta)",
+      "kind": "ambiguous",
+      "expected": "ambiguous",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "open?id= (arquivo)",
+      "kind": "ambiguous",
+      "expected": "ambiguous",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "ID cru (pasta)",
+      "kind": "ambiguous",
+      "expected": "ambiguous",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "ID cru com espacos",
+      "kind": "ambiguous",
+      "expected": "ambiguous",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "arquivo /file/d/",
+      "kind": "file",
+      "expected": "file",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "Google Doc",
+      "kind": "file",
+      "expected": "file",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "Google Sheet",
+      "kind": "file",
+      "expected": "file",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "Slides",
+      "kind": "file",
+      "expected": "file",
+      "ok": true,
+      "id_is_valid_charset": true
+    },
+    {
+      "case": "Meu Drive (raiz)",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    },
+    {
+      "case": "Compartilhados comigo",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    },
+    {
+      "case": "Recentes",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    },
+    {
+      "case": "dominio falso",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    },
+    {
+      "case": "dominio falso 2",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    },
+    {
+      "case": "esquema javascript",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    },
+    {
+      "case": "injecao em q (aspas)",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    },
+    {
+      "case": "injecao em q (ID valido + trecho)",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    },
+    {
+      "case": "ID curto demais",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    },
+    {
+      "case": "ID longo demais",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    },
+    {
+      "case": "vazio",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    },
+    {
+      "case": "texto qualquer",
+      "kind": "invalid",
+      "expected": "invalid",
+      "ok": true,
+      "id_is_valid_charset": false
+    }
+  ],
+  "parser_pass": 31,
+  "parser_total": 31,
+  "api_classification": {
+    "folder_via_open_or_raw": {
+      "status": 200,
+      "mime": "application/vnd.google-apps.folder",
+      "is_folder": true,
+      "has_parents": false,
+      "has_sharedWithMeTime": true,
+      "reason": null
+    },
+    "file_via_open_or_raw": {
+      "status": 200,
+      "mime": "text/plain",
+      "is_folder": false,
+      "has_parents": true,
+      "has_sharedWithMeTime": false,
+      "reason": null
+    },
+    "child_folder": {
+      "status": 200,
+      "mime": "application/vnd.google-apps.folder",
+      "is_folder": true,
+      "has_parents": true,
+      "has_sharedWithMeTime": false,
+      "reason": null
+    },
+    "nonexistent": {
+      "status": 404,
+      "mime": null,
+      "is_folder": false,
+      "has_parents": false,
+      "has_sharedWithMeTime": false,
+      "reason": "notFound"
+    }
+  },
+  "explicit_share_rule_via_parents_climb": {
+    "top_level_shared_folder": {
+      "result": "explicit_share_found",
+      "hops": 0,
+      "is_selected_itself": true
+    },
+    "child_folder_of_shared_tree": {
+      "result": "explicit_share_found",
+      "hops": 1,
+      "is_selected_itself": false
+    },
+    "public_link_folder": {
+      "result": "no_explicit_share",
+      "hops": 0
+    },
+    "nonexistent": {
+      "result": "not_accessible",
+      "hops": 0
+    }
+  },
+  "not_tested": [
+    "Drive compartilhado (Shared Drive) vs Meu Drive: requer Workspace",
+    "link de atalho (shortcut) colado: id do atalho nao testado diretamente; ver m07 (mimeType shortcut)"
+  ]
+}

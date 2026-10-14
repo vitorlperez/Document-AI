@@ -1,0 +1,338 @@
+{
+  "measured_at": "2026-10-14T16:03:32-0300",
+  "robot": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+  "started_utc": "2026-10-14T19:00:28.376+00:00",
+  "poll_interval_s": 5.0,
+  "polls": 30,
+  "plan_b_query_since": "2026-10-14T18:59:28Z",
+  "changes_feed": [
+    {
+      "fileId_tail": "CogN-F",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "poc-main",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:08.491Z",
+      "visible_after_s": 3.9,
+      "trashed": false,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": "2026-10-14T19:02:08.008Z",
+      "createdTime": "2026-10-14T18:12:32.297Z",
+      "trashedTime": null,
+      "mime": "d.google-apps.folder"
+    },
+    {
+      "fileId_tail": "rQEKuW",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "raiz-1-renomeado.txt",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.430Z",
+      "visible_after_s": 1.0,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:54:56.117Z",
+      "createdTime": "2026-10-14T18:12:35.657Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "fileId_tail": "QFmqs2",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "planilha.xlsx",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.430Z",
+      "visible_after_s": 1.0,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:08:50.655Z",
+      "createdTime": "2026-10-14T18:12:35.520Z",
+      "trashedTime": null,
+      "mime": ".spreadsheetml.sheet"
+    },
+    {
+      "fileId_tail": "CmpUio",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "relatorio.pdf",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.430Z",
+      "visible_after_s": 1.0,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:08:50.639Z",
+      "createdTime": "2026-10-14T18:12:34.461Z",
+      "trashedTime": null,
+      "mime": "application/pdf"
+    },
+    {
+      "fileId_tail": "y8bt2X",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "atalho-para-fora.txt",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.430Z",
+      "visible_after_s": 1.0,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:19:57.365Z",
+      "createdTime": "2026-10-14T18:19:36.371Z",
+      "trashedTime": null,
+      "mime": "google-apps.shortcut"
+    },
+    {
+      "fileId_tail": "6AzZzH",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "contrato.docx",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.523Z",
+      "visible_after_s": 0.9,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:08:50.651Z",
+      "createdTime": "2026-10-14T18:12:34.387Z",
+      "trashedTime": null,
+      "mime": "rocessingml.document"
+    },
+    {
+      "fileId_tail": "C7KPDw",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "contrato",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.609Z",
+      "visible_after_s": 0.8,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:48:05.221Z",
+      "createdTime": "2026-10-14T18:48:05.221Z",
+      "trashedTime": null,
+      "mime": "google-apps.document"
+    },
+    {
+      "fileId_tail": "NVV7go",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "apresentacao",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.609Z",
+      "visible_after_s": 0.8,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:49:16.917Z",
+      "createdTime": "2026-10-14T18:49:06.815Z",
+      "trashedTime": null,
+      "mime": "le-apps.presentation"
+    },
+    {
+      "fileId_tail": "OLil70",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "grande",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.609Z",
+      "visible_after_s": 0.8,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:48:28.904Z",
+      "createdTime": "2026-10-14T18:48:28.903Z",
+      "trashedTime": null,
+      "mime": "google-apps.document"
+    },
+    {
+      "fileId_tail": "rWLKzc",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "planilha",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.609Z",
+      "visible_after_s": 0.8,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:48:56.235Z",
+      "createdTime": "2026-10-14T18:48:56.234Z",
+      "trashedTime": null,
+      "mime": "gle-apps.spreadsheet"
+    },
+    {
+      "fileId_tail": "Y1jqua",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "novo-raiz.txt",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.703Z",
+      "visible_after_s": 0.7,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:08:51.358Z",
+      "createdTime": "2026-10-14T18:51:54.103Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "fileId_tail": "H-mj7s",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "raiz-2.txt",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.703Z",
+      "visible_after_s": 0.7,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:55:29.143Z",
+      "createdTime": "2026-10-14T18:12:34.305Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "fileId_tail": "tLxzWo",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "sub",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.782Z",
+      "visible_after_s": 0.6,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:12:35.874Z",
+      "createdTime": "2026-10-14T18:12:35.874Z",
+      "trashedTime": null,
+      "mime": "d.google-apps.folder"
+    },
+    {
+      "fileId_tail": "2-emiq",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "grande.docx",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.782Z",
+      "visible_after_s": 0.6,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:08:51.268Z",
+      "createdTime": "2026-10-14T18:12:36.113Z",
+      "trashedTime": null,
+      "mime": "rocessingml.document"
+    },
+    {
+      "fileId_tail": "_HWGWl",
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "apresentacao.pptx",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:11.782Z",
+      "visible_after_s": 0.6,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:08:50.663Z",
+      "createdTime": "2026-10-14T18:12:34.126Z",
+      "trashedTime": null,
+      "mime": "ationml.presentation"
+    },
+    {
+      "fileId_tail": "dzHmf9",
+      "first_seen_utc": "2026-10-14T19:02:18.427+00:00",
+      "name": "sub2",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:14.438Z",
+      "visible_after_s": 4.0,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1K61RiPAylMtQ2SAq2q2QksFnEwtLxzWo"
+      ],
+      "modifiedTime": "2026-10-14T18:12:36.568Z",
+      "createdTime": "2026-10-14T18:12:36.568Z",
+      "trashedTime": null,
+      "mime": "d.google-apps.folder"
+    },
+    {
+      "fileId_tail": "jiuo5X",
+      "first_seen_utc": "2026-10-14T19:02:18.427+00:00",
+      "name": "filho-1.txt",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:17.440Z",
+      "visible_after_s": 1.0,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1lhxBTTnArswzxDB6ibMJnozdPZdzHmf9"
+      ],
+      "modifiedTime": "2026-10-14T18:08:51.268Z",
+      "createdTime": "2026-10-14T18:16:07.057Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "fileId_tail": "hVoFKc",
+      "first_seen_utc": "2026-10-14T19:02:18.427+00:00",
+      "name": "novo-neto.txt",
+      "removed": false,
+      "change_time": "2026-10-14T19:02:17.440Z",
+      "visible_after_s": 1.0,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1lhxBTTnArswzxDB6ibMJnozdPZdzHmf9"
+      ],
+      "modifiedTime": "2026-10-14T18:08:51.358Z",
+      "createdTime": "2026-10-14T18:52:24.050Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    }
+  ],
+  "plan_b_modifiedTime_list": [
+    {
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "name": "poc-main",
+      "trashed": false,
+      "modifiedTime": "2026-10-14T19:02:08.008Z",
+      "visible_after_s": 4.4,
+      "parents": null
+    }
+  ],
+  "root_access_transitions": [
+    {
+      "first_seen_utc": "2026-10-14T19:00:31.023+00:00",
+      "http": 404,
+      "reason": "notFound",
+      "trashed": null
+    },
+    {
+      "first_seen_utc": "2026-10-14T19:02:12.382+00:00",
+      "http": 200,
+      "reason": null,
+      "trashed": false
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "measured_at": "2026-10-14T15:27:00-0300",
+  "note": "transcrito da saida de console da execucao original (arquivo sobrescrito por reexecucao acidental com o dono no meio da troca de papeis); valores identicos aos impressos",
+  "robot": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+  "folders": {
+    "poc-notify-on": {
+      "status": 200,
+      "robot_role": [
+        "writer"
+      ],
+      "canEdit": true,
+      "canComment": true,
+      "canDownload": true,
+      "canCopy": false,
+      "permissions_visible": 2
+    },
+    "poc-notify-off": {
+      "status": 200,
+      "robot_role": [
+        "writer"
+      ],
+      "canEdit": true,
+      "canComment": true,
+      "canDownload": true,
+      "canCopy": false,
+      "permissions_visible": 2
+    },
+    "poc-main": {
+      "status": 200,
+      "robot_role": [
+        "writer"
+      ],
+      "canEdit": true,
+      "canComment": true,
+      "canDownload": true,
+      "canCopy": false,
+      "permissions_visible": 2
+    },
+    "arvore-1000": {
+      "status": 200,
+      "robot_role": [
+        "writer"
+      ],
+      "canEdit": true,
+      "canComment": true,
+      "canDownload": true,
+      "canCopy": false,
+      "permissions_visible": 2
+    },
+    "poc-sem-download": {
+      "status": 200,
+      "robot_role": [
+        "writer"
+      ],
+      "canEdit": true,
+      "canComment": true,
+      "canDownload": true,
+      "canCopy": false,
+      "permissions_visible": 2
+    }
+  },
+  "write_attempt_with_readonly_scope": {
+    "status": 403,
+    "reason": "insufficientPermissions",
+    "message": "Request had insufficient authentication scopes."
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "measured_at": "2026-10-14T15:37:30-0300",
+  "robot_a": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+  "robot_b": "arq-poc-b@arquivio-drive-poc.iam.gserviceaccount.com",
+  "B_get_folder_shared_only_with_A": {
+    "status": 404,
+    "reason": "notFound",
+    "error_status": null,
+    "message": "File not found: <ID>."
+  },
+  "B_get_nonexistent_id": {
+    "status": 404,
+    "reason": "notFound",
+    "error_status": null,
+    "message": "File not found: <ID>."
+  },
+  "A_get_nonexistent_id": {
+    "status": 404,
+    "reason": "notFound",
+    "error_status": null,
+    "message": "File not found: <ID>."
+  },
+  "B_get_malformed_id_with_quote": {
+    "status": 404,
+    "reason": "notFound",
+    "error_status": null,
+    "message": "File not found: abc'def."
+  },
+  "B_list_children_of_A_folder": {
+    "status": 200,
+    "count": 0,
+    "reason": null
+  },
+  "B_list_children_of_fake_id": {
+    "status": 404,
+    "count": 0,
+    "reason": "notFound"
+  },
+  "B_sharedWithMe": {
+    "status": 200,
+    "count": 0
+  },
+  "B_files_list_all": {
+    "status": 200,
+    "count": 0
+  },
+  "B_changes_feed_empty_and_ok": {
+    "startPageToken_status": 200,
+    "changes_status": 200,
+    "count": 0
+  },
+  "A_get_public_link_folder": {
+    "status": 200,
+    "reason": null,
+    "error_status": null,
+    "message": null,
+    "name": "poc-link-public"
+  },
+  "A_list_public_link_children": {
+    "status": 200,
+    "names": [
+      "publico-1.txt"
+    ]
+  },
+  "A_public_in_sharedWithMe": false,
+  "B_get_public_link_folder": {
+    "status": 200,
+    "reason": null,
+    "error_status": null,
+    "message": null,
+    "name": "poc-link-public"
+  },
+  "B_list_public_link_children": {
+    "status": 200,
+    "names": [
+      "publico-1.txt"
+    ]
+  },
+  "B_public_in_sharedWithMe": false,
+  "verdict_B_404_identical_to_nonexistent": true
+}

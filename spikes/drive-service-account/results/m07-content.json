@@ -1,0 +1,495 @@
+{
+  "measured_at": "2026-10-14T16:02:58-0300",
+  "robot": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+  "poc-main": [
+    {
+      "path": "/raiz-2.txt",
+      "mime": "text/plain",
+      "size": "56",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 200,
+        "bytes": 56,
+        "sha256_matches_local_fixture": false
+      }
+    },
+    {
+      "path": "/raiz-1-renomeado.txt",
+      "mime": "text/plain",
+      "size": "26",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 200,
+        "bytes": 26
+      }
+    },
+    {
+      "path": "/apresentacao",
+      "mime": "application/vnd.google-apps.presentation",
+      "size": "8706",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "exports": {
+        "vnd.openxmlformats-officedocument.presen": {
+          "status": 200,
+          "bytes": 41856
+        },
+        "pdf": {
+          "status": 200,
+          "bytes": 28013
+        }
+      }
+    },
+    {
+      "path": "/planilha",
+      "mime": "application/vnd.google-apps.spreadsheet",
+      "size": "1480",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "exports": {
+        "vnd.openxmlformats-officedocument.spread": {
+          "status": 200,
+          "bytes": 9493
+        },
+        "pdf": {
+          "status": 200,
+          "bytes": 20728
+        }
+      }
+    },
+    {
+      "path": "/grande",
+      "mime": "application/vnd.google-apps.document",
+      "size": "16191283",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "exports": {
+        "plain": {
+          "status": 200,
+          "bytes": 427
+        },
+        "pdf": {
+          "status": 403,
+          "bytes": null,
+          "reason": "exportSizeLimitExceeded",
+          "message": "This file is too large to be exported."
+        },
+        "vnd.openxmlformats-officedocument.wordpr": {
+          "status": 403,
+          "bytes": null,
+          "reason": "exportSizeLimitExceeded",
+          "message": "This file is too large to be exported."
+        }
+      }
+    },
+    {
+      "path": "/contrato",
+      "mime": "application/vnd.google-apps.document",
+      "size": "1325",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "exports": {
+        "plain": {
+          "status": 200,
+          "bytes": 419
+        },
+        "pdf": {
+          "status": 200,
+          "bytes": 25014
+        },
+        "vnd.openxmlformats-officedocument.wordpr": {
+          "status": 200,
+          "bytes": 6748
+        }
+      }
+    },
+    {
+      "path": "/atalho-para-fora.txt",
+      "mime": "application/vnd.google-apps.shortcut",
+      "size": null,
+      "canDownload": false,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "shortcut": {
+        "targetMimeType": "text/plain",
+        "has_targetId": true,
+        "get_target_as_robot": {
+          "status": 404,
+          "reason": "notFound",
+          "message": "File not found: 1tpYHtIeQT8JQFDndYmgLyGiBEWje-155."
+        }
+      }
+    },
+    {
+      "path": "/sub/sub2/novo-neto.txt",
+      "mime": "text/plain",
+      "size": "32",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 200,
+        "bytes": 32
+      }
+    },
+    {
+      "path": "/sub/sub2/filho-1.txt",
+      "mime": "text/plain",
+      "size": "27",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 200,
+        "bytes": 27
+      }
+    },
+    {
+      "path": "/novo-raiz.txt",
+      "mime": "text/plain",
+      "size": "41",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 200,
+        "bytes": 41
+      }
+    },
+    {
+      "path": "/grande.docx",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "size": "16239222",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 200,
+        "bytes": 16239222,
+        "sha256_matches_local_fixture": true
+      }
+    },
+    {
+      "path": "/apresentacao.pptx",
+      "mime": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "size": "29962",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 200,
+        "bytes": 29962,
+        "sha256_matches_local_fixture": true
+      }
+    },
+    {
+      "path": "/planilha.xlsx",
+      "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "size": "6273",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 200,
+        "bytes": 6273,
+        "sha256_matches_local_fixture": true
+      }
+    },
+    {
+      "path": "/contrato.docx",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "size": "36744",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 200,
+        "bytes": 36744,
+        "sha256_matches_local_fixture": true
+      }
+    },
+    {
+      "path": "/relatorio.pdf",
+      "mime": "application/pdf",
+      "size": "1793",
+      "canDownload": true,
+      "canCopy": true,
+      "copyRequiresWriterPermission": false,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": false,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 200,
+        "bytes": 1793,
+        "sha256_matches_local_fixture": true
+      }
+    }
+  ],
+  "poc-sem-download": [
+    {
+      "path": "/bloqueado",
+      "mime": "application/vnd.google-apps.document",
+      "size": "1344",
+      "canDownload": false,
+      "canCopy": false,
+      "copyRequiresWriterPermission": true,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": true,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": true,
+          "restrictedForWriters": false
+        }
+      },
+      "exports": {
+        "plain": {
+          "status": 403,
+          "bytes": null,
+          "reason": "cannotExportFile",
+          "message": "This file cannot be exported by the user."
+        },
+        "pdf": {
+          "status": 403,
+          "bytes": null,
+          "reason": "cannotExportFile",
+          "message": "This file cannot be exported by the user."
+        },
+        "vnd.openxmlformats-officedocument.wordpr": {
+          "status": 403,
+          "bytes": null,
+          "reason": "cannotExportFile",
+          "message": "This file cannot be exported by the user."
+        }
+      }
+    },
+    {
+      "path": "/Cópia de bloqueado.docx",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "size": "36757",
+      "canDownload": false,
+      "canCopy": false,
+      "copyRequiresWriterPermission": true,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": true,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": true,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 403,
+        "bytes": null,
+        "reason": "cannotDownloadFile",
+        "message": "This file cannot be downloaded by the user."
+      }
+    },
+    {
+      "path": "/bloqueado.pdf",
+      "mime": "application/pdf",
+      "size": "1805",
+      "canDownload": false,
+      "canCopy": false,
+      "copyRequiresWriterPermission": true,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": true,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": true,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 403,
+        "bytes": null,
+        "reason": "cannotDownloadFile",
+        "message": "This file cannot be downloaded by the user."
+      }
+    },
+    {
+      "path": "/bloqueado.docx",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "size": "36757",
+      "canDownload": false,
+      "canCopy": false,
+      "copyRequiresWriterPermission": true,
+      "downloadRestrictions": {
+        "itemDownloadRestriction": {
+          "restrictedForReaders": true,
+          "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+          "restrictedForReaders": true,
+          "restrictedForWriters": false
+        }
+      },
+      "alt_media": {
+        "status": 403,
+        "bytes": null,
+        "reason": "cannotDownloadFile",
+        "message": "This file cannot be downloaded by the user."
+      }
+    }
+  ]
+}

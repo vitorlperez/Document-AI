@@ -1,0 +1,654 @@
+{
+  "measured_at": "2026-10-14T16:00:25-0300",
+  "robot": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+  "started_utc": "2026-10-14T18:45:53.060+00:00",
+  "poll_interval_s": 5.0,
+  "polls": 140,
+  "plan_b_query_since": "2026-10-14T18:44:53Z",
+  "changes_feed": [
+    {
+      "first_seen_utc": "2026-10-14T18:48:14.228+00:00",
+      "name": "contrato",
+      "removed": false,
+      "change_time": "2026-10-14T18:48:08.720Z",
+      "visible_after_s": 5.5,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:48:05.221Z",
+      "createdTime": "2026-10-14T18:48:05.221Z",
+      "trashedTime": null,
+      "mime": "google-apps.document"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:48:38.285+00:00",
+      "name": "grande",
+      "removed": false,
+      "change_time": "2026-10-14T18:48:33.935Z",
+      "visible_after_s": 4.4,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:48:28.904Z",
+      "createdTime": "2026-10-14T18:48:28.903Z",
+      "trashedTime": null,
+      "mime": "google-apps.document"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:49:03.193+00:00",
+      "name": "planilha",
+      "removed": false,
+      "change_time": "2026-10-14T18:48:59.829Z",
+      "visible_after_s": 3.4,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:48:56.235Z",
+      "createdTime": "2026-10-14T18:48:56.234Z",
+      "trashedTime": null,
+      "mime": "gle-apps.spreadsheet"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:49:21.436+00:00",
+      "name": "apresentacao",
+      "removed": false,
+      "change_time": "2026-10-14T18:49:20.813Z",
+      "visible_after_s": 0.6,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:49:16.917Z",
+      "createdTime": "2026-10-14T18:49:06.815Z",
+      "trashedTime": null,
+      "mime": "le-apps.presentation"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:50:10.385+00:00",
+      "name": "bloqueado",
+      "removed": false,
+      "change_time": "2026-10-14T18:50:05.436Z",
+      "visible_after_s": 4.9,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1W87vad8X44xI3OkQWV6ahyUlQVOVuW5L"
+      ],
+      "modifiedTime": "2026-10-14T18:50:01.855Z",
+      "createdTime": "2026-10-14T18:50:01.854Z",
+      "trashedTime": null,
+      "mime": "google-apps.document"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:50:16.949+00:00",
+      "name": "bloqueado",
+      "removed": false,
+      "change_time": "2026-10-14T18:50:17.430Z",
+      "visible_after_s": -0.5,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1W87vad8X44xI3OkQWV6ahyUlQVOVuW5L"
+      ],
+      "modifiedTime": "2026-10-14T18:50:13.997Z",
+      "createdTime": "2026-10-14T18:50:01.854Z",
+      "trashedTime": null,
+      "mime": "google-apps.document"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:51:56.412+00:00",
+      "name": "novo-raiz.txt",
+      "removed": false,
+      "change_time": "2026-10-14T18:51:55.427Z",
+      "visible_after_s": 1.0,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:08:51.358Z",
+      "createdTime": "2026-10-14T18:51:54.103Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:52:03.296+00:00",
+      "name": "novo-raiz.txt",
+      "removed": false,
+      "change_time": "2026-10-14T18:51:58.415Z",
+      "visible_after_s": 4.9,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:08:51.358Z",
+      "createdTime": "2026-10-14T18:51:54.103Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:52:16.330+00:00",
+      "name": "novo-sub.txt",
+      "removed": false,
+      "change_time": "2026-10-14T18:52:15.923Z",
+      "visible_after_s": 0.4,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1K61RiPAylMtQ2SAq2q2QksFnEwtLxzWo"
+      ],
+      "modifiedTime": "2026-10-14T18:08:51.358Z",
+      "createdTime": "2026-10-14T18:52:11.481Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:52:28.593+00:00",
+      "name": "novo-neto.txt",
+      "removed": false,
+      "change_time": "2026-10-14T18:52:27.988Z",
+      "visible_after_s": 0.6,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1lhxBTTnArswzxDB6ibMJnozdPZdzHmf9"
+      ],
+      "modifiedTime": "2026-10-14T18:08:51.358Z",
+      "createdTime": "2026-10-14T18:52:24.050Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:54:56.855+00:00",
+      "name": "raiz-1-renomeado.txt",
+      "removed": false,
+      "change_time": "2026-10-14T18:54:56.688Z",
+      "visible_after_s": 0.2,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:54:56.117Z",
+      "createdTime": "2026-10-14T18:12:35.657Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:55:34.259+00:00",
+      "name": "raiz-2.txt",
+      "removed": false,
+      "change_time": "2026-10-14T18:55:33.589Z",
+      "visible_after_s": 0.7,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ],
+      "modifiedTime": "2026-10-14T18:55:29.143Z",
+      "createdTime": "2026-10-14T18:12:34.305Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:56:05.425+00:00",
+      "name": "filho-1.txt",
+      "removed": false,
+      "change_time": "2026-10-14T18:56:04.700Z",
+      "visible_after_s": 0.7,
+      "trashed": false,
+      "has_parents": true,
+      "parents": [
+        "1lhxBTTnArswzxDB6ibMJnozdPZdzHmf9"
+      ],
+      "modifiedTime": "2026-10-14T18:08:51.268Z",
+      "createdTime": "2026-10-14T18:16:07.057Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:56:23.629+00:00",
+      "name": null,
+      "removed": true,
+      "change_time": "2026-10-14T18:56:21.522Z",
+      "visible_after_s": 2.1,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:56:41.873+00:00",
+      "name": "neto-1.txt",
+      "removed": false,
+      "change_time": "2026-10-14T18:56:37.587Z",
+      "visible_after_s": 4.3,
+      "trashed": true,
+      "has_parents": true,
+      "parents": [
+        "1lhxBTTnArswzxDB6ibMJnozdPZdzHmf9"
+      ],
+      "modifiedTime": "2026-10-14T18:08:51.268Z",
+      "createdTime": "2026-10-14T18:16:07.423Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:56:54.058+00:00",
+      "name": "novo-sub.txt",
+      "removed": false,
+      "change_time": "2026-10-14T18:56:53.631Z",
+      "visible_after_s": 0.4,
+      "trashed": true,
+      "has_parents": true,
+      "parents": [
+        "1K61RiPAylMtQ2SAq2q2QksFnEwtLxzWo"
+      ],
+      "modifiedTime": "2026-10-14T18:08:51.358Z",
+      "createdTime": "2026-10-14T18:52:11.481Z",
+      "trashedTime": null,
+      "mime": "text/plain"
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:57:43.205+00:00",
+      "name": null,
+      "removed": true,
+      "change_time": "2026-10-14T18:57:43.175Z",
+      "visible_after_s": 0.0,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:58:07.288+00:00",
+      "name": "novo-sub.txt",
+      "removed": true,
+      "change_time": "2026-10-14T18:58:07.194Z",
+      "visible_after_s": 0.1,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:58:07.288+00:00",
+      "name": "neto-1.txt",
+      "removed": true,
+      "change_time": "2026-10-14T18:58:07.194Z",
+      "visible_after_s": 0.1,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": "poc-main",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:35.641Z",
+      "visible_after_s": 4.2,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": "grande",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.610Z",
+      "visible_after_s": 1.3,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": "contrato",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.610Z",
+      "visible_after_s": 1.3,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": "apresentacao",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.610Z",
+      "visible_after_s": 1.3,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": "planilha",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.610Z",
+      "visible_after_s": 1.3,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": null,
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.611Z",
+      "visible_after_s": 1.3,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": "raiz-1-renomeado.txt",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.704Z",
+      "visible_after_s": 1.2,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": null,
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.704Z",
+      "visible_after_s": 1.2,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": null,
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.788Z",
+      "visible_after_s": 1.1,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": "atalho-para-fora.txt",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.788Z",
+      "visible_after_s": 1.1,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": null,
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.893Z",
+      "visible_after_s": 1.0,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": "raiz-2.txt",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.893Z",
+      "visible_after_s": 1.0,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": null,
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.976Z",
+      "visible_after_s": 0.9,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": "novo-raiz.txt",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.976Z",
+      "visible_after_s": 0.9,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "name": "sub",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:38.976Z",
+      "visible_after_s": 0.9,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:45.872+00:00",
+      "name": "sub2",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:41.598Z",
+      "visible_after_s": 4.3,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:45.872+00:00",
+      "name": "filho-1.txt",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:44.681Z",
+      "visible_after_s": 1.2,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:45.872+00:00",
+      "name": "novo-neto.txt",
+      "removed": true,
+      "change_time": "2026-10-14T18:59:44.681Z",
+      "visible_after_s": 1.2,
+      "trashed": null,
+      "has_parents": false,
+      "parents": null,
+      "modifiedTime": null,
+      "createdTime": null,
+      "trashedTime": null,
+      "mime": ""
+    }
+  ],
+  "plan_b_modifiedTime_list": [
+    {
+      "first_seen_utc": "2026-10-14T18:48:03.210+00:00",
+      "name": "contrato",
+      "trashed": false,
+      "modifiedTime": "2026-10-14T18:48:05.221Z",
+      "visible_after_s": -2.0,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ]
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:48:38.285+00:00",
+      "name": "grande",
+      "trashed": false,
+      "modifiedTime": "2026-10-14T18:48:28.904Z",
+      "visible_after_s": 9.4,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ]
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:49:03.193+00:00",
+      "name": "planilha",
+      "trashed": false,
+      "modifiedTime": "2026-10-14T18:48:56.235Z",
+      "visible_after_s": 7.0,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ]
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:49:21.436+00:00",
+      "name": "apresentacao",
+      "trashed": false,
+      "modifiedTime": "2026-10-14T18:49:16.917Z",
+      "visible_after_s": 4.5,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ]
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:50:04.379+00:00",
+      "name": "bloqueado",
+      "trashed": false,
+      "modifiedTime": "2026-10-14T18:50:01.855Z",
+      "visible_after_s": 2.5,
+      "parents": [
+        "1W87vad8X44xI3OkQWV6ahyUlQVOVuW5L"
+      ]
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:50:16.949+00:00",
+      "name": "bloqueado",
+      "trashed": false,
+      "modifiedTime": "2026-10-14T18:50:13.997Z",
+      "visible_after_s": 3.0,
+      "parents": [
+        "1W87vad8X44xI3OkQWV6ahyUlQVOVuW5L"
+      ]
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:55:02.939+00:00",
+      "name": "raiz-1-renomeado.txt",
+      "trashed": false,
+      "modifiedTime": "2026-10-14T18:54:56.117Z",
+      "visible_after_s": 6.8,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ]
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:55:34.259+00:00",
+      "name": "raiz-2.txt",
+      "trashed": false,
+      "modifiedTime": "2026-10-14T18:55:29.143Z",
+      "visible_after_s": 5.1,
+      "parents": [
+        "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F"
+      ]
+    }
+  ],
+  "root_access_transitions": [
+    {
+      "first_seen_utc": "2026-10-14T18:45:54.781+00:00",
+      "http": 200,
+      "reason": null,
+      "trashed": false
+    },
+    {
+      "first_seen_utc": "2026-10-14T18:59:39.866+00:00",
+      "http": 404,
+      "reason": "notFound",
+      "trashed": null
+    }
+  ]
+}

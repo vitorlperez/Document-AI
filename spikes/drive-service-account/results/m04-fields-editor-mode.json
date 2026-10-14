@@ -1,0 +1,228 @@
+{
+  "measured_at": "2026-10-14T15:28:25-0300",
+  "robot": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+  "folder_toplevel_get": {
+    "status": 200,
+    "fields": {
+      "id": "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F",
+      "name": "poc-main",
+      "mimeType": "application/vnd.google-apps.folder",
+      "trashed": false,
+      "version": "3",
+      "webViewLink": "https://drive.google.com/drive/folders/1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F",
+      "createdTime": "2026-10-14T18:12:32.297Z",
+      "modifiedTime": "2026-10-14T18:23:25.718Z",
+      "sharedWithMeTime": "2026-10-14T18:23:25.722Z",
+      "sharingUser": {
+        "emailAddress": "v***@gmail.com"
+      },
+      "owners": [
+        {
+          "displayName": "<dono>",
+          "emailAddress": "v***@gmail.com"
+        }
+      ],
+      "shared": true,
+      "ownedByMe": false,
+      "capabilities": {
+        "canAcceptOwnership": false,
+        "canAccessViaGenAi": true,
+        "canAddChildren": true,
+        "canAddMyDriveParent": false,
+        "canChangeCopyRequiresWriterPermission": false,
+        "canChangeItemDownloadRestriction": false,
+        "canChangeSecurityUpdateEnabled": false,
+        "canChangeViewersCanCopyContent": false,
+        "canComment": true,
+        "canCopy": false,
+        "canDelete": false,
+        "canDisableInheritedPermissions": true,
+        "canDownload": true,
+        "canEdit": true,
+        "canEnableInheritedPermissions": true,
+        "canListChildren": true,
+        "canModifyContent": true,
+        "canModifyContentRestriction": false,
+        "canModifyEditorContentRestriction": false,
+        "canModifyOwnerContentRestriction": false,
+        "canModifyLabels": false,
+        "canMoveChildrenWithinDrive": true,
+        "canMoveItemIntoTeamDrive": false,
+        "canMoveItemOutOfDrive": false,
+        "canMoveItemWithinDrive": true,
+        "canReadLabels": false,
+        "canReadRevisions": false,
+        "canRemoveChildren": true,
+        "canRemoveContentRestriction": false,
+        "canRemoveMyDriveParent": true,
+        "canRename": true,
+        "canShare": true,
+        "canTrash": false,
+        "canUntrash": false,
+        "canStartApproval": false
+      },
+      "viewersCanCopyContent": true,
+      "copyRequiresWriterPermission": false,
+      "writersCanShare": true,
+      "permissions": [
+        {
+          "kind": "drive#permission",
+          "id": "07614690461295902619",
+          "type": "user",
+          "emailAddress": "v***@gmail.com",
+          "role": "owner",
+          "displayName": "<dono>",
+          "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjVBMCWAu5pv9vJVwxzm7W8eW0Fhw5M5h9Fw9_NSKDXQ8Trk2A=s64",
+          "permissionDetails": [
+            {
+              "permissionType": "file",
+              "role": "writer",
+              "inherited": true
+            },
+            {
+              "permissionType": "file",
+              "role": "owner",
+              "inherited": false
+            }
+          ],
+          "deleted": false,
+          "pendingOwner": false
+        },
+        {
+          "kind": "drive#permission",
+          "id": "14814154939053271366",
+          "type": "user",
+          "emailAddress": "a***@arquivio-drive-poc.iam.gserviceaccount.com",
+          "role": "writer",
+          "displayName": "a***@arquivio-drive-poc.iam.gserviceaccount.com",
+          "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJgluptfgAWU2nnvAC0ijZNxZt0JfwGTu43UOz7mUup9Ehp1qc=s64",
+          "permissionDetails": [
+            {
+              "permissionType": "file",
+              "role": "writer",
+              "inherited": false
+            }
+          ],
+          "deleted": false,
+          "pendingOwner": false
+        }
+      ],
+      "permissionIds": [
+        "07614690461295902619",
+        "14814154939053271366"
+      ]
+    }
+  },
+  "folder_toplevel_get_star_presence": {
+    "kind": "<valor>",
+    "id": "<valor>",
+    "name": "<valor>",
+    "mimeType": "<valor>",
+    "starred": "<valor>",
+    "trashed": "<valor>",
+    "explicitlyTrashed": "<valor>",
+    "spaces": "<valor>",
+    "version": "<valor>",
+    "webViewLink": "<valor>",
+    "iconLink": "<valor>",
+    "hasThumbnail": "<valor>",
+    "thumbnailVersion": "<valor>",
+    "viewedByMe": "<valor>",
+    "createdTime": "<valor>",
+    "modifiedTime": "<valor>",
+    "modifiedByMe": "<valor>",
+    "sharedWithMeTime": "<valor>",
+    "sharingUser": "<objeto>",
+    "owners": "<valor>",
+    "lastModifyingUser": "<objeto>",
+    "shared": "<valor>",
+    "ownedByMe": "<valor>",
+    "downloadRestrictions": "<objeto>",
+    "capabilities": "<objeto>",
+    "viewersCanCopyContent": "<valor>",
+    "copyRequiresWriterPermission": "<valor>",
+    "writersCanShare": "<valor>",
+    "permissions": "<valor>",
+    "permissionIds": "<valor>",
+    "folderColorRgb": "<valor>",
+    "quotaBytesUsed": "<valor>",
+    "isAppAuthorized": "<valor>",
+    "clientEncryptionDetails": "<objeto>",
+    "linkShareMetadata": "<objeto>",
+    "inheritedPermissionsDisabled": "<valor>"
+  },
+  "files_list_all": {
+    "calls": 3,
+    "total_visible": 1072,
+    "folders": 57,
+    "with_sharedWithMeTime": 5
+  },
+  "sharedWithMe_list": {
+    "names": [
+      "arvore-1000",
+      "poc-main",
+      "poc-notify-off",
+      "poc-notify-on",
+      "poc-sem-download"
+    ],
+    "count": 5
+  },
+  "sharedWithMe_contains_children": [],
+  "child_get": {
+    "neto-1.txt": {
+      "status": 200,
+      "has_sharingUser": false,
+      "has_sharedWithMeTime": false,
+      "has_permissions": true,
+      "capabilities": {
+        "canCopy": true,
+        "canDownload": true,
+        "canEdit": true,
+        "canReadRevisions": true,
+        "canShare": true
+      },
+      "reason": null
+    },
+    "filho-1.txt": {
+      "status": 200,
+      "has_sharingUser": false,
+      "has_sharedWithMeTime": false,
+      "has_permissions": true,
+      "capabilities": {
+        "canCopy": true,
+        "canDownload": true,
+        "canEdit": true,
+        "canReadRevisions": true,
+        "canShare": true
+      },
+      "reason": null
+    },
+    "raiz-1.txt": {
+      "status": 200,
+      "has_sharingUser": false,
+      "has_sharedWithMeTime": false,
+      "has_permissions": true,
+      "capabilities": {
+        "canCopy": true,
+        "canDownload": true,
+        "canEdit": true,
+        "canReadRevisions": true,
+        "canShare": true
+      },
+      "reason": null
+    }
+  },
+  "permissions_list_as_reader": {
+    "status": 200,
+    "reason": null,
+    "message": null,
+    "count": 2
+  },
+  "public_link_folder_get": {
+    "status": 200,
+    "has_sharingUser": false,
+    "has_sharedWithMeTime": false,
+    "name": "poc-link-public",
+    "in_sharedWithMe": false
+  }
+}

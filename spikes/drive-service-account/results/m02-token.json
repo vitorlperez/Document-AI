@@ -1,0 +1,104 @@
+{
+  "measured_at": "2026-10-14T15:08:08-0300",
+  "robot": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+  "scope": "https://www.googleapis.com/auth/drive.readonly",
+  "token_endpoint": "https://oauth2.googleapis.com/token",
+  "cold_exchanges": [
+    {
+      "status": 200,
+      "latency_ms": 250,
+      "expires_in": 3599,
+      "token_type": "Bearer"
+    },
+    {
+      "status": 200,
+      "latency_ms": 109,
+      "expires_in": 3599,
+      "token_type": "Bearer"
+    },
+    {
+      "status": 200,
+      "latency_ms": 105,
+      "expires_in": 3599,
+      "token_type": "Bearer"
+    },
+    {
+      "status": 200,
+      "latency_ms": 108,
+      "expires_in": 3599,
+      "token_type": "Bearer"
+    },
+    {
+      "status": 200,
+      "latency_ms": 107,
+      "expires_in": 3599,
+      "token_type": "Bearer"
+    }
+  ],
+  "latency_ms": {
+    "min": 105,
+    "median": 108,
+    "max": 250
+  },
+  "token_fetches_in_session": 1,
+  "about_get": {
+    "status": 200,
+    "ms": 1107,
+    "robot_user_email": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+    "storage_limit": "0"
+  },
+  "clock": {
+    "local_minus_google_s": 3.23
+  },
+  "jwt_edge_cases": {
+    "iat_futuro_+120s": {
+      "status": 200,
+      "error": null,
+      "error_description": null,
+      "expires_in": 3599,
+      "latency_ms": 91
+    },
+    "iat_futuro_+330s": {
+      "status": 400,
+      "error": "invalid_grant",
+      "error_description": "Invalid JWT: Token must be a short-lived token (60 minutes) and in a reasonable timeframe. Check your iat and exp values in the JWT claim.",
+      "expires_in": null,
+      "latency_ms": 93
+    },
+    "iat_futuro_+900s": {
+      "status": 400,
+      "error": "invalid_grant",
+      "error_description": "Invalid JWT: Token must be a short-lived token (60 minutes) and in a reasonable timeframe. Check your iat and exp values in the JWT claim.",
+      "expires_in": null,
+      "latency_ms": 96
+    },
+    "iat_passado_-3000s_exp_ainda_valido": {
+      "status": 200,
+      "error": null,
+      "error_description": null,
+      "expires_in": 3599,
+      "latency_ms": 100
+    },
+    "ttl_3601s_(excede_1h)": {
+      "status": 200,
+      "error": null,
+      "error_description": null,
+      "expires_in": 3599,
+      "latency_ms": 104
+    },
+    "escopo_drive_file": {
+      "status": 200,
+      "error": null,
+      "error_description": null,
+      "expires_in": 3599,
+      "latency_ms": 102
+    },
+    "escopo_invalido": {
+      "status": 200,
+      "error": null,
+      "error_description": null,
+      "expires_in": null,
+      "latency_ms": 109
+    }
+  }
+}

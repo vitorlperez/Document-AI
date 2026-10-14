@@ -1,0 +1,83 @@
+{
+  "measured_at": "2026-10-14T15:46:24-0300",
+  "robot": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+  "bfs": {
+    "label": "bfs_listagem_por_pasta",
+    "seconds": 15.76,
+    "api": {
+      "calls": 51,
+      "http_200": 51
+    },
+    "files": 1000,
+    "folders": 50
+  },
+  "global_list": {
+    "label": "listagem_global_paginada",
+    "seconds": 2.82,
+    "api": {
+      "calls": 3,
+      "http_200": 3
+    },
+    "items_visible_total": 1073
+  },
+  "changes_idle": {
+    "label": "changes_sem_mudancas",
+    "seconds": 1.21,
+    "api": {
+      "calls": 2,
+      "http_200": 2
+    }
+  },
+  "download_all": {
+    "label": "download_1000_arquivos_3_workers",
+    "seconds": 354.62,
+    "api": {
+      "calls": 1000,
+      "http_200": 1000
+    },
+    "http_codes": {
+      "200": 1000
+    },
+    "files_per_second": 2.8
+  },
+  "sim_20_orgs": {
+    "label": "simulacao_20_orgs_discovery_burst_4_workers",
+    "seconds": 91.52,
+    "api": {
+      "calls": 1020,
+      "http_200": 1020
+    },
+    "each_run_files": [
+      1000
+    ],
+    "calls_per_second": 11.1
+  },
+  "drive_quotas": [
+    {
+      "metric": "Queries",
+      "unit": "1/min/{project}/{user}",
+      "limit": "12000"
+    },
+    {
+      "metric": "Queries",
+      "unit": "1/min/{project}",
+      "limit": "12000"
+    },
+    {
+      "metric": "Total Query Cost",
+      "unit": "1/min/{project}/{user}",
+      "limit": "325000"
+    },
+    {
+      "metric": "Total Query Cost",
+      "unit": "1/min/{project}",
+      "limit": "1000000"
+    }
+  ],
+  "margin_estimate": {
+    "calls_per_org_discovery_cycle": 51,
+    "orgs": 20,
+    "cycle_minutes": 15,
+    "steady_calls_per_minute_all_orgs_discovery_only": 68.0
+  }
+}

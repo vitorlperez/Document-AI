@@ -1,0 +1,179 @@
+{
+  "measured_at": "2026-10-14T15:37:05-0300",
+  "robot": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+  "folder_toplevel_get": {
+    "status": 200,
+    "fields": {
+      "id": "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F",
+      "name": "poc-main",
+      "mimeType": "application/vnd.google-apps.folder",
+      "trashed": false,
+      "version": "4",
+      "webViewLink": "https://drive.google.com/drive/folders/1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F",
+      "createdTime": "2026-10-14T18:12:32.297Z",
+      "modifiedTime": "2026-10-14T18:33:36.696Z",
+      "sharedWithMeTime": "2026-10-14T18:23:25.722Z",
+      "sharingUser": {
+        "emailAddress": "v***@gmail.com"
+      },
+      "owners": [
+        {
+          "displayName": "<dono>",
+          "emailAddress": "v***@gmail.com"
+        }
+      ],
+      "shared": true,
+      "ownedByMe": false,
+      "capabilities": {
+        "canAcceptOwnership": false,
+        "canAccessViaGenAi": true,
+        "canAddChildren": false,
+        "canAddMyDriveParent": false,
+        "canChangeCopyRequiresWriterPermission": false,
+        "canChangeItemDownloadRestriction": false,
+        "canChangeSecurityUpdateEnabled": false,
+        "canChangeViewersCanCopyContent": false,
+        "canComment": false,
+        "canCopy": false,
+        "canDelete": false,
+        "canDisableInheritedPermissions": false,
+        "canDownload": true,
+        "canEdit": false,
+        "canEnableInheritedPermissions": false,
+        "canListChildren": true,
+        "canModifyContent": false,
+        "canModifyContentRestriction": false,
+        "canModifyEditorContentRestriction": false,
+        "canModifyOwnerContentRestriction": false,
+        "canModifyLabels": false,
+        "canMoveChildrenWithinDrive": false,
+        "canMoveItemIntoTeamDrive": false,
+        "canMoveItemOutOfDrive": false,
+        "canMoveItemWithinDrive": false,
+        "canReadLabels": false,
+        "canReadRevisions": false,
+        "canRemoveChildren": false,
+        "canRemoveContentRestriction": false,
+        "canRemoveMyDriveParent": true,
+        "canRename": false,
+        "canShare": false,
+        "canTrash": false,
+        "canUntrash": false,
+        "canStartApproval": false
+      },
+      "viewersCanCopyContent": true,
+      "copyRequiresWriterPermission": false,
+      "writersCanShare": true
+    }
+  },
+  "folder_toplevel_get_star_presence": {
+    "kind": "<valor>",
+    "id": "<valor>",
+    "name": "<valor>",
+    "mimeType": "<valor>",
+    "starred": "<valor>",
+    "trashed": "<valor>",
+    "explicitlyTrashed": "<valor>",
+    "spaces": "<valor>",
+    "version": "<valor>",
+    "webViewLink": "<valor>",
+    "iconLink": "<valor>",
+    "hasThumbnail": "<valor>",
+    "thumbnailVersion": "<valor>",
+    "viewedByMe": "<valor>",
+    "createdTime": "<valor>",
+    "modifiedTime": "<valor>",
+    "modifiedByMe": "<valor>",
+    "sharedWithMeTime": "<valor>",
+    "sharingUser": "<objeto>",
+    "owners": "<valor>",
+    "lastModifyingUser": "<objeto>",
+    "shared": "<valor>",
+    "ownedByMe": "<valor>",
+    "downloadRestrictions": "<objeto>",
+    "capabilities": "<objeto>",
+    "viewersCanCopyContent": "<valor>",
+    "copyRequiresWriterPermission": "<valor>",
+    "writersCanShare": "<valor>",
+    "folderColorRgb": "<valor>",
+    "quotaBytesUsed": "<valor>",
+    "isAppAuthorized": "<valor>",
+    "clientEncryptionDetails": "<objeto>",
+    "linkShareMetadata": "<objeto>",
+    "inheritedPermissionsDisabled": "<valor>"
+  },
+  "files_list_all": {
+    "calls": 3,
+    "total_visible": 1073,
+    "folders": 57,
+    "with_sharedWithMeTime": 5
+  },
+  "sharedWithMe_list": {
+    "names": [
+      "arvore-1000",
+      "poc-main",
+      "poc-notify-off",
+      "poc-notify-on",
+      "poc-sem-download"
+    ],
+    "count": 5
+  },
+  "sharedWithMe_contains_children": [],
+  "child_get": {
+    "neto-1.txt": {
+      "status": 200,
+      "has_sharingUser": false,
+      "has_sharedWithMeTime": false,
+      "has_permissions": false,
+      "capabilities": {
+        "canCopy": true,
+        "canDownload": true,
+        "canEdit": false,
+        "canReadRevisions": false,
+        "canShare": false
+      },
+      "reason": null
+    },
+    "filho-1.txt": {
+      "status": 200,
+      "has_sharingUser": false,
+      "has_sharedWithMeTime": false,
+      "has_permissions": false,
+      "capabilities": {
+        "canCopy": true,
+        "canDownload": true,
+        "canEdit": false,
+        "canReadRevisions": false,
+        "canShare": false
+      },
+      "reason": null
+    },
+    "raiz-1.txt": {
+      "status": 200,
+      "has_sharingUser": false,
+      "has_sharedWithMeTime": false,
+      "has_permissions": false,
+      "capabilities": {
+        "canCopy": true,
+        "canDownload": true,
+        "canEdit": false,
+        "canReadRevisions": false,
+        "canShare": false
+      },
+      "reason": null
+    }
+  },
+  "permissions_list_as_reader": {
+    "status": 403,
+    "reason": "insufficientFilePermissions",
+    "message": "The user does not have sufficient permissions for this file.",
+    "count": 0
+  },
+  "public_link_folder_get": {
+    "status": 200,
+    "has_sharingUser": false,
+    "has_sharedWithMeTime": false,
+    "name": "poc-link-public",
+    "in_sharedWithMe": false
+  }
+}

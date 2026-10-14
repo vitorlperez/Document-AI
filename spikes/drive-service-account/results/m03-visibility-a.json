@@ -1,0 +1,58 @@
+{
+  "measured_at": "2026-10-14T15:45:29-0300",
+  "robot": "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com",
+  "poll_interval_s": 2.0,
+  "polls": 597,
+  "items": [
+    {
+      "name": "poc-notify-off",
+      "mime": "application/vnd.google-apps.folder",
+      "id": "1RIpJ-PndffSJaabyp-mVdCk-BF7KRM5K",
+      "first_seen_utc": "2026-10-14T18:22:14.676+00:00",
+      "sharedWithMeTime": "2026-10-14T18:22:12.746Z",
+      "visible_after_s": 1.9,
+      "sharingUser": "v***@gmail.com",
+      "owner": "v***@gmail.com"
+    },
+    {
+      "name": "poc-notify-on",
+      "mime": "application/vnd.google-apps.folder",
+      "id": "12sp46EWtLadzlDpT_wfRxi5MIRwTHfV1",
+      "first_seen_utc": "2026-10-14T18:23:01.779+00:00",
+      "sharedWithMeTime": "2026-10-14T18:22:57.304Z",
+      "visible_after_s": 4.5,
+      "sharingUser": "v***@gmail.com",
+      "owner": "v***@gmail.com"
+    },
+    {
+      "name": "poc-main",
+      "mime": "application/vnd.google-apps.folder",
+      "id": "1eay8Sd39mmxL5D1c5gJ4Poj8BMCogN-F",
+      "first_seen_utc": "2026-10-14T18:23:31.015+00:00",
+      "sharedWithMeTime": "2026-10-14T18:23:25.722Z",
+      "visible_after_s": 5.3,
+      "sharingUser": "v***@gmail.com",
+      "owner": "v***@gmail.com"
+    },
+    {
+      "name": "arvore-1000",
+      "mime": "application/vnd.google-apps.folder",
+      "id": "1iH5eJjlKmW2wZniXoMzsCCClkT6N9vwO",
+      "first_seen_utc": "2026-10-14T18:23:44.184+00:00",
+      "sharedWithMeTime": "2026-10-14T18:23:39.035Z",
+      "visible_after_s": 5.1,
+      "sharingUser": "v***@gmail.com",
+      "owner": "v***@gmail.com"
+    },
+    {
+      "name": "poc-sem-download",
+      "mime": "application/vnd.google-apps.folder",
+      "id": "1W87vad8X44xI3OkQWV6ahyUlQVOVuW5L",
+      "first_seen_utc": "2026-10-14T18:26:02.732+00:00",
+      "sharedWithMeTime": "2026-10-14T18:25:57.304Z",
+      "visible_after_s": 5.4,
+      "sharingUser": "v***@gmail.com",
+      "owner": "v***@gmail.com"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+.venv/
+fixtures/
+__pycache__/
+*.pyc
+.env*
+# chaves de robos NUNCA no repo (ficam em ~/.config/arquivio-drive-poc/); defesa extra:
+sa-*.json
+*-key.json
+*private*key*
+state.json

@@ -1,0 +1,44 @@
+{
+  "measured_at": "2026-10-14T16:06:45-0300",
+  "project": {
+    "id": "arquivio-drive-poc",
+    "number": "159875662028",
+    "parent_type": "organization",
+    "org_created": "2026-09-12 (organizations/452494134551)"
+  },
+  "service_accounts": [
+    "arq-poc-b@arquivio-drive-poc.iam.gserviceaccount.com",
+    "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com"
+  ],
+  "keys_per_sa_now": {
+    "arq-poc-b@arquivio-drive-poc.iam.gserviceaccount.com": [
+      "SYSTEM_MANAGED",
+      "USER_MANAGED"
+    ],
+    "arq-poc-a@arquivio-drive-poc.iam.gserviceaccount.com": [
+      "SYSTEM_MANAGED",
+      "USER_MANAGED"
+    ]
+  },
+  "service_account_count_quota": [
+    {
+      "metric": "Create Service Account requests by resource",
+      "unit": "1/min/{project}",
+      "limit": "3"
+    },
+    {
+      "metric": "Service Account Count",
+      "unit": "1/{project}",
+      "limit": "100"
+    }
+  ],
+  "org_policy_iam.disableServiceAccountKeyCreation": {
+    "organization_level_before": "enforce: true (listado em `gcloud org-policies list --organization`, ao lado de disableServiceAccountKeyUpload, uniformBucketLevelAccess etc.)",
+    "project_effective_before_exception": "enforce: true (observado antes de criar a excecao)",
+    "key_creation_attempt_before_exception": "FAILED_PRECONDITION: 'Key creation is not allowed on this service account' (constraints/iam.disableServiceAccountKeyCreation)",
+    "exception_applied": "policy no projeto arquivio-drive-poc com enforce:false (exigiu papel roles/orgpolicy.policyAdmin concedido NO NIVEL DA ORGANIZACAO; o Google rejeitou conceder no projeto)",
+    "propagation": "criacao de chave seguiu bloqueada por ~60-90 s apos set-policy (2 tentativas falhas, 3a OK, intervalo de 30 s)",
+    "project_effective_now": "name: projects/159875662028/policies/iam.disableServiceAccountKeyCreation | spec: |   rules: |   - enforce: false"
+  },
+  "orgpolicy_admin_role_still_granted_on_org": false
+}

@@ -1,0 +1,8 @@
+httpx
+pyjwt[crypto]
+# so para gerar fixtures (make_fixtures.py):
+python-docx
+openpyxl
+python-pptx
+pillow
+reportlab
