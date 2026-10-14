@@ -97,6 +97,11 @@ class Settings(BaseSettings):
     resend_api_key: SecretStr | None = None
     invitation_from_email: str | None = None
     public_app_url: str = "http://localhost:3000"
+    google_drive_sa_enabled: bool = False
+    google_sa_allowed_orgs: str = ""
+    google_sa_key_encryption_key: SecretStr | None = None
+    google_sa_key_encryption_previous_keys: SecretStr | None = None
+    google_sa_download_workers: int = Field(default=3, ge=1, le=3)
     google_oauth_client_id: str | None = None
     google_oauth_client_secret: SecretStr | None = None
     google_oauth_redirect_uri: str | None = None
@@ -163,8 +168,25 @@ class Settings(BaseSettings):
     # Whole relevant chunks are packed by score; per-file brief length is separate.
     evidence_context_chars: int = Field(default=64_000, ge=1024)
 
+    def google_sa_enabled_for(self, organization_id) -> bool:
+        allowed = {value.strip() for value in self.google_sa_allowed_orgs.split(",") if value.strip()}
+        return self.google_drive_sa_enabled and (not allowed or str(organization_id) in allowed)
+
+    @model_validator(mode="after")
+    def validate_sa_key(self):
+        if self.google_drive_sa_enabled and not self.google_sa_key_encryption_key:
+            raise ValueError("GOOGLE_SA_KEY_ENCRYPTION_KEY is required when robot Drive is enabled")
+        if self.google_sa_key_encryption_key:
+            from cryptography.fernet import Fernet
+            Fernet(self.google_sa_key_encryption_key.get_secret_value().encode())
+            if any(self.google_sa_key_encryption_key == key for key in (
+                self.google_token_encryption_key, self.microsoft_token_encryption_key,
+                self.notion_token_encryption_key, self.clickup_token_encryption_key)):
+                raise ValueError("robot Drive requires a dedicated encryption key")
+        return self
+
     def cipher_keys(self, provider: str) -> list[str | None]:
-        key = {"google_drive": self.google_token_encryption_key,
+        key = {"google_drive_sa": self.google_sa_key_encryption_key, "google_drive": self.google_token_encryption_key,
                "onedrive": self.microsoft_token_encryption_key,
                "sharepoint": self.microsoft_token_encryption_key,
                "notion": self.notion_token_encryption_key,
@@ -177,7 +199,7 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_provider_keys(self):
         if self.environment == "production":
-            keys = [self.cipher_keys(provider)[0] for provider in ("google_drive", "onedrive", "notion", "clickup")]
+            keys = [self.cipher_keys(provider)[0] for provider in ("google_drive", "google_drive_sa", "onedrive", "notion", "clickup")]
             populated = [key for key in keys if key]
             if len(set(populated)) != len(populated):
                 raise ValueError("each provider requires a distinct encryption key")

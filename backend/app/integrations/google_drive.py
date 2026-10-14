@@ -79,6 +79,7 @@ class RemoteFile:
     parent_ids: tuple[str, ...] = ()
     size: int | None = None  # bytes; absent for Google-native files
     md5: str | None = None  # md5Checksum; absent for Google-native files
+    can_download: bool | None = None
 
 
 class GoogleDrivePort(Protocol):
@@ -101,7 +102,7 @@ DAILY_QUOTA_REASONS = frozenset({"dailyLimitExceeded"})
 from app.ingestion.extraction.mime import GOOGLE_EXPORT_MIME
 
 ITEM_FORBIDDEN_REASONS = frozenset(
-    {"insufficientFilePermissions", "appNotAuthorizedToFile", "cannotDownloadFile", "fileNotDownloadable", "exportSizeLimitExceeded"}
+    {"insufficientFilePermissions", "appNotAuthorizedToFile", "cannotDownloadFile", "cannotExportFile", "fileNotDownloadable", "exportSizeLimitExceeded"}
 )
 
 
@@ -389,6 +390,7 @@ class GoogleDriveOAuthClient:
             parent_ids=tuple(str(parent) for parent in item.get("parents", [])),
             size=int(item["size"]) if str(item.get("size") or "").isdigit() else None,
             md5=str(item["md5Checksum"]) if item.get("md5Checksum") else None,
+            can_download=item.get("capabilities", {}).get("canDownload"),
         )
 
     def _list_response(

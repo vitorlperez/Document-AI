@@ -48,9 +48,11 @@ class GoogleDriveDocumentProvider:
         extraction_workers: int = MAX_EXTRACTION_WORKERS,
         session: Session | None = None,
         source_id: UUID | None = None,
+        credential_source=None,
         ocr=None,
         budget=None,
     ):
+        self.credential_source = credential_source
         self.ocr, self.budget = ocr, budget
         self.client = client
         self.cipher = cipher
@@ -150,6 +152,12 @@ class GoogleDriveDocumentProvider:
                         credentials=credentials, page_token=cursor
                     ),
                 )
+                if self.credential_source is not None:
+                    roots = {x.external_folder_id for x in selections}
+                    for change in page.changes:
+                        if change.get("removed") and change.get("fileId") in roots:
+                            from app.integrations.google_drive_sa import FolderAccessLost
+                            raise FolderAccessLost(str(change["fileId"]))
                 links[selection.id] = page.new_start_page_token
                 for change in page.changes:
                     file_id = str(change.get("fileId") or "")
@@ -309,6 +317,8 @@ class GoogleDriveDocumentProvider:
             "modified_at": remote_file.modified_at,
             "parent_ids": remote_file.parent_ids,
         }
+        if self.credential_source and remote_file.can_download is False:
+            return DiscoveredDocument(**base, error_code="source_file_unavailable")
         if mime_type not in self.eligible_mime_types:
             return DiscoveredDocument(**base)
         if remote_file.size is not None and remote_file.size > limits.max_file_bytes_for(mime_type):
@@ -323,7 +333,7 @@ class GoogleDriveDocumentProvider:
                     credentials=credentials, remote_file=remote_file
                 ),
             )
-            blocks = extract_blocks(mime_type, content, ocr=self.ocr, budget=self.budget)
+            blocks = extract_blocks(getattr(content, "extraction_mime_type", mime_type), content, ocr=self.ocr, budget=self.budget)
         except (GoogleItemTooLarge, RemoteFileTooLarge):
             return DiscoveredDocument(**base, error_code="file_too_large")
         except (GoogleRemoteUnauthorized, SourceItemUnavailable, DownloadIntegrityError):
@@ -350,6 +360,8 @@ class GoogleDriveDocumentProvider:
         )
 
     def _remote_call(self, encrypted_credentials: str, call):
+        if self.credential_source is not None:
+            return call(self.credential_source.credentials())
         credentials = self._current_credentials(encrypted_credentials)
         try:
             return call(credentials)

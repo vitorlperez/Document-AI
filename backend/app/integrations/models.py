@@ -20,6 +20,7 @@ from app.core.models import Base, CreatedAtMixin, UUIDPrimaryKeyMixin
 class DataSource(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     __tablename__ = "data_sources"
     organization_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    sa_identity_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), ForeignKey("google_sa_identities.id", ondelete="RESTRICT"))
     provider: Mapped[str] = mapped_column(String(40), nullable=False)
     encrypted_credentials: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(40), nullable=False, default="connected")
@@ -29,6 +30,9 @@ class DataSource(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
+        Index("uq_data_sources_google_sa_org", "organization_id", unique=True,
+              postgresql_where=text("provider = 'google_drive_sa'"),
+              sqlite_where=text("provider = 'google_drive_sa'")),
         # One SharePoint source per organization and Microsoft tenant (ADR-0016, D-A3).
         Index(
             "uq_data_sources_sharepoint_tenant",
@@ -72,3 +76,6 @@ class ClickUpTaskCreation(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         Index("ix_clickup_task_creations_user_created", "user_id", "created_at"),
         Index("ix_clickup_task_creations_message", "message_id"),
     )
+
+# Register additive SA tables wherever DataSource metadata is loaded.
+from app.integrations import google_sa_models  # noqa: E402, F401
