@@ -6,6 +6,9 @@ import { verifyCodeFor, type FolderLink, type VerifyResult } from "./drive-share
 export type DriveShareEnable = { source_id: string; robot_email: string; share_role?: string };
 export type InboxFolder = { id: string; name: string; shared_by_email?: string | null; shared_at?: string | null; linked?: boolean };
 export type DriveShareState = { source_id: string; status: string; robot_email: string; folders: FolderLink[] };
+/** Linha de `GET .../folders` (contrato): `link_id` é o id do vínculo, `folder_id` o do Drive. */
+export type LinkedFolder = { link_id: string; folder_id: string; name: string; workspace_folder_id?: string | null; status: string; purge_after?: string | null; shared_by_email?: string | null; shared_at?: string | null; blocked_download_count?: number | null; last_synced_at?: string | null };
+const toFolderLink = (f: LinkedFolder): FolderLink => ({ ...f, id: f.link_id });
 export type LinkResult = { link_id: string; folder_id: string; status: string; workspace_folder_id?: string };
 
 export type DriveShareApi = {
@@ -15,6 +18,8 @@ export type DriveShareApi = {
   link(sourceId: string, folderId: string): Promise<LinkResult>;
   unlink(sourceId: string, linkId: string, purge?: boolean): Promise<void>;
   recheck(sourceId: string): Promise<void>;
+  /** Primeira sincronização da pasta recém-vinculada (rota atual da Biblioteca); falha aqui não desfaz o vínculo. */
+  startSync(workspaceFolderId: string): Promise<void>;
   /** Dados do card: e-mail do robô (enable é idempotente) + vínculos. */
   state(sourceId: string, status?: string): Promise<DriveShareState>;
 };
@@ -38,7 +43,7 @@ async function call<T>(path: string, init: RequestInit = {}, org = organization)
 }
 const base = (sourceId: string) => `/data-sources/google-sa/${encodeURIComponent(sourceId)}`;
 const post = (body?: unknown): RequestInit => ({ method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
-const asApiError = (error: unknown) => error instanceof DriveShareError ? new ApiError(error.status, error.code === "forbidden" ? "Você não tem permissão para esta ação." : error.status >= 500 ? "O serviço está temporariamente indisponível. Tente novamente em instantes." : error.message) : error;
+const asApiError = (error: unknown) => error instanceof DriveShareError ? new ApiError(error.status, error.code === "forbidden" ? "Você não tem permissão para esta ação." : error.code === "unauthenticated" ? "Sua sessão expirou. Entre novamente." : error.code === "invalid_request" ? "Não foi possível processar o pedido. Atualize a página e tente de novo." : error.status >= 500 ? "O serviço está temporariamente indisponível. Tente novamente em instantes." : error.message) : error;
 
 export const driveShareApi: DriveShareApi = {
   enable: async (organizationId) => { organization = organizationId; try { return await call<DriveShareEnable>("/data-sources/google-sa/enable", post(), organizationId); } catch (e) { throw asApiError(e); } },
@@ -54,15 +59,13 @@ export const driveShareApi: DriveShareApi = {
   link: async (sourceId, folderId) => { try { return await call<LinkResult>(`${base(sourceId)}/folders`, post({ folder_id: folderId })); } catch (e) { throw asApiError(e); } },
   unlink: async (sourceId, linkId, purge = false) => { try { await call<unknown>(`${base(sourceId)}/folders/${encodeURIComponent(linkId)}?purge=${purge ? "true" : "false"}`, { method: "DELETE" }); } catch (e) { throw asApiError(e); } },
   recheck: async (sourceId) => { try { await call<unknown>(`${base(sourceId)}/recheck`, post()); } catch (e) { throw asApiError(e); } },
+  startSync: async (workspaceFolderId) => { try { await call<unknown>(`/library/workspaces/${encodeURIComponent(workspaceFolderId)}/reprocess`, post()); } catch (e) { throw asApiError(e); } },
   state: async (sourceId, status = "connected") => {
-    // O contrato ainda não lista vínculos. Tentamos `GET .../folders` (proposto: link_id, folder_id, name, status, purge_after, file_count,
-    // last_synced_at); se a rota não existir, caímos para o e-mail de `enable` (idempotente) + pastas `linked:true` do inbox (sem link_id).
+    // `enable` é idempotente e é a única rota que devolve o e-mail do robô; `GET .../folders` lista os vínculos (inclui suspect/access_lost/removed).
     try {
       const robot = await call<DriveShareEnable>("/data-sources/google-sa/enable", post());
-      const listed = await call<FolderLink[] | { folders?: FolderLink[]; links?: FolderLink[] }>(`${base(sourceId)}/folders`).then((r) => (Array.isArray(r) ? r : r.folders ?? r.links ?? null)).catch(() => null);
-      if (listed) return { source_id: sourceId, status, robot_email: robot.robot_email, folders: listed };
-      const inbox = await call<{ folders: InboxFolder[] }>(`${base(sourceId)}/inbox`).then((r) => r.folders).catch(() => [] as InboxFolder[]);
-      return { source_id: sourceId, status, robot_email: robot.robot_email, folders: inbox.filter((f) => f.linked).map((f) => ({ id: f.id, folder_id: f.id, name: f.name, status: "verified", shared_by_email: f.shared_by_email ?? null })) };
+      const { folders } = await call<{ folders: LinkedFolder[] }>(`${base(sourceId)}/folders`);
+      return { source_id: sourceId, status, robot_email: robot.robot_email, folders: folders.filter((f) => f.status !== "removed").map(toFolderLink) };
     } catch (e) { throw asApiError(e); }
   },
 };

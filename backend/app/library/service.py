@@ -190,6 +190,27 @@ class LibraryService:
         )
         return {source_id: provider for source_id, provider in rows}
 
+    def robot_access_states(
+        self, *, scope: OrganizationScope, nodes: Collection[LibraryNode]
+    ) -> dict[UUID, tuple[str, datetime | None]]:
+        """Folders of the robot Drive mode whose share was revoked, keyed by node id."""
+        from app.integrations.google_sa_models import DriveFolderLink
+
+        folders = {node.external_id: node.id for node in nodes if node.kind == "folder" and node.external_id}
+        if not folders:
+            return {}
+        rows = self.session.execute(
+            select(DriveFolderLink.external_folder_id, DriveFolderLink.status, DriveFolderLink.purge_after).where(
+                DriveFolderLink.organization_id == scope.organization_id,
+                DriveFolderLink.external_folder_id.in_(folders),
+                DriveFolderLink.status.in_(("suspect", "access_lost", "purge_scheduled")),
+            )
+        )
+        return {
+            folders[external]: ("purge_scheduled" if state == "purge_scheduled" else "access_lost", purge_after)
+            for external, state, purge_after in rows
+        }
+
     def children(
         self, *, scope: OrganizationScope, user_id: UUID, parent_id: UUID, page: int, page_size: int
     ) -> BrowsePage:

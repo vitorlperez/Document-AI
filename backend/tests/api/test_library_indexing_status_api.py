@@ -101,3 +101,38 @@ def test_an_indexed_copy_in_any_workspace_wins_over_a_failure_in_another(api):
         session.commit()
 
     assert children(client, organization, root)["Brief.pdf"]["indexing"]["state"] == "indexed"
+
+
+def test_folder_nodes_report_robot_drive_access_state(api):
+    from datetime import UTC, datetime, timedelta
+
+    from app.identity.models import User
+    from app.integrations.google_sa_models import DriveFolderLink
+
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    source = seed_library(factory, organization)
+    root = client.get(f"/library?organization_id={organization}").json()["items"][0]["id"]
+    purge = datetime.now(UTC) + timedelta(days=9)
+    with factory() as session:
+        user = session.query(User).first()
+        for external, status, after in (
+            ("lost", "access_lost", purge), ("suspect", "suspect", purge),
+            ("ok", "verified", None), ("scheduled", "purge_scheduled", purge),
+        ):
+            session.add(LibraryNode(organization_id=UUID(organization), source_id=UUID(source),
+                                    parent_id=UUID(root), external_id=external, kind="folder", name=external))
+            session.add(DriveFolderLink(
+                organization_id=UUID(organization), data_source_id=UUID(source), external_folder_id=external,
+                folder_name=external, status=status, purge_after=after, created_by_user_id=user.id))
+        session.add(LibraryNode(organization_id=UUID(organization), source_id=UUID(source),
+                                parent_id=UUID(root), external_id="plain", kind="folder", name="plain"))
+        session.commit()
+
+    items = children(client, organization, root)
+
+    assert items["lost"]["access_state"] == "access_lost" and items["lost"]["purge_after"]
+    assert items["suspect"]["access_state"] == "access_lost"
+    assert items["scheduled"]["access_state"] == "purge_scheduled"
+    assert "access_state" not in items["ok"] and "access_state" not in items["plain"]

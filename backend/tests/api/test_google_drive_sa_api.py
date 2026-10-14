@@ -233,3 +233,32 @@ def test_robot_route_auth_errors_have_stable_code(google_api):
     )
     assert result.status_code == 401
     assert result.json() == {"detail": {"code": "unauthenticated"}}
+
+
+def test_link_works_with_production_session_without_autoflush(google_api, monkeypatch):
+    """Regressão E2E local: fonte nasce awaiting_share e a sessão real tem autoflush=False."""
+    client, factory, org = prepare(google_api)
+    from sqlalchemy.orm import sessionmaker
+
+    from app.integrations.google_drive_sa_service import DriveSaConnectionService
+
+    client.app.state.session_factory = sessionmaker(
+        bind=factory.kw["bind"], autoflush=False, expire_on_commit=False
+    )
+    monkeypatch.setattr(DriveSaConnectionService, "credentials", lambda *a: None)
+
+    class Client:
+        def verify_folder(self, **kwargs):
+            item = {"id": kwargs["folder_id"], "name": "Contracts",
+                    "mimeType": "application/vnd.google-apps.folder", "sharedWithMeTime": "2026-10-14T00:00:00Z"}
+            return item, item
+
+        def list_folder_files(self, **kwargs):
+            return []
+
+    client.app.state.drive_sa_client = Client()
+    source_id = client.post(f"/data-sources/google-sa/enable?organization_id={org}").json()["source_id"]
+    link = client.post(f"/data-sources/google-sa/{source_id}/folders?organization_id={org}",
+                       json={"folder_id": "folder_123456"})
+    assert link.status_code == 200
+    assert link.json()["status"] == "verified"

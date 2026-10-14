@@ -167,7 +167,7 @@ export function DriveShareFlow({ organizationId, organizationName, existingSourc
   async function connectFolder() {
     if (!robot || !result?.folder_id) return;
     setLinking(true); setLinkError(null);
-    try { await client.link(robot.sourceId, result.folder_id); onLinked?.(); onChooseScope(robot.sourceId); }
+    try { const linked = await client.link(robot.sourceId, result.folder_id); if (linked.workspace_folder_id) await client.startSync(linked.workspace_folder_id).catch(() => undefined); onLinked?.(); onChooseScope(robot.sourceId); }
     catch (error) { setLinkError(messageFor(error)); } finally { setLinking(false); }
   }
 
@@ -225,7 +225,7 @@ function StepTwo({ robot, folders, poll, onResume, paste, setPaste, pasteError, 
       <p className="drive-lead">Encontramos {folders.length === 1 ? "uma pasta compartilhada" : "pastas compartilhadas"} com o ArquivIO:</p>
       <ul className="drive-folder-list">{folders.map((f) => <li key={f.id}><FolderClosed size={20} aria-hidden="true" /><div className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b><span className="drive-folder-meta">{f.shared_by_email ? `compartilhada por ${f.shared_by_email}` : "compartilhada com o ArquivIO"}{f.shared_at ? ` · ${relativeSync(f.shared_at, now).replace("sync ", "")}` : ""}</span></div><button type="button" className={btn("primary", "sm")} onClick={() => onConnect(f)}>Conectar esta pasta</button></li>)}</ul>
     </> : <><p className="drive-lead">Ainda não apareceu nenhuma pasta compartilhada com <span className="drive-mono">{robot}</span>.</p><WaitingLine poll={poll} onResume={onResume} /></>}
-    <form className="drive-paste" onSubmit={(e) => { e.preventDefault(); onVerifyPaste(); }}>
+    <form className="drive-paste" noValidate onSubmit={(e) => { e.preventDefault(); onVerifyPaste(); }}>
       <label htmlFor="drive-link" className="drive-lead">{folders.length > 0 ? "Não apareceu? Cole o link da pasta:" : "Ou cole o link da pasta:"}</label>
       <div className="drive-paste-row"><input id="drive-link" type="url" inputMode="url" autoComplete="off" spellCheck={false} placeholder={SAMPLE_FOLDER_LINK} value={paste} onChange={(e) => setPaste(e.target.value)} aria-invalid={Boolean(pasteError)} aria-describedby={pasteError ? "drive-link-error" : "drive-link-hint"} /><button type="submit" className={btn("primary")} disabled={!paste.trim()}>Verificar</button></div>
       <p id="drive-link-hint" className="drive-note">Pode ser o link de uma subpasta de uma pasta já compartilhada. Links de “qualquer pessoa com o link” não são aceitos.</p>
@@ -301,8 +301,8 @@ export function DriveShareCard({ source, client = driveShareApi, syncBadge, disc
       <p className="integration-tool-description">{status.description}</p>
       {robot && <div className="drive-card-robot"><span className="drive-mono" title={robot}>Robô: {robot}</span><CopyButton text={robot} label="Copiar" variant="ghost" size="sm" /></div>}
       {folders.length > 0 && <ul className="drive-card-folders">{folders.map((f) => {
-        const days = daysUntil(f.purge_after, now); const lostFolder = f.status === "access_lost" || f.status === "purge_scheduled";
-        return <li key={f.id} data-lost={lostFolder || undefined}><FolderOpen size={16} aria-hidden="true" /><div className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b><span className="drive-folder-meta">{lostFolder ? `acesso removido${days !== null ? ` · apagando em ${days} ${days === 1 ? "dia" : "dias"}` : ""}` : `${f.file_count != null ? formatCount(f.file_count, "arquivo", "arquivos") : "contando arquivos"} · ${relativeSync(f.last_synced_at, now)}`}</span></div>
+        const days = daysUntil(f.purge_after, now); const lostFolder = f.status === "suspect" || f.status === "access_lost" || f.status === "purge_scheduled";
+        return <li key={f.id} data-lost={lostFolder || undefined}><FolderOpen size={16} aria-hidden="true" /><div className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b><span className="drive-folder-meta">{lostFolder ? `acesso removido${days !== null ? ` · apagando em ${days} ${days === 1 ? "dia" : "dias"}` : ""}` : `${f.file_count != null ? `${formatCount(f.file_count, "arquivo", "arquivos")} · ` : ""}${relativeSync(f.last_synced_at, now)}`}</span></div>
           {lostFolder && f.link_id && <button type="button" className={btn("danger-ghost", "sm")} disabled={busy !== null} onClick={() => purgeNow(f)}><Trash2 size={14} aria-hidden="true" />Apagar agora</button>}</li>;
       })}</ul>}
       {error && <p className="drive-field-error" role="alert"><CircleAlert size={14} aria-hidden="true" />{error}</p>}

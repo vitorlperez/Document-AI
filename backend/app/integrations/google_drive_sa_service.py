@@ -231,6 +231,7 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
         if link and link.status == "verified":
             return link
         source.status = "connected"
+        self.session.flush()  # select_scope re-reads the source; sessions run with autoflush=False
         folder = WorkspaceService(self.session).select_scope(
             scope=scope,
             user_id=user_id,

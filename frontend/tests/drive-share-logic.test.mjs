@@ -15,7 +15,7 @@ test("flag: desligada por padrão, aceita 1/true/on/sim", () => {
 
 test("flag desligada = integrations-screen só muda por trás de DRIVE_SHARE_ENABLED", () => {
   const screen = read("../app/product/integrations-screen.tsx");
-  assert.match(screen, /DRIVE_SHARE_ENABLED && !sourceId\) setDriveMethodOpen\(true\); else connect\(sourceId\)/);
+  assert.match(screen, /if \(DRIVE_SHARE_ENABLED\) \{ setOauthReconnectId\(sourceId\); setDriveMethodOpen\(true\); \} else connect\(sourceId\)/);
   assert.match(screen, /DRIVE_SHARE_ENABLED && driveMethodOpen/);
   assert.match(screen, /DRIVE_SHARE_ENABLED && driveFlow/);
   assert.match(screen, /driveShare=\{DRIVE_SHARE_ENABLED\}/);
@@ -177,4 +177,15 @@ test("verificação sem folder_count (contrato) mostra só arquivos; rotas levam
   assert.match(api, /organization_id=\$\{encodeURIComponent\(org\)\}/);
   assert.match(api, /\.folders/);
   assert.match(api, /url_or_id/);
+});
+
+test("e2e local: contrato final (GET folders com link_id, sync inicial, método sempre oferecido, URL sem validação nativa)", () => {
+  const api = read("../app/product/drive-share-api.ts"), flow = read("../app/product/drive-share-flow.tsx"), screen = read("../app/product/integrations-screen.tsx");
+  assert.match(api, /\$\{base\(sourceId\)\}\/folders`\);/);
+  assert.match(api, /id: f\.link_id/);
+  assert.doesNotMatch(api, /inbox\.filter\(\(f\) => f\.linked\)/);
+  assert.match(api, /\/library\/workspaces\/\$\{encodeURIComponent\(workspaceFolderId\)\}\/reprocess/);
+  assert.match(flow, /client\.startSync\(linked\.workspace_folder_id\)/);
+  assert.match(flow, /<form className="drive-paste" noValidate/);
+  assert.match(screen, /if \(DRIVE_SHARE_ENABLED\) \{ setOauthReconnectId\(sourceId\); setDriveMethodOpen\(true\)/);
 });

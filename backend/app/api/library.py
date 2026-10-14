@@ -41,7 +41,7 @@ def _indexing(item: FileIndexing) -> dict[str, object]:
 
 def _node(
     *, node: LibraryNode, documents: list[IndexedDocumentProvenance], source_provider: str | None = None,
-    indexing: FileIndexing | None = None,
+    indexing: FileIndexing | None = None, access: tuple[str, object] | None = None,
 ) -> dict[str, object]:
     return {
         "id": str(node.id),
@@ -59,6 +59,7 @@ def _node(
             for item in documents
         ],
         **({"indexing": _indexing(indexing)} if node.kind == "file" and indexing else {}),
+        **({"access_state": access[0], "purge_after": access[1].isoformat() if access[1] else None} if access else {}),
     }
 
 
@@ -100,8 +101,10 @@ def library_search(
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
     documents, indexing = service.documents_and_indexing_for_nodes(scope=scope, nodes=result.items)
+    access = service.robot_access_states(scope=scope, nodes=result.items)
     return {
-        "items": [_node(node=node, documents=documents.get(node.id, []), indexing=indexing.get(node.id))
+        "items": [_node(node=node, documents=documents.get(node.id, []), indexing=indexing.get(node.id),
+                        access=access.get(node.id))
                   for node in result.items],
         "page": result.page, "page_size": result.page_size, "total": result.total, "pages": result.pages,
     }
@@ -220,8 +223,10 @@ def library_children(
         # A foreign UUID is intentionally indistinguishable from an absent node.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="library node not found") from error
     documents, indexing = service.documents_and_indexing_for_nodes(scope=scope, nodes=result.items)
+    access = service.robot_access_states(scope=scope, nodes=result.items)
     return {
-        "items": [_node(node=node, documents=documents.get(node.id, []), indexing=indexing.get(node.id))
+        "items": [_node(node=node, documents=documents.get(node.id, []), indexing=indexing.get(node.id),
+                        access=access.get(node.id))
                   for node in result.items],
         "page": result.page,
         "page_size": result.page_size,
