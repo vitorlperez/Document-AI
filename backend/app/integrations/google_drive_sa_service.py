@@ -200,7 +200,11 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
             if x.get("sharedWithMeTime")
         ]
 
-    def verify(self, source, url_or_id, *, sample=True):
+    SAMPLE_FILES = 3
+    SAMPLE_MAX_BYTES = 10 * 1024 * 1024
+
+    def verify(self, source, url_or_id, *, sample=True, count=True):
+        """`count=False` is the link path: re-validates access only (ancestor chain), no listing."""
         try:
             folder_id = parse_folder_id(url_or_id)
         except ValueError:
@@ -209,25 +213,37 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
         root, share = self.client.verify_folder(credentials=credentials, folder_id=folder_id)
         # The first files.list is strictly after files.get and explicit-share verification.
         files = (
-            self.client.list_folder_files(credentials=credentials, root_folder_id=folder_id)
-            if sample
+            self.client.list_folder_files(
+                credentials=credentials, root_folder_id=folder_id, root_verified=True
+            )
+            if count
             else []
         )
         blocked = sum(x.can_download is False for x in files)
-        if sample:
+        if sample and files:
+            from concurrent.futures import ThreadPoolExecutor
+
             from app.ingestion.extraction import ELIGIBLE_MIME_TYPES
             from app.integrations.errors import SourceItemUnavailable
 
-            for file in [
+            candidates = [
                 x
                 for x in files
-                if x.can_download is not False and x.mime_type in ELIGIBLE_MIME_TYPES
-            ][:20]:
+                if x.can_download is not False
+                and x.mime_type in ELIGIBLE_MIME_TYPES
+                and (x.size is None or x.size <= self.SAMPLE_MAX_BYTES)
+            ][: self.SAMPLE_FILES]
+
+            def probe(file):
                 try:
                     with self.client.read_file(credentials=credentials, remote_file=file):
-                        pass
+                        return 0
                 except SourceItemUnavailable:
-                    blocked += 1
+                    return 1
+
+            if candidates:
+                with ThreadPoolExecutor(max_workers=len(candidates)) as pool:
+                    blocked += sum(pool.map(probe, candidates))
         return {
             "code": "download_blocked_partial" if blocked else "ok",
             "folder_id": folder_id,
@@ -242,7 +258,7 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
         source = self.source(scope=scope, user_id=user_id, source_id=source_id)
         # Serialize link creation against recheck and unlink in this source.
         self.session.scalar(select(DataSource).where(DataSource.id == source.id).with_for_update())
-        data, root = self.verify(source, folder_id)
+        data, root = self.verify(source, folder_id, sample=False, count=False)
         link = self.session.scalar(
             select(DriveFolderLink).where(
                 DriveFolderLink.organization_id == scope.organization_id,
@@ -274,7 +290,7 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
             self.session.add(link)
         link.shared_by_email = data["shared_by_email"]
         link.shared_at = datetime.fromisoformat(data["shared_at"]) if data["shared_at"] else None
-        link.blocked_download_count = data["blocked_download_count"]
+        # verify (count=False) skips the listing; the blocked count was reported by the earlier verify call.
         self.restore(link)
         self.session.flush()
         self.audit(source, user_id, "drive_sa.folder_linked", link.id)

@@ -189,3 +189,14 @@ test("e2e local: contrato final (GET folders com link_id, sync inicial, método 
   assert.match(flow, /<form className="drive-paste" noValidate/);
   assert.match(screen, /if \(DRIVE_SHARE_ENABLED\) \{ setOauthReconnectId\(sourceId\); setDriveMethodOpen\(true\)/);
 });
+
+test("robô sob demanda: enable é chamado uma vez, com polling de status e sem enable no state()", () => {
+  const flow = read("../app/product/drive-share-flow.tsx");
+  const api = read("../app/product/drive-share-api.ts");
+  assert.match(flow, /enabledOnce\.current\) return; enabledOnce\.current = true; enable\(\)/);
+  assert.match(flow, /client\.provisioning\(pendingSource\)/);
+  assert.match(flow, /Preparando o e-mail exclusivo da sua empresa…/);
+  assert.match(api, /`\$\{base\(sourceId\)\}\/status`/);
+  assert.doesNotMatch(api.slice(api.indexOf("state: async")), /google-sa\/enable/);
+  assert.equal(driveShareStatus("provisioning").tone, "pending");
+});

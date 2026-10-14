@@ -142,6 +142,14 @@ def _remove_url_preserving_punctuation(match: re.Match[str]) -> str:
     return suffix
 
 
+_BLOCK_LABEL = re.compile(r"^\s*(?:\*\*|__)?(?:direct answer|resposta direta)\s*(?::|-|–|—)\s*(?:\*\*|__)?\s*", re.IGNORECASE)
+
+
+def strip_block_label(value: str) -> str:
+    """Drop a leading presentation-block name the model echoed (e.g. "Direct answer:")."""
+    return _BLOCK_LABEL.sub("", value, count=1)
+
+
 def strip_answer_links(value: str) -> tuple[str, int]:
     """Guard service output without changing citation markers before validation."""
     counter = [0]

@@ -3,9 +3,11 @@
 import { API_BASE, ApiError } from "./types-and-api";
 import { verifyCodeFor, type FolderLink, type VerifyResult } from "./drive-share-logic";
 
-export type DriveShareEnable = { source_id: string; robot_email: string; share_role?: string };
+/** `status`: "provisioning" enquanto o worker cria o robô exclusivo da organização (poll em `status`); "ready" já traz o e-mail. */
+export type ProvisionStatus = "provisioning" | "ready" | "failed";
+export type DriveShareEnable = { source_id: string; robot_email: string | null; status?: ProvisionStatus; share_role?: string };
 export type InboxFolder = { id: string; name: string; shared_by_email?: string | null; shared_at?: string | null; linked?: boolean };
-export type DriveShareState = { source_id: string; status: string; robot_email: string; folders: FolderLink[] };
+export type DriveShareState = { source_id: string; status: string; robot_email: string | null; provision?: ProvisionStatus; folders: FolderLink[] };
 /** Linha de `GET .../folders` (contrato): `link_id` é o id do vínculo, `folder_id` o do Drive. */
 export type LinkedFolder = { link_id: string; folder_id: string; name: string; workspace_folder_id?: string | null; status: string; purge_after?: string | null; shared_by_email?: string | null; shared_at?: string | null; blocked_download_count?: number | null; last_synced_at?: string | null };
 const toFolderLink = (f: LinkedFolder): FolderLink => ({ ...f, id: f.link_id });
@@ -13,6 +15,8 @@ export type LinkResult = { link_id: string; folder_id: string; status: string; w
 
 export type DriveShareApi = {
   enable(organizationId: string): Promise<DriveShareEnable>;
+  /** Estado do provisionamento do robô (leitura pura; use para o polling em vez de chamar enable de novo). */
+  provisioning(sourceId: string): Promise<DriveShareEnable>;
   inbox(sourceId: string): Promise<InboxFolder[]>;
   verify(sourceId: string, urlOrId: string): Promise<VerifyResult>;
   link(sourceId: string, folderId: string): Promise<LinkResult>;
@@ -47,6 +51,7 @@ const asApiError = (error: unknown) => error instanceof DriveShareError ? new Ap
 
 export const driveShareApi: DriveShareApi = {
   enable: async (organizationId) => { organization = organizationId; try { return await call<DriveShareEnable>("/data-sources/google-sa/enable", post(), organizationId); } catch (e) { throw asApiError(e); } },
+  provisioning: async (sourceId) => { try { return await call<DriveShareEnable>(`${base(sourceId)}/status`); } catch (e) { throw asApiError(e); } },
   inbox: async (sourceId) => { try { return (await call<{ folders: InboxFolder[] }>(`${base(sourceId)}/inbox`)).folders; } catch (e) { throw asApiError(e); } },
   verify: async (sourceId, urlOrId) => {
     try { return await call<VerifyResult>(`${base(sourceId)}/folders/verify`, post({ url_or_id: urlOrId })); }
@@ -61,11 +66,12 @@ export const driveShareApi: DriveShareApi = {
   recheck: async (sourceId) => { try { await call<unknown>(`${base(sourceId)}/recheck`, post()); } catch (e) { throw asApiError(e); } },
   startSync: async (workspaceFolderId) => { try { await call<unknown>(`/library/workspaces/${encodeURIComponent(workspaceFolderId)}/reprocess`, post()); } catch (e) { throw asApiError(e); } },
   state: async (sourceId, status = "connected") => {
-    // `enable` é idempotente e é a única rota que devolve o e-mail do robô; `GET .../folders` lista os vínculos (inclui suspect/access_lost/removed).
+    // `GET .../status` devolve o e-mail do robô sem criar nada (não chama enable); `GET .../folders` lista os vínculos (inclui suspect/access_lost/removed).
     try {
-      const robot = await call<DriveShareEnable>("/data-sources/google-sa/enable", post());
+      const robot = await call<DriveShareEnable>(`${base(sourceId)}/status`);
+      if (robot.status === "provisioning" || robot.status === "failed") return { source_id: sourceId, status, robot_email: null, provision: robot.status, folders: [] };
       const { folders } = await call<{ folders: LinkedFolder[] }>(`${base(sourceId)}/folders`);
-      return { source_id: sourceId, status, robot_email: robot.robot_email, folders: folders.filter((f) => f.status !== "removed").map(toFolderLink) };
+      return { source_id: sourceId, status, robot_email: robot.robot_email, provision: "ready", folders: folders.filter((f) => f.status !== "removed").map(toFolderLink) };
     } catch (e) { throw asApiError(e); }
   },
 };

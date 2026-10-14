@@ -5,7 +5,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSPrope
 import { ModalOverlay } from "../modal-dismiss";
 import { ProviderLogo } from "../provider-logo";
 import { Spinner, btn } from "../ui";
-import { driveShareApi, type DriveShareApi, type InboxFolder, type DriveShareState } from "./drive-share-api";
+import { driveShareApi, type DriveShareApi, type InboxFolder, type DriveShareState, type ProvisionStatus } from "./drive-share-api";
 import {
   ROLE_HINT, SAMPLE_FOLDER_LINK, WORKSPACE_BLOCK_MESSAGE, POLL_INTERVAL_MS, checklistReach, driveFolderUrl, driveShareStatus, firstSyncEstimate, formatCount, initialPollState, itRequestText,
   parseDriveFolderLink, pollTick, relativeSync, resumePoll, verifyChecklist, verifyErrorMessage, daysUntil, type FolderLink, type VerifyResult,
@@ -87,6 +87,7 @@ export function DriveMethodModal({ onCancel, onContinue }: { onCancel: () => voi
 
 type Step = 1 | 2 | 3;
 type Robot = { sourceId: string; email: string };
+const PROVISION_POLL_MS = 3000; const PROVISION_TIMEOUT_MS = 5 * 60_000;
 export type DriveShareFlowProps = {
   organizationId: string; organizationName?: string; existingSource?: Pick<Source, "id"> | null;
   client?: DriveShareApi; onClose: () => void; onUseOAuth: () => void;
@@ -113,12 +114,34 @@ export function DriveShareFlow({ organizationId, organizationName, existingSourc
   const [announce, setAnnounce] = useState("");
   const autoAdvanced = useRef(false);
 
+  const [pendingSource, setPendingSource] = useState<string | null>(null);
+  const enabledOnce = useRef(false);
+  const settle = useCallback((r: { source_id: string; robot_email: string | null; status?: ProvisionStatus }) => {
+    if (r.status === "failed") { setEnableError("Não foi possível preparar o e-mail da sua empresa agora. Tente de novo em instantes."); return; }
+    if (r.status === "provisioning" || !r.robot_email) { setPendingSource(r.source_id); return; }
+    setPendingSource(null); setRobot({ sourceId: r.source_id, email: r.robot_email });
+  }, []);
   const enable = useCallback(() => {
     setEnableError(null);
-    if (existingSource) { client.state(existingSource.id).then((s) => setRobot({ sourceId: existingSource.id, email: s.robot_email })).catch((e) => setEnableError(messageFor(e))); return; }
-    client.enable(organizationId).then((r) => setRobot({ sourceId: r.source_id, email: r.robot_email })).catch((e) => setEnableError(e instanceof ApiError && e.status === 403 ? "Só responsáveis e administradores configuram o acesso ao Google Drive." : messageFor(e)));
-  }, [client, existingSource, organizationId]);
-  useEffect(() => { if (!preview) enable(); }, [enable, preview]);
+    if (existingSource) { client.state(existingSource.id).then((s) => settle({ source_id: existingSource.id, robot_email: s.robot_email, status: s.provision })).catch((e) => setEnableError(messageFor(e))); return; }
+    client.enable(organizationId).then(settle).catch((e) => setEnableError(e instanceof ApiError && e.status === 403 ? "Só responsáveis e administradores configuram o acesso ao Google Drive." : messageFor(e)));
+  }, [client, existingSource, organizationId, settle]);
+  // Uma única chamada ao abrir (StrictMode/re-render não repetem); "Tentar de novo" chama enable() direto.
+  useEffect(() => { if (preview || enabledOnce.current) return; enabledOnce.current = true; enable(); }, [enable, preview]);
+  // Robô sob demanda: o worker cria o e-mail exclusivo (30–120 s no pior caso); poll leve até ficar pronto.
+  useEffect(() => {
+    if (!pendingSource || preview) return;
+    let cancelled = false; const started = Date.now();
+    const timer = window.setInterval(() => {
+      void client.provisioning(pendingSource).then((r) => {
+        if (cancelled) return;
+        if (r.status === "ready" && r.robot_email) { settle(r); }
+        else if (r.status === "failed") { setPendingSource(null); settle(r); }
+        else if (Date.now() - started > PROVISION_TIMEOUT_MS) { setPendingSource(null); setEnableError("Está demorando mais que o normal para preparar o e-mail da sua empresa. Tente de novo em alguns minutos."); }
+      }).catch(() => undefined);
+    }, PROVISION_POLL_MS);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [pendingSource, client, settle, preview]);
 
   // Polling do inbox: 5 s, até 5 min, depois pausa (botão "Retomar"). Só nos passos 1 e 2.
   const pollActive = robot !== null && step < 3 && poll.phase === "polling" && !preview;

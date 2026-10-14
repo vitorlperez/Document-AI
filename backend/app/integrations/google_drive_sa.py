@@ -268,8 +268,10 @@ class SaDriveClient:
             )
         ]
 
-    def list_folder_files(self, *, credentials, root_folder_id):
-        self.verify_folder(credentials=credentials, folder_id=root_folder_id)
+    def list_folder_files(self, *, credentials, root_folder_id, root_verified=False):
+        """`root_verified`: the caller just ran verify_folder on the root (skips two repeated gets)."""
+        if not root_verified:
+            self.verify_folder(credentials=credentials, folder_id=root_folder_id)
         pending, visited, files = [root_folder_id], set(), []
         while pending:
             folder = pending.pop()
@@ -277,7 +279,8 @@ class SaDriveClient:
                 continue
             visited.add(folder)
             # Never enumerate a parent before checking access with files.get.
-            self.metadata(credentials=credentials, file_id=folder)
+            if not (root_verified and folder == root_folder_id):
+                self.metadata(credentials=credentials, file_id=folder)
             for item in self._list(
                 credentials,
                 f"'{folder}' in parents and trashed = false",

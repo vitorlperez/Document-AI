@@ -150,6 +150,8 @@ export function driveShareStatus(status: DriveShareStatus): StatusPresentation {
     case "awaiting_share": return { label: "Aguardando compartilhamento", description: "Compartilhe uma pasta do Google Drive com o e-mail abaixo para começar.", tone: "pending" };
     case "access_lost": return { label: "Acesso removido", description: "O compartilhamento foi removido. Paramos de sincronizar e escondemos o conteúdo; para voltar, compartilhe de novo.", tone: "warning" };
     case "provider_error": return { label: "Problema técnico", description: "Estamos com um problema para acessar o Google Drive. Já fomos avisados; você não precisa reconectar.", tone: "error" };
+    case "provisioning": return { label: "Preparando", description: "Estamos preparando o e-mail exclusivo da sua empresa. Isso leva até um ou dois minutos.", tone: "pending" };
+    case "provisioning_failed": return { label: "Problema técnico", description: "Não conseguimos preparar o e-mail agora. Abra a conexão e tente de novo.", tone: "error" };
     case "disconnected": return { label: "Desconectado", description: "Esta conexão foi encerrada.", tone: "neutral" };
     default: return { label: "Aguardando", description: "Estamos verificando esta conexão.", tone: "pending" };
   }

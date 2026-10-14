@@ -24,7 +24,7 @@ from app.core.logging import current_request_id, log_agent_phase, provider_call_
 from app.core.scoping import OrganizationScope
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
-from app.knowledge.presentation import strip_answer_links
+from app.knowledge.presentation import strip_answer_links, strip_block_label
 from app.knowledge.queryability import folder_is_queryable
 from app.knowledge.similarity import PgVectorSimilarity, SimilarityIndex, default_similarity
 from app.knowledge.untrusted import UNTRUSTED_NOTICE, fence_sources, strip_invisible
@@ -293,7 +293,7 @@ class QuestionResult:
 
     def __post_init__(self) -> None:
         if self.answer is not None:
-            object.__setattr__(self, "answer", strip_answer_links(self.answer)[0])
+            object.__setattr__(self, "answer", strip_block_label(strip_answer_links(self.answer)[0]))
 
 
 @dataclass(frozen=True)
@@ -302,7 +302,7 @@ class GeneratedAnswer:
     citation_indexes: list[int]
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "text", strip_answer_links(self.text)[0])
+        object.__setattr__(self, "text", strip_block_label(strip_answer_links(self.text)[0]))
 
 
 # Presentation vocabulary of every final answer. The frontend (answer-blocks.ts) renders these blocks and
@@ -311,7 +311,8 @@ ANSWER_FORMAT_GUIDANCE = (
     " Format the answer as Markdown for a chat interface, composed from this small vocabulary of blocks. "
     "Choose the blocks that fit what was asked and what the sources contain; there is no fixed template, and "
     "a short factual answer can be one or two sentences with no other block. Blocks: "
-    "(1) Direct answer: open with one or two sentences that answer or summarize. "
+    "(1) Opening: begin with one or two plain sentences that answer or summarize, with no label before them. "
+    "Block names in this list are instructions only; never write a block name (such as 'Opening') as text. "
     "(2) Section: a short title line '## Title' before a group of related blocks, only when the answer has "
     "several parts. "
     "(3) File card: only when the user asks for the answer file by file (for example a summary of each file, "

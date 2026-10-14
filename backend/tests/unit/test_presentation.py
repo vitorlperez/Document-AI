@@ -57,3 +57,15 @@ def test_service_results_are_safe_before_http_serialization():
         "Veja [aqui](https://evil.test) [1]", "supported", [], "sufficient_evidence"
     )
     assert result.answer == "Veja aqui [1]"
+
+
+def test_block_name_label_never_leaks_into_answer_text():
+    from app.knowledge.presentation import strip_block_label
+    from app.knowledge.questions import ANSWER_FORMAT_GUIDANCE, GeneratedAnswer
+
+    for raw in ("Direct answer: O contrato vence em 2027.", "**Direct answer:** O contrato vence em 2027.",
+                "Direct answer - O contrato vence em 2027.", "  direct answer:\nO contrato vence em 2027."):
+        assert strip_block_label(raw) == "O contrato vence em 2027."
+        assert GeneratedAnswer(raw, [1]).text == "O contrato vence em 2027."
+    assert strip_block_label("O direct answer: do contrato é sim.") == "O direct answer: do contrato é sim."
+    assert "Direct answer" not in ANSWER_FORMAT_GUIDANCE  # the model must not see a label to echo
