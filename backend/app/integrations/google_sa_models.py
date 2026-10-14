@@ -76,6 +76,7 @@ class DriveFolderLink(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     suspect_since: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     access_lost_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     purge_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    last_reconciled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_error_code: Mapped[str | None] = mapped_column(String(40))
     created_by_user_id: Mapped[UUID] = mapped_column(

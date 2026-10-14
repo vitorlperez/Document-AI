@@ -67,6 +67,61 @@ class GoogleDriveProviderAdapter:
         return self._provider.cipher.encrypt_cursor(value)
 
 
+class GoogleDriveSaProviderAdapter(GoogleDriveProviderAdapter):
+    key = "google_drive_sa"
+    capabilities = ProviderCapabilities(supports_oauth=False, supports_hierarchical_scopes=True,
+                                        supports_incremental_sync=True)
+
+    def __init__(self, settings, *, session=None, source_id=None, organization_id=None):
+        from app.integrations.google_drive_sa import ServiceAccountTokenSource
+        from app.integrations.google_drive_sa_service import DriveSaConnectionService
+        from app.integrations.models import DataSource
+        if session is None or source_id is None or organization_id is None:
+            raise ProviderNotConfigured("robot Drive requires a tenant-scoped session")
+        self.service = DriveSaConnectionService(session, settings)
+        self.source = session.get(DataSource, source_id)
+        if not self.source or self.source.organization_id != organization_id:
+            raise ProviderNotConfigured("robot Drive source unavailable")
+        identity = self.service.identity(self.source)
+        self._provider = GoogleDriveDocumentProvider(self.service.client,
+            CredentialCipher(settings.cipher_keys("google_drive_sa")[0]),
+            credential_source=ServiceAccountTokenSource(identity.encrypted_key, self.service.cipher),
+            extraction_workers=settings.google_sa_download_workers,session=session,source_id=source_id)
+        self.eligible_mime_types = eligible_mime_types(settings)
+
+    def discover(self, *, selections, **kwargs):
+        from datetime import UTC, datetime, timedelta
+
+        from app.integrations.google_drive_sa import SaRequestError
+        from app.integrations.google_drive_sa_service import utc
+        linked = {x.external_folder_id:x for x in self.service.links(self.source)}
+        for selection in selections:
+            link = linked.get(selection.external_folder_id)
+            if selection.kind != "folder" or not link or link.status != "verified":
+                raise SaRequestError("invalid_scope")
+            self.service.client.verify_folder(credentials=self._provider.credential_source.credentials(),
+                                              folder_id=selection.external_folder_id)
+        if any(linked[x.external_folder_id].last_reconciled_at is None or
+               utc(linked[x.external_folder_id].last_reconciled_at) <= datetime.now(UTC) - timedelta(days=1)
+               for x in selections):
+            kwargs["force_full"] = True
+        result = super().discover(selections=selections, **kwargs)
+        # No result is returned if a root loses access while extraction runs.
+        for selection in selections:
+            self.service.client.verify_folder(credentials=self._provider.credential_source.credentials(),
+                                              folder_id=selection.external_folder_id)
+        return result
+
+    def folders_for_selections(self, *, encrypted_credentials, selections):
+        rows = self._provider.folders(encrypted_credentials=encrypted_credentials or "")
+        included = {x.external_folder_id for x in selections}
+        while True:
+            found = {x.id for x in rows if set(x.parent_ids) & included} - included
+            if not found: break
+            included |= found
+        return [x for x in rows if x.id in included]
+
+
 class NotionProviderAdapter:
     key = "notion"
     capabilities = ProviderCapabilities(
@@ -239,11 +294,18 @@ class IntegrationRegistry:
             "onedrive": lambda: OneDriveProviderAdapter(settings),
             "sharepoint": lambda: SharePointProviderAdapter(settings),
         }
+        if settings.google_drive_sa_enabled:
+            self._factories["google_drive_sa"] = lambda: GoogleDriveSaProviderAdapter(settings)
 
     def get(
         self, provider: str, *, session=None, source_id=None, organization_id=None, session_factory=None
     ) -> SourceProvider:
-        if provider == "google_drive":
+        if provider == "google_drive_sa":
+            if not self._settings.google_sa_enabled_for(organization_id):
+                raise ProviderNotConfigured("robot Drive disabled")
+            adapter = GoogleDriveSaProviderAdapter(self._settings, session=session,
+                source_id=source_id, organization_id=organization_id)
+        elif provider == "google_drive":
             adapter = GoogleDriveProviderAdapter(self._settings, session=session, source_id=source_id)
         else:
             factory = self._factories.get(provider)
@@ -258,7 +320,7 @@ class IntegrationRegistry:
         if target is None or not hasattr(target, "ocr"):
             return
         engine, budget = build_ocr(self._settings)
-        if engine is not None and organization_id is not None and session_factory is not None:
+        if engine is not None and organization_id is not None and session_factory is not None and adapter.key != "google_drive_sa":
             engine = CachingOcr(engine, session_factory, organization_id)
         # One budget per provider instance, i.e. per sync job.
         target.ocr, target.budget = engine, budget()

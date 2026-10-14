@@ -2,15 +2,17 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.api.auth import current_user, database_session
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.ingestion.service import SyncAccessDenied
+from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
 from app.library.service import LibraryService
+from app.workspaces.models import WorkspaceFolder
 
 router = APIRouter(tags=['evidence'])
 MAX_PASSAGE_CHARS = 4000
@@ -23,7 +25,10 @@ def scoped_document(session: Session, *, organization_id: UUID, document_id: UUI
         contexts = LibraryService(session).question_contexts(scope=scope, user_id=user.id)
     except SyncAccessDenied as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, 'evidence not found') from error
-    document = session.scalar(select(Document).where(
+    document = session.scalar(select(Document)
+        .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+        .join(DataSource, DataSource.id == WorkspaceFolder.source_id).where(
+        or_(DataSource.provider != "google_drive_sa", WorkspaceFolder.status != "access_lost"),
         Document.id == document_id, Document.organization_id == organization_id,
         Document.workspace_folder_id.in_([item.id for item in contexts]),
     ))

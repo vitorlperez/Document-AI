@@ -23,6 +23,7 @@ from app.ingestion.extraction.mime import normalize_mime_type
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import EMPTY_CONTENT, DiscoveryResult, IngestionService
 from app.integrations.errors import SourceRemoteUnauthorized
+from app.integrations.google_drive_sa import FolderAccessLost, RobotUnavailable, SaRequestError
 from app.integrations.http import RemoteThrottled
 from app.integrations.models import DataSource
 from app.integrations.registry import IntegrationRegistry
@@ -58,8 +59,8 @@ ORPHAN_REINGEST_PROVIDERS = frozenset({"google_drive", "onedrive", "sharepoint"}
 MAX_ORPHAN_REINGEST = 200
 
 
-def beat_schedule(interval_minutes: int) -> dict[str, dict[str, object]]:
-    return {
+def beat_schedule(interval_minutes: int, sa_enabled: bool = False) -> dict[str, dict[str, object]]:
+    schedule = {
         "schedule-connected-source-reconciliation": {
             "task": "document_intelligence.ingestion.schedule",
             "schedule": timedelta(minutes=interval_minutes),
@@ -78,18 +79,96 @@ def beat_schedule(interval_minutes: int) -> dict[str, dict[str, object]]:
         },
     }
 
+    if sa_enabled:
+        schedule["drive-sa-access-retention"] = {
+            "task": "document_intelligence.ingestion.drive_sa_maintenance",
+            "schedule": timedelta(hours=1),
+        }
+    return schedule
+
 
 # `celery -A app.ingestion.tasks beat` only imports this module, so the schedule
 # must exist here, not only in create_celery_app (which just the API calls).
 celery_app.conf.beat_schedule = beat_schedule(
-    int(os.getenv("SYNC_SCHEDULER_INTERVAL_MINUTES", "15"))
+    int(os.getenv("SYNC_SCHEDULER_INTERVAL_MINUTES", "15")),
+    os.getenv("GOOGLE_DRIVE_SA_ENABLED", "false").lower() in {"true", "1", "yes"}
 )
 
 
 def create_celery_app(settings: Settings) -> Celery:
     celery_app.conf.broker_url = settings.redis_url
-    celery_app.conf.beat_schedule = beat_schedule(settings.sync_scheduler_interval_minutes)
+    celery_app.conf.beat_schedule = beat_schedule(settings.sync_scheduler_interval_minutes, getattr(settings, "google_drive_sa_enabled", False))
     return celery_app
+
+
+def maintain_drive_sa(*, session, settings, service=None, now=None):
+    """Confirm revocation hourly; recheck recovery before deleting retained knowledge."""
+    from app.integrations.google_drive_sa_service import DriveSaConnectionService
+    counts = {"checked": 0, "purged": 0, "errors": 0}
+    if not settings.google_drive_sa_enabled:
+        return counts
+    from app.integrations.google_sa_models import GoogleSaIdentity
+    free_count = session.scalar(select(func.count()).select_from(GoogleSaIdentity).where(GoogleSaIdentity.status == "free"))
+    if free_count < 10:
+        logger.warning("robot pool low", extra={"event": "drive_sa.pool_low", "free_count": free_count})
+    from sqlalchemy import or_
+    overdue_count = session.scalar(select(func.count()).select_from(GoogleSaIdentity).where(
+        GoogleSaIdentity.status == "assigned",
+        or_(GoogleSaIdentity.rotated_at <= (now or datetime.now(UTC)) - timedelta(days=90),
+            GoogleSaIdentity.rotated_at.is_(None) & (GoogleSaIdentity.created_at <= (now or datetime.now(UTC)) - timedelta(days=90)))))
+    if overdue_count:
+        logger.warning("robot key rotation overdue", extra={"event": "drive_sa.rotation_overdue", "count": overdue_count})
+    connection = service or DriveSaConnectionService(session, settings)
+    sources = list(session.scalars(select(DataSource).where(DataSource.provider == "google_drive_sa",
+        DataSource.status != "disconnected")))
+    for source in sources:
+        if not settings.google_sa_enabled_for(source.organization_id):
+            continue
+        try:
+            connection.recheck(source, now=now)
+            counts["checked"] += 1
+        except RobotUnavailable:
+            source.status = "provider_error"
+            counts["errors"] += 1
+            logger.error("robot token unavailable", extra={"event": "drive_sa.robot_unavailable"})
+        except (RemoteThrottled, SaRequestError):
+            counts["errors"] += 1
+        session.commit()
+    counts["purged"] = connection.purge_due(now=now)
+    session.commit()
+    logger.info("robot retention check", extra={"event": "drive_sa.maintenance", **counts})
+    return counts
+
+
+@celery_app.task(name="document_intelligence.ingestion.drive_sa_maintenance")
+def drive_sa_maintenance_task():
+    settings = get_settings()
+    if not settings.google_drive_sa_enabled:
+        return {"checked": 0, "purged": 0, "errors": 0}
+    engine = build_engine(settings)
+    try:
+        with build_session_factory(engine)() as session:
+            return maintain_drive_sa(session=session, settings=settings)
+    finally:
+        engine.dispose()
+
+
+def require_active_sa_scope(session, source, folder, settings):
+    """Serialize publication with unlink/recheck so revoked content cannot reappear."""
+    if getattr(source, "provider", "google_drive") != "google_drive_sa":
+        return
+    from app.integrations.google_sa_models import DriveFolderLink
+    if not settings.google_sa_enabled_for(source.organization_id):
+        raise SaRequestError("disabled",404)
+    session.scalar(select(DataSource).where(DataSource.id == source.id).with_for_update())
+    selected = list(session.scalars(select(WorkspaceFolderSelection).where(
+        WorkspaceFolderSelection.workspace_folder_id == folder.id)))
+    links = {x.external_folder_id: x.status for x in session.scalars(select(DriveFolderLink).where(
+        DriveFolderLink.organization_id == source.organization_id, DriveFolderLink.data_source_id == source.id)
+        .execution_options(populate_existing=True))}
+    for item in selected:
+        if item.kind != "folder" or links.get(item.external_folder_id) != "verified":
+            raise FolderAccessLost(item.external_folder_id)
 
 
 def schedule_connected_source_reconciliations(
@@ -150,10 +229,18 @@ def schedule_connected_source_reconciliations(
     )
     for folder in folders:
         source = sources_by_id[folder.source_id]
-        last_synced_at = _as_utc(source.last_synced_at)
+        if getattr(source, "provider", None) == "google_drive_sa" and not settings.google_sa_enabled_for(folder.organization_id):
+            counts["skipped"] += 1
+            continue
+        is_robot = getattr(source, "provider", None) == "google_drive_sa"
+        if is_robot and folder.status == "access_lost":
+            counts["skipped"] += 1
+            continue
+        last_synced_at = _as_utc(folder.last_synced_at if is_robot else source.last_synced_at)
+        provider_cutoff = current_time - timedelta(minutes=settings.sync_scheduler_interval_minutes) if is_robot else freshness_cutoff
         if (
             last_synced_at is not None
-            and last_synced_at >= freshness_cutoff
+            and last_synced_at >= provider_cutoff
             and folder.id not in ocr_backlog
         ):
             counts["skipped"] += 1
@@ -504,6 +591,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 discovered_documents if isinstance(discovered_documents, DiscoveryResult) else None
             )
             document_results = discovery.documents if discovery else discovered_documents
+            require_active_sa_scope(session, source, folder, settings)
             # Keep remote metadata and the document snapshot in the same unit
             # of work. A failed projection retries the job and never leaves a
             # ready sync that cannot be browsed from the Company Library.
@@ -543,6 +631,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 batch = document_results[start:start + batch_size]
                 update_progress(session, job, stage="indexing")
                 session.commit()
+                require_active_sa_scope(session, source, folder, settings)
                 projected_job = service.apply_reconciliation(
                     job_id=job.id, run_token=run_token,
                     documents=DiscoveryResult(documents=batch, full_snapshot=False),
@@ -628,6 +717,7 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                 scope=OrganizationScope(job.organization_id),
                 workspace_folder_id=job.workspace_folder_id,
             )
+            require_active_sa_scope(session, source, folder, settings)
             projected_job = service.apply_reconciliation(
                 job_id=job.id, run_token=run_token, documents=discovered_documents,
                 manual_folders=source_folders, finalize=False,
@@ -679,6 +769,14 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
             updated_credentials = getattr(provider, "updated_encrypted_credentials", None)
             if updated_credentials:
                 source.encrypted_credentials = updated_credentials
+            if getattr(source, "provider", None) == "google_drive_sa" and discovery and discovery.full_snapshot:
+                from app.integrations.google_sa_models import DriveFolderLink
+                selected_roots = {x.external_folder_id for x in selections}
+                for link in session.scalars(select(DriveFolderLink).where(
+                    DriveFolderLink.organization_id == source.organization_id,
+                    DriveFolderLink.data_source_id == source.id,
+                    DriveFolderLink.external_folder_id.in_(selected_roots))):
+                    link.last_reconciled_at = completed_job.completed_at
             source.last_synced_at = completed_job.completed_at
             session.commit()
             refresh_followed_after_sync(session, settings, job.workspace_folder_id)
@@ -693,6 +791,23 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                     "job_id": job_id,
                 },
             )
+        except FolderAccessLost as error:
+            session.rollback()
+            if source is not None:
+                from app.integrations.google_drive_sa_service import DriveSaConnectionService
+                DriveSaConnectionService(session, settings).mark_suspect(source, error.folder_id)
+            if run_token is not None:
+                service.fail(job_id=UUID(job_id), error_code="folder_access_lost", expected_run_token=run_token)
+            session.commit()
+        except (RobotUnavailable, SaRequestError) as error:
+            session.rollback()
+            if source is not None and isinstance(error, RobotUnavailable):
+                source.status = "provider_error"
+                logger.error("robot token unavailable", extra={"event": "drive_sa.robot_unavailable"})
+            if run_token is not None:
+                service.fail(job_id=UUID(job_id), error_code="robot_unavailable" if isinstance(error, RobotUnavailable) else error.code,
+                             expected_run_token=run_token)
+            session.commit()
         except SourceRemoteUnauthorized:
             if source is not None:
                 source.status = "reauth_required"

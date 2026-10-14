@@ -1,6 +1,7 @@
 """M58 dedicated Drive robots and explicit folder grants."""
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "20261014_0032"
@@ -103,7 +104,13 @@ def upgrade():
         sa.Column("blocked_download_count", sa.Integer(), nullable=False, server_default="0"),
         *[
             sa.Column(name, sa.DateTime(timezone=True))
-            for name in ("suspect_since", "access_lost_at", "purge_after", "last_checked_at")
+            for name in (
+                "suspect_since",
+                "access_lost_at",
+                "purge_after",
+                "last_checked_at",
+                "last_reconciled_at",
+            )
         ],
         sa.Column("last_error_code", sa.String(40)),
         sa.Column(

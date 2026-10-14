@@ -78,4 +78,4 @@ class ClickUpTaskCreation(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     )
 
 # Register additive SA tables wherever DataSource metadata is loaded.
-from app.integrations import google_sa_models  # noqa: E402, F401
+from app.integrations import google_sa_models  # noqa: F401

@@ -8,6 +8,8 @@ from sqlalchemy import select as sql_select
 from sqlalchemy.orm import Session
 
 from app.api.auth import current_user, database_session
+from app.api.drive_sa import api_errors
+from app.api.drive_sa import build_service as drive_sa_service
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.integrations.clickup import (
@@ -529,6 +531,7 @@ def sources(
             "connected_by_email": connector_emails.get(x.connected_by_user_id),
         }
         for x in rows
+        if x.provider != "google_drive_sa" or request.app.state.settings.google_sa_enabled_for(organization_id)
     ]
 
 
@@ -546,6 +549,11 @@ def disconnect_source(
             DataSource.organization_id == organization_id,
         )
     )
+    if source is not None and source.provider == "google_drive_sa":
+        with api_errors():
+            drive_sa_service(request, session).disconnect(
+                scope=OrganizationScope(organization_id), user_id=user.id, source_id=source_id)
+        return
     services = {**MICROSOFT_SERVICES, "notion": notion_service, "clickup": clickup_service}
     build_service = services.get(source.provider if source is not None else "", service)
     try:
@@ -570,6 +578,11 @@ def folders(
             DataSource.organization_id == organization_id,
         )
     )
+    if source is not None and source.provider == "google_drive_sa":
+        with api_errors():
+            sa = drive_sa_service(request, session)
+            sa.source(scope=OrganizationScope(organization_id), user_id=user.id, source_id=source_id)
+            return [{"id": x.id, "name": x.name} for x in sa.linked_folders(source)]
     if source is not None and source.provider in MICROSOFT_SERVICES:
         try:
             rows = MICROSOFT_SERVICES[source.provider](request, session).folders(
@@ -614,9 +627,17 @@ def scope_catalog(
         sql_select(DataSource).where(
             DataSource.id == source_id,
             DataSource.organization_id == organization_id,
-            DataSource.status == "connected",
+            (DataSource.status == "connected") | (DataSource.provider == "google_drive_sa"),
         )
     )
+    if source is not None and source.provider == "google_drive_sa":
+        with api_errors():
+            sa = drive_sa_service(request, session)
+            sa.source(scope=OrganizationScope(organization_id), user_id=user.id, source_id=source_id)
+            return {"folders": [{"id": x.id, "name": x.name, "kind": "folder", "parent_ids": []}
+                                for x in sa.linked_folders(source)],
+                    "root_files": {"available": False, "label": "Arquivos avulsos da raiz"},
+                    "all_accessible": {"available": False, "label": "Pastas vinculadas ao robô"}}
     if source is not None and source.provider == "notion":
         try:
             notion_service(request, session).require_admin(
@@ -755,7 +776,18 @@ def select_scope(
         )
         if selected_source is None:
             raise GoogleAccessDenied("source access denied")
-        if selected_source.provider == "notion":
+        if selected_source.provider == "google_drive_sa":
+            from app.integrations.google_drive_sa import SaRequestError
+            with api_errors():
+                sa = drive_sa_service(request, session)
+                sa.source(scope=scoped, user_id=user.id, source_id=payload.source_id)
+                if payload.mode != "selected" or payload.include_root_files:
+                    raise SaRequestError("invalid_scope")
+                remote = sa.linked_folders(selected_source)
+                allowed = {x.id for x in remote}
+                if not payload.folder_ids or any(x not in allowed for x in payload.folder_ids):
+                    raise SaRequestError("invalid_scope")
+        elif selected_source.provider == "notion":
             notion_service(request, session).require_admin(scope=scoped, user_id=user.id)
             remote = (
                 IntegrationRegistry(request.app.state.settings)

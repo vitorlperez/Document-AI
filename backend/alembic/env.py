@@ -13,6 +13,11 @@ from app.core.config import get_settings
 from app.core.models import Base
 from app.identity.models import User  # noqa: F401
 from app.ingestion.models import ProcessingJob  # noqa: F401
+from app.integrations.google_sa_models import (  # noqa: F401
+    DriveFolderLink,
+    GoogleSaIdentity,
+    GoogleSaProject,
+)
 from app.knowledge.models import Document, DocumentChunk  # noqa: F401
 from app.library.models import LibraryNode  # noqa: F401
 from app.notifications.models import Notification, NotificationPreference  # noqa: F401

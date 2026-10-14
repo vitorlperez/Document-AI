@@ -59,7 +59,7 @@ def test_integration_migration_chain_preserves_main_revision():
     config = Config(str(BACKEND_DIR / "alembic.ini"))
     config.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261013_0031"]
+    assert scripts.get_heads() == ["20261014_0032"]
     expected = [
         ("20260930_0019", "library_exclusions"),
         ("20260930_0020", "pgvector_expand"),
@@ -74,6 +74,7 @@ def test_integration_migration_chain_preserves_main_revision():
         ("20261011_0029", "clickup_task_creations"),
         ("20261012_0030", "automations"),
         ("20261013_0031", "webhooks"),
+        ("20261014_0032", "drive_service_accounts"),
     ]
     previous = "20260929_0018"
     for revision, slug in expected:

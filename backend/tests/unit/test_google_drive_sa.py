@@ -1,6 +1,7 @@
 """M58 service-account security and credential contract (no network)."""
 
 import json
+from datetime import UTC, datetime
 
 import httpx
 import jwt
@@ -225,3 +226,59 @@ def test_disabled_registry_has_no_robot_provider():
     settings = Settings(database_url="postgresql+psycopg://u:p@localhost/db", _env_file=None)
     with pytest.raises(ProviderNotConfigured):
         IntegrationRegistry(settings).get("google_drive_sa")
+
+
+def test_legacy_domain_folder_link():
+    assert (
+        parse_folder_id("https://drive.google.com/a/acme.com.br/drive/folders/Abc_123456789")
+        == "Abc_123456789"
+    )
+
+
+@pytest.mark.parametrize("age,expected", [(0, False), (2, True)])
+def test_daily_full_reconciliation_without_modified_time(age, expected):
+    from datetime import timedelta
+    from types import SimpleNamespace
+    from uuid import uuid4
+
+    from app.ingestion.service import DiscoveryResult
+    from app.integrations.registry import GoogleDriveSaProviderAdapter
+    from app.workspaces.models import WorkspaceFolderSelection
+
+    adapter = GoogleDriveSaProviderAdapter.__new__(GoogleDriveSaProviderAdapter)
+    calls = []
+
+    class Provider:
+        credential_source = SimpleNamespace(credentials=lambda: GoogleCredentials("t", None, None))
+
+        def discover(self, **kwargs):
+            calls.append(kwargs)
+            return DiscoveryResult(documents=[], full_snapshot=kwargs.get("force_full", False))
+
+    link = SimpleNamespace(
+        external_folder_id="root_123456",
+        status="verified",
+        last_reconciled_at=datetime.now(UTC) - timedelta(days=age),
+    )
+    adapter._provider = Provider()
+    adapter.source = SimpleNamespace()
+    adapter.service = SimpleNamespace(
+        links=lambda source: [link], client=SimpleNamespace(verify_folder=lambda **kw: None)
+    )
+    result = adapter.discover(
+        encrypted_credentials="",
+        selections=[
+            WorkspaceFolderSelection(id=uuid4(), kind="folder", external_folder_id="root_123456")
+        ],
+    )
+    assert result.full_snapshot is expected
+    assert "modifiedTime" not in str(calls)
+
+
+def test_invalid_robot_private_key_is_ops_error():
+    cipher = ServiceAccountKeyCipher(Fernet.generate_key().decode())
+    encrypted = cipher.encrypt(
+        {"client_email": "robot@example.test", "private_key": "invalid", "private_key_id": "id"}
+    )
+    with pytest.raises(RobotUnavailable):
+        ServiceAccountTokenSource(encrypted, cipher).credentials()

@@ -57,7 +57,8 @@ def parse_folder_id(value):
     if parsed.scheme != "https" or parsed.netloc != "drive.google.com":
         raise ValueError("invalid_folder_link")
     match = re.fullmatch(
-        r"/(?:drive/)?(?:u/\d+/|mobile/|a/[^/]+/)?folders/([A-Za-z0-9_-]{10,128})/?", parsed.path
+        r"/(?:a/[^/]+/)?(?:drive/)?(?:u/\d+/|mobile/)?folders/([A-Za-z0-9_-]{10,128})/?",
+        parsed.path,
     )
     if match:
         return match.group(1)
@@ -155,7 +156,7 @@ class ServiceAccountTokenSource:
                     token, None, datetime.fromtimestamp(now + expires, UTC)
                 )
                 return self._cached
-            except (KeyError, ValueError, TypeError, httpx.HTTPError):
+            except (KeyError, ValueError, TypeError, httpx.HTTPError, jwt.PyJWTError):
                 raise RobotUnavailable("robot_unavailable") from None
 
 
@@ -166,6 +167,14 @@ class _SaHttp:
         self.http = http
 
     def request(self, method, url, **kwargs):
+        params = kwargs.get("params")
+        if params and "fields" in params:
+            params = dict(params)
+            fields = params["fields"]
+            if "capabilities" not in fields:
+                fields = fields.replace("md5Checksum", "md5Checksum,capabilities(canDownload)")
+            params["fields"] = fields
+            kwargs["params"] = params
         response = self.http.request(method, url, **kwargs)
         if "/changes" in url and response.status_code in (400, 410):
             raise GoogleCursorInvalid("cursor_expired")
