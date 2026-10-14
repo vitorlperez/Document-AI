@@ -176,7 +176,7 @@ def test_propagation_error_retries_and_failed_key_leaves_no_identity(env):
 
 
 def test_warm_pool_tops_up_and_enable_claims_it(env):
-    session, settings, _ = env
+    session, _, _ = env
     worker = provisioner(env, FakeIam())
     assert worker.top_up_warm() >= 1  # throttle may stop early, never exceeds the size
     free = list(session.scalars(select(GoogleSaIdentity).where(GoogleSaIdentity.status == "free")))
@@ -187,7 +187,7 @@ def test_warm_pool_tops_up_and_enable_claims_it(env):
     assert source.sa_identity_id in {x.id for x in free}
 
 
-def test_pool_tick_requeues_stale_provisioning_and_alerts(env, caplog):
+def test_pool_tick_requeues_stale_provisioning_and_alerts(env):
     session, settings, _ = env
     source = make_source(session)
     sent = []
@@ -198,12 +198,21 @@ def test_pool_tick_requeues_stale_provisioning_and_alerts(env, caplog):
     assert result["requeued"] == 1
 
 
-def test_capacity_low_alert(env, caplog):
-    session, settings, _ = env
+def test_capacity_low_alert(env, monkeypatch):
+    _, settings, _ = env
     settings.google_sa_capacity_alert_below = 10
-    with caplog.at_level("WARNING", logger="document_intelligence.integration"):
-        remaining = provisioner(env, FakeIam()).check_capacity()
-    assert remaining == 4 and "drive_sa.capacity_low" in {getattr(r, "event", "") for r in caplog.records}
+    events = []
+    from app.integrations import google_sa_provisioner
+
+    class Spy:
+        def warning(self, message, extra=None):
+            events.append(extra["event"])
+
+        error = warning
+
+    monkeypatch.setattr(google_sa_provisioner, "logger", Spy())
+    assert provisioner(env, FakeIam()).check_capacity() == 4
+    assert events == ["drive_sa.capacity_low"]
 
 
 def test_fatal_credential_error_marks_failed(env):

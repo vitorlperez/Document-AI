@@ -19,7 +19,6 @@ from app.integrations.google_drive_sa import FolderAccessLost, RobotUnavailable,
 from app.integrations.google_drive_sa_service import DriveSaConnectionService
 from app.integrations.http import RemoteThrottled
 
-
 logger = logging.getLogger("document_intelligence.integration")
 
 

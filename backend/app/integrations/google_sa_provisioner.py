@@ -64,7 +64,7 @@ class IamProvisionerClient:
     def __init__(self, key_b64: str, *, http=None, clock=time.time):
         try:
             self.key = json.loads(base64.b64decode(key_b64, validate=True))
-            self.key["client_email"], self.key["private_key"]  # noqa: B018
+            self.key["client_email"], self.key["private_key"]
         except (ValueError, KeyError, TypeError):
             raise ProvisionerFatal("provisioner_credential_invalid") from None
         self.http, self.clock = http or httpx.Client(timeout=30), clock
