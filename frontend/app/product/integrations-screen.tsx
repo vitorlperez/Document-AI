@@ -15,6 +15,7 @@ import { errorMessage, stageLabel } from "../sync-status-logic";
 import { DriveMethodModal, DriveShareCard, DriveShareFlow } from "./drive-share-flow";
 import { DRIVE_SHARE_ENABLED } from "./drive-share-flag";
 import { DRIVE_SHARE_PROVIDER } from "./drive-share-logic";
+import { setDriveShareOrganization } from "./drive-share-api";
 import "../interface-motion.css";
 
 const SyncTag = ({ tools, sourceId }: { tools?: ToolSyncState[]; sourceId?: string | null }) => { const tool = sourceId ? tools?.find((item) => item.sourceId === sourceId) : undefined; return tool && tool.state !== "idle" ? <ToolSyncBadge tool={tool} /> : null; };
@@ -36,6 +37,7 @@ export function IntegrationScreen({ company, setError, setNotice, onboarding, on
   const loadSources = useCallback(() => { if (!canManage) return; setSourcesLoading(true); setSourcesError(null); void api<Source[]>(`/data-sources?organization_id=${company.id}`).then((items) => setSources(latestSourcePerProvider(items))).catch((caught) => setSourcesError(messageFor(caught))).finally(() => setSourcesLoading(false)); }, [canManage, company.id]);
   const loadWorkspaceFolders = useCallback(() => { if (!canManage) return; setFoldersLoading(true); void api<Folder[]>(`/workspace-folders?organization_id=${company.id}`).then(setWorkspaceFolders).catch((caught) => setError(messageFor(caught))).finally(() => setFoldersLoading(false)); }, [canManage, company.id, setError]);
   useEffect(() => { void Promise.resolve().then(loadSources); }, [loadSources]);
+  useEffect(() => { setDriveShareOrganization(company.id); }, [company.id]);
   useEffect(() => { void Promise.resolve().then(loadWorkspaceFolders); }, [loadWorkspaceFolders]);
   useEffect(() => {
     if (!workspaceFolders.some((folder) => folder.status === "queued" || folder.status === "syncing")) return;

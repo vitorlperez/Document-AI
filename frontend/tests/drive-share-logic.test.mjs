@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import {
-  driveShareEnabled, parseDriveFolderLink, verifyErrorMessage, verifyChecklist, checklistReach, firstSyncEstimate, itRequestText, ROLE_HINT,
+  driveShareEnabled, parseDriveFolderLink, verifyErrorMessage, verifyChecklist, checklistReach, firstSyncEstimate, itRequestText, ROLE_HINT, verifyCodeFor,
   initialPollState, pollTick, resumePoll, POLL_MAX_MS, WORKSPACE_HINT_AFTER_MS, driveShareStatus, libraryAccessBadge, relativeSync, daysUntil,
 } from "../app/product/drive-share-logic.ts";
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
@@ -72,6 +72,7 @@ test("checklist da verificação e quanto dele é alcançado por código", () =>
   assert.match(items[1].label, /“Contratos 2026”/);
   assert.equal(items[4].label, "Contagem: 128 arquivos · 9 subpastas");
   assert.match(verifyChecklist({ code: "download_blocked_partial", blocked_download_count: 1, file_count: 1, folder_count: 1 })[3].label, /1 arquivo bloqueado/);
+  assert.equal(verifyChecklist({ code: "not_shared" })[4].label, "Contagem de arquivos e subpastas", "sem números inventados quando a verificação falha");
   assert.equal(checklistReach("ok"), 5);
   assert.equal(checklistReach("download_blocked_partial"), 5);
   assert.equal(checklistReach("invalid_link"), 0);
@@ -157,4 +158,23 @@ test("copiar tem fallback e anuncia por aria-live; polling isolado do módulo de
   const api = read("../app/product/drive-share-api.ts");
   assert.match(api, /\/data-sources\/google-sa\//);
   assert.doesNotMatch(flow, /\/data-sources\/google-sa/, "endpoints só no módulo de API");
+});
+
+test("contrato da API: códigos de erro do backend viram códigos de verificação da UI", () => {
+  assert.equal(verifyCodeFor("not_shared", 404), "not_shared");
+  assert.equal(verifyCodeFor("invalid_folder_link", 422), "invalid_link");
+  assert.equal(verifyCodeFor("not_a_folder", 422), "not_a_folder");
+  assert.equal(verifyCodeFor("rate_limited", 429), "rate_limited");
+  for (const code of ["robot_unavailable", "provider_unavailable", "pool_empty", "robot_retired"]) assert.equal(verifyCodeFor(code, 503), "provider_error");
+  assert.equal(verifyCodeFor(null, 404), "not_shared");
+  assert.equal(verifyCodeFor("desconhecido", 500), "provider_error");
+});
+
+test("verificação sem folder_count (contrato) mostra só arquivos; rotas levam organization_id", () => {
+  assert.equal(verifyChecklist({ code: "ok", name: "X", file_count: 12 })[4].label, "Contagem: 12 arquivos");
+  assert.equal(verifyChecklist({ code: "ok", file_count: 1 })[4].label, "Contagem: 1 arquivo");
+  const api = read("../app/product/drive-share-api.ts");
+  assert.match(api, /organization_id=\$\{encodeURIComponent\(org\)\}/);
+  assert.match(api, /\.folders/);
+  assert.match(api, /url_or_id/);
 });

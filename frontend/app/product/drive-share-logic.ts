@@ -64,6 +64,18 @@ export function verifyErrorMessage(code: string, robotEmail: string | null, bloc
   }
 }
 
+/** Códigos do backend → códigos de verificação da UI (mensagens em drive-share-logic.verifyErrorMessage). */
+export function verifyCodeFor(code: string | null, status: number): string {
+  switch (code) {
+    case "not_shared": return "not_shared";
+    case "invalid_folder_link": return "invalid_link";
+    case "not_a_folder": return "not_a_folder";
+    case "rate_limited": return "rate_limited";
+    case "robot_unavailable": case "provider_unavailable": case "pool_empty": case "robot_retired": return "provider_error";
+    default: return status === 404 ? "not_shared" : status === 422 ? "invalid_link" : status === 429 ? "rate_limited" : "provider_error";
+  }
+}
+
 export const WORKSPACE_BLOCK_MESSAGE = "Parece que sua empresa não permite compartilhar com endereços de fora. Peça ao administrador do Google Workspace para liberar (texto pronto abaixo) ou use o modo “Entrar com a conta Google”.";
 
 /** Texto pronto para o TI do cliente (§1.4). */
@@ -81,7 +93,7 @@ export function itRequestText(robotEmail: string, organizationName?: string): st
 }
 
 export type ChecklistItem = { key: string; label: string };
-export type VerifyResult = { code: string; folder_id?: string; folder_name?: string | null; shared_by_email?: string | null; file_count?: number; folder_count?: number; blocked_download_count?: number };
+export type VerifyResult = { code: string; folder_id?: string; /** contrato: `name` */ name?: string | null; folder_name?: string | null; shared_by_email?: string | null; file_count?: number; folder_count?: number; blocked_download_count?: number };
 
 /** Checklist da Tela 3. Só os itens alcançados aparecem; `ok`/`download_blocked_partial` completam todos. */
 export function verifyChecklist(result: VerifyResult): ChecklistItem[] {
@@ -89,7 +101,8 @@ export function verifyChecklist(result: VerifyResult): ChecklistItem[] {
   const items: ChecklistItem[] = [{ key: "link", label: "Link reconhecido (pasta, não arquivo)" }, { key: "open", label: `O ArquivIO consegue abrir a pasta${name}` }, { key: "read", label: "Permissão de leitura" }];
   const blocked = result.blocked_download_count ?? 0;
   items.push({ key: "download", label: blocked > 0 ? `Conteúdo pode ser baixado (${blocked} ${blocked === 1 ? "arquivo bloqueado" : "arquivos bloqueados"} pelo dono)` : "Conteúdo pode ser baixado (amostra de 20 arquivos)" });
-  items.push({ key: "count", label: `Contagem: ${formatCount(result.file_count ?? 0, "arquivo", "arquivos")} · ${formatCount(result.folder_count ?? 0, "subpasta", "subpastas")}` });
+  const reached = result.code === "ok" || result.code === "download_blocked_partial";
+  items.push({ key: "count", label: !reached ? "Contagem de arquivos e subpastas" : `Contagem: ${formatCount(result.file_count ?? 0, "arquivo", "arquivos")}${result.folder_count == null ? "" : ` · ${formatCount(result.folder_count, "subpasta", "subpastas")}`}` });
   return items;
 }
 export const formatCount = (n: number, one: string, many: string) => `${n.toLocaleString("pt-BR")} ${n === 1 ? one : many}`;
@@ -144,7 +157,7 @@ export function driveShareStatus(status: DriveShareStatus): StatusPresentation {
 
 export const driveShareConnectionLabel = (status: DriveShareStatus) => driveShareStatus(status).label;
 
-export type FolderLink = { id: string; folder_id: string; name: string; status: string; file_count?: number | null; folder_count?: number | null; last_synced_at?: string | null; access_lost_at?: string | null; purge_after?: string | null; blocked_download_count?: number | null; shared_by_email?: string | null };
+export type FolderLink = { id: string; /** id do vínculo (necessário para "Apagar agora"); ausente quando só o inbox é conhecido */ link_id?: string; folder_id: string; name: string; status: string; file_count?: number | null; folder_count?: number | null; last_synced_at?: string | null; access_lost_at?: string | null; purge_after?: string | null; blocked_download_count?: number | null; shared_by_email?: string | null };
 
 const DAY = 86_400_000;
 export const daysUntil = (iso: string | null | undefined, now: number): number | null => { if (!iso) return null; const t = Date.parse(iso); return Number.isNaN(t) ? null : Math.max(0, Math.ceil((t - now) / DAY)); };

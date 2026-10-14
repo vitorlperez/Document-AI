@@ -115,7 +115,7 @@ export function DriveShareFlow({ organizationId, organizationName, existingSourc
 
   const enable = useCallback(() => {
     setEnableError(null);
-    if (existingSource) { client.state(existingSource.id).then((s) => setRobot({ sourceId: s.source_id ?? existingSource.id, email: s.robot_email })).catch((e) => setEnableError(messageFor(e))); return; }
+    if (existingSource) { client.state(existingSource.id).then((s) => setRobot({ sourceId: existingSource.id, email: s.robot_email })).catch((e) => setEnableError(messageFor(e))); return; }
     client.enable(organizationId).then((r) => setRobot({ sourceId: r.source_id, email: r.robot_email })).catch((e) => setEnableError(e instanceof ApiError && e.status === 403 ? "Só responsáveis e administradores configuram o acesso ao Google Drive." : messageFor(e)));
   }, [client, existingSource, organizationId]);
   useEffect(() => { if (!preview) enable(); }, [enable, preview]);
@@ -147,7 +147,7 @@ export function DriveShareFlow({ organizationId, organizationName, existingSourc
     setStep(3); setVerifying(true); setResult(null); setVerifyFailure(null); setLinkError(null); setTarget(urlOrId);
     try {
       const res = await client.verify(robot.sourceId, urlOrId);
-      setResult({ ...res, folder_name: res.folder_name ?? folderName });
+      setResult({ ...res, folder_name: res.name ?? res.folder_name ?? folderName });
       if (res.code === "ok" || res.code === "download_blocked_partial") setAnnounce("Acesso confirmado."); // erros já usam role="alert"
     } catch (error) {
       // O backend devolve o mesmo corpo para "não existe" e "sem acesso" (not_shared); 404/422 sem corpo estruturado = idem.
@@ -282,14 +282,14 @@ export function DriveShareCard({ source, client = driveShareApi, syncBadge, disc
   const [busy, setBusy] = useState<string | null>(null);
   const [announce, setAnnounce] = useState("");
   const sourceId = source?.id;
-  useEffect(() => { if (!sourceId || initialState) return; let alive = true; client.state(sourceId).then((s) => alive && setState(s)).catch(() => undefined); return () => { alive = false; }; }, [client, sourceId, initialState]);
+  useEffect(() => { if (!sourceId || initialState) return; let alive = true; client.state(sourceId, source?.status).then((s) => alive && setState(s)).catch(() => undefined); return () => { alive = false; }; }, [client, sourceId, initialState]);
   const status = driveShareStatus(state?.status ?? source?.status ?? "awaiting_share");
   const folders = state?.folders ?? [];
   const robot = state?.robot_email ?? null;
   const connected = (state?.status ?? source?.status) === "connected";
   const lost = (state?.status ?? source?.status) === "access_lost";
-  const fresh = useCallback(async (fn: () => Promise<unknown>, key: string, done: string) => { setBusy(key); setError(null); try { await fn(); if (sourceId) setState(await client.state(sourceId)); setAnnounce(done); onChanged?.(); } catch (e) { setError(messageFor(e)); } finally { setBusy(null); } }, [client, sourceId, onChanged]);
-  const purgeNow = (link: FolderLink) => { if (!window.confirm(`Apagar agora o conteúdo de “${link.name}”? Isso remove os documentos indexados desta pasta e não pode ser desfeito.`)) return; if (sourceId) void fresh(() => client.unlink(sourceId, link.id, true), `purge-${link.id}`, "Conteúdo apagado."); };
+  const fresh = useCallback(async (fn: () => Promise<unknown>, key: string, done: string) => { setBusy(key); setError(null); try { await fn(); if (sourceId) setState(await client.state(sourceId, source?.status)); setAnnounce(done); onChanged?.(); } catch (e) { setError(messageFor(e)); } finally { setBusy(null); } }, [client, sourceId, source?.status, onChanged]);
+  const purgeNow = (link: FolderLink) => { if (!window.confirm(`Apagar agora o conteúdo de “${link.name}”? Isso remove os documentos indexados desta pasta e não pode ser desfeito.`)) return; if (sourceId) void fresh(() => client.unlink(sourceId, link.link_id ?? link.id, true), `purge-${link.id}`, "Conteúdo apagado."); };
   const now = Date.now();
   return <section className="integration-tool-card drive-card h-full rounded-lg border border-card-edge bg-raised p-4 shadow-sm" data-status={state?.status ?? source?.status ?? "available"}>
     <button type="button" onClick={() => { if (source && connected) onManage(source); else if (source) onAddFolder(source); else onStart(); }} className="integration-tool-header mo-interactive flex w-full items-center gap-3 text-left"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-sage"><ProviderLogo provider="google" size={26} /></span><b className="integration-tool-title min-w-0 flex-1">Google Drive · Pasta compartilhada</b></button>
@@ -303,7 +303,7 @@ export function DriveShareCard({ source, client = driveShareApi, syncBadge, disc
       {folders.length > 0 && <ul className="drive-card-folders">{folders.map((f) => {
         const days = daysUntil(f.purge_after, now); const lostFolder = f.status === "access_lost" || f.status === "purge_scheduled";
         return <li key={f.id} data-lost={lostFolder || undefined}><FolderOpen size={16} aria-hidden="true" /><div className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b><span className="drive-folder-meta">{lostFolder ? `acesso removido${days !== null ? ` · apagando em ${days} ${days === 1 ? "dia" : "dias"}` : ""}` : `${f.file_count != null ? formatCount(f.file_count, "arquivo", "arquivos") : "contando arquivos"} · ${relativeSync(f.last_synced_at, now)}`}</span></div>
-          {lostFolder && <button type="button" className={btn("danger-ghost", "sm")} disabled={busy !== null} onClick={() => purgeNow(f)}><Trash2 size={14} aria-hidden="true" />Apagar agora</button>}</li>;
+          {lostFolder && f.link_id && <button type="button" className={btn("danger-ghost", "sm")} disabled={busy !== null} onClick={() => purgeNow(f)}><Trash2 size={14} aria-hidden="true" />Apagar agora</button>}</li>;
       })}</ul>}
       {error && <p className="drive-field-error" role="alert"><CircleAlert size={14} aria-hidden="true" />{error}</p>}
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
