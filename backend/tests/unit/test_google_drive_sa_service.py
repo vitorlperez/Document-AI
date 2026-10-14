@@ -427,3 +427,10 @@ def test_unlink_does_not_extend_existing_revocation_retention(setup):
     original_deadline = utc(link.purge_after)
     service.unlink(scope=scope, user_id=user.id, source_id=source.id, link_id=link.id)
     assert utc(link.purge_after) == original_deadline
+
+
+def test_question_selection_accepts_robot_drive_provider():
+    from app.api.ingestion import QuestionInput
+
+    parsed = QuestionInput(question="o que diz?", scope="selection", providers=["google", "google_drive_sa"])
+    assert parsed.providers == ["google_drive", "google_drive_sa"]

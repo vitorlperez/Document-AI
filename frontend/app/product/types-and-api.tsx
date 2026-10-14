@@ -78,7 +78,7 @@ const providerFromName = (name: string) => ({
   clickup: "clickup",
 } as Record<string, string | undefined>)[name.trim().toLowerCase()];
 export function ProviderMark({ provider, size = "md" }: { provider?: string | null; size?: "sm" | "md" }) {
-  const key = providerKey(provider ?? "");
+  const key = provider === "google_drive_sa" ? "google" : providerKey(provider ?? "");
   if (["google", "onedrive", "sharepoint", "notion", "clickup", "github", "teams"].includes(key)) return <ProviderLogo provider={key as ProviderLogoName} size={size === "sm" ? 18 : 26} />;
   return <HardDrive aria-hidden="true" size={size === "sm" ? 16 : 20} />;
 }

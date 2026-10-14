@@ -1437,6 +1437,7 @@ class LibraryService:
         root = self._by_external(source_id=source.id, external_id=SOURCE_ROOT_EXTERNAL_ID)
         provider_name = {
             "google_drive": "Google Drive",
+            "google_drive_sa": "Google Drive (pasta compartilhada)",
             "notion": "Notion",
             "clickup": "ClickUp",
             "onedrive": "OneDrive",

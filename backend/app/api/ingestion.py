@@ -53,7 +53,7 @@ class QuestionMention(BaseModel):
     name: str | None = Field(default=None, max_length=300)
 
 
-SELECTABLE_PROVIDERS = frozenset({"google_drive", "notion", "onedrive", "clickup"})
+SELECTABLE_PROVIDERS = frozenset({"google_drive", "google_drive_sa", "notion", "onedrive", "clickup"})
 
 
 class QuestionInput(BaseModel):

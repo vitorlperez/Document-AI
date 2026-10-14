@@ -136,3 +136,22 @@ def test_folder_nodes_report_robot_drive_access_state(api):
     assert items["suspect"]["access_state"] == "access_lost"
     assert items["scheduled"]["access_state"] == "purge_scheduled"
     assert "access_state" not in items["ok"] and "access_state" not in items["plain"]
+
+
+def test_robot_drive_source_root_has_readable_name(api):
+    from app.identity.models import User
+    from app.integrations.models import DataSource
+    from app.library.service import LibraryService
+
+    client, factory = api
+    login(client)
+    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    seed_library(factory, organization)
+    with factory() as session:
+        user = session.query(User).first()
+        source = DataSource(organization_id=UUID(organization), provider="google_drive_sa",
+                            encrypted_credentials="x", status="connected", connected_by_user_id=user.id)
+        session.add(source)
+        session.flush()
+        root = LibraryService(session)._root(organization_id=UUID(organization), source=source)
+        assert root.name == "Google Drive (pasta compartilhada)"

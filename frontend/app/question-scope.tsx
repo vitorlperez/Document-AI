@@ -11,7 +11,7 @@ export type QuestionContext = {
 };
 export const providerKey = (provider: string) => provider === "google_drive" ? "google" : provider;
 export const toolLabel = (provider?: string | null) => ({
-  google: "Google Drive", google_drive: "Google Drive", onedrive: "OneDrive",
+  google: "Google Drive", google_drive: "Google Drive", google_drive_sa: "Google Drive (pasta compartilhada)", onedrive: "OneDrive",
   github: "GitHub", github_markdown: "GitHub Markdown", notion: "Notion", clickup: "ClickUp", slack: "Slack", teams: "Microsoft Teams",
 })[provider ?? ""] ?? (provider ? provider.replaceAll("_", " ") : "Fonte indexada");
 export const contextSyncing = (context: QuestionContext) => Boolean(context.sync_in_progress) || context.status === "queued" || context.status === "syncing";
