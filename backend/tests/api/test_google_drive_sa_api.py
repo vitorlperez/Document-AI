@@ -262,3 +262,83 @@ def test_link_works_with_production_session_without_autoflush(google_api, monkey
                        json={"folder_id": "folder_123456"})
     assert link.status_code == 200
     assert link.json()["status"] == "verified"
+
+
+def prepare_on_demand(google_api):
+    client, factory, gateway, _ = google_api
+    login(client, gateway, code="owner", email="owner@example.test", subject="owner")
+    org = create_organization(client)
+    from cryptography.fernet import Fernet
+    from pydantic import SecretStr
+
+    from app.access.ratelimit import InMemoryRateLimiter
+
+    client.app.state.rate_limiter = InMemoryRateLimiter()
+    settings = client.app.state.settings
+    settings.google_drive_sa_enabled = True
+    settings.google_sa_key_encryption_key = SecretStr(Fernet.generate_key().decode())
+    settings.google_sa_pool_projects = "pool-a"
+    sent = []
+    client.app.state.automation_send_task = lambda name, args: sent.append((name, args))
+    return client, factory, org, sent
+
+
+def test_enable_on_demand_returns_provisioning_then_ready(google_api):
+    client, factory, org, sent = prepare_on_demand(google_api)
+    first = client.post(f"/data-sources/google-sa/enable?organization_id={org}")
+    again = client.post(f"/data-sources/google-sa/enable?organization_id={org}")
+    assert first.status_code == 200 and first.json()["status"] == "provisioning"
+    assert first.json()["robot_email"] is None and again.json()["source_id"] == first.json()["source_id"]
+    assert [name for name, _ in sent] == ["document_intelligence.ingestion.provision_drive_sa_robot"]
+    assert sent[0][1] == [first.json()["source_id"]]
+    source_id = first.json()["source_id"]
+    polled = client.get(f"/data-sources/google-sa/{source_id}/status?organization_id={org}")
+    assert polled.json()["status"] == "provisioning"
+    blocked = client.get(f"/data-sources/google-sa/{source_id}/inbox?organization_id={org}")
+    assert (blocked.status_code, blocked.json()) == (409, {"detail": {"code": "provisioning"}})
+    # Worker side (IAM mocked) finishes the job.
+    from uuid import UUID
+
+    from app.ingestion.tasks import run_provisioning
+    from app.integrations.google_drive_sa import ServiceAccountKeyCipher
+    from app.integrations.google_sa_provisioner import RobotProvisioner
+
+    class Iam:
+        def create_account(self, project, account_id, name):
+            return f"{account_id}@{project}.iam.gserviceaccount.com"
+
+        def create_key(self, email):
+            return {"client_email": email, "private_key": "pem", "private_key_id": "k"}
+
+    settings = client.app.state.settings
+    with factory() as session:
+        cipher = ServiceAccountKeyCipher(settings.google_sa_key_encryption_key.get_secret_value())
+        assert run_provisioning(session, settings, UUID(source_id), provisioner=RobotProvisioner(session, settings, Iam(), cipher)) == "ready"
+    ready = client.get(f"/data-sources/google-sa/{source_id}/status?organization_id={org}").json()
+    assert ready["status"] == "ready" and ready["robot_email"].endswith("@pool-a.iam.gserviceaccount.com")
+    final = client.post(f"/data-sources/google-sa/enable?organization_id={org}").json()
+    assert final["status"] == "ready" and len(sent) == 1
+
+
+def test_enable_uses_warm_robot_instantly_and_failed_can_retry(google_api):
+    client, factory, org, sent = prepare_on_demand(google_api)
+    with factory() as session:
+        project = GoogleSaProject(gcp_project_id="pool-a")
+        session.add(project)
+        session.flush()
+        session.add(GoogleSaIdentity(project_id=project.id, sa_email="warm@example.test", encrypted_key="key"))
+        session.commit()
+    ready = client.post(f"/data-sources/google-sa/enable?organization_id={org}").json()
+    assert ready["status"] == "ready" and ready["robot_email"] == "warm@example.test"
+    assert [name for name, _ in sent] == ["document_intelligence.ingestion.label_drive_sa_robot"]
+    other = create_organization(client)
+    pending = client.post(f"/data-sources/google-sa/enable?organization_id={other}").json()
+    assert pending["status"] == "provisioning"
+    from app.integrations.models import DataSource
+
+    with factory() as session:
+        session.get(DataSource, __import__("uuid").UUID(pending["source_id"])).status = "provisioning_failed"
+        session.commit()
+    assert client.get(f"/data-sources/google-sa/{pending['source_id']}/status?organization_id={other}").json()["status"] == "failed"
+    retry = client.post(f"/data-sources/google-sa/enable?organization_id={other}").json()
+    assert retry["status"] == "provisioning" and sent[-1][0].endswith("provision_drive_sa_robot")

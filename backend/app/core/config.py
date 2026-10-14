@@ -102,6 +102,13 @@ class Settings(BaseSettings):
     google_sa_key_encryption_key: SecretStr | None = None
     google_sa_key_encryption_previous_keys: SecretStr | None = None
     google_sa_download_workers: int = Field(default=3, ge=1, le=3)
+    # On-demand robots (one per organization, never recycled). Pool projects are non-secret ids;
+    # the provisioner credential (base64 service-account JSON) belongs to Worker/Beat only.
+    google_sa_pool_projects: str = ""
+    google_sa_project_quota: int = Field(default=100, ge=1, le=100)
+    google_sa_warm_pool_size: int = Field(default=0, ge=0, le=20)
+    google_sa_capacity_alert_below: int = Field(default=10, ge=0)
+    google_sa_provisioner_key_b64: SecretStr | None = None
     google_oauth_client_id: str | None = None
     google_oauth_client_secret: SecretStr | None = None
     google_oauth_redirect_uri: str | None = None
@@ -167,6 +174,10 @@ class Settings(BaseSettings):
     # Total evidence input for content answers (~16k tokens at the default).
     # Whole relevant chunks are packed by score; per-file brief length is separate.
     evidence_context_chars: int = Field(default=64_000, ge=1024)
+
+    @property
+    def google_sa_pool_project_list(self) -> list[str]:
+        return [value.strip() for value in self.google_sa_pool_projects.split(",") if value.strip()]
 
     def google_sa_enabled_for(self, organization_id) -> bool:
         allowed = {value.strip() for value in self.google_sa_allowed_orgs.split(",") if value.strip()}

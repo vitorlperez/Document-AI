@@ -18,6 +18,7 @@ from app.integrations.google_drive_sa import (
     parse_folder_id,
 )
 from app.integrations.google_sa_models import DriveFolderLink, GoogleSaIdentity
+from app.integrations.google_sa_provisioner import PROVISIONING, PROVISIONING_FAILED
 from app.integrations.models import DataSource
 from app.integrations.oauth_base import OAuthConnectionServiceBase
 from app.knowledge.models import Document, DocumentChunk
@@ -71,6 +72,8 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
 
     def identity(self, source):
         self.gate(source.organization_id)
+        if source.status in (PROVISIONING, PROVISIONING_FAILED):
+            raise SaRequestError("provisioning", 409)
         identity = self.session.scalar(
             select(GoogleSaIdentity).where(
                 GoogleSaIdentity.id == source.sa_identity_id,
@@ -103,7 +106,11 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
         )
 
     def enable(self, *, scope, user_id):
+        """Idempotent per organization. Returns a ready source (warm/free robot) or a
+        `provisioning` one; `self.needs_provisioning` tells the caller to queue the worker task."""
         self.require_admin(scope=scope, user_id=user_id)
+        self.needs_provisioning = False
+        self.needs_labeling = None
         # Serialize concurrent enables for one tenant, then SKIP LOCKED across the pool.
         self.session.scalar(
             select(Organization).where(Organization.id == scope.organization_id).with_for_update()
@@ -117,6 +124,9 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
         if source:
             if source.status == "disconnected":
                 raise SaRequestError("robot_retired", 409)
+            if source.status == PROVISIONING_FAILED:
+                source.status = PROVISIONING  # explicit user retry
+                self.needs_provisioning = True
             return source
         identity = self.session.scalar(
             select(GoogleSaIdentity)
@@ -130,32 +140,43 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
             .with_for_update(skip_locked=True)
             .limit(1)
         )
-        if not identity:
+        if not identity and not self.settings.google_sa_pool_project_list:
             raise SaRequestError("pool_empty", 503)
-        identity.organization_id = scope.organization_id
-        identity.status = "assigned"
-        identity.assigned_at = datetime.now(UTC)
+        if identity:
+            identity.organization_id = scope.organization_id
+            identity.status = "assigned"
+            identity.assigned_at = datetime.now(UTC)
+            self.needs_labeling = identity.id
         source = DataSource(
             organization_id=scope.organization_id,
             provider=self.provider,
-            status="awaiting_share",
-            sa_identity_id=identity.id,
+            status="awaiting_share" if identity else PROVISIONING,
+            sa_identity_id=identity.id if identity else None,
             connected_by_user_id=user_id,
-            account_email=identity.sa_email,
+            account_email=identity.sa_email if identity else None,
         )
         self.session.add(source)
         self.session.flush()
-        self.audit(source, user_id, "drive_sa.enabled")
-        free = self.session.scalar(
-            select(func.count())
-            .select_from(GoogleSaIdentity)
-            .where(GoogleSaIdentity.status == "free")
-        )
-        if free < 10:
-            logger.warning(
-                "robot pool low", extra={"event": "drive_sa.pool_low", "free_count": free}
+        self.needs_provisioning = identity is None
+        self.audit(source, user_id, "drive_sa.enabled" if identity else "drive_sa.provisioning_requested")
+        if identity:
+            free = self.session.scalar(
+                select(func.count())
+                .select_from(GoogleSaIdentity)
+                .where(GoogleSaIdentity.status == "free")
             )
+            if free < 10 and not self.settings.google_sa_pool_project_list:
+                logger.warning(
+                    "robot pool low", extra={"event": "drive_sa.pool_low", "free_count": free}
+                )
         return source
+
+    def enable_status(self, source):
+        if source.status == PROVISIONING:
+            return {"status": "provisioning", "robot_email": None}
+        if source.status == PROVISIONING_FAILED:
+            return {"status": "failed", "robot_email": None}
+        return {"status": "ready", "robot_email": source.account_email}
 
     def inbox(self, source):
         linked = set(

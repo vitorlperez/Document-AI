@@ -1,5 +1,6 @@
 """M58 robot Drive endpoints: explicit tenant/admin authorization and stable codes."""
 
+import logging
 from contextlib import contextmanager
 from uuid import UUID
 
@@ -17,6 +18,9 @@ from app.identity.models import User
 from app.integrations.google_drive_sa import FolderAccessLost, RobotUnavailable, SaRequestError
 from app.integrations.google_drive_sa_service import DriveSaConnectionService
 from app.integrations.http import RemoteThrottled
+
+
+logger = logging.getLogger("document_intelligence.integration")
 
 
 class RobotRoute(APIRoute):
@@ -106,11 +110,39 @@ def enable(
     with api_errors():
         service = build_service(request, session)
         source = service.enable(scope=OrganizationScope(organization_id), user_id=user.id)
+        queue = []
+        if service.needs_provisioning:
+            queue.append(("document_intelligence.ingestion.provision_drive_sa_robot", [str(source.id)]))
+        if service.needs_labeling:
+            queue.append(("document_intelligence.ingestion.label_drive_sa_robot", [str(service.needs_labeling)]))
+        session.commit()  # the worker must see the committed row before it starts
+        send_task = getattr(request.app.state, "automation_send_task", None)
+        for name, args in queue:
+            try:
+                send_task(name, args=args)
+            except Exception:  # noqa: BLE001 - the beat sweep re-queues stale provisioning
+                logger.warning("drive_sa task dispatch failed", extra={"event": "drive_sa.dispatch_failed"})
         return {
             "source_id": str(source.id),
-            "robot_email": source.account_email,
             "share_role": "reader",
+            **service.enable_status(source),
         }
+
+
+@router.get("/{source_id}/status")
+def enable_status(
+    source_id: UUID,
+    organization_id: UUID,
+    request: Request,
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+):
+    with api_errors():
+        service = build_service(request, session)
+        source = service.source(
+            scope=OrganizationScope(organization_id), user_id=user.id, source_id=source_id
+        )
+        return {"source_id": str(source.id), "share_role": "reader", **service.enable_status(source)}
 
 
 @router.get("/{source_id}/inbox")

@@ -84,6 +84,11 @@ def beat_schedule(interval_minutes: int, sa_enabled: bool = False) -> dict[str, 
             "task": "document_intelligence.ingestion.drive_sa_maintenance",
             "schedule": timedelta(hours=1),
         }
+        # Warm pool top-up, stale-provisioning sweep and capacity alerts (worker-only IAM).
+        schedule["drive-sa-pool-tick"] = {
+            "task": "document_intelligence.ingestion.drive_sa_pool_tick",
+            "schedule": timedelta(minutes=5),
+        }
     return schedule
 
 
@@ -120,7 +125,7 @@ def maintain_drive_sa(*, session, settings, service=None, now=None):
         logger.warning("robot key rotation overdue", extra={"event": "drive_sa.rotation_overdue", "count": overdue_count})
     connection = service or DriveSaConnectionService(session, settings)
     sources = list(session.scalars(select(DataSource).where(DataSource.provider == "google_drive_sa",
-        DataSource.status != "disconnected")))
+        DataSource.status.not_in(("disconnected", "provisioning", "provisioning_failed")))))
     for source in sources:
         if not settings.google_sa_enabled_for(source.organization_id):
             continue
@@ -149,6 +154,120 @@ def drive_sa_maintenance_task():
     try:
         with build_session_factory(engine)() as session:
             return maintain_drive_sa(session=session, settings=settings)
+    finally:
+        engine.dispose()
+
+
+def build_robot_provisioner(session, settings):
+    """Worker-only: needs the provisioner credential, which the API process never receives."""
+    from app.integrations.google_drive_sa_service import key_cipher
+    from app.integrations.google_sa_provisioner import IamProvisionerClient, ProvisionerFatal, RobotProvisioner
+
+    if not settings.google_sa_provisioner_key_b64:
+        raise ProvisionerFatal("provisioner_credential_missing")
+    iam = IamProvisionerClient(settings.google_sa_provisioner_key_b64.get_secret_value())
+    return RobotProvisioner(session, settings, iam, key_cipher(settings))
+
+
+def backoff_seconds(retries: int, floor: int = 15) -> int:
+    return min(max(floor, 15 * 2 ** retries), 180)
+
+
+def run_provisioning(session, settings, source_id, *, provisioner=None):
+    """Returns ('ready'|'gone') or raises ProvisionerRetry; fatal errors fail the source."""
+    from app.integrations.google_sa_provisioner import PROVISIONING_FAILED, ProvisionerFatal
+
+    try:
+        provisioner = provisioner or build_robot_provisioner(session, settings)
+        return provisioner.provision_source(source_id)
+    except ProvisionerFatal as error:
+        session.rollback()
+        source = session.get(DataSource, source_id)
+        if source and source.status == "provisioning":
+            source.status = PROVISIONING_FAILED
+            session.commit()
+        logger.error("robot provisioning failed", extra={"event": "drive_sa.provisioning_failed", "code": error.code})
+        return "failed"
+
+
+@celery_app.task(bind=True, name="document_intelligence.ingestion.provision_drive_sa_robot", max_retries=14)
+def provision_drive_sa_robot_task(self, source_id: str):
+    from app.integrations.google_sa_provisioner import ProvisionerRetry
+
+    settings = get_settings()
+    if not settings.google_drive_sa_enabled:
+        return "disabled"
+    engine = build_engine(settings)
+    try:
+        with build_session_factory(engine)() as session:
+            try:
+                return run_provisioning(session, settings, UUID(source_id))
+            except ProvisionerRetry as retry:
+                session.rollback()
+                if self.request.retries >= self.max_retries:
+                    return run_provisioning_failure(session, UUID(source_id))
+                raise self.retry(countdown=max(retry.countdown, backoff_seconds(self.request.retries, 15))) from None
+    finally:
+        engine.dispose()
+
+
+def run_provisioning_failure(session, source_id):
+    from app.integrations.google_sa_provisioner import PROVISIONING_FAILED
+
+    source = session.get(DataSource, source_id)
+    if source and source.status == "provisioning":
+        source.status = PROVISIONING_FAILED
+        session.commit()
+    logger.error("robot provisioning exhausted retries", extra={"event": "drive_sa.provisioning_failed", "code": "retries_exhausted"})
+    return "failed"
+
+
+@celery_app.task(name="document_intelligence.ingestion.label_drive_sa_robot")
+def label_drive_sa_robot_task(identity_id: str):
+    settings = get_settings()
+    engine = build_engine(settings)
+    try:
+        with build_session_factory(engine)() as session:
+            try:
+                build_robot_provisioner(session, settings).label_robot(UUID(identity_id))
+            except Exception:  # noqa: BLE001 - cosmetic IAM display name; never fail the flow
+                logger.warning("robot label skipped", extra={"event": "drive_sa.label_skipped"})
+    finally:
+        engine.dispose()
+
+
+def drive_sa_pool_tick(*, session, settings, send_task, provisioner=None, now=None):
+    """Warm-pool top-up, capacity alerts and re-queue of provisioning rows whose task was lost."""
+    from app.integrations.google_sa_provisioner import PROVISIONING
+
+    current = now or datetime.now(UTC)
+    stale = list(session.scalars(select(DataSource).where(
+        DataSource.provider == "google_drive_sa", DataSource.status == PROVISIONING,
+        DataSource.sa_identity_id.is_(None), DataSource.created_at <= current - timedelta(minutes=10))))
+    for source in stale:
+        send_task("document_intelligence.ingestion.provision_drive_sa_robot", args=[str(source.id)])
+    result = {"requeued": len(stale), "warmed": 0, "remaining": None}
+    if not settings.google_sa_pool_project_list:
+        return result
+    try:
+        provisioner = provisioner or build_robot_provisioner(session, settings)
+        result["warmed"] = provisioner.top_up_warm()
+        result["remaining"] = provisioner.check_capacity()
+    except Exception as error:  # noqa: BLE001 - alert without leaking credentials
+        session.rollback()
+        logger.error("robot pool tick failed", extra={"event": "drive_sa.pool_tick_failed", "error": type(error).__name__})
+    return result
+
+
+@celery_app.task(name="document_intelligence.ingestion.drive_sa_pool_tick")
+def drive_sa_pool_tick_task():
+    settings = get_settings()
+    if not settings.google_drive_sa_enabled:
+        return {}
+    engine = build_engine(settings)
+    try:
+        with build_session_factory(engine)() as session:
+            return drive_sa_pool_tick(session=session, settings=settings, send_task=celery_app.send_task)
     finally:
         engine.dispose()
 

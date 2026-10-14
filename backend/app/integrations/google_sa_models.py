@@ -23,6 +23,8 @@ class GoogleSaProject(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     __tablename__ = "google_sa_projects"
     gcp_project_id: Mapped[str] = mapped_column(String(255), unique=True)
     sa_quota: Mapped[int] = mapped_column(Integer, default=100)
+    # Serializes IAM creations (3/min/project): written under the project row lock.
+    last_iam_create_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class GoogleSaIdentity(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
