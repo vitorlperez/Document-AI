@@ -14,7 +14,7 @@ Saída: `185 passed, 2 warnings in 8.49s`, exit 0. Warnings preexistentes de Sta
 
 PostgreSQL: `TEST_DATABASE_URL=<banco descartável> .venv/bin/pytest tests/integration/test_drive_sa_postgres.py -q --tb=short` → `1 passed in 2.57s`, exit 0. Verifica upgrade/downgrade, coluna de reconciliação, duas organizações simultâneas recebendo robôs distintos, duas chamadas simultâneas na mesma organização recebendo o mesmo robô, trigger contra reassignment e retorno ao pool. Banco temporário criado e removido separadamente; nenhum banco da aplicação migrado.
 
-Ruff nos arquivos Python alterados/adicionados: `All checks passed!`, exit 0. `docker compose config --quiet`: exit 0. `git diff --check`: exit 0. `graphify update .`: exit 0, AST-only; 10109 nós/29500 arestas na última execução. Saída graphify-out permaneceu fora dos commits. PDF extraction do Graphify opcional indisponível na primeira execução; extração AST concluída.
+Ruff nos arquivos Python alterados/adicionados: `All checks passed!`, exit 0. `docker compose config --quiet`: exit 0. `git diff --check`: exit 0. `graphify update .`: exit 0, AST-only; 10111 nós/29501 arestas na última execução. Saída graphify-out permaneceu fora dos commits. PDF extraction do Graphify opcional indisponível na primeira execução; extração AST concluída.
 
 TDD: testes novos antes do respectivo módulo/rota/script; falhas iniciais verificadas. Regressões com red→green explícito: URL legado /a/dominio/drive, chave privada inválida vira RobotUnavailable, autenticação com code estável, retenção não estendida por unlink, expurgo de união preserva outro vínculo. Isolamento de dois tenants testado em API/serviço e concorrência PostgreSQL.
 
