@@ -1,5 +1,6 @@
 const PROVIDER_LABELS: Record<string, string> = {
   google_drive: "Google Drive",
+  google_drive_sa: "Google Drive",
   onedrive: "OneDrive",
   sharepoint: "SharePoint",
   notion: "Notion",

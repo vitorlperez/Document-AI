@@ -5,6 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { FILE_KIND_LABEL, fileKind, type FileKind, type LibraryGridSize, type LibraryView } from "../library-view-logic";
 import type { LibraryNode } from "./types-and-api";
 import { LibraryIndexingBadge } from "./library-indexing-badge";
+import { LibraryAccessBadge } from "./library-access-badge";
 import { LoadingBlock, SkeletonLine, Spinner, staggerStyle } from "../ui";
 import "../library-view.css";
 
@@ -114,6 +115,7 @@ export function LibraryGrid({ items, size, loading, canManage, busyNodeId, busyF
           <span className="library-card-meta"><span>{label}</span>{isFolder && <ChevronRight size={12} aria-hidden="true" />}</span>
         </button>
         {!isFolder && <div className="library-card-indexing"><LibraryIndexingBadge item={item} /></div>}
+        {item.access_state && <div className="library-card-indexing"><LibraryAccessBadge item={item} /></div>}
         <CardMenu name={item.name} actions={actions} />
       </li>;
     })}
