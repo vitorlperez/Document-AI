@@ -57,6 +57,8 @@ services:
       GOOGLE_SA_KEY_ENCRYPTION_PREVIOUS_KEYS: ${GOOGLE_SA_KEY_ENCRYPTION_PREVIOUS_KEYS:-}
       GOOGLE_SA_ALLOWED_ORGS: ${GOOGLE_SA_ALLOWED_ORGS:-}
       GOOGLE_SA_DOWNLOAD_WORKERS: ${GOOGLE_SA_DOWNLOAD_WORKERS:-3}
+      GOOGLE_SA_POOL_PROJECTS: ${GOOGLE_SA_POOL_PROJECTS:-}
+      GOOGLE_SA_WARM_POOL_SIZE: ${GOOGLE_SA_WARM_POOL_SIZE:-0}
       MICROSOFT_OAUTH_CLIENT_ID: ${MICROSOFT_OAUTH_CLIENT_ID:-}
       MICROSOFT_OAUTH_CLIENT_SECRET: ${MICROSOFT_OAUTH_CLIENT_SECRET:-}
       MICROSOFT_OAUTH_REDIRECT_URI: ${MICROSOFT_OAUTH_REDIRECT_URI:-http://localhost:3000/api/data-sources/onedrive/oauth/callback}
@@ -107,7 +109,10 @@ services:
 
   worker:
     <<: *backend
-    environment: *backend_environment
+    environment:
+      <<: *backend_environment
+      # IAM provisioner credential: Worker/Beat only, never the API.
+      GOOGLE_SA_PROVISIONER_KEY_B64: ${GOOGLE_SA_PROVISIONER_KEY_B64:-}
     command: ["celery", "-A", "app.ingestion.tasks", "worker", "--loglevel=INFO"]
     depends_on:
       migrate:
@@ -119,7 +124,10 @@ services:
   # sync history) and the extraction-cache purge. Exactly one beat per deployment.
   beat:
     <<: *backend
-    environment: *backend_environment
+    environment:
+      <<: *backend_environment
+      # IAM provisioner credential: Worker/Beat only, never the API.
+      GOOGLE_SA_PROVISIONER_KEY_B64: ${GOOGLE_SA_PROVISIONER_KEY_B64:-}
     command: ["celery", "-A", "app.ingestion.tasks", "beat", "--loglevel=INFO", "--schedule=/tmp/celerybeat-schedule"]
     depends_on:
       migrate:
