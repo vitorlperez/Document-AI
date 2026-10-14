@@ -410,3 +410,20 @@ def test_robot_scheduler_uses_folder_interval_and_flag(setup):
         == 1
     )
     assert len(calls) == 1
+
+
+def test_unlink_does_not_extend_existing_revocation_retention(setup):
+    service, _session, user, orgs, client = setup
+    source = enable(service, user, orgs[0])
+    scope = OrganizationScope(orgs[0].id)
+    link = service.link(
+        scope=scope, user_id=user.id, source_id=source.id, folder_id="folder_123456"
+    )
+    first_loss = datetime.now(UTC) - timedelta(days=10)
+    client.allowed = False
+    service.recheck(source, now=first_loss)
+    from app.integrations.google_drive_sa_service import utc
+
+    original_deadline = utc(link.purge_after)
+    service.unlink(scope=scope, user_id=user.id, source_id=source.id, link_id=link.id)
+    assert utc(link.purge_after) == original_deadline

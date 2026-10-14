@@ -282,3 +282,59 @@ def test_invalid_robot_private_key_is_ops_error():
     )
     with pytest.raises(RobotUnavailable):
         ServiceAccountTokenSource(encrypted, cipher).credentials()
+
+
+def test_blocked_download_is_marked_without_fetching():
+    from types import SimpleNamespace
+
+    from app.ingestion.google_drive import GoogleDriveDocumentProvider
+    from app.integrations.google_drive import CredentialCipher, RemoteFile
+
+    class Client:
+        def read_file(self, **kw):
+            pytest.fail("blocked file must not be downloaded")
+
+    provider = GoogleDriveDocumentProvider(
+        Client(),
+        CredentialCipher(Fernet.generate_key().decode()),
+        credential_source=SimpleNamespace(credentials=lambda: GoogleCredentials("t", None, None)),
+    )
+    result = provider._extract(
+        encrypted_credentials="",
+        remote_file=RemoteFile(
+            "file_123456", "file.txt", "text/plain", "url", None, can_download=False
+        ),
+    )
+    assert result.error_code == "source_file_unavailable"
+
+
+def test_shortcut_targets_are_never_followed():
+    client = SaDriveClient()
+    calls = []
+    root = {
+        "id": "root_123456",
+        "name": "root",
+        "mimeType": "application/vnd.google-apps.folder",
+        "sharedWithMeTime": "2026-10-14T00:00:00Z",
+    }
+
+    def metadata(**kw):
+        calls.append(kw["file_id"])
+        return root
+
+    client.metadata = metadata
+    client._list = lambda *args: [
+        {
+            "id": "shortcut_123456",
+            "name": "external",
+            "mimeType": "application/vnd.google-apps.shortcut",
+            "shortcutDetails": {"targetId": "outside_123456"},
+        }
+    ]
+    assert (
+        client.list_folder_files(
+            credentials=GoogleCredentials("t", None, None), root_folder_id="root_123456"
+        )
+        == []
+    )
+    assert "outside_123456" not in calls

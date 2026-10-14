@@ -447,7 +447,8 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
             raise SaRequestError("not_shared", 404)
         self.hide(link)
         link.status = "purge_scheduled"
-        link.purge_after = datetime.now(UTC) + timedelta(days=14)
+        deadline = datetime.now(UTC) + timedelta(days=14)
+        link.purge_after = min(utc(link.purge_after), deadline) if link.purge_after else deadline
         if purge:
             self.purge(link)
         self.audit(source, user_id, "drive_sa.folder_unlinked", link.id)

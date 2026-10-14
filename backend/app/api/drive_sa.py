@@ -28,6 +28,19 @@ class RobotRoute(APIRoute):
                 return await handler(request)
             except RequestValidationError:
                 raise HTTPException(422, {"code": "invalid_request"}) from None
+            except HTTPException as error:
+                if isinstance(error.detail, dict) and "code" in error.detail:
+                    raise
+                code = (
+                    "unauthenticated"
+                    if error.status_code == 401
+                    else "forbidden"
+                    if error.status_code == 403
+                    else "provider_unavailable"
+                )
+                raise HTTPException(
+                    error.status_code, {"code": code}, headers=error.headers
+                ) from None
 
         return stable_validation
 

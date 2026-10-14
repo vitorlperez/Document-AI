@@ -224,3 +224,12 @@ def test_org_b_robot_cannot_link_org_a_folder(google_api, monkeypatch):
             session.scalar(select(DriveFolderLink).where(DriveFolderLink.organization_id == org_b))
             is None
         )
+
+
+def test_robot_route_auth_errors_have_stable_code(google_api):
+    client, _, _, _ = google_api
+    result = client.post(
+        "/data-sources/google-sa/enable?organization_id=00000000-0000-0000-0000-000000000001"
+    )
+    assert result.status_code == 401
+    assert result.json() == {"detail": {"code": "unauthenticated"}}
