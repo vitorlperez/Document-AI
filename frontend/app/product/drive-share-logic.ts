@@ -183,3 +183,107 @@ export function relativeSync(iso: string | null | undefined, now = Date.now()): 
   const h = Math.round(min / 60); if (h < 24) return `sync há ${h} h`;
   const d = Math.round(h / 24); return `sync há ${d} ${d === 1 ? "dia" : "dias"}`;
 }
+
+
+// ---- várias pastas de uma vez (passos 1–3 do fluxo multi-pasta) ----
+
+/** Pasta detectada no inbox do robô (contrato: GET .../inbox). `nested_in` = ancestral mais próximo já visto pelo servidor. */
+export type DetectedFolder = { id: string; name: string; shared_by_email?: string | null; shared_at?: string | null; linked?: boolean; parent_ids?: string[]; nested_in?: { id: string; name: string; linked: boolean } | null; /** adicionada por link colado */ via?: "link" };
+
+/** Contador do passo 1 (aria-live). */
+export function foundFoldersLabel(count: number): string {
+  if (count <= 0) return "Nenhuma pasta encontrada ainda";
+  return `${count.toLocaleString("pt-BR")} ${count === 1 ? "pasta encontrada" : "pastas encontradas"}`;
+}
+
+/** Pastas que ainda podem ser conectadas (as já vinculadas ficam de fora). */
+export const unlinkedFolders = <T extends { linked?: boolean }>(folders: T[]): T[] => folders.filter((f) => !f.linked);
+
+/**
+ * Ancestrais de `folder` conhecidos (do mais próximo ao mais distante), seguindo `parent_ids[0]` pelas pastas detectadas
+ * (inclui as já vinculadas). Cai em `nested_in` quando o pai não está na lista. Sem ciclos e no máximo 10 saltos.
+ */
+export function knownAncestors(folder: DetectedFolder, all: DetectedFolder[]): { id: string; name: string; linked: boolean }[] {
+  const byId = new Map(all.map((f) => [f.id, f]));
+  const chain: { id: string; name: string; linked: boolean }[] = [];
+  const seen = new Set([folder.id]);
+  let current: DetectedFolder | undefined = folder;
+  for (let hop = 0; hop < 10 && current; hop++) {
+    const parentId: string | undefined = current.parent_ids?.[0];
+    if (!parentId || seen.has(parentId)) break;
+    seen.add(parentId);
+    const parent = byId.get(parentId);
+    if (!parent) break;
+    chain.push({ id: parent.id, name: parent.name, linked: Boolean(parent.linked) });
+    current = parent;
+  }
+  if (chain.length === 0 && folder.nested_in) chain.push(folder.nested_in);
+  return chain;
+}
+
+/** Seleção explícita do usuário por id; o que ele não tocou segue o padrão (marcada, exceto pasta dentro de outra pasta detectada). */
+export type SelectionChoices = Record<string, boolean>;
+export function isSelected(folder: DetectedFolder, all: DetectedFolder[], choices: SelectionChoices): boolean {
+  if (folder.id in choices) return choices[folder.id];
+  return knownAncestors(folder, all).length === 0;
+}
+
+/** Aviso de aninhamento: só para pasta marcada cujo ancestral já está vinculado ou também está marcado. */
+export function nestedWarning(folder: DetectedFolder, all: DetectedFolder[], choices: SelectionChoices): { id: string; name: string } | null {
+  if (!isSelected(folder, all, choices)) return null;
+  const hit = knownAncestors(folder, all).find((a) => a.linked || (() => { const f = all.find((x) => x.id === a.id); return f ? isSelected(f, all, choices) : false; })());
+  return hit ? { id: hit.id, name: hit.name } : null;
+}
+export const nestedWarningText = (parentName: string) => `Esta pasta está dentro de “${parentName}” — os arquivos já serão incluídos.`;
+
+export function selectedIds(folders: DetectedFolder[], choices: SelectionChoices): string[] {
+  return folders.filter((f) => isSelected(f, folders, choices)).map((f) => f.id);
+}
+/** “Selecionar todas”: se tudo já está marcado, desmarca tudo; senão marca tudo (inclusive as aninhadas, que continuam com aviso). */
+export function toggleAll(folders: DetectedFolder[], choices: SelectionChoices): SelectionChoices {
+  const allOn = folders.every((f) => isSelected(f, folders, choices));
+  return Object.fromEntries(folders.map((f) => [f.id, !allOn]));
+}
+export const connectLabel = (count: number) => count === 0 ? "Conectar pastas" : count === 1 ? "Conectar 1 pasta" : `Conectar ${count} pastas`;
+
+/** Linha do resultado em lote (contrato: POST .../folders/batch). */
+export type BatchRow = { folder_id: string; name?: string | null; status: "ok" | "nested" | "error"; code: string; link_id?: string; workspace_folder_id?: string; file_count?: number; blocked_download_count?: number; parent_name?: string };
+export type BatchRowView = { tone: "ok" | "warn" | "info" | "error"; label: string; hint?: string; retry: boolean };
+
+export function batchRowView(row: BatchRow, robotEmail: string | null = null): BatchRowView {
+  if (row.status === "ok") {
+    const blocked = row.blocked_download_count ?? 0;
+    return row.code === "download_blocked_partial" || blocked > 0
+      ? { tone: "warn", label: `Conectada — ${blocked} ${blocked === 1 ? "arquivo com download bloqueado" : "arquivos com download bloqueado"} pelo dono`, hint: verifyErrorMessage("download_blocked_partial", null, blocked).hint, retry: false }
+      : { tone: "ok", label: `Conectada${row.file_count != null ? ` · ${formatCount(row.file_count, "arquivo", "arquivos")}` : ""}`, retry: false };
+  }
+  if (row.status === "nested") return { tone: "info", label: `Já incluída em “${row.parent_name ?? "outra pasta"}” — os arquivos já estão lá`, retry: false };
+  const message = verifyErrorMessage(verifyCodeFor(row.code, 0), robotEmail);
+  return { tone: "error", label: message.title, hint: message.hint, retry: message.retryLater || message.share };
+}
+
+export type BatchSummary = { connected: number; nested: number; failed: number; text: string };
+export function batchSummary(rows: BatchRow[]): BatchSummary {
+  const connected = rows.filter((r) => r.status === "ok").length;
+  const nested = rows.filter((r) => r.status === "nested").length;
+  const failed = rows.filter((r) => r.status === "error").length;
+  const parts = [connected > 0 ? `${connected} ${connected === 1 ? "pasta conectada" : "pastas conectadas"} · sincronizando` : "Nenhuma pasta conectada"];
+  if (nested > 0) parts.push(`${nested} já ${nested === 1 ? "incluída" : "incluídas"} em outra`);
+  if (failed > 0) parts.push(`${failed} com problema`);
+  return { connected, nested, failed, text: parts.join(" · ") };
+}
+/** Pastas a sincronizar depois do lote (somente as recém-conectadas com workspace). */
+export const syncTargets = (rows: BatchRow[]): string[] => [...new Set(rows.filter((r) => r.status === "ok" && r.workspace_folder_id).map((r) => r.workspace_folder_id as string))];
+/** Pastas do lote que vale tentar de novo (erros transitórios ou de compartilhamento). */
+export const retryableIds = (rows: BatchRow[]): string[] => rows.filter((r) => r.status === "error" && batchRowView(r).retry).map((r) => r.folder_id);
+
+/** Textos da confirmação de “Desvincular” (§ card conectado). */
+export function unlinkConfirmCopy(name: string) {
+  return {
+    title: `Desvincular “${name}”?`,
+    body: "O conteúdo desta pasta some das respostas e da Biblioteca agora. Os arquivos indexados são apagados definitivamente em 14 dias; se você compartilhar a pasta de novo antes disso, tudo volta.",
+    keep: "Desvincular (apagar em 14 dias)",
+    purge: "Apagar agora",
+    purgeHint: "Remove já os documentos indexados desta pasta. Não pode ser desfeito.",
+  };
+}

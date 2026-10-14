@@ -1,14 +1,16 @@
 "use client";
 
 import { ArrowLeft, Check, CircleAlert, Clock3, Copy, ExternalLink, FolderClosed, FolderOpen, Link2, RefreshCw, ShieldCheck, Trash2, Unplug, UserRound, X } from "lucide-react";
+import { createPortal } from "react-dom";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { ModalOverlay } from "../modal-dismiss";
 import { ProviderLogo } from "../provider-logo";
 import { Spinner, btn } from "../ui";
 import { driveShareApi, type DriveShareApi, type InboxFolder, type DriveShareState, type ProvisionStatus } from "./drive-share-api";
 import {
-  ROLE_HINT, SAMPLE_FOLDER_LINK, WORKSPACE_BLOCK_MESSAGE, POLL_INTERVAL_MS, checklistReach, driveFolderUrl, driveShareStatus, firstSyncEstimate, formatCount, initialPollState, itRequestText,
-  parseDriveFolderLink, pollTick, relativeSync, resumePoll, verifyChecklist, verifyErrorMessage, daysUntil, type FolderLink, type VerifyResult,
+  ROLE_HINT, SAMPLE_FOLDER_LINK, WORKSPACE_BLOCK_MESSAGE, POLL_INTERVAL_MS, batchRowView, batchSummary, connectLabel, driveShareStatus, formatCount, foundFoldersLabel, initialPollState, isSelected, itRequestText,
+  knownAncestors, nestedWarning, nestedWarningText, parseDriveFolderLink, pollTick, relativeSync, resumePoll, retryableIds, selectedIds, syncTargets, toggleAll, unlinkConfirmCopy, unlinkedFolders, verifyErrorMessage, daysUntil,
+  type BatchRow, type FolderLink, type SelectionChoices,
 } from "./drive-share-logic";
 import { ApiError, messageFor, type Source } from "./types-and-api";
 import "./drive-share-flow.css";
@@ -83,36 +85,41 @@ export function DriveMethodModal({ onCancel, onContinue }: { onCancel: () => voi
   </ModalOverlay>;
 }
 
-// ---- fluxo em 3 passos ----
+// ---- fluxo em 3 passos (várias pastas de uma vez) ----
 
 type Step = 1 | 2 | 3;
 type Robot = { sourceId: string; email: string };
 const PROVISION_POLL_MS = 3000; const PROVISION_TIMEOUT_MS = 5 * 60_000;
+const SYNC_CONCURRENCY = 3;
+type BatchState = { phase: "running" | "done" | "failed"; ids: string[]; rows: BatchRow[]; failure: string | null };
 export type DriveShareFlowProps = {
   organizationId: string; organizationName?: string; existingSource?: Pick<Source, "id"> | null;
   client?: DriveShareApi; onClose: () => void; onUseOAuth: () => void;
-  /** Depois do vínculo: abre o seletor de escopo atual (loadCatalog). */
+  /** Seletor de escopo pasta-a-pasta (continua disponível depois do lote). */
   onChooseScope: (sourceId: string) => void; onLinked?: () => void;
-  /** Só para testes/preview: força o passo inicial e a fonte. */
-  preview?: { step: Step; robot: Robot };
+  /** "Ver na Biblioteca" no resumo final. */
+  onOpenLibrary?: () => void;
+  /** Só para testes/preview: força o passo inicial, a fonte e dados de exemplo. */
+  preview?: { step: Step; robot: Robot; inbox?: InboxFolder[]; batch?: BatchState; noneFound?: boolean; choices?: SelectionChoices };
 };
 
 function Stepper({ step }: { step: Step }) {
   return <ol className="drive-stepper" aria-label={`Passo ${step} de 3`}>{[1, 2, 3].map((n) => <li key={n} data-state={n < step ? "done" : n === step ? "current" : "todo"} aria-current={n === step ? "step" : undefined}><span>{n < step ? <Check size={12} aria-hidden="true" /> : n}</span></li>)}</ol>;
 }
 
-export function DriveShareFlow({ organizationId, organizationName, existingSource, client = driveShareApi, onClose, onUseOAuth, onChooseScope, onLinked, preview }: DriveShareFlowProps) {
+export function DriveShareFlow({ organizationId, organizationName, existingSource, client = driveShareApi, onClose, onUseOAuth, onChooseScope, onLinked, onOpenLibrary, preview }: DriveShareFlowProps) {
   const [step, setStep] = useState<Step>(preview?.step ?? 1);
   const [robot, setRobot] = useState<Robot | null>(preview?.robot ?? null);
   const [enableError, setEnableError] = useState<string | null>(null);
-  const [inbox, setInbox] = useState<InboxFolder[]>([]);
+  const [inbox, setInbox] = useState<InboxFolder[]>(preview?.inbox ?? []);
+  const [extras, setExtras] = useState<InboxFolder[]>([]);
+  const [choices, setChoices] = useState<SelectionChoices>(preview?.choices ?? {});
   const [poll, setPoll] = useState(initialPollState);
-  const [paste, setPaste] = useState(""); const [pasteError, setPasteError] = useState<string | null>(null);
-  const [verifying, setVerifying] = useState(false); const [target, setTarget] = useState<string | null>(null);
-  const [result, setResult] = useState<VerifyResult | null>(null); const [verifyFailure, setVerifyFailure] = useState<string | null>(null);
-  const [linking, setLinking] = useState(false); const [linkError, setLinkError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false); const [noneFound, setNoneFound] = useState(preview?.noneFound ?? false);
+  const [paste, setPaste] = useState(""); const [pasteError, setPasteError] = useState<string | null>(null); const [pasteChecking, setPasteChecking] = useState(false);
+  const [batch, setBatch] = useState<BatchState | null>(preview?.batch ?? null);
+  const [syncNote, setSyncNote] = useState("");
   const [announce, setAnnounce] = useState("");
-  const autoAdvanced = useRef(false);
 
   const [pendingSource, setPendingSource] = useState<string | null>(null);
   const enabledOnce = useRef(false);
@@ -143,71 +150,101 @@ export function DriveShareFlow({ organizationId, organizationName, existingSourc
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [pendingSource, client, settle, preview]);
 
-  // Polling do inbox: 5 s, até 5 min, depois pausa (botão "Retomar"). Só nos passos 1 e 2.
+  // Todas as pastas conhecidas (inbox + coladas por link); só as não vinculadas podem ser conectadas.
+  const all = useMemo(() => [...inbox, ...extras.filter((e) => !inbox.some((f) => f.id === e.id))], [inbox, extras]);
+  const folders = useMemo(() => unlinkedFolders(all), [all]);
+  const picked = useMemo(() => selectedIds(folders, choices), [folders, choices]);
+
+  // Polling do inbox: 5 s, até 5 min, depois pausa (botão "Retomar"). A lista cresce ao vivo nos passos 1 e 2.
   const pollActive = robot !== null && step < 3 && poll.phase === "polling" && !preview;
+  const lastCount = useRef(0);
   useEffect(() => {
     if (!pollActive || !robot) return;
     let cancelled = false;
     const tick = async () => {
-      let folders: InboxFolder[] = [];
-      try { folders = await client.inbox(robot.sourceId); } catch { /* falha de rede: tenta no próximo tick */ }
+      let found: InboxFolder[] | null = null;
+      try { found = await client.inbox(robot.sourceId); } catch { /* falha de rede: tenta no próximo tick */ }
       if (cancelled) return;
-      setInbox(folders);
-      const fresh = folders.some((f) => !f.linked);
-      setPoll((state) => pollTick(state, fresh));
+      if (found) setInbox(found);
+      setPoll((state) => pollTick(state, (found ?? []).some((f) => !f.linked)));
     };
     void tick();
     const timer = window.setInterval(() => void tick(), POLL_INTERVAL_MS);
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [pollActive, robot, client]);
-  const unlinked = useMemo(() => inbox.filter((f) => !f.linked), [inbox]);
+  // Anuncia só quando o total muda (leitor de tela não repete o mesmo número a cada 5 s).
   useEffect(() => {
-    if (step === 1 && unlinked.length > 0 && !autoAdvanced.current) { autoAdvanced.current = true; setStep(2); setAnnounce(`${unlinked.length === 1 ? "Encontramos uma pasta compartilhada" : `Encontramos ${unlinked.length} pastas compartilhadas`} com o ArquivIO.`); }
-  }, [step, unlinked.length]);
+    if (folders.length === lastCount.current) return;
+    lastCount.current = folders.length; if (folders.length > 0) setNoneFound(false);
+  }, [folders.length]);
 
-  async function runVerify(urlOrId: string, folderName?: string) {
+  async function continueFromStepOne() {
     if (!robot) return;
-    setStep(3); setVerifying(true); setResult(null); setVerifyFailure(null); setLinkError(null); setTarget(urlOrId);
+    if (folders.length > 0) { setStep(2); return; }
+    // Nada detectado ainda: verificação imediata antes de dizer que não encontramos.
+    setChecking(true); setNoneFound(false);
     try {
-      const res = await client.verify(robot.sourceId, urlOrId);
-      setResult({ ...res, folder_name: res.name ?? res.folder_name ?? folderName });
-      if (res.code === "ok" || res.code === "download_blocked_partial") setAnnounce("Acesso confirmado."); // erros já usam role="alert"
-    } catch (error) {
-      // O backend devolve o mesmo corpo para "não existe" e "sem acesso" (not_shared); 404/422 sem corpo estruturado = idem.
-      if (error instanceof ApiError && (error.status === 404 || error.status === 422)) setResult({ code: error.status === 422 ? "invalid_link" : "not_shared" });
-      else if (error instanceof ApiError && error.status === 429) setResult({ code: "rate_limited" });
-      else if (error instanceof ApiError && error.status >= 500) setResult({ code: "provider_error" });
-      else setVerifyFailure(messageFor(error));
-    } finally { setVerifying(false); }
+      const found = await client.inbox(robot.sourceId);
+      setInbox(found);
+      if (found.some((f) => !f.linked)) setStep(2); else { setNoneFound(true); setAnnounce("Não encontramos nenhuma pasta compartilhada ainda."); }
+    } catch { setNoneFound(true); } finally { setChecking(false); }
   }
 
-  function submitPaste() {
+  async function addPasted() {
+    if (!robot) return;
     const parsed = parseDriveFolderLink(paste);
-    if (parsed.kind === "invalid") { setPasteError(verifyErrorMessage(parsed.code, robot?.email ?? null).title); return; }
-    setPasteError(null); void runVerify(paste.trim());
+    if (parsed.kind === "invalid") { setPasteError(verifyErrorMessage(parsed.code, robot.email).title); return; }
+    setPasteError(null); setPasteChecking(true);
+    try {
+      const res = await client.verify(robot.sourceId, paste.trim());
+      if ((res.code === "ok" || res.code === "download_blocked_partial") && res.folder_id) {
+        const id = res.folder_id;
+        if (all.some((f) => f.id === id && f.linked)) { setPasteError("Essa pasta já está conectada."); return; }
+        setExtras((list) => list.some((f) => f.id === id) ? list : [...list, { id, name: res.name ?? res.folder_name ?? "Pasta do Drive", shared_by_email: res.shared_by_email, via: "link" }]);
+        setChoices((c) => ({ ...c, [id]: true })); setPaste(""); setAnnounce(`Pasta “${res.name ?? "do Drive"}” adicionada à lista.`);
+      } else { const m = verifyErrorMessage(res.code, robot.email); setPasteError([m.title, m.hint].filter(Boolean).join(" ")); }
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 422)) { const m = verifyErrorMessage(error.status === 422 ? "invalid_link" : "not_shared", robot.email); setPasteError([m.title, m.hint].filter(Boolean).join(" ")); }
+      else setPasteError(messageFor(error));
+    } finally { setPasteChecking(false); }
   }
 
-  async function connectFolder() {
-    if (!robot || !result?.folder_id) return;
-    setLinking(true); setLinkError(null);
-    try { const linked = await client.link(robot.sourceId, result.folder_id); if (linked.workspace_folder_id) await client.startSync(linked.workspace_folder_id).catch(() => undefined); onLinked?.(); onChooseScope(robot.sourceId); }
-    catch (error) { setLinkError(messageFor(error)); } finally { setLinking(false); }
+  /** Passo 3: verifica e conecta todas de uma vez; depois dispara a sincronização de cada pasta conectada. */
+  async function connectSelected(ids: string[], previous: BatchRow[] = []) {
+    if (!robot || ids.length === 0) return;
+    setStep(3); setSyncNote("");
+    setBatch({ phase: "running", ids: [...new Set([...previous.map((r) => r.folder_id), ...ids])], rows: previous, failure: null });
+    try {
+      const fresh = await client.linkBatch(robot.sourceId, ids);
+      const rows = [...previous.filter((r) => !ids.includes(r.folder_id)), ...fresh];
+      setBatch((b) => ({ phase: "done", ids: b?.ids ?? ids, rows, failure: null }));
+      const targets = syncTargets(fresh);
+      const summary = batchSummary(rows);
+      setAnnounce(summary.text);
+      if (fresh.some((r) => r.status === "ok")) onLinked?.();
+      if (targets.length > 0) {
+        setSyncNote("Iniciando a sincronização das pastas…");
+        const queue = [...targets];
+        await Promise.all(Array.from({ length: Math.min(SYNC_CONCURRENCY, queue.length) }, async () => { for (let next = queue.shift(); next; next = queue.shift()) await client.startSync(next).catch(() => undefined); }));
+        setSyncNote("Sincronização iniciada. Você pode fechar esta janela: o trabalho continua em segundo plano.");
+      }
+    } catch (error) { setBatch((b) => ({ phase: "failed", ids: b?.ids ?? ids, rows: previous, failure: messageFor(error) })); }
   }
 
-  const busy = verifying || linking;
+  const busy = checking || pasteChecking || batch?.phase === "running";
   const titleId = "drive-share-title";
+  const subtitle = step === 1 ? "Compartilhe as pastas com este e-mail" : step === 2 ? "Escolha as pastas" : batch?.phase === "done" ? "Pastas conectadas" : "Conectando as pastas";
   return <ModalOverlay onClose={onClose} busy={busy} labelledBy={titleId} className="integration-modal drive-share-modal aq-motion-overlay fixed inset-0 z-50 grid place-items-center bg-primary/40 p-4">
     <section className="drive-share-panel max-w-2xl" data-arquivio-motion="panel-scale" data-step={step}>
-      <header className="drive-share-head"><span className="drive-share-logo"><ProviderLogo provider="google" size={24} /></span><div className="min-w-0 flex-1"><h2 id={titleId} className="text-xl font-semibold text-ink">Compartilhar pastas com o ArquivIO</h2><p className="mt-1 text-sm text-muted-foreground">Passo {step} de 3 · {step === 1 ? "Compartilhe a pasta com este e-mail" : step === 2 ? "Confirmar pasta" : "Verificando acesso"}</p></div><Stepper step={step} /><button type="button" onClick={onClose} disabled={busy} aria-label="Fechar" className={btn("ghost", "icon")}><X size={18} /></button></header>
+      <header className="drive-share-head"><span className="drive-share-logo"><ProviderLogo provider="google" size={24} /></span><div className="min-w-0 flex-1"><h2 id={titleId} className="text-xl font-semibold text-ink">Compartilhar pastas com o ArquivIO</h2><p className="mt-1 text-sm text-muted-foreground">Passo {step} de 3 · {subtitle}</p></div><Stepper step={step} /><button type="button" onClick={onClose} disabled={busy} aria-label="Fechar" className={btn("ghost", "icon")}><X size={18} /></button></header>
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
 
       {!robot && !enableError && <div className="drive-loading" role="status"><Spinner size={18} /><span>Preparando o e-mail exclusivo da sua empresa…</span></div>}
       {enableError && <div className="drive-alert" data-tone="error" role="alert"><CircleAlert size={18} aria-hidden="true" /><div><p className="font-semibold">Não foi possível preparar o acesso.</p><p>{enableError}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={btn("secondary", "sm")} onClick={enable}><RefreshCw size={14} aria-hidden="true" />Tentar de novo</button><button type="button" className={btn("ghost", "sm")} onClick={onUseOAuth}>Usar “Entrar com a conta Google”</button></div></div></div>}
 
-      {robot && step === 1 && <StepOne robot={robot.email} poll={poll} onResume={() => setPoll(resumePoll)} onPaste={() => setStep(2)} onUseOAuth={onUseOAuth} organizationName={organizationName} />}
-      {robot && step === 2 && <StepTwo robot={robot.email} folders={unlinked} poll={poll} onResume={() => setPoll(resumePoll)} paste={paste} setPaste={(v) => { setPaste(v); setPasteError(null); }} pasteError={pasteError} onVerifyPaste={submitPaste} onConnect={(f) => void runVerify(f.id, f.name)} onBack={() => setStep(1)} />}
-      {robot && step === 3 && <StepThree robot={robot.email} verifying={verifying} result={result} failure={verifyFailure} linking={linking} linkError={linkError}
-        onRetry={() => target && void runVerify(target, result?.folder_name ?? undefined)} onBack={() => { setStep(2); setResult(null); setVerifyFailure(null); }} onConnect={() => void connectFolder()} onUseOAuth={onUseOAuth} organizationName={organizationName} />}
+      {robot && step === 1 && <StepOne robot={robot.email} folders={folders} poll={poll} checking={checking} noneFound={noneFound} hasExisting={Boolean(existingSource)} onResume={() => setPoll(resumePoll)} onContinue={() => void continueFromStepOne()} onSkipToPick={() => setStep(2)} onPaste={() => setStep(2)} onUseOAuth={onUseOAuth} organizationName={organizationName} />}
+      {robot && step === 2 && <StepTwo robot={robot.email} folders={folders} all={all} choices={choices} setChoices={setChoices} picked={picked.length} poll={poll} onResume={() => setPoll(resumePoll)} paste={paste} setPaste={(v) => { setPaste(v); setPasteError(null); }} pasteError={pasteError} pasteChecking={pasteChecking} onAddPasted={() => void addPasted()} onConnect={() => void connectSelected(picked)} onBack={() => setStep(1)} />}
+      {robot && step === 3 && batch && <StepThree robot={robot.email} all={all} batch={batch} syncNote={syncNote} onRetryFailed={() => void connectSelected(retryableIds(batch.rows), batch.rows)} onRetryAll={() => void connectSelected(batch.ids)} onBack={() => { setStep(2); setBatch(null); }} onChooseScope={() => onChooseScope(robot.sourceId)} onOpenLibrary={onOpenLibrary} onDone={onClose} />}
     </section>
   </ModalOverlay>;
 }
@@ -223,71 +260,83 @@ function WorkspaceHint({ robot, organizationName, onUseOAuth }: { robot: string;
   return <div className="drive-alert" data-tone="warning" role="note"><CircleAlert size={18} aria-hidden="true" /><div><p>{WORKSPACE_BLOCK_MESSAGE}</p><div className="mt-3 flex flex-wrap gap-2"><CopyButton text={text} label="Copiar texto para o TI" size="sm" /><button type="button" className={btn("ghost", "sm")} onClick={onUseOAuth}>Usar “Entrar com a conta Google”</button></div></div></div>;
 }
 
-function StepOne({ robot, poll, onResume, onPaste, onUseOAuth, organizationName }: { robot: string; poll: ReturnType<typeof initialPollState>; onResume: () => void; onPaste: () => void; onUseOAuth: () => void; organizationName?: string }) {
+function StepOne({ robot, folders, poll, checking, noneFound, hasExisting, onResume, onContinue, onSkipToPick, onPaste, onUseOAuth, organizationName }: { robot: string; folders: InboxFolder[]; poll: ReturnType<typeof initialPollState>; checking: boolean; noneFound: boolean; hasExisting: boolean; onResume: () => void; onContinue: () => void; onSkipToPick: () => void; onPaste: () => void; onUseOAuth: () => void; organizationName?: string }) {
   return <div className="drive-step">
     <RobotEmail email={robot} />
-    <p className="drive-note">Este e-mail é exclusivo da sua empresa. Ninguém mais o usa.</p>
+    <p className="drive-note">Este e-mail é exclusivo da sua empresa. Ninguém mais o usa. <b className="drive-many">Você pode compartilhar quantas pastas quiser com o mesmo e-mail</b> — uma de cada vez ou todas em seguida.</p>
     <ol className="drive-instructions">
       <li><span>Abra o Google Drive em outra aba.</span><a className={btn("secondary", "sm")} href={DRIVE_HOME} target="_blank" rel="noopener noreferrer">Abrir o Google Drive<ExternalLink size={14} aria-hidden="true" /></a></li>
-      <li><span>Clique com o botão direito na pasta → <b>Compartilhar</b>.</span></li>
+      <li><span>Clique com o botão direito na pasta → <b>Compartilhar</b>. Dica: selecione várias pastas (⌘/Ctrl + clique) para compartilhar todas de uma vez.</span></li>
       <li data-key><span>Cole o e-mail, escolha <b className="drive-role">Leitor</b> e <b>desmarque “Notificar pessoas”</b>.</span><p className="drive-role-hint">{ROLE_HINT}</p></li>
-      <li><span>Clique em <b>Enviar</b>. Se o Drive avisar que o endereço não é uma conta Google, confirme o envio.</span></li>
+      <li><span>Clique em <b>Enviar</b>. Se o Drive avisar que o endereço não é uma conta Google, confirme o envio. Repita para as outras pastas.</span></li>
     </ol>
     <div className="drive-feature"><ShieldCheck size={16} aria-hidden="true" /><span>Sem tela “Entrar com Google”: o ArquivIO só enxerga o que você compartilhar.</span></div>
-    <WaitingLine poll={poll} onResume={onResume} />
-    {poll.emptyHint && <WorkspaceHint robot={robot} organizationName={organizationName} onUseOAuth={onUseOAuth} />}
-    <div className="drive-links"><span>Já compartilhou?</span><button type="button" className={btn("ghost", "sm")} onClick={onPaste}><Link2 size={14} aria-hidden="true" />Colar o link da pasta</button></div>
+    <section className="drive-found" aria-labelledby="drive-found-title" data-empty={folders.length === 0 || undefined}>
+      <div className="drive-found-head"><b id="drive-found-title" className="drive-found-count" role="status" aria-live="polite" aria-atomic="true">{foundFoldersLabel(folders.length)}</b>{poll.phase === "polling" && <span className="drive-found-live"><Spinner size={12} />verificando a cada 5 s</span>}</div>
+      {folders.length > 0 && <ul className="drive-found-list">{folders.map((f) => <li key={f.id}><FolderClosed size={16} aria-hidden="true" /><span className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b></span>{f.shared_by_email && <span className="drive-folder-meta">{f.shared_by_email}</span>}</li>)}</ul>}
+      {poll.phase === "paused" && <WaitingLine poll={poll} onResume={onResume} />}
+    </section>
+    {noneFound && folders.length === 0 && <div className="drive-alert" data-tone="warning" role="alert"><CircleAlert size={18} aria-hidden="true" /><div className="min-w-0"><p className="font-semibold">Ainda não encontramos nenhuma pasta compartilhada com <span className="drive-mono">{robot}</span>.</p>
+      <ul className="drive-tips"><li>Confira se o e-mail foi digitado exatamente como acima e se escolheu <b>Leitor</b> (ou Editor).</li><li>O Google pode levar alguns segundos para liberar o acesso. Esperamos mais um pouco e verificamos sozinhos.</li><li>Compartilhe a <b>pasta</b>, não um arquivo, e não use “qualquer pessoa com o link”.</li><li>Se a sua empresa bloqueia compartilhamento externo, veja o aviso abaixo.</li></ul></div></div>}
+    {(poll.emptyHint || noneFound) && folders.length === 0 && <WorkspaceHint robot={robot} organizationName={organizationName} onUseOAuth={onUseOAuth} />}
+    <div className="drive-actions-end drive-actions-split">
+      {hasExisting && <button type="button" className={btn("ghost")} onClick={onSkipToPick}>Já compartilhei antes — escolher agora</button>}
+      <button type="button" className={btn("primary")} onClick={onContinue} disabled={checking} aria-busy={checking || undefined}>{checking ? "Verificando…" : "Já compartilhei todas as pastas"}</button>
+    </div>
+    <div className="drive-links"><span>Prefere colar o link?</span><button type="button" className={btn("ghost", "sm")} onClick={onPaste}><Link2 size={14} aria-hidden="true" />Colar o link da pasta</button></div>
     <div className="drive-links"><span>Sua empresa bloqueia compartilhamento externo?</span><details className="drive-details"><summary>Ver o que fazer</summary><div className="mt-2"><WorkspaceHint robot={robot} organizationName={organizationName} onUseOAuth={onUseOAuth} /></div></details></div>
   </div>;
 }
 
-function StepTwo({ robot, folders, poll, onResume, paste, setPaste, pasteError, onVerifyPaste, onConnect, onBack }: { robot: string; folders: InboxFolder[]; poll: ReturnType<typeof initialPollState>; onResume: () => void; paste: string; setPaste: (v: string) => void; pasteError: string | null; onVerifyPaste: () => void; onConnect: (f: InboxFolder) => void; onBack: () => void }) {
+function StepTwo({ robot, folders, all, choices, setChoices, picked, poll, onResume, paste, setPaste, pasteError, pasteChecking, onAddPasted, onConnect, onBack }: { robot: string; folders: InboxFolder[]; all: InboxFolder[]; choices: SelectionChoices; setChoices: (updater: (c: SelectionChoices) => SelectionChoices) => void; picked: number; poll: ReturnType<typeof initialPollState>; onResume: () => void; paste: string; setPaste: (v: string) => void; pasteError: string | null; pasteChecking: boolean; onAddPasted: () => void; onConnect: () => void; onBack: () => void }) {
   const now = Date.now();
+  const allOn = folders.length > 0 && picked === folders.length;
   return <div className="drive-step">
     {folders.length > 0 ? <>
-      <p className="drive-lead">Encontramos {folders.length === 1 ? "uma pasta compartilhada" : "pastas compartilhadas"} com o ArquivIO:</p>
-      <ul className="drive-folder-list">{folders.map((f) => <li key={f.id}><FolderClosed size={20} aria-hidden="true" /><div className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b><span className="drive-folder-meta">{f.shared_by_email ? `compartilhada por ${f.shared_by_email}` : "compartilhada com o ArquivIO"}{f.shared_at ? ` · ${relativeSync(f.shared_at, now).replace("sync ", "")}` : ""}</span></div><button type="button" className={btn("primary", "sm")} onClick={() => onConnect(f)}>Conectar esta pasta</button></li>)}</ul>
+      <div className="drive-pick-head"><label className="drive-check drive-check-all"><input type="checkbox" checked={allOn} ref={(el) => { if (el) el.indeterminate = picked > 0 && !allOn; }} onChange={() => setChoices((c) => toggleAll(folders, c))} /><span>Selecionar todas</span></label><span className="drive-pick-count" role="status" aria-live="polite">{picked} de {folders.length} {folders.length === 1 ? "selecionada" : "selecionadas"}</span></div>
+      <ul className="drive-pick-list" aria-label="Pastas compartilhadas com o ArquivIO">{folders.map((f) => {
+        const checked = isSelected(f, all, choices); const parent = knownAncestors(f, all)[0]; const warn = nestedWarning(f, all, choices);
+        const hintId = `drive-pick-${f.id}-hint`;
+        return <li key={f.id} data-checked={checked || undefined} data-nested={parent ? "" : undefined}>
+          <label className="drive-check drive-pick-row"><input type="checkbox" checked={checked} aria-describedby={parent ? hintId : undefined} onChange={() => setChoices((c) => ({ ...c, [f.id]: !checked }))} /><FolderClosed size={20} aria-hidden="true" /><span className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b><span className="drive-folder-meta">{f.via === "link" ? "adicionada por link" : f.shared_by_email ? `compartilhada por ${f.shared_by_email}` : "compartilhada com o ArquivIO"}{f.shared_at ? ` · ${relativeSync(f.shared_at, now).replace("sync ", "")}` : ""}</span></span></label>
+          {parent && <p id={hintId} className="drive-nested-hint" data-active={warn ? "" : undefined}><CircleAlert size={14} aria-hidden="true" />{nestedWarningText(parent.name)}</p>}
+        </li>; })}</ul>
+      {poll.phase === "paused" ? <WaitingLine poll={poll} onResume={onResume} /> : <p className="drive-note drive-live-note"><Spinner size={12} />Novas pastas compartilhadas aparecem aqui sozinhas.</p>}
     </> : <><p className="drive-lead">Ainda não apareceu nenhuma pasta compartilhada com <span className="drive-mono">{robot}</span>.</p><WaitingLine poll={poll} onResume={onResume} /></>}
-    <form className="drive-paste" noValidate onSubmit={(e) => { e.preventDefault(); onVerifyPaste(); }}>
+    <form className="drive-paste" noValidate onSubmit={(e) => { e.preventDefault(); onAddPasted(); }}>
       <label htmlFor="drive-link" className="drive-lead">{folders.length > 0 ? "Não apareceu? Cole o link da pasta:" : "Ou cole o link da pasta:"}</label>
-      <div className="drive-paste-row"><input id="drive-link" type="url" inputMode="url" autoComplete="off" spellCheck={false} placeholder={SAMPLE_FOLDER_LINK} value={paste} onChange={(e) => setPaste(e.target.value)} aria-invalid={Boolean(pasteError)} aria-describedby={pasteError ? "drive-link-error" : "drive-link-hint"} /><button type="submit" className={btn("primary")} disabled={!paste.trim()}>Verificar</button></div>
+      <div className="drive-paste-row"><input id="drive-link" type="url" inputMode="url" autoComplete="off" spellCheck={false} placeholder={SAMPLE_FOLDER_LINK} value={paste} onChange={(e) => setPaste(e.target.value)} aria-invalid={Boolean(pasteError)} aria-describedby={pasteError ? "drive-link-error" : "drive-link-hint"} /><button type="submit" className={btn("secondary")} disabled={!paste.trim() || pasteChecking} aria-busy={pasteChecking || undefined}>{pasteChecking ? "Verificando…" : "Adicionar à lista"}</button></div>
       <p id="drive-link-hint" className="drive-note">Pode ser o link de uma subpasta de uma pasta já compartilhada. Links de “qualquer pessoa com o link” não são aceitos.</p>
       {pasteError && <p id="drive-link-error" className="drive-field-error" role="alert"><CircleAlert size={14} aria-hidden="true" />{pasteError} <span className="drive-mono">Exemplo: {SAMPLE_FOLDER_LINK}</span></p>}
     </form>
-    <div className="drive-actions-start"><button type="button" className={btn("ghost", "sm")} onClick={onBack}><ArrowLeft size={14} aria-hidden="true" />Voltar ao passo 1</button></div>
+    <div className="drive-actions-end drive-actions-split"><button type="button" className={btn("ghost")} onClick={onBack}><ArrowLeft size={14} aria-hidden="true" />Voltar ao passo 1</button><button type="button" className={btn("primary")} onClick={onConnect} disabled={picked === 0}>{connectLabel(picked)}</button></div>
   </div>;
 }
 
-function StepThree({ robot, verifying, result, failure, linking, linkError, onRetry, onBack, onConnect, onUseOAuth, organizationName }: { robot: string; verifying: boolean; result: VerifyResult | null; failure: string | null; linking: boolean; linkError: string | null; onRetry: () => void; onBack: () => void; onConnect: () => void; onUseOAuth: () => void; organizationName?: string }) {
-  const ok = result?.code === "ok" || result?.code === "download_blocked_partial";
-  const items = result ? verifyChecklist(result) : [];
-  const reach = result ? checklistReach(result.code) : 0;
-  const message = result && !ok ? verifyErrorMessage(result.code, robot, result.blocked_download_count) : null;
+function StepThree({ robot, all, batch, syncNote, onRetryFailed, onRetryAll, onBack, onChooseScope, onOpenLibrary, onDone }: { robot: string; all: InboxFolder[]; batch: BatchState; syncNote: string; onRetryFailed: () => void; onRetryAll: () => void; onBack: () => void; onChooseScope: () => void; onOpenLibrary?: () => void; onDone: () => void }) {
+  const running = batch.phase === "running";
+  const summary = batchSummary(batch.rows);
+  const byId = new Map(batch.rows.map((r) => [r.folder_id, r]));
+  const name = (id: string) => byId.get(id)?.name ?? all.find((f) => f.id === id)?.name ?? "Pasta do Drive";
+  const retryable = retryableIds(batch.rows).length;
   return <div className="drive-step">
-    <ul className="drive-checklist" aria-label="Verificação de acesso">
-      {verifying && <li data-state="running"><Spinner size={16} /><span>Verificando o acesso à pasta…</span></li>}
-      {!verifying && result && items.map((item, index) => {
-        const state = index < reach ? "done" : index === reach && !ok ? "failed" : "todo";
-        const warn = item.key === "download" && result.code === "download_blocked_partial";
-        return <li key={item.key} data-state={warn ? "warn" : state} style={{ "--i": index } as CSSProperties}>{state === "done" ? (warn ? <CircleAlert size={16} aria-hidden="true" /> : <Check size={16} aria-hidden="true" />) : state === "failed" ? <X size={16} aria-hidden="true" /> : <span className="drive-dot" aria-hidden="true" />}<span>{item.label}</span><span className="sr-only">{state === "done" ? (warn ? " — atenção" : " — ok") : state === "failed" ? " — falhou" : " — não verificado"}</span></li>;
-      })}
+    <ul className="drive-checklist drive-batch" aria-label="Pastas sendo conectadas" aria-busy={running || undefined}>
+      {batch.ids.map((id, index) => {
+        const row = byId.get(id); const view = row ? batchRowView(row, robot) : null;
+        const state = !row ? "running" : view!.tone === "ok" ? "done" : view!.tone === "warn" ? "warn" : view!.tone === "info" ? "info" : "failed";
+        return <li key={id} data-state={state} style={{ "--i": index } as CSSProperties}>
+          {state === "running" ? <Spinner size={16} /> : state === "done" ? <Check size={16} aria-hidden="true" /> : state === "failed" ? <X size={16} aria-hidden="true" /> : <CircleAlert size={16} aria-hidden="true" />}
+          <span className="min-w-0 flex-1"><b className="drive-folder-name">{name(id)}</b><span className="drive-folder-meta">{view ? view.label : "Verificando acesso, permissões e arquivos…"}</span>{view?.hint && view.tone !== "ok" && <span className="drive-folder-meta">{view.hint}</span>}</span>
+          <span className="sr-only">{state === "done" ? " — conectada" : state === "warn" ? " — conectada com atenção" : state === "info" ? " — já incluída" : state === "failed" ? " — com problema" : " — verificando"}</span>
+        </li>; })}
     </ul>
-    {failure && <div className="drive-alert" data-tone="error" role="alert"><CircleAlert size={18} aria-hidden="true" /><div><p>{failure}</p><div className="mt-3"><button type="button" className={btn("secondary", "sm")} onClick={onRetry}>Tentar de novo</button></div></div></div>}
-    {message && <div className="drive-alert" data-tone={message.retryLater ? "warning" : "error"} role="alert"><CircleAlert size={18} aria-hidden="true" /><div className="min-w-0"><p className="font-semibold">{message.title}</p>{message.hint && <p className="mt-1">{message.hint}</p>}
-      {message.example && <p className="drive-mono mt-2">Exemplo: {SAMPLE_FOLDER_LINK}</p>}
-      <div className="mt-3 flex flex-wrap gap-2">{message.share && <><CopyButton text={robot} label="Copiar e-mail" size="sm" /><button type="button" className={btn("primary", "sm")} onClick={onRetry}><RefreshCw size={14} aria-hidden="true" />Já compartilhei, verificar de novo</button></>}
-        {!message.share && <button type="button" className={btn("secondary", "sm")} onClick={message.retryLater ? onRetry : onBack}>{message.retryLater ? "Tentar de novo" : "Colar outro link"}</button>}
-        {message.share && result?.folder_id && <a className={btn("ghost", "sm")} href={driveFolderUrl(result.folder_id)} target="_blank" rel="noopener noreferrer">Abrir esta pasta no Drive<ExternalLink size={14} aria-hidden="true" /></a>}
-        {message.share && <button type="button" className={btn("ghost", "sm")} onClick={onBack}>Colar outro link</button>}</div>
-      {message.share && <details className="drive-details mt-3"><summary>Sua empresa bloqueia compartilhamento externo?</summary><div className="mt-2"><WorkspaceHint robot={robot} organizationName={organizationName} onUseOAuth={onUseOAuth} /></div></details>}
-    </div></div>}
-    {ok && result && <div className="drive-success">
-      <p className="drive-success-title"><ShieldCheck size={20} aria-hidden="true" />Acesso confirmado</p>
-      <p className="drive-note">{result.shared_by_email ? `Compartilhada por ${result.shared_by_email} · ` : ""}Seu e-mail do ArquivIO: <span className="drive-mono">{robot}</span></p>
-      <p className="drive-note" id="drive-eta">{firstSyncEstimate(result.file_count ?? 0)}</p>
-      {result.code === "download_blocked_partial" && <div className="drive-alert mt-3" data-tone="warning" role="note"><CircleAlert size={18} aria-hidden="true" /><div><p className="font-semibold">{verifyErrorMessage("download_blocked_partial", robot, result.blocked_download_count).title}</p><p className="mt-1">{verifyErrorMessage("download_blocked_partial", robot, result.blocked_download_count).hint}</p></div></div>}
-      {linkError && <p className="drive-field-error mt-3" role="alert"><CircleAlert size={14} aria-hidden="true" />{linkError}</p>}
-      <div className="drive-actions-end"><button type="button" className={btn("ghost")} onClick={onBack} disabled={linking}>Escolher outra pasta</button><button type="button" className={btn("primary")} onClick={onConnect} disabled={linking} aria-busy={linking || undefined} aria-describedby="drive-eta">{linking ? "Conectando…" : "Escolher o que sincronizar"}</button></div>
+    {batch.failure && <div className="drive-alert" data-tone="error" role="alert"><CircleAlert size={18} aria-hidden="true" /><div><p>{batch.failure}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={btn("secondary", "sm")} onClick={onRetryAll}><RefreshCw size={14} aria-hidden="true" />Tentar de novo</button><button type="button" className={btn("ghost", "sm")} onClick={onBack}>Voltar à lista</button></div></div></div>}
+    {batch.phase === "done" && <div className="drive-success">
+      <p className="drive-success-title" role="status" aria-live="polite"><ShieldCheck size={20} aria-hidden="true" />{summary.text}</p>
+      <p className="drive-note">Seu e-mail do ArquivIO: <span className="drive-mono">{robot}</span>. Para incluir mais pastas, compartilhe com o mesmo e-mail.</p>
+      {syncNote && <p className="drive-note" id="drive-eta">{syncNote}</p>}
+      {retryable > 0 && <div className="drive-alert mt-3" data-tone="warning" role="note"><CircleAlert size={18} aria-hidden="true" /><div><p>{retryable === 1 ? "Uma pasta não pôde ser conectada." : `${retryable} pastas não puderam ser conectadas.`} Confira o compartilhamento no Drive e tente de novo.</p><div className="mt-3 flex flex-wrap gap-2"><CopyButton text={robot} label="Copiar e-mail" size="sm" /><button type="button" className={btn("primary", "sm")} onClick={onRetryFailed}><RefreshCw size={14} aria-hidden="true" />Tentar de novo as que falharam</button></div></div></div>}
+      <div className="drive-actions-end"><button type="button" className={btn("ghost")} onClick={summary.connected > 0 ? onChooseScope : onBack}>{summary.connected > 0 ? "Escolher o que sincronizar em cada pasta" : "Voltar à lista"}</button>{onOpenLibrary && summary.connected > 0 && <button type="button" className={btn("secondary")} onClick={onOpenLibrary}>Ver na Biblioteca</button>}<button type="button" className={btn("primary")} onClick={onDone}>Concluir</button></div>
     </div>}
   </div>;
 }
@@ -312,7 +361,8 @@ export function DriveShareCard({ source, client = driveShareApi, syncBadge, disc
   const connected = (state?.status ?? source?.status) === "connected";
   const lost = (state?.status ?? source?.status) === "access_lost";
   const fresh = useCallback(async (fn: () => Promise<unknown>, key: string, done: string) => { setBusy(key); setError(null); try { await fn(); if (sourceId) setState(await client.state(sourceId, source?.status)); setAnnounce(done); onChanged?.(); } catch (e) { setError(messageFor(e)); } finally { setBusy(null); } }, [client, sourceId, source?.status, onChanged]);
-  const purgeNow = (link: FolderLink) => { if (!window.confirm(`Apagar agora o conteúdo de “${link.name}”? Isso remove os documentos indexados desta pasta e não pode ser desfeito.`)) return; if (sourceId) void fresh(() => client.unlink(sourceId, link.link_id ?? link.id, true), `purge-${link.id}`, "Conteúdo apagado."); };
+  const [unlinking, setUnlinking] = useState<FolderLink | null>(null);
+  const unlink = (link: FolderLink, purge: boolean) => { setUnlinking(null); if (sourceId) void fresh(() => client.unlink(sourceId, link.link_id ?? link.id, purge), `unlink-${link.id}`, purge ? "Conteúdo apagado." : `Pasta “${link.name}” desvinculada.`); };
   const now = Date.now();
   return <section className="integration-tool-card drive-card h-full rounded-lg border border-card-edge bg-raised p-4 shadow-sm" data-status={state?.status ?? source?.status ?? "available"}>
     <button type="button" onClick={() => { if (source && connected) onManage(source); else if (source) onAddFolder(source); else onStart(); }} className="integration-tool-header mo-interactive flex w-full items-center gap-3 text-left"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-sage"><ProviderLogo provider="google" size={26} /></span><b className="integration-tool-title min-w-0 flex-1">Google Drive · Pasta compartilhada</b></button>
@@ -326,7 +376,7 @@ export function DriveShareCard({ source, client = driveShareApi, syncBadge, disc
       {folders.length > 0 && <ul className="drive-card-folders">{folders.map((f) => {
         const days = daysUntil(f.purge_after, now); const lostFolder = f.status === "suspect" || f.status === "access_lost" || f.status === "purge_scheduled";
         return <li key={f.id} data-lost={lostFolder || undefined}><FolderOpen size={16} aria-hidden="true" /><div className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b><span className="drive-folder-meta">{lostFolder ? `acesso removido${days !== null ? ` · apagando em ${days} ${days === 1 ? "dia" : "dias"}` : ""}` : `${f.file_count != null ? `${formatCount(f.file_count, "arquivo", "arquivos")} · ` : ""}${relativeSync(f.last_synced_at, now)}`}</span></div>
-          {lostFolder && f.link_id && <button type="button" className={btn("danger-ghost", "sm")} disabled={busy !== null} onClick={() => purgeNow(f)}><Trash2 size={14} aria-hidden="true" />Apagar agora</button>}</li>;
+          {f.link_id && <button type="button" className={btn("danger-ghost", "sm")} disabled={busy !== null} onClick={() => setUnlinking(f)}>{lostFolder ? <Trash2 size={14} aria-hidden="true" /> : <Unplug size={14} aria-hidden="true" />}{lostFolder ? "Apagar agora" : "Desvincular"}</button>}</li>;
       })}</ul>}
       {error && <p className="drive-field-error" role="alert"><CircleAlert size={14} aria-hidden="true" />{error}</p>}
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
@@ -336,8 +386,22 @@ export function DriveShareCard({ source, client = driveShareApi, syncBadge, disc
         {(connected || lost || status.tone === "pending") && <button type="button" onClick={() => onAddFolder(source)} className={btn("secondary", "sm")}>{connected || lost ? "Adicionar outra pasta" : "Compartilhar pasta"}</button>}
         {connected && <button type="button" onClick={() => onManage(source)} className="mo-interactive rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground">Gerenciar</button>}
       </span></div>
-      {connected && <p className="integration-tool-note drive-add-note"><UserRound size={12} aria-hidden="true" /> Para incluir outra pasta, compartilhe com o mesmo e-mail e atualize.</p>}
+      {connected && <p className="integration-tool-note drive-add-note"><UserRound size={12} aria-hidden="true" /> Use o mesmo e-mail para todas as pastas: compartilhe cada nova pasta com ele e clique em “Adicionar outra pasta”.</p>}
     </>}
+    {unlinking && <UnlinkConfirm link={unlinking} lost={unlinking.status !== "verified"} onCancel={() => setUnlinking(null)} onUnlink={(purge) => unlink(unlinking, purge)} />}
   </section>;
 }
 
+
+function UnlinkConfirm({ link, lost, onCancel, onUnlink }: { link: FolderLink; lost: boolean; onCancel: () => void; onUnlink: (purge: boolean) => void }) {
+  const copy = unlinkConfirmCopy(link.name);
+  // Portal: o card tem transform/motion, então um `fixed` interno ficaria preso ao card.
+  return createPortal(<ModalOverlay onClose={onCancel} labelledBy="drive-unlink-title" className="integration-modal drive-share-modal aq-motion-overlay fixed inset-0 z-50 grid place-items-center bg-primary/40 p-4">
+    <section className="drive-share-panel max-w-lg" data-arquivio-motion="panel-scale" role="alertdialog" aria-describedby="drive-unlink-body">
+      <header className="drive-share-head"><span className="drive-share-logo"><Unplug size={20} aria-hidden="true" /></span><div className="min-w-0 flex-1"><h2 id="drive-unlink-title" className="text-xl font-semibold text-ink">{lost ? `Apagar “${link.name}” agora?` : copy.title}</h2></div><button type="button" onClick={onCancel} aria-label="Fechar" className={btn("ghost", "icon")}><X size={18} /></button></header>
+      <p id="drive-unlink-body" className="drive-note">{lost ? "O acesso a esta pasta já foi removido. Você pode esperar o prazo de 14 dias ou apagar os documentos indexados agora, sem volta." : copy.body}</p>
+      {!lost && <p className="drive-note mt-2">{copy.purgeHint}</p>}
+      <footer className="drive-share-actions"><button type="button" className={btn("ghost")} onClick={onCancel} autoFocus>Cancelar</button>{!lost && <button type="button" className={btn("secondary")} onClick={() => onUnlink(false)}>{copy.keep}</button>}<button type="button" className={btn("destructive")} onClick={() => onUnlink(true)}><Trash2 size={14} aria-hidden="true" />{copy.purge}</button></footer>
+    </section>
+  </ModalOverlay>, document.body);
+}

@@ -1,12 +1,13 @@
 /** Chamadas do modo "e-mail-robô". Único ponto a ajustar se o contrato (specs/google/drive-sa-api-contract.md) mudar.
  * Todas as rotas levam `organization_id` na query; erros chegam como `{detail:{code}}` e viram códigos da UI (drive-share-logic). */
 import { API_BASE, ApiError } from "./types-and-api";
-import { verifyCodeFor, type FolderLink, type VerifyResult } from "./drive-share-logic";
+import { verifyCodeFor, type BatchRow, type DetectedFolder, type FolderLink, type VerifyResult } from "./drive-share-logic";
 
 /** `status`: "provisioning" enquanto o worker cria o robô exclusivo da organização (poll em `status`); "ready" já traz o e-mail. */
 export type ProvisionStatus = "provisioning" | "ready" | "failed";
 export type DriveShareEnable = { source_id: string; robot_email: string | null; status?: ProvisionStatus; share_role?: string };
-export type InboxFolder = { id: string; name: string; shared_by_email?: string | null; shared_at?: string | null; linked?: boolean };
+/** Pasta do inbox: `parent_ids` e `nested_in` descrevem a hierarquia que o robô enxerga (contrato: GET .../inbox). */
+export type InboxFolder = DetectedFolder;
 export type DriveShareState = { source_id: string; status: string; robot_email: string | null; provision?: ProvisionStatus; folders: FolderLink[] };
 /** Linha de `GET .../folders` (contrato): `link_id` é o id do vínculo, `folder_id` o do Drive. */
 export type LinkedFolder = { link_id: string; folder_id: string; name: string; workspace_folder_id?: string | null; status: string; purge_after?: string | null; shared_by_email?: string | null; shared_at?: string | null; blocked_download_count?: number | null; last_synced_at?: string | null };
@@ -20,6 +21,8 @@ export type DriveShareApi = {
   inbox(sourceId: string): Promise<InboxFolder[]>;
   verify(sourceId: string, urlOrId: string): Promise<VerifyResult>;
   link(sourceId: string, folderId: string): Promise<LinkResult>;
+  /** Verifica e conecta várias pastas de uma vez; uma linha por pasta, falha em uma não aborta as demais. */
+  linkBatch(sourceId: string, folderIds: string[]): Promise<BatchRow[]>;
   unlink(sourceId: string, linkId: string, purge?: boolean): Promise<void>;
   recheck(sourceId: string): Promise<void>;
   /** Primeira sincronização da pasta recém-vinculada (rota atual da Biblioteca); falha aqui não desfaz o vínculo. */
@@ -62,6 +65,7 @@ export const driveShareApi: DriveShareApi = {
     }
   },
   link: async (sourceId, folderId) => { try { return await call<LinkResult>(`${base(sourceId)}/folders`, post({ folder_id: folderId })); } catch (e) { throw asApiError(e); } },
+  linkBatch: async (sourceId, folderIds) => { try { return (await call<{ results: BatchRow[] }>(`${base(sourceId)}/folders/batch`, post({ folder_ids: folderIds }))).results; } catch (e) { throw asApiError(e); } },
   unlink: async (sourceId, linkId, purge = false) => { try { await call<unknown>(`${base(sourceId)}/folders/${encodeURIComponent(linkId)}?purge=${purge ? "true" : "false"}`, { method: "DELETE" }); } catch (e) { throw asApiError(e); } },
   recheck: async (sourceId) => { try { await call<unknown>(`${base(sourceId)}/recheck`, post()); } catch (e) { throw asApiError(e); } },
   startSync: async (workspaceFolderId) => { try { await call<unknown>(`/library/workspaces/${encodeURIComponent(workspaceFolderId)}/reprocess`, post()); } catch (e) { throw asApiError(e); } },
