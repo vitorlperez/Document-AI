@@ -2,9 +2,18 @@
   "command": "npm test",
   "exitCode": 0,
   "counts": {
-    "tests": 30,
-    "pass": 30,
+    "tests": 43,
+    "pass": 43,
     "fail": 0
   },
-  "scope": "offline synthetic tests; no real account"
+  "generatedAt": "2026-10-15T21:17:35.796Z",
+  "base": "0de870b",
+  "findings": [
+    "h-si F1",
+    "h-si F2",
+    "h-si F3",
+    "h-si F4",
+    "h-si F5"
+  ],
+  "scope": "offline synthetic tests including injected live runner; no WhatsApp account or connection"
 }

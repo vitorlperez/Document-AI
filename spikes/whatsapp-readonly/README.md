@@ -45,7 +45,7 @@ terminal e um QR de autenticação no navegador. **Não cole QR, nomes, números
 conteúdo em chats, relatórios ou issues.**
 
 ```sh
-npm run live -- --consent
+npm run live -- --consent --duration-minutes 90
 ```
 
 1. Exige TTY e `--consent`, explica os efeitos e pede **VINCULAR**. Sem a frase
@@ -58,7 +58,8 @@ npm run live -- --consent
    seleção anterior. Seleção inválida/vazia cancela sem ingerir.
 4. Confirme **SINCRONIZAR**. Só então retém texto e busca histórico das conversas
    escolhidas, inicialmente 200 mensagens/conversa. Aliases `chat-1`, `chat-2`
-   seguem a ordem da seleção; nomes aparecem somente no terminal local.
+   são atribuídos na primeira escolha e permanecem estáveis na mesma pasta,
+   inclusive ao reordenar/reselecionar; nomes aparecem somente no terminal local.
 5. Durante a execução, use estes comandos:
 
 ```text
@@ -81,8 +82,49 @@ quit
 **declaração humana** (`pass`/`fail`), separada dos contadores; nunca certifica
 integração. Após encerrar, `npm run report -- --real` imprime métricas sem texto,
 nomes ou IDs. Durante execução use `stats`: lock impede outro processo de ler o
-snapshot simultaneamente. Encerra após 30 minutos; nova execução exige novamente
-consentimento e seleção.
+snapshot simultaneamente. `--duration-minutes N` aceita inteiro **1–120**, padrão
+**60 minutos**. O timer inicia antes de criar o cliente e inclui QR/seleção; ao
+atingir o limite, encerra com `RUNTIME_LIMIT` e persiste evidências. Valores
+inválidos/repetidos são recusados antes de abrir cliente ou armazenamento. Use
+90 minutos por execução para acomodar roteiro e 30 minutos de estabilidade;
+se necessário, até 120. Nova execução exige novamente consentimento, escolha e
+SINCRONIZAR. A seleção persistida nunca autoriza ingestão ao reiniciar.
+
+### Preservar evidência entre execuções do ensaio
+
+Use **a mesma conta de teste e a mesma pasta dedicada** em ambas as execuções.
+Não apague `real/`, não copie snapshots para o git, não use `demo` como evidência
+real e não troque de conta na mesma pasta. Para explicitar a pasta, antes do live:
+
+```sh
+export ARQUIVIO_WA_POC_HOME="$HOME/.local/share/arquivio-whatsapp-poc"
+```
+
+1. Na primeira execução, faça cenários 1–6, registre `check` conforme observado
+   e observe 30 min após sincronização. Anote contadores de baseline via `stats`
+   para comparar deltas, pois eventos/conexão são cumulativos da pasta.
+2. Encerre com `quit`. Opcionalmente guarde métricas locais fora do git, com o
+   comando abaixo. É um relatório de contagens, não cópia do conteúdo privado.
+3. Execute novamente o live de 90 min na mesma pasta. Antes da nova confirmação,
+   textos/tombstones/evidências anteriores são preservados, mas eventos e buscas
+   de conteúdo não são ingeridos. Cancele a seleção para verificar esse gate;
+   depois abra outra execução, escolha conscientemente e confirme para continuar.
+4. Confira dedup/tombstones, registre `check restart pass/fail` e observe outros
+   30 min. Só então teste revogação no telefone e gere o relatório final.
+
+```sh
+umask 077
+node src/cli.mjs report --real > "$ARQUIVIO_WA_POC_HOME/real/metrics-run-1.json"
+```
+
+Altere apenas o sufixo para `metrics-final.json` ao concluir. O snapshot canônico
+contém todos os `runs` e `selections`; `history`/`observations` recebem `runId` e
+`selectionId`, sem truncamento silencioso em 100 buscas. Selecionar novamente ou
+cancelar não apaga essas medições. Materialização ainda remove mensagens de
+conversas explicitamente desmarcadas. Evidência legada recebe proveniência
+`legacy`: não é possível reconstruir runs que o código anterior não registrou.
+Checks continuam sendo declarações humanas. Relatório após crash é calculado do
+snapshot atômico confirmado; gravações ainda em `.tmp` não são promovidas.
 
 Para medir eventos, use conversas de teste com participantes cientes: outra pessoa
 pode enviar/editar/apagar textos sintéticos manualmente no próprio WhatsApp. A POC
@@ -115,10 +157,28 @@ redirecionamento de auth/cache por symlink.
 `quit`/Ctrl+C fecham o browser preservando sessão. Para desligar definitivamente,
 **remova o dispositivo no WhatsApp do telefone**, depois apague a pasta `real/`.
 Apagar arquivos sozinho não comprova revogação no servidor. Não promete apagar
-cache/backups do SO ou do telefone. Se crash deixar `run.lock`, confirme que o PID
-ali contido não está executando antes de remover somente esse arquivo. Remova
-`.tmp` remanescente só com processo parado; contém dados privados e o runner falha
-com segurança em vez de sobrescrevê-lo.
+cache/backups do SO ou do telefone.
+
+Após crash, a próxima aquisição do lock verifica o PID com sinal 0. Se o processo
+não existe (`ESRCH`), recupera `run.lock`; PID vivo/reutilizado, falta de permissão
+ou estado incerto bloqueiam com `ALREADY_RUNNING`. PID inválido/vazio bloqueia com
+`LOCK_OWNER_UNKNOWN`. **Nunca remova o lock de processo ativo**. Depois da posse
+exclusiva, descarta só `.arquivio-wa-poc.tmp`, `library.private.json.tmp` e
+`report.json.tmp` regulares, preservando o último snapshot confirmado e arquivos
+não reconhecidos. Symlinks são recusados. O live informa `RECOVERED_LOCAL_RUN`.
+
+`run.lock.guard` serializa aquisição/recuperação para impedir dois recuperadores
+de apagarem o lock recém-criado de um terceiro processo. `LOCK_RECOVERY_BUSY`
+indica aquisição concorrente (repita depois) ou crash durante essa curta seção.
+**Esse guard nunca é removido automaticamente**, mesmo com PID morto: reapagar
+um guard criaria outra corrida. Recuperação manual excepcional: feche todas as
+POCs, impeça novas execuções durante a manutenção e confirme que os PIDs de
+`run.lock` e `run.lock.guard` não existem. Só com exclusividade humana confirmada,
+remova o guard órfão e, se PID inválido exigir, o lock inválido. Se não conseguir
+confirmar a exclusividade, preserve ambos. Depois repita o comando normal; ele
+recuperará lock morto e temporários. Não apague a biblioteca ou auth para resolver
+contenção. A recuperação não promete durabilidade de dados ainda não confirmados
+nem proteção contra edição manual concorrente dos arquivos de lock.
 
 ## Critérios e protocolo de sucesso real
 
@@ -186,4 +246,10 @@ produto. Biblioteca local demonstra materialização, não integração com RAG 
 
 Veja [DECISION.md](DECISION.md), [RESULTS.md](RESULTS.md), [FINDINGS.md](FINDINGS.md).
 Módulos: core (normalização/materialização), connector (leitura/eventos), session
-(ciclo/retry), store (persistência), cli (consentimento e operação).
+(ciclo/retry), store (persistência), live (gates/operação com dependências
+injetáveis nos testes), cli (entrada e diagnóstico seguro).
+
+Revisão h-si F1–F5: evidência fresh em [RESULTS.md](RESULTS.md) e
+[FINDINGS.md](FINDINGS.md). Nenhum override de Puppeteer foi aplicado: os 9 high
+do audit continuam dívida documentada. A revisão os localizou fora do caminho
+live ensaiado; isso não prova compatibilidade de upgrade nem libera produção.

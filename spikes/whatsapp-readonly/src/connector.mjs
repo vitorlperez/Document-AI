@@ -35,7 +35,7 @@ export class ReadOnlyConnector {
   }
   async history(id, limit) {
     if (!this.active) throw Error('INACTIVE_SESSION');
-    if (!this.engine.state.selected.includes(id)) throw Error('NOT_SELECTED');
+    if (!this.engine.ingestionEnabled || !this.engine.state.selected.includes(id)) throw Error('NOT_SELECTED');
     if (!Number.isInteger(limit) || limit < 1 || limit > 5000) throw Error('INVALID_LIMIT');
     const start = performance.now(), baseline = this.engine.revision;
     try {

@@ -26,7 +26,19 @@
     "reconnectAttempts": 0
   },
   "observations": [],
+  "runs": [],
+  "selections": [
+    {
+      "id": "selection-1",
+      "runId": "legacy",
+      "chats": [
+        "chat-1",
+        "chat-2"
+      ],
+      "at": "2026-10-15T21:17:35.884Z"
+    }
+  ],
   "historyCompleteness": "unknown; fetch limit is not a completeness guarantee",
-  "startedAt": "2026-10-15T21:04:37.792Z",
-  "generatedAt": "2026-10-15T21:04:37.802Z"
+  "startedAt": "2026-10-15T21:17:35.883Z",
+  "generatedAt": "2026-10-15T21:17:35.990Z"
 }

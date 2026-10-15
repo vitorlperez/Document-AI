@@ -4,6 +4,11 @@
 session*/
 state*/
 library.json
+library.private.json
+auth/
+web-cache/
+run.lock
+run.lock.guard
 report.json
 *.tmp
 node_modules/

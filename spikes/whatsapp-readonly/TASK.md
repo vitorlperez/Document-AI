@@ -11,3 +11,10 @@ ACL, produção, envio, acesso real ou credenciais no git. Sem conta real o resu
 
 Gate real: consentimento consciente → vínculo humano pelo QR no navegador local →
 seleção de conversas → confirmação de ingestão. Nenhuma etapa humana presumida.
+
+Revisão h-si F1–F5 (base 0de870b): owner pane-710; branch main compartilhada.
+Escopo exclusivo: este spike; preservar trabalho alheio. Corrigir evidência por
+run/seleção, duração, ignores, recuperação de lock/tmp e testar live com injeção.
+Sem override Puppeteer, vínculo, sincronização ou conta real. Dívida de audit fica.
+Verificação revisão: 43/43 testes offline, 0 falhas; demo/report 2 mensagens,
+1 tombstone, 2 documentos; evidência fresh em RESULTS/FINDINGS/evidence.

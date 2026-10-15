@@ -80,3 +80,37 @@ test('real mode still has no automatic claim of validation', () => {
   e.apply('new', normalize(msg()));
   assert.equal(e.report().realIntegrationValidated, false);
 });
+
+test('evidence survives empty selection, reordering and restart with run/selection identity', () => {
+  const e = engine();
+  e.beginRun({ durationMinutes: 90 }); e.select(['group@g.us', 'other@c.us']);
+  e.historyResult('group@g.us', { requested: 200, returned: 1, ok: true });
+  e.observe('history', 'pass');
+  const original = structuredClone(e.report());
+  e.select([]); e.select(['other@c.us', 'group@g.us']);
+  e.historyResult('group@g.us', { requested: 500, returned: 1, ok: true });
+  assert.deepEqual(e.report().history[0], original.history[0]);
+  assert.deepEqual(e.report().observations, original.observations);
+  assert.equal(e.report().history[1].chat, original.history[0].chat);
+  assert.notEqual(e.report().history[1].selectionId, original.history[0].selectionId);
+  e.endRun('STOPPED');
+  const resumed = new Engine({ mode: 'simulated', snapshot: structuredClone(e.state) });
+  resumed.beginRun({ durationMinutes: 90 });
+  assert.equal(resumed.apply('new', normalize(msg())), false);
+  assert.equal(resumed.report().history.length, 2);
+  resumed.select(['group@g.us']); resumed.observe('restart', 'pass');
+  assert.notEqual(resumed.report().observations[1].runId, original.observations[0].runId);
+  assert.equal(resumed.report().runs.length, 2);
+  for (const value of ['group@g.us', 'other@c.us']) assert.ok(!JSON.stringify(resumed.report()).includes(value));
+});
+
+test('legacy evidence is retained with explicit legacy provenance on migration', () => {
+  const e = engine(); e.historyResult('group@g.us', { requested: 200 }); e.observe('history', 'pass');
+  const snapshot = structuredClone(e.state);
+  delete snapshot.runs; delete snapshot.selections; delete snapshot.chatAliases;
+  for (const row of [...snapshot.history, ...snapshot.observations]) { delete row.runId; delete row.selectionId; }
+  const migrated = new Engine({ mode: 'simulated', snapshot });
+  migrated.beginRun({ durationMinutes: 60 }); migrated.select(['other@c.us']);
+  assert.equal(migrated.report().history[0].runId, 'legacy');
+  assert.equal(migrated.report().observations[0].selectionId, 'legacy');
+});
