@@ -54,3 +54,8 @@ testes offline e Chromium/CDP sintético exit 0. 38→0 reproduzido com `$1` na
 biblioteca instalada e corrigido; contadores por etapa/motivo no report. Nenhum
 live/diagnose pessoal executado. realIntegrationValidated segue false. Próxima
 tentativa: live humano; se ainda zero, ler `stats.ingestion.history.rejections`.
+Revisão h-st (pane-718) aplicada: revoke usa só protocolMessageKey quando
+completo (envelope não veta), revoke repetido = already_deleted, gate fechado
+não conta (sem NaN), eventos live de chats não selecionados não geram contagem,
+remote embutido no id serializado veta endpoint divergente, resumo só da
+execução atual, mídia só por tipo. 78/78 offline; CDP sintético exit 0.

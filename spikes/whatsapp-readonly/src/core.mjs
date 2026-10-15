@@ -37,6 +37,9 @@ function identity(...values) {
   return found.size > 1 ? CONFLICT : [...found][0];
 }
 
+const remoteOf = id => typeof id === 'string'
+  ? /^(?:true|false)_(.+?@(?:g\.us|c\.us|lid))_/.exec(id)?.[1] : undefined;
+
 // No getChat/getContact/downloadMedia: normalization never performs network I/O.
 // The chat comes only from the directed endpoint (from, or to when fromMe);
 // id.remote can only veto it, and author never authorizes a chat.
@@ -45,23 +48,29 @@ export function inspect(raw, { deletion = false, text } = {}) {
   const data = raw._data && typeof raw._data === 'object' ? raw._data : {};
   const fromMe = Boolean(raw.fromMe ?? raw.id?.fromMe ?? data.id?.fromMe);
   const dir = fromMe ? 'to' : 'from';
+  // A revoke names its target in protocolMessageKey; the notice's own envelope
+  // must not veto a valid target (fail-open would keep the deleted text).
+  const key = deletion ? raw.protocolMessageKey ?? data.protocolMessageKey : undefined;
+  let keyId;
+  if (key && typeof key === 'object') {
+    keyId = identity(key); const keyChat = identity(key.remote, remoteOf(keyId));
+    if (keyId === CONFLICT || keyChat === CONFLICT) return { reason: 'identity_conflict' };
+    if (keyId && keyChat) {
+      return supportedChat(keyChat) ? { msg: { id: keyId, chatId: keyChat } } : { reason: 'unsupported_chat' };
+    }
+  }
   const own = identity(raw.id, data.id);
   if (own === CONFLICT) return { reason: 'identity_conflict' };
-  const endpoint = identity(raw[dir], data[dir]), remote = identity(raw.id?.remote, data.id?.remote);
+  // 1.34.7 drops an object id.remote; the serialized id still embeds it.
+  const endpoint = identity(raw[dir], data[dir]), remote = identity(raw.id?.remote, data.id?.remote, remoteOf(own));
   if (endpoint === CONFLICT || remote === CONFLICT || (endpoint && remote && endpoint !== remote)) {
     return { reason: 'identity_conflict' };
   }
-  let id = own, chatId = endpoint;
-  if (deletion) {
-    const key = raw.protocolMessageKey ?? data.protocolMessageKey;
-    const keyId = identity(key), keyChat = identity(key?.remote);
-    if (keyId === CONFLICT || keyChat === CONFLICT) return { reason: 'identity_conflict' };
-    id = keyId || id; chatId = keyChat || chatId;
-  }
+  const id = keyId || own, chatId = endpoint; // key without chat: envelope chat, vetoed above
   if (!id) return { reason: 'invalid_message_id' };
   if (!supportedChat(chatId)) return { reason: 'unsupported_chat' };
   if (deletion) return { msg: { id, chatId } };
-  if (raw.hasMedia || data.directPath || MEDIA.has(raw.type)) return { reason: 'unsupported_media' };
+  if (MEDIA.has(raw.type)) return { reason: 'unsupported_media' };
   if (raw.type !== 'chat') return { reason: 'unsupported_type' };
   if (raw.isEphemeral || data.isEphemeral) return { reason: 'ephemeral' };
   if (raw.isViewOnce || data.isViewOnce) return { reason: 'view_once' };
@@ -139,8 +148,9 @@ export class Engine {
     if (!this.state.selected.includes(msg.chatId)) return { ok: false, reason: 'unselected_chat' };
     const key = this.hash(`${msg.chatId}:${msg.id}`), old = this.state.messages[key];
     if (kind.startsWith('delete')) {
+      if (old?.deleted) return { ok: false, reason: 'already_deleted' };
       this.state.messages[key] = { chatId: msg.chatId, deleted: true };
-      if (!old?.deleted) this.state.events[kind]++;
+      this.state.events[kind]++;
       return { ok: true, effect: 'tombstoned' };
     }
     const reconcile = old && kind === 'history' && baseline !== undefined &&
@@ -160,12 +170,19 @@ export class Engine {
   ingest(stage, raw, { text, baseline, requested, counters = this.state.ingestion[stage] } = {}) {
     const deletion = stage.startsWith('delete') || (stage === 'history' && raw?.type === 'revoked');
     const kind = deletion && stage === 'history' ? 'delete_everyone' : stage;
-    counters.received++; counters.processed++;
-    let inspected;
+    if (!this.ingestionEnabled) return { ok: false, reason: 'ingestion_disabled' };
+    let inspected, observed;
     try {
-      counters.observed[observedKind(raw, deletion)]++;
+      observed = observedKind(raw, deletion);
       inspected = inspect(raw, { deletion, text });
-    } catch { inspected = { reason: 'inspection_failed' }; }
+    } catch { observed ??= 'other'; inspected = { reason: 'inspection_failed' }; }
+    // Live events reach us for the whole account. Count only those that resolve to
+    // a selected chat, so activity volume of other chats never lands on disk.
+    // History is already scoped to one selected chat, so every message counts.
+    if (stage !== 'history' && !this.state.selected.includes(inspected.msg?.chatId)) {
+      return { ok: false, reason: inspected.reason ?? 'unselected_chat' };
+    }
+    counters.received++; counters.processed++; counters.observed[observed]++;
     const reject = (stageField, reason) => {
       counters[stageField]++; counters.rejections[reason]++; return { ok: false, reason };
     };

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { createContext, runInContext } from 'node:vm';
 import { EventEmitter } from 'node:events';
-import { Engine, normalize } from '../src/core.mjs';
+import { Engine, normalize, inspect, emptyCounters } from '../src/core.mjs';
 import { ReadOnlyConnector } from '../src/connector.mjs';
 import { createWebReader } from '../src/web-reader.mjs';
 
@@ -171,4 +171,51 @@ test('capacity failure stays balanced and counts fetched-but-unprocessed message
   const c = e.report().history[0].ingestion;
   balanced(c); assert.equal(c.rejections.capacity_reached, 1); assert.equal(c.unprocessed, 2);
   assert.equal(e.report().history[0].ok, false);
+});
+
+test('review h-st: revoke target wins over a mismatched notice envelope; repeat revoke is already_deleted', () => {
+  const pn = 'synthetic-pn@c.us', e = new Engine({ mode: 'simulated', selected: [pn] });
+  const client = upstream([]); new ReadOnlyConnector(client, e);
+  client.emit('message_create', new Message({}, wire(1, { from: pn, id: { $1: 'synthetic-1', remote: pn, fromMe: false } })));
+  const revoke = new Message({}, wire(2, { from: 'synthetic-l@lid', id: { $1: 'synthetic-2', remote: pn },
+    protocolMessageKey: { $1: 'synthetic-1', remote: pn } }));
+  client.emit('message_revoke_everyone', revoke); client.emit('message_revoke_everyone', revoke);
+  assert.equal(e.report().retainedMessages, 0); assert.equal(e.report().tombstones, 1);
+  const c = e.report().ingestion.delete_everyone;
+  balanced(c); assert.equal(c.tombstoned, 1); assert.equal(c.rejections.already_deleted, 1);
+});
+
+test('review h-st: closed gate is never counted and never yields NaN', () => {
+  const e = new Engine({ mode: 'simulated', selected: [chat] });
+  e.ingestionEnabled = false;
+  assert.equal(e.ingest('history', new Message({}, wire(1))).reason, 'ingestion_disabled');
+  for (const c of Object.values(e.report().ingestion)) { balanced(c); assert.equal(c.received, 0); }
+});
+
+test('review h-st: live activity of unselected chats leaves no counters', () => {
+  const e = new Engine({ mode: 'simulated', selected: [chat] }), client = upstream([]);
+  new ReadOnlyConnector(client, e);
+  client.emit('message_create', new Message({}, wire(1, { type: 'image', from: 'other@g.us',
+    id: { $1: 'x', remote: 'other@g.us' } })));
+  client.emit('message_create', new Message({}, wire(2, { from: 'status@broadcast', id: { $1: 'y', remote: 'status@broadcast' } })));
+  assert.deepEqual(e.report().ingestion.new, emptyCounters());
+});
+
+test('review h-st: remote embedded in the serialized id vetoes a different endpoint', () => {
+  assert.equal(inspect({ id: { _serialized: 'false_other@g.us_ID' }, from: chat, type: 'chat', body: 'x',
+    timestamp: 1 }).reason, 'identity_conflict');
+  assert.equal(normalize({ id: { $1: `true_${chat}_ID` }, fromMe: true, to: chat, type: 'chat', body: 'x',
+    timestamp: 1 })?.chatId, chat);
+});
+
+test('review h-st: summary reflects only the current run', async () => {
+  const { retentionSummary } = await import('../src/live.mjs');
+  const e = new Engine({ mode: 'simulated', selected: [chat] });
+  e.beginRun({ durationMinutes: 1 }); e.select([chat]);
+  await new ReadOnlyConnector(upstream([wire(1, { type: 'image' })]), e).history(chat, 200);
+  const resumed = new Engine({ mode: 'simulated', snapshot: structuredClone(e.state) });
+  resumed.beginRun({ durationMinutes: 1 }); resumed.select([chat]);
+  await new ReadOnlyConnector(upstream([wire(2, { body: '' })]), resumed).history(chat, 200);
+  const line = retentionSummary(resumed);
+  assert.match(line, /recebidas 1,/); assert.match(line, /empty_body=1/); assert.doesNotMatch(line, /unsupported_media/);
 });

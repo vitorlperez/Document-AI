@@ -1,7 +1,7 @@
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
-import { Engine, chooseChats } from './core.mjs';
+import { Engine, chooseChats, emptyCounters, addCounters } from './core.mjs';
 import { Store } from './store.mjs';
 import { LiveSession } from './session.mjs';
 import { diagnosticLogger, setupStep } from './diagnostics.mjs';
@@ -11,10 +11,13 @@ const cleanName = s => String(s || '(sem nome)').replace(/[\x00-\x1f\x7f-\x9f\u2
 
 // Counts only. Zero documents must be stated, never left implicit behind "ativa".
 export function retentionSummary(engine) {
-  const r = engine.report(), h = r.ingestion.history;
+  // This run only: snapshot totals would mix in causes from earlier runs.
+  const r = engine.report(), runId = engine.provenance().runId;
+  const h = r.history.filter(row => row.runId === runId && row.ingestion)
+    .reduce((sum, row) => addCounters(sum, row.ingestion), emptyCounters());
   const reasons = Object.entries(h.rejections).filter(([, n]) => n).map(([k, n]) => `${k}=${n}`).join(', ');
   return `${r.documents === 0 ? 'ZERO_DOCUMENTS: nenhuma mensagem virou documento. ' : ''}` +
-    `Histórico: recebidas ${h.received}, retidas ${h.retained}; biblioteca: ${r.retainedMessages} mensagens em ` +
+    `Histórico desta execução: recebidas ${h.received}, retidas ${h.retained}; biblioteca: ${r.retainedMessages} mensagens em ` +
     `${r.documents} documentos. Descartes: ${reasons || 'nenhum'}.`;
 }
 

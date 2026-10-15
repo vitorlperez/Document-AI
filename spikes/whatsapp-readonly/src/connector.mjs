@@ -17,7 +17,8 @@ export class ReadOnlyConnector {
       const wrapped = (...args) => { try { fn(...args); } catch { failed('EVENT_FAILED'); } };
       client.on(event, wrapped); this.handlers.push([event, wrapped]);
     };
-    // Gate first: nothing about a message is inspected or counted before selection.
+    // Gate first: nothing is inspected before selection; afterwards only messages
+    // resolving to a selected chat are counted (see Engine.ingest).
     const apply = (kind, raw, opts) => {
       if (!engine.ingestionEnabled) return;
       if (engine.ingest(kind, raw, opts).ok) changed();
