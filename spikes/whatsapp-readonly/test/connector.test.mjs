@@ -6,6 +6,10 @@ import { ReadOnlyConnector, RetryBudget } from '../src/connector.mjs';
 
 class FakeClient extends EventEmitter {
   calls = [];
+  readOnly = {
+    catalog: async () => (await this.getChats()).map(c => ({ id: c.id._serialized, name: c.name, isGroup: c.isGroup })),
+    history: async (id, limit) => (await this.getChatById(id)).fetchMessages({ limit })
+  };
   async getChats() { this.calls.push('getChats'); return [{ id: { _serialized: 'demo@g.us' }, isGroup: true, name: 'Demo' }]; }
   async getChatById(id) { this.calls.push(['getChatById', id]); return { fetchMessages: async options => {
     this.calls.push(['fetchMessages', options]); return [this.message()];

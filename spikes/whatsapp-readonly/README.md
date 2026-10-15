@@ -1,8 +1,10 @@
 # WhatsApp → biblioteca local do ArquivIO: POC somente leitura
 
-**Implementação e validação simulada entregues; integração com conta real NÃO
-validada.** O usuário reportou vínculo humano bem-sucedido seguido de
-LOCAL_SETUP_FAILED antes da seleção. Nenhum envio nem gravação no ArquivIO.
+**Listagem corrigida e validada com fixtures e Chromium isolado; integração com
+conta real ainda NÃO validada.** O diagnóstico humano confirmou falha em
+`Client.getChats` após ready. A POC agora projeta só ID/título/tipo do catálogo,
+sem serializar chats/última mensagem. Nenhum envio nem gravação no ArquivIO.
+Precisão, comparação upstream e limites: [UPSTREAM.md](UPSTREAM.md).
 
 Programa independente com whatsapp-web.js **1.34.7** fixado no lockfile, Node **22+**.
 A biblioteca local demonstra documentos por conversa/dia UTC com blocos, autoria
@@ -22,6 +24,9 @@ npm run report
 ```
 
 Testes não requerem Chromium, rede ou credenciais. Fixtures são inventados.
+Verificação opcional do transporte real Puppeteer/CDP, depois de instalar Chrome:
+`node test/browser-catalog.mjs`. Abre apenas **about:blank**, bloqueia requests,
+usa perfil temporário do Puppeteer e modelos inventados, sem LocalAuth inicializado.
 `demo` sobrescreve apenas a execução simulada. Resultado esperado: 2 conversas
 selecionadas, 2 mensagens retidas, 1 tombstone e 2 documentos. Texto apagado,
 duplicata, texto anterior à edição e conversa de controle não selecionada não
@@ -39,13 +44,24 @@ abre **somente about:blank** e fecha o browser. Não acessa WhatsApp. Testes e d
 podem rodar sem desktop; o fluxo real exige interface gráfica. Não desative o
 sandbox do Chromium.
 
-## Diagnosticar LOCAL_SETUP_FAILED preservando a sessão vinculada
+## Correção de listagem e diagnóstico opcional
+
+O erro real recebido já foi usado; não é necessário repetir o diagnóstico antigo
+para aplicar esta correção. A próxima tentativa é o comando **live** abaixo.
+`getChats` da 1.34.7 usa `Promise.all(getChatModel)`: uma falha de serialize,
+metadados ou última mensagem rejeita o catálogo inteiro. Regressões com o código
+instalado reproduzem duas dessas falhas; não identificam qual ocorreu na conta.
+A POC lê `WAWebCollections.Chat.getModelsArray()` e projeta somente os três
+campos necessários à escolha. Não omite silenciosamente chats com erro.
+Histórico usa o `Chat.fetchMessages` original com um objeto Chat contendo só ID;
+evita `getChatById`/`getChatModel` antes da busca. Serialização de mensagens e
+eventos continua na dependência original; compatibilidade real não é presumida.
 
 A conta pessoal já autorizada pode ser usada; conta de teste é opcional.
 Não apague auth/cache, não troque de conta e não faça outro vínculo para tentar
 corrigir este status. Ele antes ocultava tanto erro em `initialize()` quanto
-erro no callback de `ready` (incluindo `getChats()`). A exceção original da
-execução antiga não foi guardada e não pode ser reconstruída pelo status.
+erro no callback de `ready` (incluindo `getChats()`). O diagnóstico humano agora
+confirma a fronteira getChats; não revela sua etapa interna.
 
 Feche outras instâncias da POC. No mesmo terminal e com a mesma pasta de dados:
 
@@ -55,14 +71,16 @@ npm run diagnose
 ```
 
 Este comando reutiliza **somente o perfil existente**, sem pedir VINCULAR ou
-SINCRONIZAR. Faz uma tentativa até `getChats()` e fecha o browser, com limite de
+SINCRONIZAR. Faz uma tentativa do catálogo mínimo e fecha o browser, com limite de
 três minutos. Não mostra nomes, não oferece seleção, não busca histórico, não
 envia mensagens e não lê/regrava a biblioteca privada nem o relatório anterior.
-Não apaga auth/cache; bloqueia a limpeza LocalAuth no logout. O Chromium pode
-atualizar seu próprio perfil/cache durante a conexão. A biblioteca WhatsApp
-serializa objetos de chats internamente em `getChats()` (inclusive lastMessage);
-a POC descarta o retorno sem inspecionar nomes/IDs/textos. Não abra chats ou use
-o composer na janela de diagnóstico.
+Não apaga auth/cache; bloqueia a limpeza LocalAuth no logout, também no live.
+O Chromium pode atualizar seu próprio perfil/cache durante a conexão. Os probes
+`web_capabilities`, `chat_enumeration` e `chat_projection` distinguem ausência
+de API, falha na enumeração e falha na projeção/IDs. No diagnose, só IDs são
+validados dentro da página: não lê títulos, não serializa modelos nem retorna
+o catálogo ao processo Node. Só enums fechados de etapa/evento/erro atravessam
+essa fronteira. Não abra chats ou use o composer na janela de diagnóstico.
 
 Se precisar de autenticação, encerra com `AUTH_REQUIRED`, sem iniciar novo
 vínculo. Perfil ausente/inseguro dá `EXISTING_SESSION_REQUIRED` antes de abrir o
@@ -75,26 +93,29 @@ nomes fixos de funções. Não imprimem mensagem/stack bruto, paths, payloads de
 auth/QR ou dados de chats. Exemplo sintético:
 
 ```text
-SETUP_DIAGNOSTIC {"stage":"list_chats","event":"failed","error":{"type":"Error","kind":"OPAQUE_WEB_ERROR","code":"unknown","frames":["Client.getChats"]}}
+SETUP_DIAGNOSTIC {"stage":"chat_enumeration","event":"failed","error":{"type":"DataError","kind":"WEB_DATA_ERROR","code":"unknown","frames":[]}}
 LOCAL_SETUP_FAILED
 ```
 
 `OPAQUE_WEB_ERROR` classifica o erro `r`/`r: r`, sem atribuir causa. Uma falha
 `BINDING_ALREADY_EXISTS` em initialize aponta outra fronteira. Há relatos
 primários de incompatibilidade em
-[getChats na 1.34.7](https://github.com/wwebjs/whatsapp-web.js/issues/201845), mas
-isso ainda não foi comprovado nesta conta; nenhum patch especulativo, pin de
-WhatsApp Web, upgrade ou exclusão de cache foi aplicado.
+[getChats na 1.34.7](https://github.com/wwebjs/whatsapp-web.js/issues/201845).
+A correção local remove a dependência de modelos completos para escolher chats;
+não infere um rename `$1` nesta conta nem altera a biblioteca, versão, cache
+ou mecanismos de envio. Uma falha na enumeração continua explícita.
 
-`SETUP_DIAGNOSED` (exit 0) comprova apenas que inicialização + getChats terminaram
-naquela tentativa. Não valida catálogo completo, ingestão, eventos ou estabilidade.
+`SETUP_DIAGNOSED` (exit 0) comprova apenas inicialização + enumeração/validação
+mínima de IDs. Não testa títulos, serialização de modelos/mensagens, catálogo
+completo, ingestão, eventos ou estabilidade. Probes são retornados juntos ao fim
+da avaliação; travamento da página dá timeout, sem uma etapa interna confirmada.
 Outros resultados retornam exit 1. O modo live normal também emite diagnósticos
 de etapa, mas exibe nomes na seleção: não compartilhe seu terminal inteiro.
 
-## Etapa humana pendente: vínculo e escolha das conversas
+## Retomar a POC: escolha das conversas
 
 Use terminal local sem gravação, capturas de tela ou CI. Haverá nomes privados no
-terminal e um QR de autenticação no navegador. **Não cole QR, nomes, números nem
+terminal. A conta pessoal já vinculada será reutilizada. **Não cole QR, nomes, números nem
 conteúdo em chats, relatórios ou issues.**
 
 ```sh
@@ -103,10 +124,10 @@ npm run live -- --consent --duration-minutes 90
 
 1. Exige TTY e `--consent`, explica os efeitos e pede **VINCULAR**. Sem a frase
    exata, nem cliente nem perfil de sessão são abertos.
-2. Abre Chrome/WhatsApp Web local. No telefone: **Aparelhos conectados → Conectar
-   aparelho**; escaneie conscientemente. QR não é impresso nem salvo pelo código
-   da POC. Sessão existente é reutilizada após consentimento, sem exigir novo QR.
-3. Lista os chats/grupos retornados por `getChats`. Digite índices separados por
+2. Abre Chrome/WhatsApp Web local usando o mesmo perfil. Não é preciso novo QR.
+   Se a sessão pedir autenticação, encerre e preserve auth/cache; este conserto
+   não exige revincular. Os gates locais de escolha/ingestão continuam humanos.
+3. Lista o catálogo mínimo de chats/grupos. Digite índices separados por
    vírgula (`2,5`). Não há wildcard, seleção automática ou retomada silenciosa da
    seleção anterior. Seleção inválida/vazia cancela sem ingerir.
 4. Confirme **SINCRONIZAR**. Só então retém texto e busca histórico das conversas

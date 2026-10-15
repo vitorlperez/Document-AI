@@ -1,9 +1,12 @@
 // Closed vocabulary: never redact-and-print an arbitrary message, stack or payload.
 const stages = new Set(['make_client', 'initialize', 'authenticated', 'ready', 'setup_callback',
-  'list_chats', 'selection', 'confirmation', 'destroy', 'session_profile', 'reuse_auth']);
+  'list_chats', 'selection', 'confirmation', 'destroy', 'session_profile', 'reuse_auth',
+  'web_capabilities', 'chat_enumeration', 'chat_projection']);
 const events = new Set(['started', 'reached', 'failed']);
-const types = new Set(['Error', 'TypeError', 'RangeError', 'SyntaxError', 'TimeoutError', 'ProtocolError', 'TargetCloseError']);
+const types = new Set(['Error', 'TypeError', 'RangeError', 'SyntaxError', 'TimeoutError', 'ProtocolError', 'TargetCloseError',
+  'DataError', 'InvalidStateError', 'NotSupportedError', 'NotFoundError', 'SecurityError']);
 const codes = new Set(['ENOENT', 'EACCES', 'EPERM', 'ENOSPC', 'EEXIST', 'EMFILE', 'EIO']);
+const webCodes = new Set(['CAPABILITY_MISSING', 'INVALID_COLLECTION', 'INVALID_CHAT_ID']);
 
 export function safeDiagnostic(stage, event, error) {
   const record = { stage: stages.has(stage) ? stage : 'unknown', event: events.has(event) ? event : 'unknown' };
@@ -16,7 +19,7 @@ export function safeDiagnostic(stage, event, error) {
     const message = typeof rawMessage === 'string' ? rawMessage : '';
     const stack = typeof rawStack === 'string' ? rawStack : '';
     const type = types.has(rawType) ? rawType : 'unknown';
-    const code = codes.has(rawCode) ? rawCode : 'unknown';
+    const code = codes.has(rawCode) || webCodes.has(rawCode) ? rawCode : 'unknown';
     let kind = 'UNCLASSIFIED';
     if (/^r(?:: r)?$/.test(message)) kind = 'OPAQUE_WEB_ERROR';
     else if (message.includes('Failed to add page binding') && message.includes('already exists')) kind = 'BINDING_ALREADY_EXISTS';
@@ -26,6 +29,8 @@ export function safeDiagnostic(stage, event, error) {
     else if (message.includes('Evaluation failed')) kind = 'WEB_EVALUATION';
     else if (message.includes('Execution context was destroyed')) kind = 'CONTEXT_DESTROYED';
     else if (type === 'TargetCloseError') kind = 'TARGET_CLOSED';
+    else if (webCodes.has(code)) kind = code;
+    else if (type === 'DataError') kind = 'WEB_DATA_ERROR';
     else if (code !== 'unknown') kind = 'LOCAL_IO';
     const frames = ['Client.initialize', 'Client.inject', 'Client.getChats', 'ExecutionContext.evaluate']
       .filter(frame => stack.includes(frame));

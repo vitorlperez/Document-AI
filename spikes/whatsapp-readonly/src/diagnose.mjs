@@ -33,7 +33,7 @@ export async function runDiagnosis({ args = process.argv.slice(3), input = proce
   const stop = () => session?.stop();
   store.lock();
   try {
-    log('Diagnóstico da sessão já autorizada: uma tentativa até getChats, sem exibir conversas, selecionar ou ingerir.');
+    log('Diagnóstico da sessão já autorizada: capacidade, enumeração e projeção mínima; sem exibir conversas, selecionar ou ingerir.');
     log('Sem novo vínculo. Se a sessão pedir QR, o diagnóstico encerra. Auth/cache e biblioteca serão preservados.');
     // Fresh, disabled in-memory engine. Do not load/save any existing private state.
     const engine = new Engine({ mode: 'real' }); engine.beginRun({ durationMinutes: 3 });
@@ -45,7 +45,7 @@ export async function runDiagnosis({ args = process.argv.slice(3), input = proce
         listed = true; session.stop();
       } });
     signals.once('SIGINT', stop); signals.once('SIGTERM', stop);
-    // Also bounds getChats after ready; the ready-only timer no longer applies then.
+    // Also bounds catalog probes after ready; the ready-only timer no longer applies then.
     timer = setTimeout(() => { expired = true; stop(); }, readyTimeoutMs);
     const status = await session.run();
     const outcome = expired ? 'DIAGNOSIS_TIMEOUT' : listed && status === 'STOPPED' ? 'SETUP_DIAGNOSED'

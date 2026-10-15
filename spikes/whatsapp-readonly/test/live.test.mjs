@@ -30,6 +30,10 @@ function harness(store, answers, onQuestion = () => {}, lines = ['check restart 
     return answers[index++];
   }, async *[Symbol.asyncIterator]() { yield* lines; } };
   class Client extends EventEmitter {
+    readOnly = {
+      catalog: async () => (await this.getChats()).map(c => ({ id: c.id._serialized, name: c.name, isGroup: c.isGroup })),
+      history: async (id, limit) => (await this.getChatById(id)).fetchMessages({ limit })
+    };
     async initialize() { calls.push('initialize'); this.emit('message_create', message('before-ready')); this.emit('ready'); }
     async getChats() { calls.push('list'); this.emit('message_create', message('before-selection'));
       return ['demo@g.us', 'other@c.us'].map(id => ({ id: { _serialized: id }, name: 'synthetic', isGroup: id.endsWith('g.us') })); }
@@ -134,10 +138,11 @@ test('configured deadline stops actual session during selection and saves earlie
   assert.ok(!h.calls.some(x => x.startsWith('fetch:'))); assert.equal(store.ownsLock, false);
 });
 
-test('getChats rejection before selection reports its exact stage but no private exception', async t => {
+test('catalog rejection before selection reports its exact stage but no private exception', async t => {
   const { store, original } = setup(t);
   const h = harness(store, ['VINCULAR']);
   class Client extends EventEmitter {
+    readOnly = { catalog: () => this.getChats() };
     async initialize() { this.emit('ready'); }
     async getChats() { throw new Error('r'); }
     async destroy() { h.calls.push('destroy'); }

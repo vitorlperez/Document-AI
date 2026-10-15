@@ -10,8 +10,9 @@ export class RetryBudget {
 
 // Deliberately small read surface. No raw client or message objects escape this adapter.
 export class ReadOnlyConnector {
-  constructor(client, engine, { changed = () => {}, failed = () => {} } = {}) {
+  constructor(client, engine, { changed = () => {}, failed = () => {}, diagnostic = () => {} } = {}) {
     this.client = client; this.engine = engine; this.handlers = []; this.active = true;
+    this.diagnostic = diagnostic;
     const on = (event, fn) => {
       const wrapped = (...args) => { try { fn(...args); } catch { failed('EVENT_FAILED'); } };
       client.on(event, wrapped); this.handlers.push([event, wrapped]);
@@ -30,13 +31,11 @@ export class ReadOnlyConnector {
     }
   }
   async checkListing() {
-    // Exercise the same upstream method; do not inspect names, IDs or lastMessage.
-    // The library itself serializes chat objects. No returned object is retained.
-    await this.client.getChats();
+    await this.client.readOnly.catalog({ probeOnly: true, diagnostic: this.diagnostic });
   }
   async list() {
-    const chats = (await this.client.getChats()).filter(c => supportedChat(c.id?._serialized)).map(c => ({
-      id: c.id._serialized, name: c.name, isGroup: Boolean(c.isGroup) }));
+    const chats = (await this.client.readOnly.catalog({ diagnostic: this.diagnostic }))
+      .filter(c => supportedChat(c.id));
     this.engine.state.catalog = { chats: chats.length, groups: chats.filter(c => c.isGroup).length,
       individual: chats.filter(c => !c.isGroup).length };
     return chats;
@@ -47,8 +46,7 @@ export class ReadOnlyConnector {
     if (!Number.isInteger(limit) || limit < 1 || limit > 5000) throw Error('INVALID_LIMIT');
     const start = performance.now(), baseline = this.engine.revision;
     try {
-      const chat = await this.client.getChatById(id);
-      const messages = await chat.fetchMessages({ limit });
+      const messages = await this.client.readOnly.history(id, limit);
       if (!this.active) throw Error('INACTIVE_SESSION');
       let retained = 0;
       for (const raw of messages) {

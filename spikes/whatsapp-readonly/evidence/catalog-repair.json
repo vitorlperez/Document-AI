@@ -1,0 +1,94 @@
+{
+  "task": "WA-POC-03",
+  "base": "77669c1",
+  "skills": "inline [oc-builder, oc-blackbox, oc-stamp]",
+  "scope": "Read-only spike only; actual installed source with synthetic VM and Chromium about:blank, fresh temporary browser profile; no personal account/profile/auth/cache access or live/diagnose run",
+  "humanDiagnosis": {
+    "authenticated": "reached",
+    "ready": "reached",
+    "list_chats": "failed",
+    "kind": "OPAQUE_WEB_ERROR",
+    "type": "unknown",
+    "frames": [
+      "Client.getChats",
+      "ExecutionContext.evaluate"
+    ],
+    "status": "LOCAL_SETUP_FAILED"
+  },
+  "commands": [
+    {
+      "cmd": "npm test (baseline)",
+      "exitCode": 0,
+      "tests": 54,
+      "pass": 54,
+      "fail": 0
+    },
+    {
+      "cmd": "node --test --test-reporter=tap test/web-listing.test.mjs (before fix)",
+      "exitCode": 1,
+      "tests": 7,
+      "pass": 0,
+      "fail": 7
+    },
+    {
+      "cmd": "node --test --test-reporter=tap test/web-listing.test.mjs (after fix)",
+      "exitCode": 0,
+      "tests": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "cmd": "node --test --test-reporter=tap test/web-listing.test.mjs test/diagnose.test.mjs (expanded)",
+      "exitCode": 0,
+      "tests": 18,
+      "pass": 18,
+      "fail": 0
+    },
+    {
+      "cmd": "npm test (final suite)",
+      "exitCode": 0,
+      "tests": 65,
+      "pass": 65,
+      "fail": 0
+    },
+    {
+      "cmd": "node test/browser-catalog.mjs",
+      "exitCode": 0,
+      "chromium": true,
+      "whatsappConnected": false,
+      "upstreamFailure": "DataError",
+      "minimalCatalog": "pass",
+      "probePrivacy": "pass",
+      "historyWithoutChatSerialization": "pass",
+      "browserErrorClassBeforeCDP": "pass"
+    },
+    {
+      "cmd": "graphify update .",
+      "exitCode": 0,
+      "nodes": 10754,
+      "edges": 31117,
+      "communities": 630
+    },
+    {
+      "cmd": "git diff --check -- spikes/whatsapp-readonly",
+      "exitCode": 0
+    }
+  ],
+  "upstream": {
+    "version": "1.34.7",
+    "installedUtilsSha256": "0d0f88565f481dbfeb9493b04b24033a2cb60f5fd2fd0e84e543b461d98878fe",
+    "mainCommit": "064a3d5a5a3dce1281a6a12740b5a7051339d154",
+    "mainUtilsSha256": "cff56e15b20d81671341815cb097e4fe325885b7551cc7e9b04e4dc108e6088c",
+    "pr201850": "open, not merged at check",
+    "reference201852": "issue, /pull URL redirects to issue"
+  },
+  "reproduced": [
+    "Pinned getChatModel supplies undefined to message lookup with $1-only lastReceivedKey",
+    "Pinned getChats/getChatById fail when chat.serialize throws",
+    "Native IndexedDB key validation rejects missing key in Chromium",
+    "New minimal catalog and existing fetchMessages work without chat serialization",
+    "Synthetic live run preserves selection/confirmation gates and reaches history"
+  ],
+  "precision": "The POC dependency on full chat models is reproduced and removed. Exact inner cause on the personal account is unknown. Collection completeness and real history/events remain unverified; message serializers are unchanged.",
+  "humanNextCommand": "npm run live -- --consent --duration-minutes 90"
+}

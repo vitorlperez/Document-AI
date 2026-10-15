@@ -5,6 +5,51 @@ Viabilidade com conta WhatsApp real inconclusiva. O usuário reportou vínculo
 humano e falha antes da seleção; agentes não executaram live com conta real.**
 Skills: inline [oc-builder, oc-blackbox, oc-stamp].
 
+## WA-POC-03 — correção da listagem, base 77669c1
+
+Diagnóstico humano recebido: authenticated/ready alcançados; getChats falhou em
+ExecutionContext.evaluate com OPAQUE_WEB_ERROR. A fronteira foi confirmada;
+a causa interna dessa conta não foi inferida. Comparação primária e precisão
+em [UPSTREAM.md](UPSTREAM.md), evidência em
+[evidence/catalog-repair.json](evidence/catalog-repair.json).
+
+O caminho da POC agora enumera a coleção e projeta só ID/título/tipo, sem
+getChatModel/serialize/metadados/lastMessage. Grupos derivam do namespace do ID;
+erro em chat não produz catálogo parcial silencioso. Histórico usa o
+fetchMessages original com Chat contendo só ID, evitando getChatById e uma
+segunda passagem pelo serializador de chat. Auth/cache não são apagados; hook
+de logout preserva também o perfil live. Gates humanos continuam vigentes.
+
+Verificação desta rodada:
+
+- Baseline `npm test`: **54/54 pass**, exit 0.
+- Regressão antes da correção: `node --test --test-reporter=tap test/web-listing.test.mjs`,
+  **7 testes, 0 pass / 7 fail**, exit 1. Usa LoadUtils/Client/Chat instalados em VM,
+  com objetos sintéticos; falhas de chave ausente/serialize bloqueavam a lista.
+- Após correção, a mesma regressão: **7/7 pass**, exit 0.
+- Suite final `npm test`: **65 testes, 65 pass / 0 fail**, exit 0. Inclui fluxo
+  live inteiramente sintético chegando à escolha e histórico após os gates,
+  enumeração vs projeção, classes fechadas/privacidade e perfil sintético preservado.
+- `node test/browser-catalog.mjs`: exit 0, Chromium/CDP real, apenas about:blank,
+  requests bloqueados, perfil temporário sem LocalAuth inicializado. Validação
+  nativa IDBKeyRange.only(undefined) causa DataError no getChats original; catálogo
+  mínimo, privacidade, histórico e classe do erro antes do CDP passam.
+- `graphify update .`: exit 0, AST-only, 10.754 nós, 31.117 arestas, 630 comunidades.
+  Artefatos do grafo já estavam dirty e ficam fora do commit do spike.
+- `git diff --check -- spikes/whatsapp-readonly`: exit 0.
+
+Precisão: conserto demonstrado para o acoplamento local a modelos completos.
+Não comprova a etapa interna da falha pessoal, catálogo total da conta, histórico,
+eventos ou estabilidade reais. Nenhum live/diagnose com a conta pessoal, leitura
+de perfil, seleção, ingestão ou envio foi executado. Biblioteca e lockfile intactos;
+sem patch preventivo de IDs de mensagens, upgrade ou QR novo.
+
+Próximo comando único, humano, na pasta do spike:
+`npm run live -- --consent --duration-minutes 90`.
+Não é necessário repetir o diagnóstico antigo; os probes de capacidade,
+enumeração e projeção já estão no caminho live. Diagnose opcional usa o mesmo
+caminho sem títulos e sem devolver catálogo/IDs ao Node.
+
 ## WA-POC-02 — diagnóstico de falha após vínculo, base 018473d
 
 Falha real relatada: comando live de 90 min no Terminal Mac; vínculo humano

@@ -5,6 +5,7 @@ import { Engine, chooseChats } from './core.mjs';
 import { Store } from './store.mjs';
 import { LiveSession } from './session.mjs';
 import { diagnosticLogger, setupStep } from './diagnostics.mjs';
+import { createWebReader } from './web-reader.mjs';
 
 const cleanName = s => String(s || '(sem nome)').replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '').slice(0, 100);
 
@@ -22,20 +23,23 @@ export function durationMinutes(args) {
 export async function realClient(store, { reuseOnly = false } = {}) {
   const { default: wweb } = await import('whatsapp-web.js');
   const authStrategy = new wweb.LocalAuth({ clientId: 'readonly-poc', dataPath: store.directory('auth') });
+  // Server logout must not rm the already linked profile, in live or diagnosis.
+  // Revocation can still invalidate server auth; preserving disk cannot undo it.
+  authStrategy.logout = async () => {};
   if (reuseOnly) {
     // Client.inject consults this before registering QR callbacks. Fail closed.
     authStrategy.onAuthenticationNeeded = async () => ({ failed: true, restart: false });
-    // Client's logout navigation normally invokes LocalAuth.logout, which rm's
-    // the entire profile. Diagnosis must preserve it even when server auth is lost.
-    authStrategy.logout = async () => {};
   }
-  return new wweb.Client({
+  const client = new wweb.Client({
     authStrategy,
     webVersionCache: { type: 'local', path: store.directory('web-cache') },
     puppeteer: { headless: false, dumpio: false },
     qrMaxRetries: 5, takeoverOnConflict: false, authTimeoutMs: 120_000,
     deviceName: 'ArquivIO POC somente leitura'
   });
+  // Local read contract, separate from the dependency's full chat serializers.
+  client.readOnly = createWebReader(client, wweb.Chat);
+  return client;
 }
 
 // Injection is programmatic for offline tests; the CLI always uses these defaults.

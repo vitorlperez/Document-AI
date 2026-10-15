@@ -99,3 +99,33 @@ Ensaio humano e viabilidade real continuam pendentes.
   desconexão, e erro no callback de persistência sendo tratado como parada normal.
   Testes específicos reproduzem ambos. Usar AbortSignal para cancelar perguntas
   antigas e status terminal de erro para persistência; sem conteúdo bruto em log.
+
+## WA-POC-03 — registro antes da correção (base 77669c1)
+
+Evidência humana recebida: session_profile/make_client reached; initialize started;
+authenticated/ready reached; list_chats failed com tipo unknown, kind
+OPAQUE_WEB_ERROR, frames Client.getChats/ExecutionContext.evaluate; setup_callback
+failed e LOCAL_SETUP_FAILED. Demonstra a fronteira, não a causa interna.
+
+Fonte instalada 1.34.7: Client.getChats → WWebJS.getChats → Chat.getModelsArray →
+Promise.all(getChatModel). Cada modelo passa por chat.serialize(), metadados
+de grupo/update e eventual Msg.get/getMessagesById(lastReceivedKey._serialized).
+getChatById também usa getChatModel; trocar só a listagem deixaria esse acoplamento
+na entrada do histórico. Chat.fetchMessages usa getChat(getAsModel:false).
+
+Hipótese local testável: o catálogo mínimo é indevidamente acoplado à serialização
+integral/última mensagem; uma falha nessas operações bloqueia todas as escolhas.
+Reproduzir com LoadUtils/Client/Chat reais e modelos sintéticos, incluindo chave
+de mensagem apenas $1 → getMessagesById([undefined]) → DataError e serialize que
+lança. Corrigir o caminho da POC, sem afirmar qual desses casos ocorreu na conta
+pessoal e sem patch amplo de dependência.
+
+Verificação WA-POC-03: regressão source-backed vermelha 0/7 → verde 7/7;
+suite final 65/65, 0 fail, exit 0. Chromium about:blank com validação nativa de
+chave IndexedDB confirma falha do getChats original, lista mínima e histórico
+sem serialização de chat. CDP recria DataError como DOMException no Node;
+classificação dentro da página preserva a classe sem texto bruto. Probes novos
+separam capacidade, enumeração e projeção e não testam serializer integral.
+Fontes/diff main fixado em UPSTREAM.md; registros em evidence/catalog-repair.json.
+A correção remove o acoplamento reproduzido da POC; a etapa exata da conta real
+permanece não demonstrada e compatibilidade de mensagens/eventos não é presumida.

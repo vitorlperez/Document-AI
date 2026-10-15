@@ -22,6 +22,7 @@ function harness(t, failure) {
   const logs = [], calls = [], signals = new EventEmitter();
   let client;
   class Client extends EventEmitter {
+    readOnly = { catalog: () => this.getChats() };
     async initialize() {
       calls.push('initialize'); this.emit('authenticated', 'PRIVATE_AUTH_PAYLOAD');
       if (failure === 'qr') { this.emit('qr', 'PRIVATE_QR'); return; }
@@ -54,7 +55,7 @@ function harness(t, failure) {
     } };
 }
 
-test('diagnosis reuses only an existing profile, probes getChats and never reads or rewrites snapshots/auth/cache', async t => {
+test('diagnosis reuses only an existing profile, probes catalog and never reads or rewrites snapshots/auth/cache', async t => {
   const h = harness(t);
   assert.equal(await runDiagnosis(h.options), 'SETUP_DIAGNOSED');
   assert.deepEqual(h.calls, ['client', 'initialize', 'getChats', 'destroy']);
@@ -113,7 +114,7 @@ test('diagnostic is a closed vocabulary even for hostile errors, fields, strings
   assert.ok(!JSON.stringify(safeDiagnostic('list_chats', 'failed', changingGetters)).includes('PRIVATE_'));
 });
 
-test('diagnosis bounds a stuck getChats and releases the lock while preserving the profile', async t => {
+test('diagnosis bounds a stuck catalog and releases the lock while preserving the profile', async t => {
   const h = harness(t, 'hang');
   assert.equal(await runDiagnosis({ ...h.options, readyTimeoutMs: 10 }), 'DIAGNOSIS_TIMEOUT');
   assert.deepEqual(h.calls, ['client', 'initialize', 'getChats', 'destroy']); h.verifyPreserved();
@@ -125,6 +126,14 @@ test('real diagnostic auth strategy refuses pairing and does not delete its synt
   await client.authStrategy.beforeBrowserInitialized();
   const required = await client.authStrategy.onAuthenticationNeeded();
   assert.equal(required.failed, true); assert.equal(required.restart, false);
+  await client.authStrategy.logout();
+  h.verifyPreserved();
+});
+
+test('real live auth strategy also preserves the synthetic linked profile on server logout', async t => {
+  const h = harness(t), store = new Store(h.root);
+  const client = await realClient(store); // No initialize, real account or browser.
+  await client.authStrategy.beforeBrowserInitialized();
   await client.authStrategy.logout();
   h.verifyPreserved();
 });

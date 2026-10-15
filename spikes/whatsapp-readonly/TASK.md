@@ -25,3 +25,16 @@ diagnóstico sanitizado executável, regressões e avisos locais. Sem live real
 autônomo, leitura de conteúdo/perfil, exclusão de auth/cache, nova autorização,
 seleção, ingestão ou envio. Corrigir apenas causa demonstrada; falha real não
 reproduzível sem conta exige diagnóstico humano antes de patch especulativo.
+
+Correção WA-POC-03: owner pane-714; branch main compartilhada; base 77669c1.
+Diagnóstico REAL recebido: initialize → authenticated → ready; list_chats falha
+OPAQUE_WEB_ERROR em Client.getChats/ExecutionContext.evaluate. Não demonstra
+a etapa interna. Escopo: reproduções sintéticas com fonte 1.34.7, comparação
+upstream primário atual, correção local da listagem + passagem para histórico
+sem serialização integral de chat, probes fechados e regressões. Preservar
+auth/cache; sem live/diagnose pessoal, novo vínculo, seleção, ingestão ou envio
+autônomos. Commit somente spike; grafo atualizado fora do commit.
+
+WA-POC-03 implementado e verificado: 65/65 testes offline e Chromium/CDP sintético
+exit 0; diagnóstico fechado por etapa. Comparação e limites em UPSTREAM.md.
+Nenhum ensaio pessoal autônomo. Próxima tentativa: live humano no mesmo perfil.

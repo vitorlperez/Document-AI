@@ -15,7 +15,8 @@ export class LiveSession {
       try { client = await setupStep(this.diagnostic, 'make_client', this.makeClient); }
       catch { return 'LOCAL_SETUP_FAILED'; }
       const adapter = new ReadOnlyConnector(client, this.engine, {
-        changed: this.changed, failed: () => { this.failure = 'EVENT_PERSISTENCE_FAILED'; this.stop(); } });
+        changed: this.changed, diagnostic: this.diagnostic,
+        failed: () => { this.failure = 'EVENT_PERSISTENCE_FAILED'; this.stop(); } });
       const setup = new AbortController();
       let readyTimer;
       let readyResolve, endResolve;
