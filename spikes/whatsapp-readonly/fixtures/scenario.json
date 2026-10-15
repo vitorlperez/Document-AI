@@ -1,0 +1,14 @@
+{
+  "notice": "Synthetic only. No account, phone number or real conversation.",
+  "selected": ["fixture@g.us", "fixture@c.us"],
+  "events": [
+    { "kind": "history", "message": { "id": { "_serialized": "m1" }, "from": "fixture@g.us", "type": "chat", "body": "Prazo fictício: sexta.", "timestamp": 1760000000 } },
+    { "kind": "new", "message": { "id": { "_serialized": "m2" }, "from": "fixture@g.us", "type": "chat", "body": "Orçamento fictício aprovado.", "timestamp": 1760000060 } },
+    { "kind": "new", "message": { "id": { "_serialized": "m2" }, "from": "fixture@g.us", "type": "chat", "body": "Orçamento fictício aprovado.", "timestamp": 1760000060 } },
+    { "kind": "edit", "message": { "id": { "_serialized": "m1" }, "from": "fixture@g.us", "type": "chat", "body": "Prazo fictício: segunda.", "timestamp": 1760000000 } },
+    { "kind": "delete_everyone", "message": { "id": { "_serialized": "m2" }, "from": "fixture@g.us" } },
+    { "kind": "history", "message": { "id": { "_serialized": "m2" }, "from": "fixture@g.us", "type": "chat", "body": "Não deve ressuscitar.", "timestamp": 1760000060 } },
+    { "kind": "new", "message": { "id": { "_serialized": "m3" }, "fromMe": true, "from": "self@c.us", "to": "fixture@c.us", "type": "chat", "body": "Mensagem sintética do próprio usuário.", "timestamp": 1760000120 } },
+    { "kind": "new", "message": { "id": { "_serialized": "m4" }, "from": "unselected@g.us", "type": "chat", "body": "UNSELECTED_FIXTURE_MUST_NOT_PERSIST", "timestamp": 1760000120 } }
+  ]
+}

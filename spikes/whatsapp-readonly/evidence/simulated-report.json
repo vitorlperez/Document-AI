@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "validation": "simulated",
+  "realIntegrationValidated": false,
+  "selectedChats": 2,
+  "retainedMessages": 2,
+  "tombstones": 1,
+  "documents": 2,
+  "events": {
+    "history": 1,
+    "new": 2,
+    "edit": 1,
+    "delete_everyone": 1,
+    "delete_me": 0
+  },
+  "catalog": {
+    "chats": 0,
+    "groups": 0,
+    "individual": 0
+  },
+  "history": [],
+  "connection": {
+    "ready": 0,
+    "disconnected": 0,
+    "authFailure": 0,
+    "reconnectAttempts": 0
+  },
+  "observations": [],
+  "historyCompleteness": "unknown; fetch limit is not a completeness guarantee",
+  "startedAt": "2026-10-15T21:04:37.792Z",
+  "generatedAt": "2026-10-15T21:04:37.802Z"
+}

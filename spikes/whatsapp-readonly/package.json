@@ -1,0 +1,15 @@
+{
+  "name": "arquivio-whatsapp-readonly-poc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "demo": "node src/cli.mjs demo",
+    "live": "node src/cli.mjs live",
+    "report": "node src/cli.mjs report",
+    "doctor": "node src/cli.mjs doctor"
+  },
+  "dependencies": { "whatsapp-web.js": "1.34.7" }
+}

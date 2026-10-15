@@ -1,0 +1,10 @@
+{
+  "command": "npm test",
+  "exitCode": 0,
+  "counts": {
+    "tests": 30,
+    "pass": 30,
+    "fail": 0
+  },
+  "scope": "offline synthetic tests; no real account"
+}

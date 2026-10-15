@@ -1,0 +1,9 @@
+# Runtime belongs OUTSIDE the repository. Defense in depth for accidental defaults.
+.wwebjs_auth/
+.wwebjs_cache/
+session*/
+state*/
+library.json
+report.json
+*.tmp
+node_modules/
