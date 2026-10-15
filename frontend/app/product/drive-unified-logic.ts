@@ -17,8 +17,10 @@ export function driveConnections<T extends SourceLike>(sources: T[]): { oauth: T
 
 export type CardStatus = { tone: "ok" | "pending" | "warning" | "error" | "neutral"; label: string; description: string };
 
-export function driveCardStatus({ oauth, share }: { oauth: SourceLike | null; share: SourceLike | null }): CardStatus {
+/** `healthyShareFolders`: pastas do robô vinculadas e saudáveis — o erro técnico do robô não derruba o card inteiro nesse caso. */
+export function driveCardStatus({ oauth, share, healthyShareFolders = 0 }: { oauth: SourceLike | null; share: SourceLike | null; healthyShareFolders?: number }): CardStatus {
   if (oauth?.status === "connected" || share?.status === "connected") return { tone: "ok", label: "Conectado", description: "O ArquivIO lê as pastas conectadas e as mantém atualizadas." };
+  if ((share?.status === "provider_error" || share?.status === "provisioning_failed") && healthyShareFolders > 0) return { tone: "ok", label: "Conectado", description: "O ArquivIO lê as pastas conectadas e as mantém atualizadas." };
   switch (share?.status) {
     case "awaiting_share": return { tone: "pending", label: "Aguardando compartilhamento", description: "Compartilhe uma pasta do Google Drive com o e-mail do ArquivIO para começar." };
     case "provisioning": return { tone: "pending", label: "Preparando", description: "Estamos preparando o e-mail exclusivo da sua empresa. Isso leva até um ou dois minutos." };
@@ -60,4 +62,35 @@ export function driveCardActions<T extends SourceLike>({ oauth, share }: { oauth
     reconnectOauth: oauth?.status === "reauth_required",
     manage: oauth?.status === "connected" ? oauth : share?.status === "connected" ? share : null,
   };
+}
+
+/** Problema de UMA conexão (badge na linha de "Detalhes das conexões"), sem pintar o card inteiro. */
+export type ConnectionIssue = { tone: "warning" | "error"; label: string };
+export function driveConnectionIssue(method: DriveMethodKey, source: SourceLike | null): ConnectionIssue | null {
+  if (!source) return null;
+  if (method === "share") {
+    if (source.status === "provider_error" || source.status === "provisioning_failed") return { tone: "error", label: "Problema técnico" };
+    if (source.status === "access_lost") return { tone: "warning", label: "Acesso removido" };
+    return null;
+  }
+  return source.status === "reauth_required" ? { tone: "warning", label: "Reconexão necessária" } : null;
+}
+
+/** Resumo compacto do card: no máximo `limit` pastas, as com acesso removido primeiro (ordem original preservada dentro de cada grupo). */
+export type FolderSummary<T extends { lost: boolean } = UnifiedFolder> = { visible: T[]; total: number; hidden: number; lostCount: number; text: string };
+export const CARD_FOLDER_LIMIT = 3;
+export function summarizeDriveFolders<T extends { lost: boolean }>(rows: T[], limit = CARD_FOLDER_LIMIT): FolderSummary<T> {
+  const ordered = [...rows.filter((r) => r.lost), ...rows.filter((r) => !r.lost)];
+  const total = rows.length; const lostCount = rows.length - rows.filter((r) => !r.lost).length;
+  const noun = total === 1 ? "pasta conectada" : "pastas conectadas";
+  const text = total === 0 ? "" : `${total} ${noun}${lostCount > 0 ? ` · ${lostCount} com acesso removido` : ""}`;
+  return { visible: ordered.slice(0, limit), total, hidden: Math.max(0, total - limit), lostCount, text };
+}
+
+const fold = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+/** Busca por nome (sem acento, sem caixa) para o painel completo; problemas continuam no topo. */
+export function filterDriveFolders<T extends { name: string; lost: boolean }>(rows: T[], query: string): T[] {
+  const needle = fold(query.trim());
+  const matched = needle ? rows.filter((r) => fold(r.name).includes(needle)) : rows;
+  return [...matched.filter((r) => r.lost), ...matched.filter((r) => !r.lost)];
 }

@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { toolGroup, mergeToolRoots, sameTool, providerKey, toolLabel } from "../app/tool-groups.ts";
 import { providerLabel } from "../app/provider-labels.ts";
-import { driveConnections, driveCardStatus, unifiedDriveFolders, driveCardActions } from "../app/product/drive-unified-logic.ts";
+import { driveConnections, driveCardStatus, unifiedDriveFolders, driveCardActions, summarizeDriveFolders, filterDriveFolders, driveConnectionIssue } from "../app/product/drive-unified-logic.ts";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const NOW = Date.parse("2026-10-14T12:00:00Z");
@@ -93,4 +93,42 @@ test("fluxo: link discreto de OAuth e Conectar sem modal de método", () => {
   assert.match(flow, /Prefere entrar com a conta Google\?/);
   const screen = read("../app/product/integrations-screen.tsx");
   assert.doesNotMatch(screen, /<DriveMethodModal/);
+});
+
+const mk = (name, lost = false) => ({ name, lost });
+
+test("resumo do card: no máximo 3 pastas, acesso removido primeiro, texto de contagem", () => {
+  const rows = Array.from({ length: 12 }, (_, i) => mk(`Pasta ${i + 1}`, i === 9));
+  const s = summarizeDriveFolders(rows);
+  assert.equal(s.visible.length, 3); assert.equal(s.hidden, 9); assert.equal(s.total, 12);
+  assert.equal(s.visible[0].name, "Pasta 10");
+  assert.equal(s.text, "12 pastas conectadas · 1 com acesso removido");
+  assert.equal(summarizeDriveFolders([mk("A")]).text, "1 pasta conectada");
+  assert.equal(summarizeDriveFolders([mk("A"), mk("B")]).hidden, 0);
+  assert.equal(summarizeDriveFolders([]).text, "");
+});
+
+test("busca no painel: sem acento/caixa e problemas no topo", () => {
+  const rows = [mk("Contratos 2025"), mk("Árvore", true), mk("Financeiro"), mk("arvore-1000")];
+  assert.deepEqual(filterDriveFolders(rows, "ARVORE").map((r) => r.name), ["Árvore", "arvore-1000"]);
+  assert.equal(filterDriveFolders(rows, "  ").length, 4);
+  assert.equal(filterDriveFolders(rows, "zzz").length, 0);
+});
+
+test("erro técnico do robô só derruba o card se não houver pastas saudáveis; vira badge da conexão", () => {
+  const share = src("2", "google_drive_sa", "provider_error");
+  assert.equal(driveCardStatus({ oauth: null, share }).tone, "error");
+  assert.equal(driveCardStatus({ oauth: null, share, healthyShareFolders: 2 }).tone, "ok");
+  assert.equal(driveCardStatus({ oauth: src("1", "google_drive"), share }).tone, "ok");
+  assert.deepEqual(driveConnectionIssue("share", share), { tone: "error", label: "Problema técnico" });
+  assert.equal(driveConnectionIssue("share", src("2", "google_drive_sa")), null);
+  assert.equal(driveConnectionIssue("oauth", src("1", "google_drive", "reauth_required")).label, "Reconexão necessária");
+});
+
+test("card compacto: resumo + 'Ver todas as pastas' + painel com busca/rolagem + badge por conexão", () => {
+  const flow = read("../app/product/drive-share-flow.tsx");
+  assert.match(flow, /summarizeDriveFolders\(rows\)/); assert.match(flow, /Ver todas as pastas \(\$\{summary\.total\}\)|Ver todas as pastas \(\{summary\.total\}\)/);
+  assert.match(flow, /type="search"/); assert.match(flow, /DriveFoldersPanel/);
+  assert.match(flow, /driveConnectionIssue\("share"/);
+  assert.match(read("../app/product/drive-share-flow.css"), /\.drive-folders-list \{[^}]*overflow-y: auto/);
 });

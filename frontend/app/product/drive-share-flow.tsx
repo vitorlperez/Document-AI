@@ -13,7 +13,7 @@ import {
   type BatchRow, type FolderLink, type SelectionChoices,
 } from "./drive-share-logic";
 import { ApiError, messageFor, type Folder, type Source } from "./types-and-api";
-import { driveCardActions, driveCardStatus, unifiedDriveFolders, type DriveMethodKey } from "./drive-unified-logic";
+import { driveCardActions, driveCardStatus, driveConnectionIssue, filterDriveFolders, summarizeDriveFolders, unifiedDriveFolders, type DriveMethodKey, type UnifiedFolder } from "./drive-unified-logic";
 import "./drive-share-flow.css";
 
 const DRIVE_HOME = "https://drive.google.com/";
@@ -333,10 +333,14 @@ export function GoogleDriveCard({ oauth, share, oauthFolders, client = driveShar
   useEffect(() => { if (!sourceId || initialState) return; let alive = true; client.state(sourceId, shareRaw).then((s) => alive && setState(s)).catch(() => undefined); return () => { alive = false; }; }, [client, sourceId, initialState, shareRaw]);
   const shareStatus = state?.status ?? share?.status;
   const liveShare = share ? { ...share, status: shareStatus ?? share.status } : null;
-  const status = driveCardStatus({ oauth, share: liveShare });
-  const actions = driveCardActions({ oauth, share: liveShare });
   const [now] = useState(() => Date.now());
   const rows = unifiedDriveFolders({ shareFolders: state?.folders ?? [], oauthFolders, oauthSourceId: oauth?.id ?? null, now });
+  const status = driveCardStatus({ oauth, share: liveShare, healthyShareFolders: rows.filter((r) => r.method === "share" && !r.lost).length });
+  const actions = driveCardActions({ oauth, share: liveShare });
+  const summary = summarizeDriveFolders(rows);
+  const [managing, setManaging] = useState(false);
+  const shareIssue = driveConnectionIssue("share", liveShare); const oauthIssue = driveConnectionIssue("oauth", oauth);
+  const issueCount = [shareIssue, oauthIssue].filter(Boolean).length;
   const robot = state?.robot_email ?? null;
   const lost = shareStatus === "access_lost";
   const both = Boolean(oauth && share);
@@ -345,6 +349,12 @@ export function GoogleDriveCard({ oauth, share, oauthFolders, client = driveShar
   const unlink = (link: FolderLink, purge: boolean) => { setUnlinking(null); if (sourceId) void fresh(() => client.unlink(sourceId, link.link_id ?? link.id, purge), `unlink-${link.id}`, purge ? "Conteúdo apagado." : `Pasta “${link.name}” desvinculada.`); };
   const primary = () => { if (actions.primary.kind === "start-share") onStart(); else onAddFolders(share); };
   const disconnectButton = (method: DriveMethodKey, source: Source, compact = false) => <button key={`disc-${method}`} type="button" onClick={() => onDisconnect(source)} disabled={disconnectingId !== null} className={btn("danger-ghost", "sm")}><Unplug size={14} aria-hidden="true" />{disconnectingId === source.id ? "Desconectando…" : compact ? "Desconectar" : method === "share" ? "Desconectar pastas compartilhadas" : "Desconectar conta Google"}</button>;
+  const folderRow = (f: UnifiedFolder, manager = false) => {
+    const link = f.method === "share" ? (state?.folders ?? []).find((x) => `share:${x.id}` === f.key) : undefined;
+    return <li key={f.key} data-lost={f.lost || undefined}><FolderOpen size={16} aria-hidden="true" /><div className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b><span className="drive-folder-meta">{f.lost ? f.meta : `${f.fileCount != null ? `${formatCount(f.fileCount, "arquivo", "arquivos")} · ` : ""}${relativeSync(f.lastSyncedAt, now)}`}</span></div>
+      {manager && <span className="drive-folder-badge" data-tone={f.lost ? "warning" : "ok"}>{f.lost ? "Acesso removido" : "Sincronizada"}</span>}
+      {link && f.canUnlink && <button type="button" className={btn("danger-ghost", "sm")} disabled={busy !== null} onClick={() => setUnlinking(link)}>{f.lost ? <Trash2 size={14} aria-hidden="true" /> : <Unplug size={14} aria-hidden="true" />}{f.lost ? "Apagar agora" : "Desvincular"}</button>}</li>;
+  };
   return <section className="integration-tool-card drive-card h-full rounded-lg border border-card-edge bg-raised p-4 shadow-sm" data-status={status.tone}>
     <button type="button" onClick={primary} className="integration-tool-header mo-interactive flex w-full items-center gap-3 text-left"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-sage"><ProviderLogo provider="google" size={26} /></span><b className="integration-tool-title min-w-0 flex-1">Google Drive</b><ChevronRight className="mo-arrow shrink-0 text-muted-foreground" size={18} aria-hidden="true" /></button>
     {actions.primary.kind === "start-share" ? <>
@@ -354,11 +364,9 @@ export function GoogleDriveCard({ oauth, share, oauthFolders, client = driveShar
       <div className="drive-card-status"><span className="drive-dot-status" data-tone={status.tone} /><b>{status.label}</b>{syncBadge}{oauth?.account_email && !share && <span className="truncate text-muted-foreground" title={oauth.account_email}>· {oauth.account_email}</span>}</div>
       <p className="integration-tool-description">{status.description}</p>
       {robot && <div className="drive-card-robot"><span className="drive-mono" title={robot}>Compartilhe com: {robot}</span><CopyButton text={robot} label="Copiar" variant="ghost" size="sm" /></div>}
-      {rows.length > 0 && <ul className="drive-card-folders">{rows.map((f) => {
-        const link = f.method === "share" ? (state?.folders ?? []).find((x) => `share:${x.id}` === f.key) : undefined;
-        return <li key={f.key} data-lost={f.lost || undefined}><FolderOpen size={16} aria-hidden="true" /><div className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b><span className="drive-folder-meta">{f.lost ? f.meta : `${f.fileCount != null ? `${formatCount(f.fileCount, "arquivo", "arquivos")} · ` : ""}${relativeSync(f.lastSyncedAt, now)}`}</span></div>
-          {link && f.canUnlink && <button type="button" className={btn("danger-ghost", "sm")} disabled={busy !== null} onClick={() => setUnlinking(link)}>{f.lost ? <Trash2 size={14} aria-hidden="true" /> : <Unplug size={14} aria-hidden="true" />}{f.lost ? "Apagar agora" : "Desvincular"}</button>}</li>;
-      })}</ul>}
+      {summary.total > 0 && <div className="drive-card-summary"><p className="drive-card-summary-text" data-warn={summary.lostCount > 0 || undefined}>{summary.text}</p>
+        <ul className="drive-card-folders" aria-label="Pastas conectadas">{summary.visible.map((f) => folderRow(f))}</ul>
+        {summary.hidden > 0 && <button type="button" className={btn("secondary", "sm", "drive-card-viewall")} onClick={() => setManaging(true)} aria-haspopup="dialog">Ver todas as pastas ({summary.total})</button>}</div>}
       {error && <p className="drive-field-error" role="alert"><CircleAlert size={14} aria-hidden="true" />{error}</p>}
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
       <div className="integration-tool-footer border-t border-line-soft text-xs"><span className="integration-tool-actions flex flex-wrap items-center gap-2">
@@ -368,16 +376,38 @@ export function GoogleDriveCard({ oauth, share, oauthFolders, client = driveShar
         {actions.manage && <button type="button" onClick={() => onManage(actions.manage!)} className={btn("secondary", "sm")}>Gerenciar</button>}
         <button type="button" onClick={primary} className="mo-interactive rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground">{actions.primary.label}</button>
       </span></div>
-      {both && <details className="drive-details drive-card-methods"><summary>Detalhes das conexões</summary>
-        <ul>{share && <li><span className="min-w-0 flex-1"><b>Pastas compartilhadas</b>{robot && <span className="drive-folder-meta drive-mono">{robot}</span>}</span>{disconnectButton("share", share)}</li>}
-          {oauth && <li><span className="min-w-0 flex-1"><b>Conta Google</b>{oauth.account_email && <span className="drive-folder-meta">{oauth.account_email}</span>}</span>{disconnectButton("oauth", oauth)}</li>}</ul>
+      {both && <details className="drive-details drive-card-methods"><summary>Detalhes das conexões{issueCount > 0 && <span className="drive-folder-badge" data-tone={shareIssue?.tone === "error" ? "error" : "warning"}>{issueCount} com problema</span>}</summary>
+        <ul>{share && <li><span className="min-w-0 flex-1"><b>Pastas compartilhadas</b>{shareIssue && <span className="drive-folder-badge" data-tone={shareIssue.tone}>{shareIssue.label}</span>}{robot && <span className="drive-folder-meta drive-mono">{robot}</span>}</span>{disconnectButton("share", share)}</li>}
+          {oauth && <li><span className="min-w-0 flex-1"><b>Conta Google</b>{oauthIssue && <span className="drive-folder-badge" data-tone={oauthIssue.tone}>{oauthIssue.label}</span>}{oauth.account_email && <span className="drive-folder-meta">{oauth.account_email}</span>}</span>{disconnectButton("oauth", oauth)}</li>}</ul>
       </details>}
       {actions.primary.kind === "add-folders" && !oauth && <p className="integration-tool-note drive-add-note"><UserRound size={12} aria-hidden="true" /> Use o mesmo e-mail para todas as pastas: compartilhe cada nova pasta com ele e clique em “{actions.primary.label}”.</p>}
     </>}
+    {managing && <DriveFoldersPanel covered={unlinking !== null} rows={rows} renderRow={(f) => folderRow(f, true)} onClose={() => setManaging(false)} />}
     {unlinking && <UnlinkConfirm link={unlinking} lost={unlinking.status !== "verified"} onCancel={() => setUnlinking(null)} onUnlink={(purge) => unlink(unlinking, purge)} />}
   </section>;
 }
 
+
+/** Painel com a lista completa: busca, rolagem interna, status por pasta e ações (a confirmação de desvincular abre por cima). */
+function DriveFoldersPanel({ covered, rows, renderRow, onClose }: { covered: boolean; rows: UnifiedFolder[]; renderRow: (f: UnifiedFolder) => ReactNode; onClose: () => void }) {
+  const [query, setQuery] = useState("");
+  const searchId = useId();
+  const search = useRef<HTMLInputElement>(null);
+  // A confirmação de desvincular fica por cima: ao fechá-la, o foco volta ao painel (senão Esc/Tab deixam de chegar nele).
+  const wasCovered = useRef(false);
+  useEffect(() => { if (wasCovered.current && !covered) search.current?.focus({ preventScroll: true }); wasCovered.current = covered; }, [covered]);
+  const shown = filterDriveFolders(rows, query);
+  const summary = summarizeDriveFolders(rows, 0);
+  return createPortal(<ModalOverlay onClose={onClose} labelledBy="drive-folders-title" className="integration-modal drive-share-modal aq-motion-overlay fixed inset-0 z-50 grid place-items-center bg-primary/40 p-4">
+    <section className="drive-share-panel drive-folders-panel max-w-2xl" data-arquivio-motion="panel-scale">
+      <header className="drive-share-head"><span className="drive-share-logo"><ProviderLogo provider="google" size={24} /></span><div className="min-w-0 flex-1"><h2 id="drive-folders-title" className="text-xl font-semibold text-ink">Pastas do Google Drive</h2><p className="mt-1 text-sm text-muted-foreground">{summary.text}</p></div><button type="button" onClick={onClose} aria-label="Fechar" className={btn("ghost", "icon")}><X size={18} /></button></header>
+      <div className="drive-folders-search"><label htmlFor={searchId} className="sr-only">Buscar pasta por nome</label><input id={searchId} ref={search} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar pasta por nome" autoComplete="off" spellCheck={false} /></div>
+      <p className="sr-only" role="status" aria-live="polite">{shown.length === 1 ? "1 pasta encontrada." : `${shown.length} pastas encontradas.`}</p>
+      {shown.length > 0 ? <ul className="drive-card-folders drive-folders-list" aria-label="Todas as pastas">{shown.map((f) => renderRow(f))}</ul> : <p className="drive-note drive-folders-empty">Nenhuma pasta com “{query.trim()}”.</p>}
+      <footer className="drive-share-actions"><button type="button" className={btn("primary")} onClick={onClose}>Fechar</button></footer>
+    </section>
+  </ModalOverlay>, document.body);
+}
 
 function UnlinkConfirm({ link, lost, onCancel, onUnlink }: { link: FolderLink; lost: boolean; onCancel: () => void; onUnlink: (purge: boolean) => void }) {
   const copy = unlinkConfirmCopy(link.name);
