@@ -8,6 +8,7 @@
     "test": "node --test test/*.test.mjs",
     "demo": "node src/cli.mjs demo",
     "live": "node src/cli.mjs live",
+    "diagnose": "node src/cli.mjs diagnose",
     "report": "node src/cli.mjs report",
     "doctor": "node src/cli.mjs doctor"
   },

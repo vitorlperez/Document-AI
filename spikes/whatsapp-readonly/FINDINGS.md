@@ -1,5 +1,42 @@
 # WA-POC-01 — achados locais
 
+## WA-POC-02 — LOCAL_SETUP_FAILED depois do vínculo (base 018473d)
+
+Registro antes da correção: `src/session.mjs` descarta a exceção de initialize
+(init_error) e de onReady (setup_error), convergindo para LOCAL_SETUP_FAILED.
+Em `src/live.mjs`, antes de mostrar seleção, onReady chama adapter.list →
+client.getChats. O status sozinho não distingue essas origens. Os 43 testes
+anteriores passam e não verificam diagnóstico dessas duas exceções.
+
+Metadados lstat, sem ler arquivos privados: real/auth/session-readonly-poc e
+web-cache existem (0700); snapshots existem (0600); run.lock/guard ausentes.
+Runtime instalado: Node 24.3.0, whatsapp-web.js 1.34.7, Puppeteer 24.38.0.
+Nenhum live real executado. Presença de perfil não prova validade da sessão.
+
+Leitura estruturada somente do relatório de métricas (sem snapshot privado):
+1 run, LOCAL_SETUP_FAILED; ready=1, authFailure=0, disconnected=0;
+catalogChats=0, selectedChats=0, retainedMessages=0, historyMeasurements=0.
+O ready foi alcançado; a listagem não confirmou catálogo. Isso estreita a
+investigação para o caminho de listagem pós-ready, sem recuperar a exceção
+descartada nem demonstrar qual operação interna do WhatsApp Web falhou.
+
+Hipótese demonstrável: a perda de diagnóstico nasce nos catches que descartam
+o erro. Reproduzir com initialize/getChats rejeitando e verificar diagnóstico
+de etapa + classificação fechada, sem mensagem/stack/payload bruto. Isso corrige
+a observabilidade, não comprova correção da falha da integração real.
+
+Hipótese externa, NÃO confirmada para esta conta: getChats da 1.34.7 serializa
+metadados e lastMessage e pode falhar por mudanças internas do WhatsApp Web.
+Fonte primária: https://github.com/wwebjs/whatsapp-web.js/issues/201845.
+Também há corrida de exposeFunctionIfAbsent (check → exposeFunction) em reload;
+sem exceção real, nenhuma dessas hipóteses autoriza patch na dependência.
+
+Verificação WA-POC-02: `npm test`, exit 0, **54/54 pass, 0 fail**. Regressões
+confirmam distinção initialize/onReady/getChats, ausência de payloads/paths nos
+diagnósticos, recusa de novo vínculo, deadline inclusive no getChats e sentinelas
+de auth/cache/biblioteca intactas em pastas sintéticas. O hook real de LocalAuth
+foi testado sem initialize/browser. Sem afirmação de correção da integração real.
+
 ## Revisão h-si, base 0de870b — investigação antes da correção
 
 - F1 MÉDIA: `Engine.select` apaga `history`/`observations`; CLI esvazia selected

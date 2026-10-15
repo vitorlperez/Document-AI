@@ -18,3 +18,10 @@ run/seleção, duração, ignores, recuperação de lock/tmp e testar live com i
 Sem override Puppeteer, vínculo, sincronização ou conta real. Dívida de audit fica.
 Verificação revisão: 43/43 testes offline, 0 falhas; demo/report 2 mensagens,
 1 tombstone, 2 documentos; evidência fresh em RESULTS/FINDINGS/evidence.
+
+Investigação WA-POC-02: owner pane-713; branch main compartilhada. Usuário
+autorizou a conta pessoal já vinculada. Escopo: origem de LOCAL_SETUP_FAILED,
+diagnóstico sanitizado executável, regressões e avisos locais. Sem live real
+autônomo, leitura de conteúdo/perfil, exclusão de auth/cache, nova autorização,
+seleção, ingestão ou envio. Corrigir apenas causa demonstrada; falha real não
+reproduzível sem conta exige diagnóstico humano antes de patch especulativo.

@@ -1,0 +1,24 @@
+{
+  "task": "WA-POC-02",
+  "base": "018473d",
+  "skills": "inline [oc-builder, oc-blackbox, oc-stamp]",
+  "scope": "Offline synthetic regressions, installed LocalAuth hooks in temporary synthetic profile, doctor about:blank; no real live/diagnose run",
+  "commands": [
+    { "cmd": "npm test (baseline)", "exitCode": 0, "tests": 43, "pass": 43, "fail": 0 },
+    { "cmd": "node --test test/session.test.mjs test/live.test.mjs (before fix)", "exitCode": 1, "tests": 14, "pass": 11, "fail": 3 },
+    { "cmd": "node --test test/session.test.mjs test/live.test.mjs (after fix)", "exitCode": 0, "tests": 14, "pass": 14, "fail": 0 },
+    { "cmd": "node --test test/diagnose.test.mjs (after guards)", "exitCode": 0, "tests": 7, "pass": 7, "fail": 0 },
+    { "cmd": "npm test (final code)", "exitCode": 0, "tests": 54, "pass": 54, "fail": 0 },
+    { "cmd": "npm run doctor", "exitCode": 0, "whatsappConnected": false, "chromiumLaunch": true },
+    { "cmd": "git diff --check -- spikes/whatsapp-readonly", "exitCode": 0 },
+    { "cmd": "graphify update .", "exitCode": 0, "nodes": 10727, "edges": 31059, "communities": 632 }
+  ],
+  "runtime": { "node": "v24.3.0", "whatsappWebJs": "1.34.7", "puppeteer": "24.38.0", "chromium": "Chrome/146.0.7680.31" },
+  "realReportCountersOnly": {
+    "runs": 1, "lastStatus": "LOCAL_SETUP_FAILED", "ready": 1, "authFailure": 0,
+    "disconnected": 0, "selectedChats": 0, "catalogChats": 0, "retainedMessages": 0, "historyMeasurements": 0
+  },
+  "conclusion": "Exception loss reproduced and fixed. Existing metrics establish ready was reached, catalog not confirmed. Exact real upstream exception and integration fix require the human-run diagnosis; not claimed resolved.",
+  "humanRetry": "npm run diagnose",
+  "returnOnly": "SETUP_DIAGNOSTIC lines and final status; no raw terminal dump or profile files"
+}

@@ -19,6 +19,12 @@ test('live refuses no-consent/non-TTY before data directory or client is created
     assert.equal(existsSync(root), false);
   }
 });
+test('diagnose CLI rejects non-TTY before storage or client and does not request new consent', t => {
+  const { root, result } = run(t, ['diagnose']);
+  assert.equal(result.status, 1); assert.match(result.stderr, /DIAGNOSIS_REQUIRES_TTY/);
+  assert.equal(existsSync(root), false);
+  assert.ok(!/VINCULAR|SINCRONIZAR|LIVE_REQUIRES_TTY_AND_CONSENT/.test(result.stdout + result.stderr));
+});
 test('CLI fixture to disk to report works offline; removed/unselected content is absent', t => {
   const { root, env, result } = run(t, ['demo']);
   assert.equal(result.status, 0);

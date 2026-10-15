@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { Engine, normalize } from './core.mjs';
 import { Store } from './store.mjs';
 import { runLive } from './live.mjs';
+import { runDiagnosis } from './diagnose.mjs';
 
 process.umask(0o077);
 const command = process.argv[2];
@@ -38,6 +39,9 @@ async function doctor() {
 try {
   if (command === 'demo') await demo();
   else if (command === 'doctor') await doctor();
+  else if (command === 'diagnose') {
+    if (await runDiagnosis() !== 'SETUP_DIAGNOSED') process.exitCode = 1;
+  }
   else if (command === 'live') {
     const status = await runLive();
     if (!['STOPPED', 'CANCELLED', 'RUNTIME_LIMIT'].includes(status)) process.exitCode = 1;
@@ -47,11 +51,14 @@ try {
     const s = new Store(dataPath(mode)); s.lock();
     try { const snapshot = s.load(); if (!snapshot) throw Error('NO_LOCAL_RUN'); console.log(JSON.stringify(new Engine({ mode, snapshot }).report(), null, 2)); }
     finally { s.unlock(); }
-  } else { console.log('Uso: npm test | npm run demo | npm run doctor | npm run live -- --consent --duration-minutes 90 | npm run report -- --real'); process.exitCode = 2; }
+  } else { console.log('Uso: npm test | npm run demo | npm run doctor | npm run diagnose | npm run live -- --consent --duration-minutes 90 | npm run report -- --real'); process.exitCode = 2; }
 } catch (error) {
   const safe = new Set(['LIVE_REQUIRES_TTY_AND_CONSENT', 'OUTSIDE_GIT_REQUIRED', 'ALREADY_RUNNING',
     'DEDICATED_DIRECTORY_REQUIRED', 'UNSAFE_FILE', 'NO_LOCAL_RUN', 'INCOMPATIBLE_STATE', 'INVALID_SELECTION']);
   const diagnostics = {
+    DIAGNOSIS_REQUIRES_TTY: 'DIAGNOSIS_REQUIRES_TTY: execute npm run diagnose no terminal local.',
+    INVALID_DIAGNOSIS_OPTIONS: 'INVALID_DIAGNOSIS_OPTIONS: use npm run diagnose sem argumentos.',
+    EXISTING_SESSION_REQUIRED: 'EXISTING_SESSION_REQUIRED: perfil local existente não encontrado ou inseguro. Nenhum vínculo iniciado; preserve auth/cache e confira ARQUIVIO_WA_POC_HOME.',
     INVALID_DURATION_OPTIONS: 'INVALID_DURATION_OPTIONS: use --duration-minutes 1..120 (padrão 60), uma única vez.',
     ALREADY_RUNNING: 'ALREADY_RUNNING: PID do lock ainda existe ou não pôde ser verificado; nenhuma recuperação executada. Feche o processo antes de repetir.',
     LOCK_OWNER_UNKNOWN: 'LOCK_OWNER_UNKNOWN: PID ausente/inválido. Não removido; consulte recuperação manual no README.',

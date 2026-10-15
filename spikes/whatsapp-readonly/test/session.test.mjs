@@ -54,3 +54,34 @@ test('failed persistence is an error status, not successful operator stop', asyn
     changed: () => { throw Error('PRIVATE_PATH'); } });
   assert.equal(await s.run(), 'EVENT_PERSISTENCE_FAILED');
 });
+
+test('initialization rejection is located without disclosing raw exception or payloads', async () => {
+  const records = [];
+  class Client extends EventEmitter {
+    async initialize() {
+      this.emit('authenticated', 'PRIVATE_AUTH');
+      throw Object.assign(new Error('Evaluation failed: PRIVATE_CHAT PRIVATE_PHONE PRIVATE_TOKEN'), { code: 'PRIVATE_CODE' });
+    }
+    async destroy() {}
+  }
+  const s = new LiveSession({ engine: new Engine({ mode: 'simulated' }), makeClient: async () => new Client(),
+    diagnostic: record => records.push(record) });
+  assert.equal(await s.run(), 'LOCAL_SETUP_FAILED');
+  assert.ok(records.some(r => r.stage === 'authenticated' && r.event === 'reached'));
+  assert.ok(records.some(r => r.stage === 'initialize' && r.event === 'failed' && r.error.kind === 'WEB_EVALUATION'));
+  assert.ok(!JSON.stringify(records).includes('PRIVATE_'));
+});
+
+test('ready callback error is distinct from initialization and still destroys client', async () => {
+  const records = []; let destroyed = 0;
+  class Client extends EventEmitter {
+    async initialize() { this.emit('ready'); }
+    async destroy() { destroyed++; }
+  }
+  const s = new LiveSession({ engine: new Engine({ mode: 'simulated' }), makeClient: async () => new Client(),
+    onReady: async () => { throw new TypeError('PRIVATE_PATH'); }, diagnostic: record => records.push(record) });
+  assert.equal(await s.run(), 'LOCAL_SETUP_FAILED');
+  assert.ok(records.some(r => r.stage === 'setup_callback' && r.event === 'failed' && r.error.type === 'TypeError'));
+  assert.ok(!records.some(r => r.stage === 'initialize' && r.event === 'failed'));
+  assert.equal(destroyed, 1); assert.ok(!JSON.stringify(records).includes('PRIVATE_'));
+});

@@ -1,7 +1,8 @@
 # WhatsApp → biblioteca local do ArquivIO: POC somente leitura
 
 **Implementação e validação simulada entregues; integração com conta real NÃO
-validada.** Nenhuma conta vinculada, nenhum envio e nenhuma gravação no ArquivIO.
+validada.** O usuário reportou vínculo humano bem-sucedido seguido de
+LOCAL_SETUP_FAILED antes da seleção. Nenhum envio nem gravação no ArquivIO.
 
 Programa independente com whatsapp-web.js **1.34.7** fixado no lockfile, Node **22+**.
 A biblioteca local demonstra documentos por conversa/dia UTC com blocos, autoria
@@ -37,6 +38,58 @@ O instalador baixa Chrome pelo Puppeteer já instalado. `doctor` importa o clien
 abre **somente about:blank** e fecha o browser. Não acessa WhatsApp. Testes e doctor
 podem rodar sem desktop; o fluxo real exige interface gráfica. Não desative o
 sandbox do Chromium.
+
+## Diagnosticar LOCAL_SETUP_FAILED preservando a sessão vinculada
+
+A conta pessoal já autorizada pode ser usada; conta de teste é opcional.
+Não apague auth/cache, não troque de conta e não faça outro vínculo para tentar
+corrigir este status. Ele antes ocultava tanto erro em `initialize()` quanto
+erro no callback de `ready` (incluindo `getChats()`). A exceção original da
+execução antiga não foi guardada e não pode ser reconstruída pelo status.
+
+Feche outras instâncias da POC. No mesmo terminal e com a mesma pasta de dados:
+
+```sh
+cd /Users/vitorperez/Documents/Document-AI/spikes/whatsapp-readonly
+npm run diagnose
+```
+
+Este comando reutiliza **somente o perfil existente**, sem pedir VINCULAR ou
+SINCRONIZAR. Faz uma tentativa até `getChats()` e fecha o browser, com limite de
+três minutos. Não mostra nomes, não oferece seleção, não busca histórico, não
+envia mensagens e não lê/regrava a biblioteca privada nem o relatório anterior.
+Não apaga auth/cache; bloqueia a limpeza LocalAuth no logout. O Chromium pode
+atualizar seu próprio perfil/cache durante a conexão. A biblioteca WhatsApp
+serializa objetos de chats internamente em `getChats()` (inclusive lastMessage);
+a POC descarta o retorno sem inspecionar nomes/IDs/textos. Não abra chats ou use
+o composer na janela de diagnóstico.
+
+Se precisar de autenticação, encerra com `AUTH_REQUIRED`, sem iniciar novo
+vínculo. Perfil ausente/inseguro dá `EXISTING_SESSION_REQUIRED` antes de abrir o
+cliente. Não reconecta automaticamente. `DIAGNOSIS_TIMEOUT` indica que atingiu
+o limite; Ctrl+C encerra com `DIAGNOSIS_INTERRUPTED`.
+
+Compartilhe **somente as linhas `SETUP_DIAGNOSTIC {...}` e o status final**.
+Elas usam vocabulário fechado: etapas, classe/código conhecido, classificação e
+nomes fixos de funções. Não imprimem mensagem/stack bruto, paths, payloads de
+auth/QR ou dados de chats. Exemplo sintético:
+
+```text
+SETUP_DIAGNOSTIC {"stage":"list_chats","event":"failed","error":{"type":"Error","kind":"OPAQUE_WEB_ERROR","code":"unknown","frames":["Client.getChats"]}}
+LOCAL_SETUP_FAILED
+```
+
+`OPAQUE_WEB_ERROR` classifica o erro `r`/`r: r`, sem atribuir causa. Uma falha
+`BINDING_ALREADY_EXISTS` em initialize aponta outra fronteira. Há relatos
+primários de incompatibilidade em
+[getChats na 1.34.7](https://github.com/wwebjs/whatsapp-web.js/issues/201845), mas
+isso ainda não foi comprovado nesta conta; nenhum patch especulativo, pin de
+WhatsApp Web, upgrade ou exclusão de cache foi aplicado.
+
+`SETUP_DIAGNOSED` (exit 0) comprova apenas que inicialização + getChats terminaram
+naquela tentativa. Não valida catálogo completo, ingestão, eventos ou estabilidade.
+Outros resultados retornam exit 1. O modo live normal também emite diagnósticos
+de etapa, mas exibe nomes na seleção: não compartilhe seu terminal inteiro.
 
 ## Etapa humana pendente: vínculo e escolha das conversas
 
@@ -92,7 +145,8 @@ SINCRONIZAR. A seleção persistida nunca autoriza ingestão ao reiniciar.
 
 ### Preservar evidência entre execuções do ensaio
 
-Use **a mesma conta de teste e a mesma pasta dedicada** em ambas as execuções.
+Use **a mesma conta autorizada e a mesma pasta dedicada** em ambas as execuções.
+Uma conta de teste é opcional, não é requisito para a conta pessoal autorizada.
 Não apague `real/`, não copie snapshots para o git, não use `demo` como evidência
 real e não troque de conta na mesma pasta. Para explicitar a pasta, antes do live:
 

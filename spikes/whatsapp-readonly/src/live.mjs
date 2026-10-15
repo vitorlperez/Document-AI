@@ -4,6 +4,7 @@ import { createInterface } from 'node:readline/promises';
 import { Engine, chooseChats } from './core.mjs';
 import { Store } from './store.mjs';
 import { LiveSession } from './session.mjs';
+import { diagnosticLogger, setupStep } from './diagnostics.mjs';
 
 const cleanName = s => String(s || '(sem nome)').replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '').slice(0, 100);
 
@@ -18,10 +19,18 @@ export function durationMinutes(args) {
   return duration;
 }
 
-async function realClient(store) {
+export async function realClient(store, { reuseOnly = false } = {}) {
   const { default: wweb } = await import('whatsapp-web.js');
+  const authStrategy = new wweb.LocalAuth({ clientId: 'readonly-poc', dataPath: store.directory('auth') });
+  if (reuseOnly) {
+    // Client.inject consults this before registering QR callbacks. Fail closed.
+    authStrategy.onAuthenticationNeeded = async () => ({ failed: true, restart: false });
+    // Client's logout navigation normally invokes LocalAuth.logout, which rm's
+    // the entire profile. Diagnosis must preserve it even when server auth is lost.
+    authStrategy.logout = async () => {};
+  }
   return new wweb.Client({
-    authStrategy: new wweb.LocalAuth({ clientId: 'readonly-poc', dataPath: store.directory('auth') }),
+    authStrategy,
     webVersionCache: { type: 'local', path: store.directory('web-cache') },
     puppeteer: { headless: false, dumpio: false },
     qrMaxRetries: 5, takeoverOnConflict: false, authTimeoutMs: 120_000,
@@ -38,15 +47,16 @@ export async function runLive({ args = process.argv.slice(3), input = process.st
   if (!args.includes('--consent') || !input.isTTY || !output.isTTY) throw Error('LIVE_REQUIRES_TTY_AND_CONSENT');
   const minutes = durationMinutes(args);
   const rl = createPrompt();
+  const diagnostic = diagnosticLogger(log);
   let session, store, engine, active, commands, timer, outcome = 'LOCAL_RUN_FAILED', cancelled = false, expired = false;
   const stop = () => { session?.stop(); rl.close(); };
   try {
     log('Cliente NÃO OFICIAL. Pode haver bloqueio da conta e quebra sem aviso. Nenhum envio será feito pela POC.');
     log('A sessão vinculada recebe/cacheia dados da conta inteira no perfil local do Chromium. A seleção limita apenas a biblioteca da POC.');
     log('Nomes de chats aparecerão somente neste terminal local. Não grave/compartilhe a tela. O QR ficará só no navegador local.');
-    log('Feche outras instâncias da POC. Use uma conta de teste e conversas com participantes cientes.');
+    log('Feche outras instâncias da POC. Use a conta já autorizada e conversas com participantes cientes; uma conta de teste é opcional.');
     log(`Limite desta execução: ${minutes} min, incluindo vínculo e seleção (máximo permitido: 120 min).`);
-    if (await rl.question('Para abrir WhatsApp Web e vincular conscientemente, digite VINCULAR: ') !== 'VINCULAR') return 'CANCELLED';
+    if (await rl.question('Para abrir WhatsApp Web (reutiliza a sessão existente), digite VINCULAR: ') !== 'VINCULAR') return 'CANCELLED';
     store = createStore(join(resolve(home), 'real')); store.lock();
     if (store.recoveredLock || store.recoveredTemps?.length) log('RECOVERED_LOCAL_RUN: PID anterior encerrado; temporários conhecidos descartados sob lock. Snapshot confirmado preservado.');
     engine = new Engine({ mode: 'real', snapshot: store.load() });
@@ -57,20 +67,22 @@ export async function runLive({ args = process.argv.slice(3), input = process.st
     const save = () => store.save(engine);
     save();
     let selected = false;
-    session = new LiveSession({ engine, changed: save, makeClient: () => makeClient(store),
+    session = new LiveSession({ engine, changed: save, makeClient: () => makeClient(store), diagnostic,
       onReady: async (adapter, signal) => {
         active = adapter;
         if (!selected) {
-          const chats = await adapter.list();
+          const chats = await setupStep(diagnostic, 'list_chats', () => adapter.list());
           if (signal.aborted) return;
           log(`Conversas disponíveis: ${chats.length}. Seleção anterior NÃO será retomada automaticamente (${previousCount}).`);
           chats.forEach((c, i) => log(`${i + 1}. [${c.isGroup ? 'grupo' : 'chat'}] ${cleanName(c.name)}`));
-          const answer = await rl.question('Escolha apenas índices, separados por vírgula (vazio cancela): ', { signal });
+          const answer = await setupStep(diagnostic, 'selection', () =>
+            rl.question('Escolha apenas índices, separados por vírgula (vazio cancela): ', { signal }));
           if (signal.aborted) return;
           if (!answer.trim()) { cancelled = true; session.stop(); return; }
           const ids = chooseChats(answer, chats);
           log(`Serão sincronizadas ${ids.length} conversas; textos serão gravados somente na biblioteca privada local.`);
-          const confirmation = await rl.question('Para autorizar esta seleção, digite SINCRONIZAR: ', { signal });
+          const confirmation = await setupStep(diagnostic, 'confirmation', () =>
+            rl.question('Para autorizar esta seleção, digite SINCRONIZAR: ', { signal }));
           if (signal.aborted) return;
           if (confirmation !== 'SINCRONIZAR') { cancelled = true; session.stop(); return; }
           engine.select(ids); selected = true; save();

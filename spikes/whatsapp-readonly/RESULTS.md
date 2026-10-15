@@ -1,8 +1,60 @@
 # WA-POC-01 — resultado de 15/10/2026
 
 **Conclusão: POC isolada executável entregue; pipeline local validado por simulação.
-Viabilidade com conta WhatsApp real inconclusiva. Nenhuma conexão real realizada.**
+Viabilidade com conta WhatsApp real inconclusiva. O usuário reportou vínculo
+humano e falha antes da seleção; agentes não executaram live com conta real.**
 Skills: inline [oc-builder, oc-blackbox, oc-stamp].
+
+## WA-POC-02 — diagnóstico de falha após vínculo, base 018473d
+
+Falha real relatada: comando live de 90 min no Terminal Mac; vínculo humano
+concluído no Chrome; LOCAL_SETUP_FAILED antes da seleção. Metadados seguros
+confirmam perfil existente e ausência de run.lock/guard. Nenhum snapshot,
+credencial, cache ou conteúdo real foi lido; nenhum live/diagnose real executado
+pelo agente. A conta pessoal já foi autorizada e não exige troca/reconfirmação.
+Leitura filtrada de report.json mostrou 1 run LOCAL_SETUP_FAILED, ready=1,
+authFailure=0, disconnected=0, catálogo/seleção/mensagens/histórico em zero.
+Isso localiza o avanço até ready e ausência de catálogo confirmado, mas não
+reconstitui a exceção nem prova um bug específico da dependência.
+
+Origem comprovada da mensagem: session.mjs descartava a exceção de initialize
+ou onReady. Antes da seleção, live.mjs executa adapter.list → client.getChats.
+Esses caminhos agora emitem etapas e classificação sanitizada por vocabulário
+fechado, sem mensagem, stack, paths ou payloads brutos. **Isso corrige a perda do
+diagnóstico; a causa da falha da integração real continua não demonstrada.**
+
+O novo `npm run diagnose` permite a reprodução humana com a sessão existente,
+sem perguntas de autorização/seleção. Faz getChats e descarta o retorno, sem
+snapshot, nomes, IDs ou inspeção de conteúdo pela POC, sem histórico/envio.
+Auth necessária bloqueia antes de QR pelo hook LocalAuth; logout não apaga o
+perfil; não há retries. O deadline inclui getChats, não apenas espera por ready.
+Teste usa o LocalAuth real contra pasta sintética sem abrir browser/rede.
+
+Regressões vermelhas antes das correções:
+- `node --test test/session.test.mjs test/live.test.mjs`: exit 1, 14 testes,
+  11 pass / 3 fail, nas três asserções de diagnóstico ausente.
+- `node --test test/diagnose.test.mjs`: exit 1 inicialmente por módulo ausente;
+  após a primeira implementação, testes adicionais expuseram inspeção de eventos
+  antes do gate e estratégia LocalAuth que ainda permitia vínculo. Depois dos
+  guards, 7/7 pass, exit 0, incluindo deadline e preservação de sentinelas.
+
+Verificação sem conta: `npm run doctor`, exit 0; Node v24.3.0,
+whatsapp-web.js 1.34.7, Puppeteer 24.38.0, Chrome/146.0.7680.31;
+clientImport=true, chromiumLaunch=true, whatsappConnected=false (about:blank).
+Não prova compatibilidade do WhatsApp Web real. Dependências e lockfile intactos.
+
+`npm test`: **54 testes, 54 pass, 0 fail, exit 0**, incluindo 11 novos testes
+offline (7 diagnóstico, 2 session, 1 live, 1 CLI). Saída fresh e red→green
+registrados nesta rodada; [evidence/setup-diagnostics.json](evidence/setup-diagnostics.json).
+`git diff --check`: exit 0. `graphify update .`: exit 0, AST-only, 10.727 nós,
+31.059 arestas, 632 comunidades. Artefatos do grafo já estavam dirty e ficam
+fora do commit do spike. lstat final confirmou os mesmos mtimes iniciais dos
+diretórios conhecidos de auth/cache e dos snapshots/relatório reais; isso não
+é uma inspeção recursiva do perfil nem prova de validade da sessão no servidor.
+
+Próximo passo humano: `npm run diagnose` na pasta do spike; retornar somente
+linhas SETUP_DIAGNOSTIC e status. Não escanear novo QR nem iniciar sincronização.
+Hipóteses externas registradas em FINDINGS não foram aplicadas como correções.
 
 ## Revisão h-si F1–F5 — evidência fresh, 15/10/2026
 
@@ -117,20 +169,18 @@ reconexão do controlador é limitada e reutiliza o mesmo engine.
 encerra. Isso não prova compatibilidade com a versão WhatsApp Web que a conta
 receberá, nem que a injeção de eventos funcionará após QR.
 
-**Pendente real:** QR/sessão, catálogo e seleção de chats/grupos reais, alcance
+**Pendente real:** reutilização da sessão, catálogo e seleção de chats/grupos reais, alcance
 histórico por conversa, novas mensagens, eventos de edição/exclusão, recuperação
 de rede, persistência/revogação da sessão e estabilidade. Nenhuma quantidade de
 histórico real ou taxa de sucesso é inferida a partir dos fixtures.
 
-Etapa exata: em terminal privado local, executar
-`cd spikes/whatsapp-readonly && npm run live -- --consent --duration-minutes 90`; ler avisos; digitar
-VINCULAR; vincular no telefone; escolher índices; confirmar SINCRONIZAR. O roteiro
-de oito cenários e tempos de aceite está em [README.md](README.md). A conta nunca
-foi escolhida pelo agente. Não foi iniciada sessão real para "esperar o QR".
-
-O formulário `overclock_clarify` funciona no piloto e será conduzido após as
-correções. Sua ausência no worker não bloqueia a entrega das correções locais e
-não presume consentimento para vínculo ou sincronização reais.
+Etapa atual após a falha relatada: em terminal privado local, executar
+`npm run diagnose` na pasta do spike e retornar somente diagnóstico sanitizado.
+A conta pessoal já foi explicitamente autorizada; nenhum novo formulário,
+troca de conta, QR ou sincronização é necessário para essa investigação.
+O roteiro completo de oito cenários no README permanece para uma etapa posterior;
+não deve ser iniciado para descobrir esta exceção. Nenhum agente iniciou sessão
+real para "esperar o QR".
 
 ## Dependências e limitações materiais
 

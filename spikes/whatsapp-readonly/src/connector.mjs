@@ -16,7 +16,10 @@ export class ReadOnlyConnector {
       const wrapped = (...args) => { try { fn(...args); } catch { failed('EVENT_FAILED'); } };
       client.on(event, wrapped); this.handlers.push([event, wrapped]);
     };
-    const apply = (kind, raw, opts) => { if (engine.apply(kind, normalize(raw, opts))) changed(); };
+    const apply = (kind, raw, opts) => {
+      if (!engine.ingestionEnabled) return;
+      if (engine.apply(kind, normalize(raw, opts))) changed();
+    };
     // message_create includes messages sent manually on another linked device.
     on('message_create', msg => apply('new', msg));
     on('message_edit', (msg, newBody) => apply('edit', msg, { text: newBody }));
@@ -25,6 +28,11 @@ export class ReadOnlyConnector {
     for (const [event, metric] of [['ready', 'ready'], ['disconnected', 'disconnected'], ['auth_failure', 'authFailure']]) {
       on(event, () => { engine.state.connection[metric]++; changed(); });
     }
+  }
+  async checkListing() {
+    // Exercise the same upstream method; do not inspect names, IDs or lastMessage.
+    // The library itself serializes chat objects. No returned object is retained.
+    await this.client.getChats();
   }
   async list() {
     const chats = (await this.client.getChats()).filter(c => supportedChat(c.id?._serialized)).map(c => ({

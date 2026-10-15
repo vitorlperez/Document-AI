@@ -133,3 +133,19 @@ test('configured deadline stops actual session during selection and saves earlie
   assert.equal(store.load().runs.at(-1).status, 'RUNTIME_LIMIT');
   assert.ok(!h.calls.some(x => x.startsWith('fetch:'))); assert.equal(store.ownsLock, false);
 });
+
+test('getChats rejection before selection reports its exact stage but no private exception', async t => {
+  const { store, original } = setup(t);
+  const h = harness(store, ['VINCULAR']);
+  class Client extends EventEmitter {
+    async initialize() { this.emit('ready'); }
+    async getChats() { throw new Error('r'); }
+    async destroy() { h.calls.push('destroy'); }
+  }
+  assert.equal(await runLive({ ...h.options, makeClient: async () => new Client() }), 'LOCAL_SETUP_FAILED');
+  const records = h.logs.filter(x => x.startsWith('SETUP_DIAGNOSTIC ')).map(x => JSON.parse(x.slice(17)));
+  assert.ok(records.some(r => r.stage === 'list_chats' && r.event === 'failed' && r.error.kind === 'OPAQUE_WEB_ERROR'));
+  assert.deepEqual(store.load().messages, original.messages);
+  assert.ok(h.calls.includes('destroy')); assert.equal(store.ownsLock, false);
+  assert.ok(!h.logs.some(x => x.includes('Use uma conta de teste')));
+});
