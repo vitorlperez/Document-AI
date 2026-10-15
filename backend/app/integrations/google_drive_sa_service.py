@@ -189,7 +189,8 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
                 )
             )
         )
-        linked = {x.external_folder_id for x in links}
+        # Unlinked (purge_scheduled) or access_lost folders must reappear so they can be relinked.
+        linked = {x.external_folder_id for x in links if x.status in ("verified", "suspect")}
         items = [
             x
             for x in self.client.inbox(credentials=self.credentials(source))

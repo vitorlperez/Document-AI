@@ -434,3 +434,24 @@ def test_question_selection_accepts_robot_drive_provider():
 
     parsed = QuestionInput(question="o que diz?", scope="selection", providers=["google", "google_drive_sa"])
     assert parsed.providers == ["google_drive", "google_drive_sa"]
+
+
+def test_inbox_lists_unlinked_folder_again_so_it_can_be_relinked(setup):
+    service, session, user, orgs, client = setup
+    source = enable(service, user, orgs[0])
+    scope = OrganizationScope(orgs[0].id)
+    link = service.link(
+        scope=scope, user_id=user.id, source_id=source.id, folder_id="folder_123456"
+    )
+    client.inbox = lambda **kwargs: [
+        {"id": "folder_123456", "name": "Contracts", "sharedWithMeTime": "2026-10-14T00:00:00Z"}
+    ]
+    assert service.inbox(source)[0]["linked"] is True
+    service.unlink(scope=scope, user_id=user.id, source_id=source.id, link_id=link.id)
+    assert session.get(DriveFolderLink, link.id).status == "purge_scheduled"
+    assert service.inbox(source)[0]["linked"] is False
+    relinked = service.link(
+        scope=scope, user_id=user.id, source_id=source.id, folder_id="folder_123456"
+    )
+    assert relinked.id == link.id and relinked.status == "verified"
+    assert service.inbox(source)[0]["linked"] is True
