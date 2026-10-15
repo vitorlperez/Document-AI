@@ -39,3 +39,29 @@ Ambiente: stack docker local (`migrate api worker beat frontend`), org First Org
 ## Pendências
 1. B4 (latência ~20 s de verify/link).
 2. Configuração local nova: `docker-compose.yml` repassa `NEXT_PUBLIC_DRIVE_SHARE_ENABLED` (vazio por padrão). Revogação real pelo dono (suspect → access_lost) não foi exercitada (sem mexer nos compartilhamentos); coberta só por testes de backend.
+
+---
+
+# M58 — E2E local multi-pasta (14/10/2026, 2ª rodada)
+
+Stack docker local reconstruída (`migrate api worker beat frontend`), `alembic current` = `20261014_0034 (head)`. Robô real `arq-poc-a`, org First Org. Nenhum compartilhamento do Drive do dono foi alterado. Screenshots: `/private/tmp/claude-501/drive-sa-multi-e2e/`.
+
+| # | Passo | Resultado | Evidência |
+|---|---|---|---|
+| 1 | “Adicionar outra pasta” → passo 1 | OK: “4 pastas encontradas” (poc-sem-download, arvore-1000, poc-notify-off, poc-notify-on); `poc-main` (já vinculada) não aparece | `01-passo1.png` |
+| 2 | “Já compartilhei todas as pastas” → passo 2 | OK: lista com checkbox, só as não vinculadas | `02-passo2-lista.png` |
+| 3 | “Conectar 4 pastas” (todas vêm marcadas por padrão, inclusive arvore-1000) | OK: resumo por pasta; `poc-sem-download` = “Conectada — 4 arquivos com download bloqueado pelo dono” (aviso); arvore-1000 “1.000 arquivos”; notify-on/off “1 arquivo”; “4 pastas conectadas · sincronizando” | `04-passo3-resumo.png` |
+| 4 | Sync | OK: jobs `ready` (notify-on/off), `partial_failure` (poc-sem-download, esperado: download bloqueado); arvore-1000 `syncing` (1.006 itens, ~50 % na hora do chat) | worker logs |
+| 5 | Biblioteca | OK: fonte “Google Drive (pasta compartilhada)” → poc-main, poc-notify-off, poc-notify-on, poc-sem-download, com progresso “Etapa 1 de 2 · Lendo arquivos” | `07`, `08` |
+| 6 | Chat “O que diz o arquivo ola-notify-on.txt?” | OK: cita `pasta compartilhada com notificacao LIGADA [3278e0a594ac807a]` com fonte `ola-notify-on.txt · Google Drive (pasta compartilhada)` e aviso “1 de 8 pastas ainda sincronizando” | `10-chat-resposta.png` |
+| 7 | Aninhamento real: colar link de `poc-main/sub` | OK: `verify` 200 → entra na lista; ao conectar, backend recusa com `nested_in_linked` e a UI mostra “Já incluída em “poc-main” — os arquivos já estão lá” (“Nenhuma pasta conectada · 1 já incluída em outra”) | `06-aninhamento-resultado.png` |
+| 8 | Desvincular `poc-notify-off` (saudável, sem purge) | OK: “acesso removido · apagando em 14 dias” + botão “Apagar agora”; link `purge_scheduled`, `purge_after` = +14 d | `11`, `12` |
+| 9 | Revincular | **Falhou antes do fix (B7)**; OK depois: passo 2 lista só `poc-notify-off`, “Conectada · 1 arquivo”, link volta a `verified`, `purge_after` limpo | `13-revincular-lista.png`, `14-revinculada.png` |
+
+## Bugs
+- **B7 (backend, corrigido — commit 5be851d)**: `inbox()` marcava `linked=true` para qualquer vínculo ≠ `removed`, inclusive `purge_scheduled`/`access_lost`. Depois de “Desvincular”, a pasta sumia do passo 2 e a colagem do link dava “Essa pasta já está conectada.” — impossível revincular pela UI. Agora `linked` só vale para `verified`/`suspect`. Teste de regressão `test_inbox_lists_unlinked_folder_again_so_it_can_be_relinked` (red: `assert True is False`; green após o fix).
+- **Observação (não corrigida)**: link colado de subpasta não mostra o aviso de aninhamento na lista (o `verify` não devolve `parent_ids`); o aviso aparece só no resultado do lote (recusa `nested_in_linked`). Comportamento seguro.
+- **Observação local**: `arvore-1000` ficou `syncing` porque o worker foi reconstruído no meio do sync; só ambiente local.
+
+## Suítes
+Backend `pytest tests/unit`: 1422 passed. Frontend `drive-share-logic.test.mjs`: 26/26; `tsc --noEmit` sem erros fora dos duplicados “* 2.ts(x)” do macOS (pré-existentes, fora do escopo).
