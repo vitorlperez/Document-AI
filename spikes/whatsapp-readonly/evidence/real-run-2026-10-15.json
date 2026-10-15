@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "kind": "sanitized_real_run_summary",
+  "date": "2026-10-15",
+  "baseCommit": "d19dc90",
+  "provenance": "Allowlisted numeric/closed-vocabulary fields copied from the local real report.json (generatedAt below). library.private.json, auth, web-cache, titles, IDs, numbers and messages were not read.",
+  "reportGeneratedAt": "2026-10-15T22:38:18.112Z",
+  "catalog": {
+    "chats": 700,
+    "groups": 110,
+    "individual": 590
+  },
+  "selections": [
+    {
+      "chatAliases": []
+    },
+    {
+      "chatAliases": [
+        "chat-1"
+      ]
+    }
+  ],
+  "history": [
+    {
+      "chat": "chat-1",
+      "requested": 200,
+      "returned": 38,
+      "newlyRetained": 0,
+      "oldestAgeDays": 34,
+      "spanDays": 34,
+      "durationMs": 53,
+      "ok": true,
+      "complete": false
+    }
+  ],
+  "stored": {
+    "retainedMessages": 0,
+    "tombstones": 0,
+    "documents": 0,
+    "selectedChats": 1,
+    "events": {
+      "history": 0,
+      "new": 0,
+      "edit": 0,
+      "delete_everyone": 0,
+      "delete_me": 0
+    }
+  },
+  "connectionCumulative": {
+    "ready": 3,
+    "disconnected": 0,
+    "authFailure": 0,
+    "reconnectAttempts": 0
+  },
+  "humanObservations": 0,
+  "runs": [
+    {
+      "status": "LOCAL_SETUP_FAILED",
+      "durationLimitMinutes": 90,
+      "elapsedSeconds": 45
+    },
+    {
+      "status": "STOPPED",
+      "durationLimitMinutes": 90,
+      "elapsedSeconds": 103
+    }
+  ],
+  "realIntegrationValidatedFlag": false,
+  "historyCompleteness": "unknown"
+}

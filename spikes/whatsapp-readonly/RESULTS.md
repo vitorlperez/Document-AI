@@ -1,9 +1,68 @@
 # WA-POC-01 — resultado de 15/10/2026
 
-**Conclusão: POC isolada executável entregue; pipeline local validado por simulação.
-Viabilidade com conta WhatsApp real inconclusiva. O usuário reportou vínculo
-humano e falha antes da seleção; agentes não executaram live com conta real.**
-Skills: inline [oc-builder, oc-blackbox, oc-stamp].
+**Conclusão: viabilidade PARCIAL com conta real. Vínculo/sessão, catálogo (700 conversas),
+seleção e leitura do histórico inicial funcionaram; a ingestão local do histórico NÃO foi
+demonstrada (38 mensagens devolvidas, 0 retidas, 0 documentos). Novas, edições, exclusões,
+reconexão e estabilidade seguem sem evidência real.**
+Skills: inline [oc-builder, oc-blackbox, oc-stamp]; rodada real: [oc-scout, oc-stamp].
+
+## Primeira execução real bem-sucedida até a sincronização — 15/10/2026, base d19dc90
+
+Fonte: `report.json` local da execução real (gerado 22:38:18 UTC), lido por allowlist de
+campos numéricos/vocabulário fechado; evidência em
+[evidence/real-run-2026-10-15.json](evidence/real-run-2026-10-15.json). Nenhuma biblioteca
+privada, auth/cache, título, ID, número ou mensagem foi aberta; nenhum live/diagnose/envio
+foi executado pelo agente. A saída do terminal (aliases e "ativa") foi só contexto: as
+conclusões abaixo vêm do relatório.
+
+| Etapa | Evidência no relatório | Veredito |
+|---|---|---|
+| Sessão reutilizada, ready | `connection.ready=3` (cumulativo, inclui o run anterior), `authFailure=0`, `disconnected=0` | funcionou |
+| Catálogo | `catalog` 700 total = 110 grupos + 590 individuais | funcionou (confirma o conserto WA-POC-03) |
+| Seleção | 2ª seleção = 1 alias (`chat-1`), `selectedChats=1` | funcionou |
+| Histórico inicial — leitura | 1 busca: pedidas 200, **devolvidas 38**, `ok=true`, 53 ms, mais antiga 34 dias, janela 34 dias | funcionou (leitura) |
+| Histórico — retenção | `newlyRetained=0`, `retainedMessages=0`, `events.history=0`, `documents=0` | **NÃO demonstrado** |
+| Encerramento | run 1 `LOCAL_SETUP_FAILED` (45 s, falha anterior já diagnosticada); run 2 `STOPPED` (103 s) | ver abaixo |
+
+**Quit normal vs. falha.** O run 2 terminou `STOPPED` com `endedAt` gravado; falhas usam
+outros rótulos (LOCAL_SETUP_FAILED, AUTH_REQUIRED, READY_TIMEOUT, ...). `STOPPED` vem de
+`quit` (session.stop), mas o código também o devolve se a entrada local fechar
+(`LOCAL_INPUT_CLOSED`); que foi `quit` é relato do usuário, coerente com o estado, não
+provado pelo relatório. Nada indica falha: sem authFailure, disconnected ou retries.
+
+**Ressalva sobre "Sincronização local ativa".** `live.mjs` imprime a linha depois do laço
+de histórico mesmo que a ingestão não retenha nada (e só avisa `HISTORY_FAILED` se a busca
+lançar). Aqui a busca não lançou (`ok=true`), então a mensagem não contradiz o relatório,
+mas **não prova** retenção.
+
+**Lacuna principal: 38 devolvidas → 0 retidas.** `connector.history` conta retidas via
+`engine.apply`, que descarta em silêncio. Causas possíveis, **nenhuma verificada**:
+`normalize` descarta tipo ≠ `chat` (mídia, sistema), efêmeras/view-once e corpo vazio; ou o
+ID da mensagem (`from`/`to`) difere do ID selecionado (divergência PN/LID já listada em
+Limitações), e `apply` exige igualdade com `selected`. A POC não registra o motivo do
+descarte, então com os campos permitidos não dá para distinguir. Nem se descarta que o
+chat só tenha mídia no período. "34 dias em 38 mensagens" também não diz se o histórico
+completo foi buscado: `historyCompleteness` segue `unknown`.
+
+**O que isto sustenta.** Viabilidade parcial da camada de acesso somente leitura (login por
+sessão local, catálogo grande, seleção, `fetchMessages` sem erro). **Não** sustenta
+viabilidade de conhecimento: nenhum texto virou documento. Não há base para afirmar
+estabilidade, completude de histórico ou alcance histórico por conversa. `realIntegrationValidated`
+continua `false` e deve continuar.
+
+**Cenários reais ainda pendentes:** novas mensagens em tempo real; edições; exclusões
+(para todos / para mim); reconexão/rede; reinício com sessão preservada; logout/revogação;
+estabilidade na janela de 90 min; histórico mais fundo (`history 500`) e em chat com texto
+comum; observações humanas (`check ... pass/fail`: 0 registradas).
+
+**Próximos passos mínimos (humanos, sem novo QR):**
+1. Descobrir por que 38 → 0 sem expor conteúdo: contadores por motivo de descarte
+   (tipo, efêmera, chatId divergente, corpo vazio) no `connector.history`, só números no
+   report. É mudança de código pequena e testável offline; ainda não feita.
+2. Rodar de novo `npm run live -- --consent --duration-minutes 90` com um chat de texto
+   comum, `history 500`, enviar uma mensagem de teste de outro aparelho e dar `stats`.
+3. Registrar `check new/edit/delete pass|fail` e fechar com `quit`; reiniciar para o cenário
+   de reinício.
 
 ## WA-POC-03 — correção da listagem, base 77669c1
 
