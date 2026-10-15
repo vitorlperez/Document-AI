@@ -16,11 +16,10 @@ test("flag: desligada por padrão, aceita 1/true/on/sim", () => {
 
 test("flag desligada = integrations-screen só muda por trás de DRIVE_SHARE_ENABLED", () => {
   const screen = read("../app/product/integrations-screen.tsx");
-  assert.match(screen, /if \(DRIVE_SHARE_ENABLED\) \{ setOauthReconnectId\(sourceId\); setDriveMethodOpen\(true\); \} else connect\(sourceId\)/);
-  assert.match(screen, /DRIVE_SHARE_ENABLED && driveMethodOpen/);
+  assert.match(screen, /onConnect=\{connect\} driveShare=\{DRIVE_SHARE_ENABLED\}/);
   assert.match(screen, /DRIVE_SHARE_ENABLED && driveFlow/);
-  assert.match(screen, /driveShare=\{DRIVE_SHARE_ENABLED\}/);
-  assert.match(read("../app/product/integrations-screen.tsx"), /props\.driveShare \? props\.sources\.find/);
+  assert.match(screen, /if \(driveShare\) return <GoogleDriveCard/);
+  assert.doesNotMatch(screen, /DriveMethodModal|driveMethodOpen/);
 });
 
 test("parser de links: variantes de pasta, arquivo, inválidos e injeção", () => {
@@ -136,17 +135,11 @@ test("relativeSync", () => {
   assert.equal(relativeSync(null, now), "ainda não sincronizada");
 });
 
-test("Tela 0: modal de método com recomendado pré-selecionado e OAuth como 2ª opção", () => {
+test("Tela 0 removida: Conectar abre direto o compartilhamento; OAuth é link secundário no fluxo", () => {
   const flow = read("../app/product/drive-share-flow.tsx");
-  const modal = flow.slice(flow.indexOf("export function DriveMethodModal"), flow.indexOf("// ---- fluxo em 3 passos"));
-  assert.match(modal, /useState<DriveMethod>\("share"\)/);
-  assert.match(modal, /Conectar Google Drive/);
-  assert.match(modal, /Compartilhar pastas com o ArquivIO/);
-  assert.match(modal, /Recomendado/);
-  assert.match(modal, /Entrar com a conta Google/);
-  assert.match(modal, /role="radiogroup"/);
-  assert.match(modal, />Cancelar</); assert.match(modal, />Continuar</);
-  assert.ok(modal.indexOf("Recomendado") < modal.indexOf("Entrar com a conta Google"), "OAuth fica como segunda opção");
+  assert.doesNotMatch(flow, /DriveMethodModal/);
+  assert.match(flow, /Prefere entrar com a conta Google\?/);
+  assert.ok(flow.indexOf("Prefere entrar com a conta Google?") > flow.indexOf("Já compartilhei todas as pastas"), "OAuth fica depois da ação principal");
 });
 
 test("copiar tem fallback e anuncia por aria-live; polling isolado do módulo de API", () => {
@@ -188,7 +181,7 @@ test("e2e local: contrato final (GET folders com link_id, sync inicial, método 
   assert.match(api, /\/library\/workspaces\/\$\{encodeURIComponent\(workspaceFolderId\)\}\/reprocess/);
   assert.match(flow, /client\.startSync\(next\)/);
   assert.match(flow, /<form className="drive-paste" noValidate/);
-  assert.match(screen, /if \(DRIVE_SHARE_ENABLED\) \{ setOauthReconnectId\(sourceId\); setDriveMethodOpen\(true\)/);
+  assert.match(screen, /onDriveShareStart=\{\(\) => setDriveFlow\(\{ source: null \}\)\}/);
 });
 
 test("robô sob demanda: enable é chamado uma vez, com polling de status e sem enable no state()", () => {

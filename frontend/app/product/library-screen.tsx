@@ -13,6 +13,7 @@ import { LibraryAccessBadge } from "./library-access-badge";
 import { DEFAULT_LIBRARY_VIEW, LIBRARY_VIEW_KEY, parseLibraryView, serializeLibraryView, type LibraryView } from "../library-view-logic";
 
 import { toolLabel } from "../question-scope";
+import { mergeToolRoots, pickTool, rootCoversTool } from "../tool-groups";
 import { ToolLogoSpinner, ToolStatusDot, useSyncStatus, syncPercent } from "../sync-status";
 import { useToolsSidebarCollapsed } from "../tools-sidebar";
 import "../tools-sidebar.css";
@@ -70,7 +71,7 @@ export function LibraryScreen({ company, onConnect, setError, setNotice }: { com
   const loadError = itemsError ? messageFor(itemsError) : null;
   const { request: requestRoots } = useLatestRequest<LibraryPage>();
   const openPath = (nodes: LibraryNode[]) => { setPath(nodes); setQuery(""); setSearchTerm(""); };
-  const loadRoots = useCallback(() => { setRootsLoading(true); setRootsError(null); void requestRoots(`/library?organization_id=${company.id}`, (result) => setRoots(result.items), (caught) => setRootsError(messageFor(caught)), () => setRootsLoading(false)); }, [company.id, requestRoots]);
+  const loadRoots = useCallback(() => { setRootsLoading(true); setRootsError(null); void requestRoots(`/library?organization_id=${company.id}`, (result) => setRoots(mergeToolRoots(result.items)), (caught) => setRootsError(messageFor(caught)), () => setRootsLoading(false)); }, [company.id, requestRoots]);
   useEffect(() => { void Promise.resolve().then(loadRoots); }, [loadRoots]);
   useEffect(() => {
     // Route-driven selection: ?source=<library root id> opens that tool and shows its folders.
@@ -81,8 +82,8 @@ export function LibraryScreen({ company, onConnect, setError, setNotice }: { com
   }, [roots, sourceParam]);
   const selectTool = (item: LibraryNode) => { openPath([item]); router.replace(libraryPath(company.id, item.id)); };
   const refreshLibrary = () => { loadRoots(); loadItems(); syncStatus.refresh(); };
-  const missingTools = syncStatus.tools.filter((tool) => !roots.some((root) => root.id === tool.libraryNodeId || root.source_id === tool.sourceId));
-  const selectedSync = syncStatus.tools.find((tool) => syncingParam ? tool.sourceId === syncingParam : tool.libraryNodeId === path[0]?.id || tool.sourceId === path[0]?.source_id);
+  const missingTools = syncStatus.tools.filter((tool) => !roots.some((root) => rootCoversTool(root, tool)));
+  const selectedSync = syncingParam ? syncStatus.tools.find((tool) => tool.sourceId === syncingParam) : path[0] ? pickTool(syncStatus.tools, path[0]) : undefined;
   const toolLevel = path.length > 0 || Boolean(syncingParam) || Boolean(searchTerm);
   const hasTools = roots.length > 0 || syncStatus.tools.length > 0;
   const selectSync = (sourceId: string) => { openPath([]); router.replace(`/companies/${company.id}/library?syncing=${encodeURIComponent(sourceId)}`); };
@@ -91,7 +92,7 @@ export function LibraryScreen({ company, onConnect, setError, setNotice }: { com
   useEffect(() => { queueMicrotask(loadRoots); }, [rootIds, loadRoots]);
   useEffect(() => {
     if (!syncingParam) return;
-    const root = roots.find((item) => item.source_id === syncingParam);
+    const root = roots.find((item) => item.source_id === syncingParam || (item as { merged_source_ids?: string[] }).merged_source_ids?.includes(syncingParam));
     queueMicrotask(() => {
       if (root) { openPath([root]); router.replace(libraryPath(company.id, root.id)); }
       else if (path.length > 0) openPath([]);

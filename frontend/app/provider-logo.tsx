@@ -1,11 +1,11 @@
 import type { CSSProperties } from "react";
 
-export type ProviderLogoName = "google" | "google_drive" | "notion" | "clickup" | "onedrive" | "sharepoint" | "github" | "teams";
+export type ProviderLogoName = "google" | "google_drive" | "google_drive_sa" | "notion" | "clickup" | "onedrive" | "sharepoint" | "github" | "teams";
 
-const labels: Record<ProviderLogoName, string> = { google: "Google Drive", google_drive: "Google Drive", notion: "Notion", clickup: "ClickUp", onedrive: "OneDrive", sharepoint: "SharePoint", github: "GitHub", teams: "Microsoft Teams" };
+const labels: Record<ProviderLogoName, string> = { google: "Google Drive", google_drive: "Google Drive", google_drive_sa: "Google Drive", notion: "Notion", clickup: "ClickUp", onedrive: "OneDrive", sharepoint: "SharePoint", github: "GitHub", teams: "Microsoft Teams" };
 
 export function ProviderLogo({ provider, size = 24, decorative = true, className = "" }: { provider: ProviderLogoName; size?: number; decorative?: boolean; className?: string }) {
-  const key = provider === "google_drive" ? "google" : provider;
+  const key = provider === "google_drive" || provider === "google_drive_sa" ? "google" : provider;
   const accessibility = decorative ? { "aria-hidden": true as const } : { role: "img", "aria-label": labels[provider] };
   return <span {...accessibility} className={`provider-logo provider-logo-${key} ${className}`.trim()} style={{ "--provider-logo-size": `${size}px` } as CSSProperties}>
     {key === "google" && <svg viewBox="0 0 24 24"><path fill="#0F9D58" d="M8.1 3h5.2l7.5 13h-5.2z"/><path fill="#F4B400" d="M8.1 3 .6 16h5.2l7.5-13z"/><path fill="#4285F4" d="M5.8 16h15l-2.6 4.5h-15z"/></svg>}

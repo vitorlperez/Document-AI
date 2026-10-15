@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronRight, Folder as FolderIcon, HardDrive, X } from "lucide-react";
 import type { LibraryNode } from "./types-and-api";
+import { mergeToolRoots } from "../tool-groups";
 import { ProviderLogo, type ProviderLogoName } from "../provider-logo";
 import type { ScopeFolder } from "./automations-model";
 import { Enter, LoadingBlock, SkeletonList, SkeletonText, StaggerItem } from "../ui";
@@ -17,7 +18,7 @@ type Choose = { selected: ScopeFolder[]; onToggle: (folder: ScopeFolder) => void
 
 export function AutomationSourceIcon({ node }: { node: Pick<LibraryNode, "name" | "source_provider"> }) {
   const provider = node.source_provider ?? ({ "google drive": "google_drive", onedrive: "onedrive", sharepoint: "sharepoint", notion: "notion", clickup: "clickup" } as Record<string, string | undefined>)[node.name.trim().toLowerCase()];
-  return provider && ["google", "google_drive", "onedrive", "sharepoint", "notion", "clickup", "github", "teams"].includes(provider)
+  return provider && ["google", "google_drive", "google_drive_sa", "onedrive", "sharepoint", "notion", "clickup", "github", "teams"].includes(provider)
     ? <ProviderLogo provider={provider as ProviderLogoName} size={18} />
     : <HardDrive aria-hidden="true" size={18} />;
 }
@@ -60,7 +61,7 @@ export function AutomationFolderPicker({ fetchJson, organizationId, selected, on
   useEffect(() => {
     const controller = new AbortController();
     void Promise.resolve().then(async () => {
-      try { const data = await fetchJson<{ items: LibraryNode[] }>(`/library?organization_id=${organizationId}`, controller.signal); if (!controller.signal.aborted) { setRoots(data.items); setRootsError(false); } }
+      try { const data = await fetchJson<{ items: LibraryNode[] }>(`/library?organization_id=${organizationId}`, controller.signal); if (!controller.signal.aborted) { setRoots(mergeToolRoots(data.items)); setRootsError(false); } }
       catch { if (!controller.signal.aborted) setRootsError(true); }
     });
     return () => controller.abort();

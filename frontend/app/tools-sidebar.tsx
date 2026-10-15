@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { isActive, progressView } from "./sync-status-logic";
 import { useCallback, useEffect, useState } from "react";
 import { toolLabel } from "./question-scope";
+import { mergeToolRoots, pickTool, rootCoversTool, toolGroup } from "./tool-groups";
 import { ToolLogoSpinner, ToolProgressMini, type ToolSyncState } from "./sync-status";
 import { ProviderMark, type LibraryNode } from "./product/types-and-api";
 import "./tools-sidebar.css";
@@ -37,14 +38,18 @@ export function useToolsSidebarCollapsed() {
 
 /** Tools with data: library roots ∪ tools currently syncing (so a freshly connected tool does not vanish). */
 function buildEntries(roots: LibraryNode[], tools: ToolSyncState[]): ToolEntry[] {
-  const entries: ToolEntry[] = roots.filter((root) => root.kind === "source").map((root) => {
-    const tool = tools.find((item) => item.libraryNodeId === root.id || item.sourceId === root.source_id);
+  const merged = mergeToolRoots(roots.filter((root) => root.kind === "source"));
+  const entries: ToolEntry[] = merged.map((root) => {
+    const tool = pickTool(tools, root);
     return { key: root.id, libraryNodeId: root.id, provider: root.source_provider ?? tool?.provider ?? "", name: root.name, tool };
   });
-  const covered = new Set(entries.map((entry) => entry.tool?.sourceId).filter(Boolean));
+  const coveredGroups = new Set<string>();
   for (const tool of tools) {
-    if (covered.has(tool.sourceId)) continue;
+    if (merged.some((root) => rootCoversTool(root, tool))) continue;
     if (tool.state === "idle") continue;
+    // Ferramenta ainda sem raiz: uma entrada por ferramenta (as duas conexões do Drive aparecem juntas).
+    if (coveredGroups.has(toolGroup(tool.provider))) continue;
+    coveredGroups.add(toolGroup(tool.provider));
     entries.push({ key: `source:${tool.sourceId}`, libraryNodeId: tool.libraryNodeId, provider: tool.provider, name: toolLabel(tool.provider), tool });
   }
   return entries;

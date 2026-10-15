@@ -3,17 +3,14 @@
 import { Check, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import "./question-scope.css";
+import { providerKey, toolLabel } from "./tool-groups";
 
 export type QuestionContext = {
   id: string; name: string; status: string; source_id: string; source_provider: string;
   query_status: "ready" | "no_indexed_content" | "no_compatible_embeddings" | "not_ready";
   sync_in_progress?: boolean; source_status?: string;
 };
-export const providerKey = (provider: string) => provider === "google_drive" ? "google" : provider;
-export const toolLabel = (provider?: string | null) => ({
-  google: "Google Drive", google_drive: "Google Drive", google_drive_sa: "Google Drive (pasta compartilhada)", onedrive: "OneDrive",
-  github: "GitHub", github_markdown: "GitHub Markdown", notion: "Notion", clickup: "ClickUp", slack: "Slack", teams: "Microsoft Teams",
-})[provider ?? ""] ?? (provider ? provider.replaceAll("_", " ") : "Fonte indexada");
+export { providerKey, toolLabel };
 export const contextSyncing = (context: QuestionContext) => Boolean(context.sync_in_progress) || context.status === "queued" || context.status === "syncing";
 // Consultável assim que há conteúdo embedado, mesmo com a sincronização ainda em andamento (base parcial).
 export const contextReady = (context: QuestionContext) => context.query_status === "ready" && (context.status === "ready" || context.status === "partial_failure" || contextSyncing(context));
