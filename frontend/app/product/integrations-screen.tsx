@@ -123,7 +123,7 @@ function IntegrationCatalog(props: ToolsCatalogProps) {
 
 function ToolsCatalog({ sources, syncTools, onConnect, onManage, onDisconnect, disconnectingSourceId, driveShare, workspaceFolders, onDriveShareStart, onDriveShareAdd, onRetry }: ToolsCatalogProps) {
   const { oauth, share } = driveConnections(sources);
-  if (driveShare) return <GoogleDriveCard oauth={oauth} share={share} oauthFolders={workspaceFolders ?? []} syncBadge={<>{share && <SyncTag tools={syncTools} sourceId={share.id} />}{oauth && <SyncTag tools={syncTools} sourceId={oauth.id} />}</>} disconnectingId={disconnectingSourceId} onStart={() => onDriveShareStart?.()} onAddFolders={(selected) => onDriveShareAdd?.(selected)} onManage={onManage} onDisconnect={onDisconnect} onReconnectOauth={(sourceId) => onConnect(sourceId)} onChanged={onRetry} />;
+  if (driveShare) return <GoogleDriveCard oauth={oauth} share={share} oauthFolders={workspaceFolders ?? []} workspaceFolders={workspaceFolders ?? []} syncBadge={<>{share && <SyncTag tools={syncTools} sourceId={share.id} />}{oauth && <SyncTag tools={syncTools} sourceId={oauth.id} />}</>} disconnectingId={disconnectingSourceId} onStart={() => onDriveShareStart?.()} onAddFolders={(selected) => onDriveShareAdd?.(selected)} onManage={onManage} onDisconnect={onDisconnect} onReconnectOauth={(sourceId) => onConnect(sourceId)} onChanged={onRetry} />;
   const googleSources = sources.filter((source) => source.provider === "google_drive");
   const primary = googleSources.find((source) => source.status === "connected" || source.status === "reauth_required") ?? googleSources[0] ?? null;
   const connected = primary?.status === "connected";

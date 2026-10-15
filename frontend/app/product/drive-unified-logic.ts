@@ -1,7 +1,7 @@
 /** Google Drive unificado: as conexões "pasta compartilhada" (google_drive_sa) e "conta Google" (google_drive) são uma
  * ferramenta só para o usuário. Lógica pura (testada em tests/drive-unified.test.mjs); o backend segue com dois providers. */
 type SourceLike = { id: string; provider: string; status: string; account_email?: string | null };
-type FolderLinkLike = { id: string; link_id?: string; folder_id?: string; name: string; status: string; file_count?: number | null; last_synced_at?: string | null; purge_after?: string | null };
+type FolderLinkLike = { id: string; link_id?: string; folder_id?: string; name: string; status: string; file_count?: number | null; last_synced_at?: string | null; purge_after?: string | null; workspace_folder_id?: string | null; blocked_download_count?: number | null };
 type WorkspaceFolderLike = { id: string; name: string; status: string; last_synced_at: string | null; source_id?: string };
 
 export type DriveMethodKey = "share" | "oauth";
@@ -33,16 +33,30 @@ export function driveCardStatus({ oauth, share, healthyShareFolders = 0 }: { oau
   return { tone: "neutral", label: "Disponível", description: "Conecte pastas do Google Drive para a base de conhecimento da sua organização." };
 }
 
-export type UnifiedFolder = { key: string; name: string; method: DriveMethodKey; lost: boolean; meta: string | null; fileCount: number | null; lastSyncedAt: string | null; linkId: string | null; canUnlink: boolean; status: string };
+export type FolderBadge = { label: string; tone: "ok" | "pending" | "warning" | "error" };
+/** Badge da linha de pasta, derivado do estado real (vínculo + workspace); coerente com o subtítulo `relativeSync`. */
+export function driveFolderBadge({ lost, lastSyncedAt, workspaceStatus, blockedCount }: { lost: boolean; status?: string; lastSyncedAt: string | null; workspaceStatus?: string | null; blockedCount?: number | null }): FolderBadge {
+  if (lost) return { label: "Acesso removido", tone: "warning" };
+  if (workspaceStatus === "queued" || workspaceStatus === "syncing") return { label: "Sincronizando", tone: "pending" };
+  if (workspaceStatus === "failed") return { label: "Falhou", tone: "error" };
+  if (workspaceStatus === "partial_failure") return { label: "Com falhas", tone: "warning" };
+  if (!lastSyncedAt) return { label: "Aguardando sync", tone: "pending" };
+  if ((blockedCount ?? 0) > 0) return { label: "Download parcial", tone: "warning" };
+  return { label: "Sincronizada", tone: "ok" };
+}
+
+export type UnifiedFolder = { key: string; name: string; method: DriveMethodKey; lost: boolean; meta: string | null; fileCount: number | null; lastSyncedAt: string | null; linkId: string | null; canUnlink: boolean; status: string; badge: FolderBadge };
 const LOST = new Set(["suspect", "access_lost", "purge_scheduled"]);
 
-export function unifiedDriveFolders({ shareFolders, oauthFolders, oauthSourceId, now }: { shareFolders: FolderLinkLike[]; oauthFolders: WorkspaceFolderLike[]; oauthSourceId: string | null; now: number }): UnifiedFolder[] {
+export function unifiedDriveFolders({ shareFolders, oauthFolders, workspaceFolders = [], oauthSourceId, now }: { shareFolders: FolderLinkLike[]; oauthFolders: WorkspaceFolderLike[]; /** todas as pastas do workspace (inclui as do robô) — fonte do estado de indexação por `workspace_folder_id` */ workspaceFolders?: WorkspaceFolderLike[]; oauthSourceId: string | null; now: number }): UnifiedFolder[] {
   const share: UnifiedFolder[] = shareFolders.map((f) => {
     const lost = LOST.has(f.status);
     const days = f.purge_after && !Number.isNaN(Date.parse(f.purge_after)) ? Math.max(0, Math.ceil((Date.parse(f.purge_after) - now) / DAY)) : null;
-    return { key: `share:${f.id}`, name: f.name, method: "share", lost, meta: lost ? `acesso removido${days !== null ? ` · apagando em ${days} ${days === 1 ? "dia" : "dias"}` : ""}` : null, fileCount: f.file_count ?? null, lastSyncedAt: f.last_synced_at ?? null, linkId: f.link_id ?? null, canUnlink: Boolean(f.link_id), status: f.status };
+    const ws = f.workspace_folder_id ? workspaceFolders.find((w) => w.id === f.workspace_folder_id) : undefined;
+    const lastSyncedAt = f.last_synced_at ?? ws?.last_synced_at ?? null;
+    return { key: `share:${f.id}`, name: f.name, method: "share", lost, badge: driveFolderBadge({ lost, lastSyncedAt, workspaceStatus: ws?.status, blockedCount: f.blocked_download_count }), meta: lost ? `acesso removido${days !== null ? ` · apagando em ${days} ${days === 1 ? "dia" : "dias"}` : ""}` : null, fileCount: f.file_count ?? null, lastSyncedAt, linkId: f.link_id ?? null, canUnlink: Boolean(f.link_id), status: f.status };
   });
-  const oauth: UnifiedFolder[] = oauthSourceId ? oauthFolders.filter((f) => f.source_id === oauthSourceId).map((f) => ({ key: `oauth:${f.id}`, name: f.name, method: "oauth", lost: false, meta: null, fileCount: null, lastSyncedAt: f.last_synced_at, linkId: null, canUnlink: false, status: f.status })) : [];
+  const oauth: UnifiedFolder[] = oauthSourceId ? oauthFolders.filter((f) => f.source_id === oauthSourceId).map((f) => ({ key: `oauth:${f.id}`, name: f.name, method: "oauth", lost: false, meta: null, fileCount: null, lastSyncedAt: f.last_synced_at, linkId: null, canUnlink: false, status: f.status, badge: driveFolderBadge({ lost: false, lastSyncedAt: f.last_synced_at, workspaceStatus: f.status }) })) : [];
   return [...share, ...oauth];
 }
 

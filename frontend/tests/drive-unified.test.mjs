@@ -132,3 +132,30 @@ test("card compacto: resumo + 'Ver todas as pastas' + painel com busca/rolagem +
   assert.match(flow, /driveConnectionIssue\("share"/);
   assert.match(read("../app/product/drive-share-flow.css"), /\.drive-folders-list \{[^}]*overflow-y: auto/);
 });
+
+test("badge da pasta reflete o estado real e é coerente com o subtítulo", async () => {
+  const { driveFolderBadge } = await import("../app/product/drive-unified-logic.ts");
+  const base = { lost: false, status: "verified", lastSyncedAt: null, workspaceStatus: null, blockedCount: 0 };
+  assert.deepEqual(driveFolderBadge({ ...base }), { label: "Aguardando sync", tone: "pending" });
+  assert.deepEqual(driveFolderBadge({ ...base, workspaceStatus: "queued" }), { label: "Sincronizando", tone: "pending" });
+  assert.deepEqual(driveFolderBadge({ ...base, workspaceStatus: "syncing", lastSyncedAt: "2026-10-14T11:00:00Z" }), { label: "Sincronizando", tone: "pending" });
+  assert.deepEqual(driveFolderBadge({ ...base, lastSyncedAt: "2026-10-14T11:00:00Z" }), { label: "Sincronizada", tone: "ok" });
+  assert.deepEqual(driveFolderBadge({ ...base, lastSyncedAt: "2026-10-14T11:00:00Z", workspaceStatus: "ready" }), { label: "Sincronizada", tone: "ok" });
+  assert.deepEqual(driveFolderBadge({ ...base, lastSyncedAt: "2026-10-14T11:00:00Z", blockedCount: 2 }), { label: "Download parcial", tone: "warning" });
+  assert.deepEqual(driveFolderBadge({ ...base, lastSyncedAt: "2026-10-14T11:00:00Z", workspaceStatus: "partial_failure" }), { label: "Com falhas", tone: "warning" });
+  assert.deepEqual(driveFolderBadge({ ...base, workspaceStatus: "failed" }), { label: "Falhou", tone: "error" });
+  assert.deepEqual(driveFolderBadge({ ...base, lost: true, lastSyncedAt: "2026-10-14T11:00:00Z" }), { label: "Acesso removido", tone: "warning" });
+});
+
+test("pasta vinculada nunca sincronizada não vira 'Sincronizada'; estado do workspace entra pelo workspace_folder_id", () => {
+  const rows = unifiedDriveFolders({
+    shareFolders: [{ id: "l1", link_id: "l1", name: "arvore-1000", status: "verified", workspace_folder_id: "w1", last_synced_at: null }, { id: "l2", link_id: "l2", name: "ok", status: "verified", workspace_folder_id: "w2", last_synced_at: null, blocked_download_count: 3 }],
+    oauthFolders: [], workspaceFolders: [{ id: "w1", name: "arvore-1000", status: "syncing", last_synced_at: null }, { id: "w2", name: "ok", status: "ready", last_synced_at: "2026-10-14T11:00:00Z" }],
+    oauthSourceId: null, now: NOW,
+  });
+  assert.equal(rows[0].badge.label, "Sincronizando");
+  assert.equal(rows[1].badge.label, "Download parcial");
+  assert.equal(rows[1].lastSyncedAt, "2026-10-14T11:00:00Z");
+  const never = unifiedDriveFolders({ shareFolders: [{ id: "l", name: "x", status: "verified" }], oauthFolders: [], oauthSourceId: null, now: NOW });
+  assert.equal(never[0].badge.label, "Aguardando sync");
+});

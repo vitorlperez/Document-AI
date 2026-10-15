@@ -116,6 +116,7 @@
 .drive-card-summary-text[data-warn] { color: var(--ds-warn-fg); }
 .drive-card-viewall { align-self: flex-start; }
 .drive-folder-badge { display: inline-flex; align-items: center; margin-left: 0.5rem; padding: 2px 8px; border-radius: 999px; font-size: 0.6875rem; font-weight: 600; line-height: 1.4; white-space: nowrap; background: var(--ds-ok-bg); color: var(--ds-ok-fg); }
+.drive-folder-badge[data-tone="pending"] { background: color-mix(in srgb, currentColor 10%, transparent); color: var(--muted-foreground, inherit); }
 .drive-folder-badge[data-tone="warning"] { background: var(--ds-warn-bg); color: var(--ds-warn-fg); }
 .drive-folder-badge[data-tone="error"] { background: var(--danger-bg); color: var(--danger-fg); }
 .drive-card-methods .drive-folder-badge { margin: 0.25rem 0 0; display: flex; width: fit-content; }

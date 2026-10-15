@@ -320,11 +320,11 @@ function StepThree({ robot, all, batch, syncNote, onRetryFailed, onRetryAll, onB
 // ---- Tela 4: card único "Google Drive" (pasta compartilhada + conta Google) ----
 
 export type GoogleDriveCardProps = {
-  oauth: Source | null; share: Source | null; oauthFolders: Folder[]; client?: DriveShareApi; syncBadge?: ReactNode; disconnectingId: string | null; initialState?: DriveShareState | null;
+  oauth: Source | null; share: Source | null; oauthFolders: Folder[]; workspaceFolders?: Folder[]; client?: DriveShareApi; syncBadge?: ReactNode; disconnectingId: string | null; initialState?: DriveShareState | null;
   onStart: () => void; onAddFolders: (source: Source | null) => void; onManage: (source: Source) => void; onDisconnect: (source: Source) => void; onReconnectOauth: (sourceId: string) => void; onChanged?: () => void;
 };
 
-export function GoogleDriveCard({ oauth, share, oauthFolders, client = driveShareApi, syncBadge, disconnectingId, initialState = null, onStart, onAddFolders, onManage, onDisconnect, onReconnectOauth, onChanged }: GoogleDriveCardProps) {
+export function GoogleDriveCard({ oauth, share, oauthFolders, workspaceFolders = [], client = driveShareApi, syncBadge, disconnectingId, initialState = null, onStart, onAddFolders, onManage, onDisconnect, onReconnectOauth, onChanged }: GoogleDriveCardProps) {
   const [state, setState] = useState<DriveShareState | null>(initialState);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -334,7 +334,7 @@ export function GoogleDriveCard({ oauth, share, oauthFolders, client = driveShar
   const shareStatus = state?.status ?? share?.status;
   const liveShare = share ? { ...share, status: shareStatus ?? share.status } : null;
   const [now] = useState(() => Date.now());
-  const rows = unifiedDriveFolders({ shareFolders: state?.folders ?? [], oauthFolders, oauthSourceId: oauth?.id ?? null, now });
+  const rows = unifiedDriveFolders({ shareFolders: state?.folders ?? [], oauthFolders, workspaceFolders, oauthSourceId: oauth?.id ?? null, now });
   const status = driveCardStatus({ oauth, share: liveShare, healthyShareFolders: rows.filter((r) => r.method === "share" && !r.lost).length });
   const actions = driveCardActions({ oauth, share: liveShare });
   const summary = summarizeDriveFolders(rows);
@@ -352,7 +352,7 @@ export function GoogleDriveCard({ oauth, share, oauthFolders, client = driveShar
   const folderRow = (f: UnifiedFolder, manager = false) => {
     const link = f.method === "share" ? (state?.folders ?? []).find((x) => `share:${x.id}` === f.key) : undefined;
     return <li key={f.key} data-lost={f.lost || undefined}><FolderOpen size={16} aria-hidden="true" /><div className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b><span className="drive-folder-meta">{f.lost ? f.meta : `${f.fileCount != null ? `${formatCount(f.fileCount, "arquivo", "arquivos")} · ` : ""}${relativeSync(f.lastSyncedAt, now)}`}</span></div>
-      {manager && <span className="drive-folder-badge" data-tone={f.lost ? "warning" : "ok"}>{f.lost ? "Acesso removido" : "Sincronizada"}</span>}
+      {manager && <span className="drive-folder-badge" data-tone={f.badge.tone}>{f.badge.label}</span>}
       {link && f.canUnlink && <button type="button" className={btn("danger-ghost", "sm")} disabled={busy !== null} onClick={() => setUnlinking(link)}>{f.lost ? <Trash2 size={14} aria-hidden="true" /> : <Unplug size={14} aria-hidden="true" />}{f.lost ? "Apagar agora" : "Desvincular"}</button>}</li>;
   };
   return <section className="integration-tool-card drive-card h-full rounded-lg border border-card-edge bg-raised p-4 shadow-sm" data-status={status.tone}>
