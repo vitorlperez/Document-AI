@@ -117,3 +117,16 @@ def test_children_of_the_drive_root_list_folders_of_both_connections_without_lea
     names = {item.name for item in page.items}
     assert "Contratos" in names and "A plano.pdf" in names
     assert "Segredo-B" not in names and page.total == 2
+
+
+def test_legacy_root_name_never_leaks_in_mention_paths(factory):
+    """Raiz antiga '(pasta compartilhada)' ainda gravada no banco: o caminho mostrado ao usuário usa 'Google Drive'."""
+    from app.library.models import LibraryNode  # noqa: PLC0415
+    tenant = seed_tenant(factory, "A", "a")
+    root_id = _add_sa_root(factory, tenant, "Contratos")
+    with factory.begin() as session:
+        session.query(LibraryNode).filter_by(id=root_id).update({"name": "Google Drive (pasta compartilhada)"})
+    with factory() as session:
+        nodes = {n.id: n for n in session.query(LibraryNode).filter_by(organization_id=tenant.organization_id)}
+        folder = next(n for n in nodes.values() if n.name == "Contratos")
+        assert LibraryService._node_path(folder, nodes) == "Google Drive/Contratos"

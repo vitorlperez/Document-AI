@@ -18,6 +18,7 @@ from app.ingestion.service import (
 )
 from app.library.manual_sync import SyncCooldown, request_run, serialize_run
 from app.library.models import LibraryNode, ManualSyncRun
+from app.library.tool_groups import display_node_name
 from app.library.service import (
     PAGE_SIZE_MAX,
     FileIndexing,
@@ -50,7 +51,7 @@ def _node(
         **({"source_provider": source_provider} if node.kind == "source" else {}),
         "kind": node.kind,
         "external_id": node.external_id,
-        "name": node.name,
+        "name": display_node_name(node.kind, node.name),
         "mime_type": node.mime_type,
         "source_url": node.source_url,
         "workspace_folder_ids": [str(item) for item in sorted({document.workspace_folder_id for document in documents})],

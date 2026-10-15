@@ -19,7 +19,7 @@ from app.knowledge.questions import EMBEDDING_MODEL
 from app.library.models import LibraryExclusion, LibraryNode, ManualSyncRun
 from app.organizations.models import Membership
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
-from app.library.tool_groups import provider_label, tool_group, tool_groups
+from app.library.tool_groups import LEGACY_SHARED_ROOT_NAME, display_node_name, provider_label, tool_group, tool_groups
 
 SOURCE_ROOT_EXTERNAL_ID = "__company_library_source_root__"
 PAGE_SIZE_MAX = 100
@@ -1032,7 +1032,7 @@ class LibraryService:
 
     @staticmethod
     def _node_path(node: LibraryNode, nodes: dict[UUID, LibraryNode]) -> str | None:
-        parts = [node.name]
+        parts = [display_node_name(node.kind, node.name)]
         visited = {node.id}
         current = node
         while current.parent_id is not None:
@@ -1040,7 +1040,7 @@ class LibraryService:
             if parent is None or parent.source_id != node.source_id or parent.id in visited:
                 return None
             visited.add(parent.id)
-            parts.append(parent.name)
+            parts.append(display_node_name(parent.kind, parent.name))
             current = parent
         return "/".join(reversed(parts)) if current.kind == "source" else None
 
@@ -1461,7 +1461,7 @@ class LibraryService:
             )
             self.session.add(root)
             self.session.flush()
-        elif root.name == "Google Drive (pasta compartilhada)":
+        elif root.name == LEGACY_SHARED_ROOT_NAME:
             root.name = provider_name  # ferramenta única: nome antigo da raiz da conexão por pasta compartilhada
         return root
 

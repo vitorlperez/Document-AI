@@ -25,3 +25,11 @@ def tool_groups(providers: Iterable[str | None]) -> set[str]:
 def provider_label(provider: str | None) -> str:
     group = tool_group(provider) or ""
     return _LABELS.get(group, group.replace("_", " ").title())
+
+
+LEGACY_SHARED_ROOT_NAME = "Google Drive (pasta compartilhada)"
+
+
+def display_node_name(kind: str, name: str) -> str:
+    """Raízes antigas da conexão por pasta compartilhada ainda gravadas com o nome antigo aparecem como 'Google Drive'."""
+    return provider_label("google_drive") if kind == "source" and name == LEGACY_SHARED_ROOT_NAME else name
