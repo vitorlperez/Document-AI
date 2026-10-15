@@ -364,9 +364,8 @@ export function GoogleDriveCard({ oauth, share, oauthFolders, workspaceFolders =
       <div className="drive-card-status"><span className="drive-dot-status" data-tone={status.tone} /><b>{status.label}</b>{syncBadge}{oauth?.account_email && !share && <span className="truncate text-muted-foreground" title={oauth.account_email}>· {oauth.account_email}</span>}</div>
       <p className="integration-tool-description">{status.description}</p>
       {robot && <div className="drive-card-robot"><span className="drive-mono" title={robot}>Compartilhe com: {robot}</span><CopyButton text={robot} label="Copiar" variant="ghost" size="sm" /></div>}
-      {summary.total > 0 && <div className="drive-card-summary"><p className="drive-card-summary-text" data-warn={summary.lostCount > 0 || undefined}>{summary.text}</p>
-        <ul className="drive-card-folders" aria-label="Pastas conectadas">{summary.visible.map((f) => folderRow(f))}</ul>
-        {summary.hidden > 0 && <button type="button" className={btn("secondary", "sm", "drive-card-viewall")} onClick={() => setManaging(true)} aria-haspopup="dialog">Ver todas as pastas ({summary.total})</button>}</div>}
+      {summary.total > 0 && <div className="drive-card-summary"><p className="drive-card-summary-text" data-warn={summary.lostCount > 0 || undefined}>{summary.lostCount > 0 && <CircleAlert size={14} aria-hidden="true" />}{summary.text}</p>
+        <button type="button" className={btn("secondary", "sm", "drive-card-viewall")} onClick={() => setManaging(true)} aria-haspopup="dialog">Ver pastas ({summary.total})</button></div>}
       {error && <p className="drive-field-error" role="alert"><CircleAlert size={14} aria-hidden="true" />{error}</p>}
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
       <div className="integration-tool-footer border-t border-line-soft text-xs"><span className="integration-tool-actions flex flex-wrap items-center gap-2">

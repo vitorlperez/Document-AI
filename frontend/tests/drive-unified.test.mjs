@@ -125,9 +125,9 @@ test("erro técnico do robô só derruba o card se não houver pastas saudáveis
   assert.equal(driveConnectionIssue("oauth", src("1", "google_drive", "reauth_required")).label, "Reconexão necessária");
 });
 
-test("card compacto: resumo + 'Ver todas as pastas' + painel com busca/rolagem + badge por conexão", () => {
+test("card compacto: só resumo + 'Ver pastas (N)' (sem lista no card) + painel com busca/rolagem + badge por conexão", () => {
   const flow = read("../app/product/drive-share-flow.tsx");
-  assert.match(flow, /summarizeDriveFolders\(rows\)/); assert.match(flow, /Ver todas as pastas \(\$\{summary\.total\}\)|Ver todas as pastas \(\{summary\.total\}\)/);
+  assert.match(flow, /summarizeDriveFolders\(rows\)/); assert.match(flow, /Ver pastas \(\{summary\.total\}\)/); assert.doesNotMatch(flow, /summary\.visible\.map/); assert.doesNotMatch(flow, /summary\.hidden > 0/);
   assert.match(flow, /type="search"/); assert.match(flow, /DriveFoldersPanel/);
   assert.match(flow, /driveConnectionIssue\("share"/);
   assert.match(read("../app/product/drive-share-flow.css"), /\.drive-folders-list \{[^}]*overflow-y: auto/);
