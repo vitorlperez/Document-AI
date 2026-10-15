@@ -432,8 +432,8 @@ def test_unlink_does_not_extend_existing_revocation_retention(setup):
 def test_question_selection_accepts_robot_drive_provider():
     from app.api.ingestion import QuestionInput
 
-    parsed = QuestionInput(question="o que diz?", scope="selection", providers=["google", "google_drive_sa"])
-    assert parsed.providers == ["google_drive", "google_drive_sa"]
+    parsed = QuestionInput(question="o que diz?", scope="selection", providers=["google_drive_sa"])
+    assert parsed.providers == ["google_drive"]  # mesma ferramenta "Google Drive"
 
 
 def test_inbox_lists_unlinked_folder_again_so_it_can_be_relinked(setup):

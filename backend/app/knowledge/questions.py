@@ -30,6 +30,7 @@ from app.knowledge.similarity import PgVectorSimilarity, SimilarityIndex, defaul
 from app.knowledge.untrusted import UNTRUSTED_NOTICE, fence_sources, strip_invisible
 from app.workspaces.models import WorkspaceFolder
 from app.workspaces.service import WorkspaceService
+from app.library.tool_groups import tool_group, tool_groups
 
 EMBEDDING_MODEL = "text-embedding-3-small"
 ANSWER_MODEL = "gpt-5-mini"
@@ -1062,13 +1063,12 @@ class QuestionService:
             contexts = LibraryService(self.session).question_contexts(scope=scope, user_id=user_id)
         except SyncAccessDenied as error:
             raise GoogleAccessDenied("question scope access denied") from error
-        requested_provider = "google_drive" if provider == "google" else provider
+        requested_provider = tool_group(provider)
         selected = [
             item
             for item in contexts
             if question_scope == "organization"
-            or item.source_provider == requested_provider
-            or (requested_provider == "google_drive" and item.source_provider == "google")
+            or tool_group(item.source_provider) == requested_provider
         ]
         from app.library.service import question_coverage
         coverage = question_coverage(selected)

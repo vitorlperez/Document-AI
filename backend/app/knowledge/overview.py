@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.scoping import OrganizationScope
 from app.knowledge.models import Document
 from app.library.service import LibraryService
+from app.library.tool_groups import tool_group, tool_groups
 
 _STOPWORDS = frozenset(
     ["a", "o", "as", "os", "de", "da", "do", "das", "dos", "e", "em", "no", "na", "nos", "nas", "um", "uma", "para", "por", "com", "sem", "sobre", "the", "of", "and", "for", "to", "in", "on", "at", "final", "versao", "version", "v", "copia", "copy", "novo", "nova", "new", "rev", "draft", "rascunho", "doc", "docs", "documento", "arquivo", "file", "pdf", "docx", "xlsx", "pptx", "txt", "md"]
@@ -64,10 +65,10 @@ def folder_overview(
 ) -> dict[str, object]:
     """Overview for the member's queryable folders; ``providers`` empty means every tool."""
     contexts = LibraryService(session).question_contexts(scope=scope, user_id=user_id)
-    wanted = {"google_drive" if p == "google" else p for p in providers}
+    wanted = tool_groups(providers)
     folder_ids = sorted(
         item.id for item in contexts
-        if item.query_status in {"ready", "no_compatible_embeddings"} and (not wanted or item.source_provider in wanted)
+        if item.query_status in {"ready", "no_compatible_embeddings"} and (not wanted or tool_group(item.source_provider) in wanted)
     )
     empty: dict[str, object] = {"document_count": 0, "themes": [], "types": [], "suggested_questions": []}
     if not folder_ids:

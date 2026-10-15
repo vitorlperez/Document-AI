@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
 from app.library.service import LibraryService, QuestionSelection
+from app.library.tool_groups import tool_group, tool_groups
 
 MAX_SCOPE_NODES = 20
 
@@ -29,8 +30,7 @@ def resolve_nodes(session: Session, org: OrganizationScope, user_id: UUID, node_
     """The user's question selection for the folders; raises ``SyncAccessDenied`` (not a member) or ``ValueError``
     (a folder is unavailable: removed, outside the library, or without indexed documents)."""
     library = LibraryService(session)
-    providers = sorted({"google_drive" if item == "google" else item
-                        for item in library.source_providers(scope=org, user_id=user_id).values()})
+    providers = sorted(tool_groups(library.source_providers(scope=org, user_id=user_id).values()))
     return library.resolve_question_selection(
         scope=org, user_id=user_id, providers=providers, mentions=[("folder", item) for item in node_ids])
 

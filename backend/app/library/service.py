@@ -19,6 +19,7 @@ from app.knowledge.questions import EMBEDDING_MODEL
 from app.library.models import LibraryExclusion, LibraryNode, ManualSyncRun
 from app.organizations.models import Membership
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
+from app.library.tool_groups import provider_label, tool_group, tool_groups
 
 SOURCE_ROOT_EXTERNAL_ID = "__company_library_source_root__"
 PAGE_SIZE_MAX = 100
@@ -211,6 +212,21 @@ class LibraryService:
             for external, state, purge_after in rows
         }
 
+    def _same_tool_roots(self, *, scope: OrganizationScope, parent: LibraryNode) -> list[UUID]:
+        """A source root stands for its whole tool: Drive by OAuth and Drive by shared folder are one "Google Drive"."""
+        if parent.kind != "source":
+            return [parent.id]
+        providers = {
+            source_id: provider for source_id, provider in self.session.execute(
+                select(DataSource.id, DataSource.provider).where(DataSource.organization_id == scope.organization_id))
+        }
+        group = tool_group(providers.get(parent.source_id))
+        sibling_sources = [source_id for source_id, provider in providers.items() if tool_group(provider) == group]
+        roots = list(self.session.scalars(select(LibraryNode.id).where(
+            LibraryNode.organization_id == scope.organization_id, LibraryNode.kind == "source",
+            LibraryNode.source_id.in_(sibling_sources))))
+        return roots or [parent.id]
+
     def children(
         self, *, scope: OrganizationScope, user_id: UUID, parent_id: UUID, page: int, page_size: int
     ) -> BrowsePage:
@@ -225,7 +241,7 @@ class LibraryService:
             raise SyncAccessDenied("company library node unavailable")
         statement = select(LibraryNode).where(
             LibraryNode.organization_id == scope.organization_id,
-            LibraryNode.parent_id == parent.id,
+            LibraryNode.parent_id.in_(self._same_tool_roots(scope=scope, parent=parent)),
         )
         total = int(self.session.scalar(select(func.count()).select_from(statement.subquery())) or 0)
         items = list(
@@ -635,9 +651,7 @@ class LibraryService:
         self.require_member(scope=scope, user_id=user_id)
         if not node_ids:
             return []
-        normalized_providers = {
-            "google_drive" if provider == "google" else provider for provider in providers
-        }
+        normalized_providers = tool_groups(providers)
         nodes = self._selection_nodes(scope=scope)
         sources = {
             source_id: provider
@@ -669,8 +683,7 @@ class LibraryService:
                 node is None
                 or node.kind != "file"
                 or node.source_id not in ready_sources
-                or ("google_drive" if sources.get(node.source_id) == "google" else sources.get(node.source_id))
-                not in normalized_providers
+                or tool_group(sources.get(node.source_id)) not in normalized_providers
                 or self._node_path(node, nodes) is None
                 or (inventory_folder_ids is not None and (
                     inventory_folder is None
@@ -1000,12 +1013,11 @@ class LibraryService:
         )
         nodes = all_nodes if all_nodes is not None else self._selection_nodes(scope=scope)
         contexts = self.question_contexts(scope=scope, user_id=user_id)
-        normalized_providers = {"google_drive" if provider == "google" else provider for provider in providers}
+        normalized_providers = tool_groups(providers)
         allowed_sources = {
             context.source_id
             for context in contexts
-            if ("google_drive" if context.source_provider == "google" else context.source_provider)
-            in normalized_providers
+            if tool_group(context.source_provider) in normalized_providers
             and context.id in selection.folder_ids
         }
         roots = [nodes[node_id] for node_id in selection.accepted_node_ids]
@@ -1116,7 +1128,7 @@ class LibraryService:
         self.require_member(scope=scope, user_id=user_id)
         contexts = self.question_contexts(scope=scope, user_id=user_id)
         selected = [item for item in contexts if
-                    ("google_drive" if item.source_provider == "google" else item.source_provider) in providers]
+                    tool_group(item.source_provider) in tool_groups(providers)]
         eligible = [item for item in selected if folder_is_queryable(item, self.session)]
         coverage = question_coverage(selected)
         folder_ids = [item.id for item in eligible]
@@ -1435,14 +1447,7 @@ class LibraryService:
 
     def _root(self, *, organization_id: UUID, source: DataSource) -> LibraryNode:
         root = self._by_external(source_id=source.id, external_id=SOURCE_ROOT_EXTERNAL_ID)
-        provider_name = {
-            "google_drive": "Google Drive",
-            "google_drive_sa": "Google Drive (pasta compartilhada)",
-            "notion": "Notion",
-            "clickup": "ClickUp",
-            "onedrive": "OneDrive",
-            "sharepoint": "SharePoint",
-        }.get(source.provider, source.provider.replace("_", " ").title())
+        provider_name = provider_label(source.provider)
         if root is None:
             root = LibraryNode(
                 organization_id=organization_id,
@@ -1456,6 +1461,8 @@ class LibraryService:
             )
             self.session.add(root)
             self.session.flush()
+        elif root.name == "Google Drive (pasta compartilhada)":
+            root.name = provider_name  # ferramenta única: nome antigo da raiz da conexão por pasta compartilhada
         return root
 
     def _folder_parent(

@@ -37,6 +37,7 @@ from app.knowledge.presentation import (
 from app.knowledge.questions import AIProviderUnavailable, QuestionService
 from app.knowledge.search import SearchUnavailable, TextSearchService
 from app.library.service import LibraryService
+from app.library.tool_groups import tool_group
 
 router = APIRouter(tags=["ingestion"])
 
@@ -73,7 +74,7 @@ class QuestionInput(BaseModel):
         if self.scope == "selection":
             if not self.providers or len(self.providers) > len(SELECTABLE_PROVIDERS):
                 raise ValueError("selection requires one or more providers")
-            normalized = ["google_drive" if item == "google" else item for item in self.providers]
+            normalized = [tool_group(item) for item in self.providers]
             if any(item not in SELECTABLE_PROVIDERS for item in normalized):
                 raise ValueError("provider is invalid")
             if len(set(normalized)) != len(normalized):

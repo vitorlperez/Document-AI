@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.access.principal import Principal
 from app.library.service import LibraryService, QuestionSelection
+from app.library.tool_groups import tool_group, tool_groups
 
 
 class ScopedAccess:
@@ -15,7 +16,7 @@ class ScopedAccess:
 
     def providers(self) -> list[str]:
         found = self._library.source_providers(scope=self.principal.scope, user_id=self.principal.user_id)
-        return sorted({"google_drive" if item == "google" else item for item in found.values()})
+        return sorted(tool_groups(found.values()))
 
     def mentions(self, requested_ids: list[UUID] | None) -> list[tuple[str, UUID]]:
         root_ids = list(self.principal.node_ids) if self.principal.node_ids else None

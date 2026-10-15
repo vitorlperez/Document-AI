@@ -154,4 +154,4 @@ def test_robot_drive_source_root_has_readable_name(api):
         session.add(source)
         session.flush()
         root = LibraryService(session)._root(organization_id=UUID(organization), source=source)
-        assert root.name == "Google Drive (pasta compartilhada)"
+        assert root.name == "Google Drive"
