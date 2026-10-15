@@ -9,6 +9,15 @@ import { createWebReader } from './web-reader.mjs';
 
 const cleanName = s => String(s || '(sem nome)').replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '').slice(0, 100);
 
+// Counts only. Zero documents must be stated, never left implicit behind "ativa".
+export function retentionSummary(engine) {
+  const r = engine.report(), h = r.ingestion.history;
+  const reasons = Object.entries(h.rejections).filter(([, n]) => n).map(([k, n]) => `${k}=${n}`).join(', ');
+  return `${r.documents === 0 ? 'ZERO_DOCUMENTS: nenhuma mensagem virou documento. ' : ''}` +
+    `Histórico: recebidas ${h.received}, retidas ${h.retained}; biblioteca: ${r.retainedMessages} mensagens em ` +
+    `${r.documents} documentos. Descartes: ${reasons || 'nenhum'}.`;
+}
+
 export function durationMinutes(args) {
   let duration = 60, seen = false;
   for (let i = 0; i < args.length; i++) {
@@ -97,7 +106,7 @@ export async function runLive({ args = process.argv.slice(3), input = process.st
           try { await adapter.history(id, 200); } catch { log('HISTORY_FAILED: consulte métricas; histórico não validado.'); }
         }
         if (signal.aborted) return;
-        save(); log('Sincronização local ativa. Comandos: stats | history 500 | check new pass | quit');
+        save(); log(retentionSummary(engine)); log('Sincronização local ativa. Comandos: stats | history 500 | check new pass | quit');
         if (!commands) commands = (async () => {
           for await (const line of rl) {
             const [op, a, b] = line.trim().split(/\s+/);
@@ -106,7 +115,7 @@ export async function runLive({ args = process.argv.slice(3), input = process.st
               else if (op === 'stats') log(JSON.stringify(engine.report(), null, 2));
               else if (op === 'history' && /^[1-9]\d*$/.test(a || '') && Number(a) <= 5000) {
                 for (const id of engine.state.selected) await active.history(id, Number(a)); save();
-                log('Consulta concluída. Use stats para contagens.');
+                log(retentionSummary(engine)); log('Consulta concluída. Use stats para contagens.');
               } else if (op === 'check') { engine.observe(a, b); save(); log('Observação humana registrada; não é prova automática.'); }
               else log('Comando inválido. stats | history 1..5000 | check cenário pass/fail | quit');
             } catch { log('COMMAND_FAILED: nenhuma informação privada foi registrada no diagnóstico.'); }

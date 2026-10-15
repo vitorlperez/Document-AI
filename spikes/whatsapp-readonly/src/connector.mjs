@@ -1,4 +1,4 @@
-import { normalize, supportedChat } from './core.mjs';
+import { emptyCounters, supportedChat } from './core.mjs';
 
 export class RetryBudget {
   attempts = 0;
@@ -17,15 +17,16 @@ export class ReadOnlyConnector {
       const wrapped = (...args) => { try { fn(...args); } catch { failed('EVENT_FAILED'); } };
       client.on(event, wrapped); this.handlers.push([event, wrapped]);
     };
+    // Gate first: nothing about a message is inspected or counted before selection.
     const apply = (kind, raw, opts) => {
       if (!engine.ingestionEnabled) return;
-      if (engine.apply(kind, normalize(raw, opts))) changed();
+      if (engine.ingest(kind, raw, opts).ok) changed();
     };
     // message_create includes messages sent manually on another linked device.
     on('message_create', msg => apply('new', msg));
     on('message_edit', (msg, newBody) => apply('edit', msg, { text: newBody }));
-    on('message_revoke_everyone', msg => apply('delete_everyone', msg, { deletion: true }));
-    on('message_revoke_me', msg => apply('delete_me', msg, { deletion: true }));
+    on('message_revoke_everyone', msg => apply('delete_everyone', msg));
+    on('message_revoke_me', msg => apply('delete_me', msg));
     for (const [event, metric] of [['ready', 'ready'], ['disconnected', 'disconnected'], ['auth_failure', 'authFailure']]) {
       on(event, () => { engine.state.connection[metric]++; changed(); });
     }
@@ -44,22 +45,23 @@ export class ReadOnlyConnector {
     if (!this.active) throw Error('INACTIVE_SESSION');
     if (!this.engine.ingestionEnabled || !this.engine.state.selected.includes(id)) throw Error('NOT_SELECTED');
     if (!Number.isInteger(limit) || limit < 1 || limit > 5000) throw Error('INVALID_LIMIT');
-    const start = performance.now(), baseline = this.engine.revision;
+    const start = performance.now(), baseline = this.engine.revision, ingestion = emptyCounters();
+    let messages = [];
     try {
-      const messages = await this.client.readOnly.history(id, limit);
+      messages = await this.client.readOnly.history(id, limit);
       if (!this.active) throw Error('INACTIVE_SESSION');
-      let retained = 0;
-      for (const raw of messages) {
-        if (raw.type === 'revoked') this.engine.apply('delete_everyone', normalize(raw, { deletion: true }));
-        else if (this.engine.apply('history', normalize(raw), { baseline })) retained++;
-      }
+      for (const raw of messages) this.engine.ingest('history', raw, { baseline, requested: id, counters: ingestion });
       const times = messages.map(m => m.timestamp).filter(Number.isFinite);
-      this.engine.historyResult(id, { requested: limit, returned: messages.length, newlyRetained: retained,
+      this.engine.historyResult(id, { requested: limit, returned: messages.length, newlyRetained: ingestion.retained,
         oldestAgeDays: times.length ? Math.floor((Date.now() / 1000 - Math.min(...times)) / 86400) : null,
         spanDays: times.length ? Math.floor((Math.max(...times) - Math.min(...times)) / 86400) : null,
-        durationMs: Math.round(performance.now() - start), ok: true });
-    } catch {
-      this.engine.historyResult(id, { requested: limit, returned: 0, durationMs: Math.round(performance.now() - start), ok: false });
+        durationMs: Math.round(performance.now() - start), ingestion, ok: true });
+    } catch (error) {
+      // Fetched but never processed (inactive session, capacity): received, not discarded silently.
+      ingestion.unprocessed = messages.length - ingestion.processed;
+      ingestion.received = messages.length;
+      this.engine.historyResult(id, { requested: limit, returned: messages.length,
+        newlyRetained: ingestion.retained, durationMs: Math.round(performance.now() - start), ingestion, ok: false });
       throw Error('HISTORY_FAILED');
     }
   }

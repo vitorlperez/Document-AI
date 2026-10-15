@@ -1,5 +1,36 @@
 # WA-POC-01 — achados locais
 
+## WA-POC-05 — investigação antes da correção (base 9b290b3)
+
+h-sq completo confirma leitura de 38 itens e retenção zero, sem motivos de
+descarte; nenhum conteúdo pessoal permite reconstituir os tipos/identidades.
+Não é prova de PN/LID nem de que os 38 eram texto. normalize exige
+id._serialized e endpoint from/to string; Message._patch 1.34.7 mantém id
+original e extrai endpoints objeto usando apenas _serialized. getMessageModel
+1.34.7 também perde remote objeto com só $1. Main upstream fixado em
+064a3d5 já normaliza id.$1/remote.$1 (fontes em UPSTREAM.md).
+
+Hipótese local testável: mensagens com chave alternativa $1 passam pelo
+fetchMessages sem erro mas são descartadas pela POC; isso pode produzir
+38→0 mesmo com texto comum. Reproduzir antes da correção usando LoadUtils,
+Chat.fetchMessages e Message instalados, não copiando seus serializers.
+Separar de mídia/efêmera/view-once/corpo vazio e PN/LID em fixtures distintos.
+Mesmo que reproduzida, essa hipótese não identifica a causa do run pessoal.
+
+**Reproduzida e corrigida.** Com getMessageModel/Chat.fetchMessages/Message
+1.34.7 instalados e 38 modelos sintéticos de texto com chave só em `$1`, a POC
+retinha 0 (`test/retention.test.mjs`, vermelho na base). Correção em
+`src/core.mjs`: id/from/to/remote aceitam `_serialized` ou `$1` (inclusive em
+`_data`); alternativas divergentes → `identity_conflict`; conversa vem só do
+endpoint dirigido (from, ou to se fromMe), `id.remote` apenas veta; author
+nunca autoriza; PN/LID só é observado (`pnLidSelectionMismatch`), sem remapear.
+Cada histórico/evento agora tem contadores por etapa
+(recebido→processado→normalizado→elegível→aplicado→retido/tombstone) e por
+motivo, com somas fechadas; report expõe `ingestion` e `ingestionCoverage`
+(históricos antigos ficam "unmeasured", sem motivo inventado). O live imprime
+`ZERO_DOCUMENTS` + motivos numéricos quando a biblioteca fica vazia. A causa do
+run pessoal continua **não provada**: o próximo live humano mostrará os motivos.
+
 ## WA-POC-02 — LOCAL_SETUP_FAILED depois do vínculo (base 018473d)
 
 Registro antes da correção: `src/session.mjs` descarta a exceção de initialize

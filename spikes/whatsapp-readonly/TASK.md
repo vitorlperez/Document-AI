@@ -38,3 +38,19 @@ autônomos. Commit somente spike; grafo atualizado fora do commit.
 WA-POC-03 implementado e verificado: 65/65 testes offline e Chromium/CDP sintético
 exit 0; diagnóstico fechado por etapa. Comparação e limites em UPSTREAM.md.
 Nenhum ensaio pessoal autônomo. Próxima tentativa: live humano no mesmo perfil.
+
+WA-POC-05 — retenção zero: owner pane-716; branch main compartilhada; base 9b290b3.
+Autorização explícita para investigação/correção da POC read-only. Contrato:
+reprodução com biblioteca instalada/fixtures sintéticos; contadores numéricos
+por etapa/motivo, somas coerentes em report/stats; correção somente sustentada
+por regressão e identidade segura; mensagem ativa informa zero documentos.
+Sem contornar seleção, remapear PN/LID sem prova, aceitar autor como conversa,
+live/diagnose pessoal, leitura de library.private.json/auth/cache ou envio.
+Preservar sessão e evidência h-sq; realIntegrationValidated permanece false.
+Commit exclusivo do spike; graphify update fora do commit.
+
+WA-POC-05 implementado (assumido por pane-717 após limite do pane-716): 73/73
+testes offline e Chromium/CDP sintético exit 0. 38→0 reproduzido com `$1` na
+biblioteca instalada e corrigido; contadores por etapa/motivo no report. Nenhum
+live/diagnose pessoal executado. realIntegrationValidated segue false. Próxima
+tentativa: live humano; se ainda zero, ler `stats.ingestion.history.rejections`.
