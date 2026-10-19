@@ -402,8 +402,8 @@ class LibraryService:
             .where(
                 Document.organization_id == scope.organization_id,
                 WorkspaceFolder.organization_id == scope.organization_id,
-                WorkspaceFolder.source_id.in_({node.source_id for node in files}),
-                Document.external_file_id.in_({node.external_id for node in files}),
+                ids_clause(self.session, WorkspaceFolder.source_id, {node.source_id for node in files}),
+                ids_clause(self.session, Document.external_file_id, {node.external_id for node in files}),
             )
             .order_by(Document.workspace_folder_id, Document.id)
         ).all()
@@ -715,9 +715,9 @@ class LibraryService:
                 Document.organization_id == scope.organization_id,
                 WorkspaceFolder.organization_id == scope.organization_id,
                 Document.index_status == "indexed",
-                Document.workspace_folder_id.in_(admitted_folders),
-                Document.external_file_id.in_({node.external_id for node in files}),
-                WorkspaceFolder.source_id.in_({node.source_id for node in files}),
+                ids_clause(self.session, Document.workspace_folder_id, admitted_folders),
+                ids_clause(self.session, Document.external_file_id, {node.external_id for node in files}),
+                ids_clause(self.session, WorkspaceFolder.source_id, {node.source_id for node in files}),
             )
             .subquery()
         )
@@ -991,7 +991,7 @@ class LibraryService:
             .join(DataSource, DataSource.id == WorkspaceFolder.source_id)
             .where(
                 Document.organization_id == scope.organization_id,
-                Document.workspace_folder_id.in_(folder_ids),
+                ids_clause(self.session, Document.workspace_folder_id, folder_ids),
                 Document.index_status == "indexed",
                 WorkspaceFolder.organization_id == scope.organization_id,
                 folder_is_queryable(),

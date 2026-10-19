@@ -16,12 +16,13 @@ from urllib.parse import urlsplit, urlunsplit
 from uuid import UUID
 
 import httpx
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, defer
 
 from app.audit_usage.service import UsageService
 from app.core.logging import current_request_id, log_agent_phase, provider_call_count
 from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.presentation import strip_answer_links, strip_block_label
@@ -1183,11 +1184,11 @@ class QuestionService:
                 .join(Document, Document.id == DocumentChunk.document_id)
                 .where(
                     Document.organization_id == scope.organization_id,
-                    Document.workspace_folder_id.in_(folder_ids),
+                    ids_clause(self.session, Document.workspace_folder_id, folder_ids),
                     Document.index_status == "indexed",
-                    *([Document.id.in_(document_ids)] if document_ids is not None else []),
+                    *([ids_clause(self.session, Document.id, document_ids)] if document_ids is not None else []),
                     DocumentChunk.organization_id == scope.organization_id,
-                    DocumentChunk.workspace_folder_id.in_(folder_ids),
+                    ids_clause(self.session, DocumentChunk.workspace_folder_id, folder_ids),
                     DocumentChunk.workspace_folder_id == Document.workspace_folder_id,
                 )
             )
@@ -1202,11 +1203,11 @@ class QuestionService:
             )
         scoped_filters = [
             Document.organization_id == scope.organization_id,
-            Document.workspace_folder_id.in_(folder_ids),
+            ids_clause(self.session, Document.workspace_folder_id, folder_ids),
             Document.index_status == "indexed",
-            *([Document.id.in_(document_ids)] if document_ids is not None else []),
+            *([ids_clause(self.session, Document.id, document_ids)] if document_ids is not None else []),
             DocumentChunk.organization_id == scope.organization_id,
-            DocumentChunk.workspace_folder_id.in_(folder_ids),
+            ids_clause(self.session, DocumentChunk.workspace_folder_id, folder_ids),
             DocumentChunk.workspace_folder_id == Document.workspace_folder_id,
             DocumentChunk.embedding.is_not(None),
             DocumentChunk.embedding_model == EMBEDDING_MODEL,
@@ -1217,28 +1218,57 @@ class QuestionService:
             [defer(DocumentChunk.embedding), defer(DocumentChunk.embedding_vec)]
             if isinstance(similarity, PgVectorSimilarity) else []
         )
-        scoped_rows = list(
-            self.session.execute(
-                select(Document, DocumentChunk)
-                .join(DocumentChunk, DocumentChunk.document_id == Document.id)
-                .where(*scoped_filters)
-                .options(*vector_options)
-            ).all()
-        )
-        if not scoped_rows:
-            return self._complete(
-                _insufficient_evidence(RETRIEVAL_STATUS_NO_COMPATIBLE_EMBEDDINGS),
-                started_at=started_at,
-                coverage=sync_coverage,
-                indexed_chunk_count=indexed_chunk_count,
-            )
-        scoped_rows = _deduplicate_indexed_copies(scoped_rows, source_metadata)
         wants_summary = (
             answer_mode in {"summary", "evidence"}
             if answer_mode is not None
             else _is_document_inventory_summary_question(normalized_question)
             or (document_ids is not None and _is_selection_summary_question(normalized_question))
         )
+        explicitly_selected = (
+            document_ids is not None if read_selected_documents is None else read_selected_documents
+        )
+        inventory_question = answer_mode is None and _is_document_inventory_question(normalized_question)
+        # Summaries, inventories and explicit file selections enumerate documents and need every chunk of
+        # their scope. A plain semantic question does not: the database returns only the top-K (spike M1).
+        top_k_only = not (wants_summary or inventory_question or explicitly_selected)
+        canonical_document_ids: set[UUID] = set()
+        if top_k_only:
+            canonical_document_ids = self._canonical_document_ids(scoped_filters, source_metadata)
+            scoped_filters = [*scoped_filters, ids_clause(self.session, Document.id, canonical_document_ids)]
+            scoped_rows: list[tuple[Document, DocumentChunk]] = []
+            compatible_count = int(
+                self.session.scalar(
+                    select(func.count(DocumentChunk.id))
+                    .join(Document, Document.id == DocumentChunk.document_id)
+                    .where(*scoped_filters)
+                )
+                or 0
+            )
+            if compatible_count == 0:
+                return self._complete(
+                    _insufficient_evidence(RETRIEVAL_STATUS_NO_COMPATIBLE_EMBEDDINGS),
+                    started_at=started_at,
+                    coverage=sync_coverage,
+                    indexed_chunk_count=indexed_chunk_count,
+                )
+        else:
+            scoped_rows = list(
+                self.session.execute(
+                    select(Document, DocumentChunk)
+                    .join(DocumentChunk, DocumentChunk.document_id == Document.id)
+                    .where(*scoped_filters)
+                    .options(*vector_options)
+                ).all()
+            )
+            if not scoped_rows:
+                return self._complete(
+                    _insufficient_evidence(RETRIEVAL_STATUS_NO_COMPATIBLE_EMBEDDINGS),
+                    started_at=started_at,
+                    coverage=sync_coverage,
+                    indexed_chunk_count=indexed_chunk_count,
+                )
+            scoped_rows = _deduplicate_indexed_copies(scoped_rows, source_metadata)
+            compatible_count = len(scoped_rows)
         if wants_summary:
             inventory_evidence = _all_document_inventory_evidence(scoped_rows, source_providers)
             summary_evidence = _document_summary_evidence(
@@ -1257,7 +1287,7 @@ class QuestionService:
                     started_at=started_at,
                     coverage=sync_coverage,
                     indexed_chunk_count=indexed_chunk_count,
-                    compatible_embedding_count=len(scoped_rows),
+                    compatible_embedding_count=compatible_count,
                     selected_candidate_count=len(summary_evidence),
                     retrieval_strategy="document_evidence",
                 )
@@ -1372,12 +1402,12 @@ class QuestionService:
                 started_at=started_at,
                 coverage=sync_coverage,
                 indexed_chunk_count=indexed_chunk_count,
-                compatible_embedding_count=len(scoped_rows),
+                compatible_embedding_count=compatible_count,
                 selected_candidate_count=len(summary_evidence),
                 provider_outcome=provider_outcome,
                 retrieval_strategy="document_inventory_evaluated_summary",
             )
-        if answer_mode is None and _is_document_inventory_question(normalized_question):
+        if inventory_question:
             inventory_evidence = _document_inventory_evidence(scoped_rows, source_providers)
             generated = _document_inventory_fallback(inventory_evidence)
             cited_evidence = inventory_evidence
@@ -1391,7 +1421,7 @@ class QuestionService:
                 started_at=started_at,
                 coverage=sync_coverage,
                 indexed_chunk_count=indexed_chunk_count,
-                compatible_embedding_count=len(scoped_rows),
+                compatible_embedding_count=compatible_count,
                 selected_candidate_count=len(inventory_evidence),
                 provider_outcome="metadata_inventory",
                 retrieval_strategy="document_inventory",
@@ -1400,17 +1430,27 @@ class QuestionService:
             scope=scope, metric="embedding_tokens", increment=_estimated_tokens(retrieval_text)
         )
         question_embedding = self.provider.embed(texts=[retrieval_text])[0]
-        similarities = similarity.scores(
-            self.session, filters=scoped_filters,
-            question_embedding=question_embedding, rows=scoped_rows,
-        )
-        semantic_candidates = sorted(
-            scoped_rows,
-            key=lambda row: (
-                -similarities.get(row[1].id, 0.0),
-                str(row[1].id),
-            ),
-        )[:MAX_SEMANTIC_CANDIDATES]
+        if top_k_only:
+            similarities = similarity.top(
+                self.session, filters=scoped_filters, question_embedding=question_embedding,
+                limit=MAX_SEMANTIC_CANDIDATES,
+            )
+            semantic_candidates = sorted(
+                self._hydrate_chunks(list(similarities), vector_options),
+                key=lambda row: (-similarities.get(row[1].id, 0.0), str(row[1].id)),
+            )[:MAX_SEMANTIC_CANDIDATES]
+        else:
+            similarities = similarity.scores(
+                self.session, filters=scoped_filters,
+                question_embedding=question_embedding, rows=scoped_rows,
+            )
+            semantic_candidates = sorted(
+                scoped_rows,
+                key=lambda row: (
+                    -similarities.get(row[1].id, 0.0),
+                    str(row[1].id),
+                ),
+            )[:MAX_SEMANTIC_CANDIDATES]
         query_terms = _query_terms(retrieval_text)
         lexical_candidates = (
             list(
@@ -1418,16 +1458,10 @@ class QuestionService:
                     select(Document, DocumentChunk)
                     .join(DocumentChunk, DocumentChunk.document_id == Document.id)
                     .where(
-                        Document.organization_id == scope.organization_id,
-                        Document.workspace_folder_id.in_(folder_ids),
-                        Document.index_status == "indexed",
-                        *([Document.id.in_(document_ids)] if document_ids is not None else []),
-                        DocumentChunk.organization_id == scope.organization_id,
-                        DocumentChunk.workspace_folder_id.in_(folder_ids),
-                        DocumentChunk.workspace_folder_id == Document.workspace_folder_id,
-                        DocumentChunk.embedding.is_not(None),
-                        DocumentChunk.embedding_model == EMBEDDING_MODEL,
-                        Document.id.in_({document.id for document, _chunk in scoped_rows}),
+                        *scoped_filters,
+                        *([] if top_k_only else [ids_clause(
+                            self.session, Document.id, {document.id for document, _chunk in scoped_rows}
+                        )]),
                         or_(
                             *(DocumentChunk.search_text.ilike(f"%{term}%") for term in query_terms)
                         ),
@@ -1440,6 +1474,11 @@ class QuestionService:
             if query_terms
             else []
         )
+        if top_k_only:
+            # Lexical hits outside the semantic top-K still need their real similarity for ranking.
+            self._add_missing_similarities(
+                similarities, lexical_candidates, similarity, scoped_filters, question_embedding
+            )
         rows_by_chunk_id = {chunk.id: (document, chunk) for document, chunk in semantic_candidates}
         rows_by_chunk_id.update(
             {chunk.id: (document, chunk) for document, chunk in lexical_candidates}
@@ -1491,8 +1530,14 @@ class QuestionService:
                 for document, chunk in scoped_rows if chunk.id not in candidate_ids
             )
         else:
+            expansion_rows = scoped_rows
+            if top_k_only:
+                expansion_rows = self._neighbor_rows(supported, scoped_filters, vector_options)
+                self._add_missing_similarities(
+                    similarities, expansion_rows, similarity, scoped_filters, question_embedding
+                )
             supported = _expand_evidence_neighbors(
-                supported, scoped_rows, source_providers, retrieval_text, similarities
+                supported, expansion_rows, source_providers, retrieval_text, similarities
             )
         supported = _select_diverse_evidence(supported, max_chars=self.evidence_context_chars)
         top_score = ranked_candidates[0][2] if ranked_candidates else None
@@ -1502,7 +1547,7 @@ class QuestionService:
                 started_at=started_at,
                 coverage=sync_coverage,
                 indexed_chunk_count=indexed_chunk_count,
-                compatible_embedding_count=len(scoped_rows),
+                compatible_embedding_count=compatible_count,
                 semantic_candidate_count=len(semantic_candidates),
                 lexical_candidate_count=len(lexical_candidates),
                 top_score=top_score,
@@ -1533,7 +1578,7 @@ class QuestionService:
                 started_at=started_at,
                 coverage=sync_coverage,
                 indexed_chunk_count=indexed_chunk_count,
-                compatible_embedding_count=len(scoped_rows),
+                compatible_embedding_count=compatible_count,
                 semantic_candidate_count=len(semantic_candidates),
                 lexical_candidate_count=len(lexical_candidates),
                 selected_candidate_count=len(supported),
@@ -1553,7 +1598,7 @@ class QuestionService:
                 started_at=started_at,
                 coverage=sync_coverage,
                 indexed_chunk_count=indexed_chunk_count,
-                compatible_embedding_count=len(scoped_rows),
+                compatible_embedding_count=compatible_count,
                 semantic_candidate_count=len(semantic_candidates),
                 lexical_candidate_count=len(lexical_candidates),
                 selected_candidate_count=len(supported),
@@ -1572,13 +1617,71 @@ class QuestionService:
             started_at=started_at,
             coverage=sync_coverage,
             indexed_chunk_count=indexed_chunk_count,
-            compatible_embedding_count=len(scoped_rows),
+            compatible_embedding_count=compatible_count,
             semantic_candidate_count=len(semantic_candidates),
             lexical_candidate_count=len(lexical_candidates),
             selected_candidate_count=len(supported),
             top_score=top_score,
             provider_outcome="accepted",
         )
+
+    def _canonical_document_ids(self, scoped_filters, source_metadata) -> set[UUID]:
+        """Newest indexed copy per source file, from document columns only (no chunks, no entities)."""
+        rows = self.session.execute(
+            select(
+                Document.id, Document.workspace_folder_id, Document.external_file_id,
+                Document.modified_at, Document.indexed_at,
+            )
+            .join(DocumentChunk, DocumentChunk.document_id == Document.id)
+            .where(*scoped_filters)
+            .distinct()
+        ).all()
+        canonical: dict[tuple[UUID, str], object] = {}
+        for row in rows:
+            key = (source_metadata[row.workspace_folder_id][0], row.external_file_id)
+            previous = canonical.get(key)
+            if previous is None or _document_recency(row) > _document_recency(previous):
+                canonical[key] = row
+        return {row.id for row in canonical.values()}
+
+    def _hydrate_chunks(self, chunk_ids: list[UUID], vector_options) -> list[tuple[Document, DocumentChunk]]:
+        if not chunk_ids:
+            return []
+        return list(self.session.execute(
+            select(Document, DocumentChunk)
+            .join(DocumentChunk, DocumentChunk.document_id == Document.id)
+            .where(ids_clause(self.session, DocumentChunk.id, chunk_ids))
+            .options(*vector_options)
+        ).all())
+
+    def _neighbor_rows(self, evidence: list[Evidence], scoped_filters, vector_options) -> list[tuple[Document, DocumentChunk]]:
+        """Only the chunks one position away from each document's strongest supported seed."""
+        anchors: dict[UUID, Evidence] = {}
+        for item in evidence:
+            if item.document_id not in anchors or item.score > anchors[item.document_id].score:
+                anchors[item.document_id] = item
+        windows = [
+            and_(Document.id == document_id, DocumentChunk.position.in_([anchor.chunk_positions[0] - 1, anchor.chunk_positions[0] + 1]))
+            for document_id, anchor in anchors.items() if anchor.chunk_positions
+        ]
+        if not windows:
+            return []
+        return list(self.session.execute(
+            select(Document, DocumentChunk)
+            .join(DocumentChunk, DocumentChunk.document_id == Document.id)
+            .where(*scoped_filters, or_(*windows))
+            .options(*vector_options)
+        ).all())
+
+    def _add_missing_similarities(self, similarities, rows, similarity, scoped_filters, question_embedding) -> None:
+        missing = [(document, chunk) for document, chunk in rows if chunk.id not in similarities]
+        if not missing:
+            return
+        similarities.update(similarity.scores(
+            self.session,
+            filters=[*scoped_filters, ids_clause(self.session, DocumentChunk.id, [chunk.id for _d, chunk in missing])],
+            question_embedding=question_embedding, rows=missing,
+        ))
 
     def _complete(
         self,
