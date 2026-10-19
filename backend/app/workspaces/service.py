@@ -15,7 +15,8 @@ from app.integrations.google_drive import GoogleAccessDenied
 from app.integrations.models import DataSource
 from app.organizations.models import Membership, MembershipRole
 from app.spaces import enrollment
-from app.spaces.access import SpaceAccessResolver
+from app.spaces.access import SpaceAccessResolver, SpaceRef
+from app.spaces.models import Space, SpaceFolderGrant
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 SCOPE_SELECTED = "selected"
@@ -49,6 +50,37 @@ class WorkspaceService:
         except SyncAccessDenied as error:
             raise GoogleAccessDenied("workspace access denied") from error
         return list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id, ids_clause(self.session, WorkspaceFolder.id, access.folder_ids)).order_by(WorkspaceFolder.name)))
+
+    def folders_with_spaces(self, *, scope: OrganizationScope, user_id: UUID) -> list[tuple[WorkspaceFolder, tuple[SpaceRef, ...], bool]]:
+        """(folder, Space badges, readable) for the Fontes screen (ADR-0021 D5).
+
+        Members get the folders they can read, badged with their own Spaces. Org owners/admins get every
+        folder of the organization with every Space that grants it (configuration, never content); ``readable``
+        says whether the admin may also read it through a Space of their own."""
+        try:
+            access = SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id)
+        except SyncAccessDenied as error:
+            raise GoogleAccessDenied("workspace access denied") from error
+        is_admin = self.session.scalar(select(Membership.id).where(
+            Membership.organization_id == scope.organization_id, Membership.user_id == user_id,
+            Membership.is_active.is_(True), Membership.role.in_([MembershipRole.OWNER, MembershipRole.ADMIN]))) is not None
+        if not is_admin:
+            rows = self.folders(scope=scope, user_id=user_id)
+            return [(folder, access.spaces_of(folder.id), True) for folder in rows]
+        folders = list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolder.name)))
+        granted: dict[UUID, dict[UUID, SpaceRef]] = {}
+        for folder_id, space_id, space_name in self.session.execute(
+            select(SpaceFolderGrant.workspace_folder_id, Space.id, Space.name)
+            .join(Space, Space.id == SpaceFolderGrant.space_id)
+            .where(SpaceFolderGrant.organization_id == scope.organization_id, SpaceFolderGrant.revoked_at.is_(None),
+                   Space.organization_id == scope.organization_id, Space.archived_at.is_(None))
+        ):
+            granted.setdefault(folder_id, {})[space_id] = SpaceRef(space_id, space_name)
+        return [
+            (folder, tuple(sorted(granted.get(folder.id, {}).values(), key=lambda ref: (ref.name.casefold(), str(ref.id)))),
+             access.allows(folder.id))
+            for folder in folders
+        ]
 
     def selections(self, *, scope: OrganizationScope, workspace_folder_id: UUID) -> list[WorkspaceFolderSelection]:
         return list(self.session.scalars(select(WorkspaceFolderSelection).join(WorkspaceFolder, WorkspaceFolder.id == WorkspaceFolderSelection.workspace_folder_id).where(WorkspaceFolderSelection.workspace_folder_id == workspace_folder_id, WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolderSelection.kind, WorkspaceFolderSelection.external_folder_id)))

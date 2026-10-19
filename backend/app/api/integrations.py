@@ -863,8 +863,10 @@ def workspace_folders(
     try:
         workspace_service = WorkspaceService(session)
         scope = OrganizationScope(organization_id)
-        rows = workspace_service.folders(scope=scope, user_id=user.id)
+        entries = workspace_service.folders_with_spaces(scope=scope, user_id=user.id)
+        rows = [folder for folder, _spaces, _readable in entries]
         selections = workspace_service.selections_for_folders(scope=scope, folders=rows)
+        space_info = {folder.id: (spaces, readable) for folder, spaces, readable in entries}
     except GoogleAccessDenied as error:
         raise HTTPException(status_code=403, detail="not allowed") from error
     return [
@@ -888,6 +890,8 @@ def workspace_folders(
                 for item in selections.get(folder.id, [])
                 if item.kind == "folder"
             ],
+            "spaces": [{"id": str(ref.id), "name": ref.name} for ref in space_info[folder.id][0]],
+            "readable": space_info[folder.id][1],
         }
         for folder in rows
     ]
