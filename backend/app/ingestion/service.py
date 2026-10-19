@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog, SavedQuery
-from app.audit_usage.service import UsageLimitExceeded, UsageService
+from app.audit_usage.service import UsageLimitExceeded, UsageService, active_document_limit
 from app.core.scoping import OrganizationScope
 from app.ingestion.blocks import ExtractedBlock
 from app.ingestion.extraction import (
@@ -1006,7 +1006,7 @@ class IngestionService:
             .select_from(Document)
             .where(Document.organization_id == organization_id, Document.index_status == "indexed")
         )
-        if active_count is not None and active_count >= (self.settings.active_document_limit if self.settings else 500):
+        if active_count is not None and active_count >= active_document_limit(self.settings):
             raise UsageLimitExceeded("organization active document limit reached")
 
 

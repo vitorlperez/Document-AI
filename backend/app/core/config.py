@@ -44,7 +44,13 @@ class Settings(BaseSettings):
             raise ValueError("Docling requires its private endpoint")
         return self
 
-    active_document_limit: int = Field(default=500, gt=0)
+    # Single source for the per-organization caps (spikes/library-scale/FINDINGS.md A1/A2, M8).
+    # processed_bytes keeps the old 4 MB/doc headroom (2 GB / 500 docs) at 3,000 docs; embedding_tokens is x10.
+    active_document_limit: int = Field(default=3_000, gt=0)
+    monthly_limit_processed_bytes: int = Field(default=12_000_000_000, gt=0)
+    monthly_limit_embedding_tokens: int = Field(default=10_000_000, gt=0)
+    monthly_limit_questions: int = Field(default=1_000, gt=0)
+    monthly_limit_ocr_pages: int = Field(default=2_000, gt=0)
     service_name: str = "document-intelligence-api"
     auth_session_cookie_name: str = "document_intelligence_session"
     auth_login_state_cookie_name: str = "document_intelligence_login_state"

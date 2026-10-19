@@ -33,7 +33,7 @@ def content_for(mime):
 def test_new_format_fixture_indexes_with_citable_chunks(session, mime):
     org, admin, folder = create_workspace(session)
     service = IngestionService(
-        session, settings=SimpleNamespace(active_document_limit=500)
+        session, settings=SimpleNamespace(active_document_limit=3000)
     )
     job = service.enqueue(
         scope=OrganizationScope(org.id), user_id=admin.id, workspace_folder_id=folder.id

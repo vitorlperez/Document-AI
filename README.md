@@ -88,7 +88,8 @@ Copy `.env.example` to `.env` and add credentials only for the integrations you 
 | `RESEND_API_KEY` / `INVITATION_FROM_EMAIL` | Enables email invitations |
 | `PUBLIC_APP_URL` | Public URL allowed by the API CORS policy |
 | `MAX_OOXML_BYTES` | Largest XLSX/PPTX read by the Worker (default 41943040 = 40 MiB; other files use `MAX_FILE_BYTES`). TXT/CSV/XLSX/PPTX and Sheets/Slides are always indexed. Formats and caps: [integration roadmap](docs/integrations-roadmap.md#formatos-indexáveis) |
-| `ACTIVE_DOCUMENT_LIMIT` | Maximum active indexed documents per organization; default `500` |
+| `ACTIVE_DOCUMENT_LIMIT` | Maximum active indexed documents per organization; default `3000` (single source: `Settings.active_document_limit`; usage panel and ingestion both read it) |
+| `MONTHLY_LIMIT_PROCESSED_BYTES` / `MONTHLY_LIMIT_EMBEDDING_TOKENS` / `MONTHLY_LIMIT_QUESTIONS` / `MONTHLY_LIMIT_OCR_PAGES` | Per-organization monthly caps; defaults `12000000000`, `10000000`, `1000`, `2000` |
 
 Never commit `.env` files or credentials. The repository includes `.env.example` as a safe template.
 

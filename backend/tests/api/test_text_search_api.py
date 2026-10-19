@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.audit_usage.models import AuditLog, UsageRecord
-from app.audit_usage.service import MONTHLY_LIMITS
+from app.audit_usage.service import monthly_limits
 from app.core.config import Settings
 from app.core.models import Base
 from app.identity.auth import AuthenticationUnavailable, VerifiedIdentity
@@ -333,7 +333,7 @@ def test_question_limit_blocks_only_the_new_question_and_leaves_search_readable(
                 organization_id=organization_id,
                 period_start=date(now.year, now.month, 1),
                 metric="questions",
-                quantity=MONTHLY_LIMITS["questions"],
+                quantity=monthly_limits()["questions"],
             )
         )
 
@@ -350,7 +350,7 @@ def test_question_limit_blocks_only_the_new_question_and_leaves_search_readable(
 
     assert question.status_code == 429
     assert search.status_code == 200
-    assert recorded.quantity == MONTHLY_LIMITS["questions"]
+    assert recorded.quantity == monthly_limits()["questions"]
 
 
 class FakeIngestionDispatcher:

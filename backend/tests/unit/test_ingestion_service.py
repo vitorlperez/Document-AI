@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.api.ingestion import document_failures, documents
 from app.audit_usage.models import AuditLog, SavedQuery
-from app.audit_usage.service import ACTIVE_DOCUMENT_LIMIT, UsageLimitExceeded
+from app.audit_usage.service import UsageLimitExceeded, active_document_limit
 from app.core.models import Base
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
@@ -262,7 +262,7 @@ def test_active_document_limit_is_not_monthly_and_allows_reactivation_after_capa
                 processing_version="v1",
                 index_status="indexed",
             )
-            for number in range(ACTIVE_DOCUMENT_LIMIT)
+            for number in range(active_document_limit())
         ]
     )
     session.commit()
@@ -275,7 +275,7 @@ def test_active_document_limit_is_not_monthly_and_allows_reactivation_after_capa
             source_url=f"https://drive.example.test/existing-{number}",
             text=f"Current text for document {number}.",
         )
-        for number in range(ACTIVE_DOCUMENT_LIMIT)
+        for number in range(active_document_limit())
     ]
     blocked_job = service.enqueue(
         scope=OrganizationScope(organization.id), user_id=admin.id, workspace_folder_id=folder.id
@@ -309,7 +309,7 @@ def test_active_document_limit_is_not_monthly_and_allows_reactivation_after_capa
 
     assert session.scalar(
         select(func.count()).select_from(Document).where(Document.index_status == "indexed")
-    ) == ACTIVE_DOCUMENT_LIMIT
+    ) == active_document_limit()
 
 
 def test_successful_full_reconciliation_marks_unseen_documents_removed(session: Session) -> None:

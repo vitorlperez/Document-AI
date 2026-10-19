@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.audit_usage.service import MONTHLY_LIMITS
+from app.audit_usage.service import monthly_limits
 from app.core.config import Settings
 from app.ingestion.extraction.engines import build_ocr
 
@@ -12,7 +12,7 @@ def test_disabled_defaults():
     assert s.ocr_engine == "none"
     assert s.ocr_cloud_fallback_enabled is False
     assert build_ocr(s)[0] is None
-    assert MONTHLY_LIMITS["ocr_pages"] == 2000
+    assert monthly_limits()["ocr_pages"] == 2000
 
 def test_docling_needs_endpoint():
     with pytest.raises(ValidationError):

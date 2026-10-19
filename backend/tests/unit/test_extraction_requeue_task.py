@@ -61,7 +61,7 @@ def test_task_force_reads_newly_eligible_ignored_files_and_orphan_catalog_files(
     embedding = MagicMock()
     embedding.embed_workspace.side_effect = AIProviderRateLimited(None)
     settings = SimpleNamespace(
-        active_document_limit=500,
+        active_document_limit=3000,
         google_oauth_client_id=None,
         google_oauth_client_secret=None,
         google_oauth_redirect_uri=None,

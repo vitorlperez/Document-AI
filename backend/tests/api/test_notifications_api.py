@@ -1,7 +1,7 @@
 from datetime import UTC, date, datetime, timedelta
 
 from app.audit_usage.models import SavedQuery, UsageRecord
-from app.audit_usage.service import MONTHLY_LIMITS
+from app.audit_usage.service import monthly_limits
 from app.identity.models import User
 from app.knowledge.models import Document
 from app.notifications.digest import send_weekly_digests
@@ -99,7 +99,7 @@ def test_followed_query_respects_question_quota(corpus):  # noqa: F811
     now = datetime.now(UTC)
     with factory.begin() as session:
         session.add(UsageRecord(organization_id=org, period_start=date(now.year, now.month, 1),
-                                metric="questions", quantity=MONTHLY_LIMITS["questions"]))
+                                metric="questions", quantity=monthly_limits()["questions"]))
     touch_documents(factory, folder)
     with factory.begin() as session:
         counts = refresh_followed_queries(session, workspace_folder_id=folder, provider=provider)
