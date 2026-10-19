@@ -1,4 +1,5 @@
 import secrets
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from uuid import UUID
@@ -11,6 +12,8 @@ from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.organizations.models import Membership, MembershipInvitation, MembershipRole, Organization
+from app.spaces import enrollment
+from app.spaces.models import SPACE_ROLE_MANAGER, Space
 
 
 class MembershipAlreadyExists(ValueError):
@@ -48,7 +51,7 @@ class OrganizationService:
             self.session.add(user)
             self.session.flush()
 
-        organization = Organization(name=name)
+        organization = Organization(name=name, spaces_resolver_mode=enrollment.new_org_mode())
         self.session.add(organization)
         self.session.flush()
         membership = Membership(
@@ -56,6 +59,15 @@ class OrganizationService:
         )
         self.session.add(membership)
         self.session.flush()
+        geral = Space(
+            organization_id=organization.id, name="Geral", name_key="geral", is_default=True,
+            description="Espaço inicial — todos os membros e todas as pastas", created_by_user_id=user.id,
+        )
+        self.session.add(geral)
+        self.session.flush()
+        enrollment.enroll_member(
+            self.session, organization.id, user.id, [geral.id], added_by_user_id=user.id, role=SPACE_ROLE_MANAGER
+        )
         self._record_membership_audit(
             organization_id=organization.id,
             actor_user_id=user.id,
@@ -74,6 +86,9 @@ class OrganizationService:
         except IntegrityError as error:
             self.session.rollback()
             raise MembershipAlreadyExists("active membership already exists for this organization") from error
+        enrollment.enroll_member(
+            self.session, scope.organization_id, user_id, added_by_user_id=actor_user_id
+        )
         self._record_membership_audit(
             organization_id=scope.organization_id,
             actor_user_id=actor_user_id or user_id,
@@ -128,7 +143,8 @@ class OrganizationService:
         return membership
 
     def create_invitation(
-        self, *, scope: OrganizationScope, actor_user_id: UUID, email: str, role: MembershipRole
+        self, *, scope: OrganizationScope, actor_user_id: UUID, email: str, role: MembershipRole,
+        space_ids: Sequence[UUID] | None = None,
     ) -> tuple[MembershipInvitation, str]:
         if role not in {MembershipRole.ADMIN, MembershipRole.MEMBER}:
             raise InvitationInvalid("only admin or member invitations are allowed")
@@ -165,6 +181,7 @@ class OrganizationService:
             token_hash=_hash_token(raw_token),
             invited_by_user_id=actor_user_id,
             expires_at=datetime.now(UTC) + timedelta(days=7),
+            space_ids=[str(item) for item in space_ids] if space_ids else None,
         )
         self.session.add(invitation)
         self.session.flush()
@@ -200,6 +217,11 @@ class OrganizationService:
             self.session.rollback()
             raise InvitationInvalid("invitation is invalid") from error
         invitation.accepted_at = datetime.now(UTC)
+        enrollment.enroll_member(
+            self.session, invitation.organization_id, user.id,
+            [UUID(item) for item in invitation.space_ids] if invitation.space_ids else None,
+            added_by_user_id=invitation.invited_by_user_id,
+        )
         self._record_invitation_audit(
             organization_id=invitation.organization_id,
             actor_user_id=user.id,
@@ -245,6 +267,7 @@ class OrganizationService:
             raise InvitationInvalid("membership is invalid")
         membership.is_active = False
         membership.deactivated_at = datetime.now(UTC)
+        enrollment.deactivate_member(self.session, scope.organization_id, membership.user_id, actor_user_id)
         self._record_membership_audit(
             organization_id=scope.organization_id,
             actor_user_id=actor_user_id,

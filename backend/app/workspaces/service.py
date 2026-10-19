@@ -1,5 +1,6 @@
 import hashlib
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from app.core.scoping import OrganizationScope
 from app.integrations.google_drive import GoogleAccessDenied
 from app.integrations.models import DataSource
 from app.organizations.models import Membership, MembershipRole
+from app.spaces import enrollment
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 SCOPE_SELECTED = "selected"
@@ -75,22 +77,25 @@ class WorkspaceService:
         """Return only operational folder metadata after platform grant authorization."""
         return list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolder.name, WorkspaceFolder.id)))
 
-    def select_scope(self, *, scope: OrganizationScope, user_id: UUID, source_id: UUID, requested: WorkspaceScope, uniform_access_confirmed: bool, available_folder_names: dict[str, str], name: str | None = None) -> WorkspaceFolder:
+    def select_scope(self, *, scope: OrganizationScope, user_id: UUID, source_id: UUID, requested: WorkspaceScope, uniform_access_confirmed: bool, available_folder_names: dict[str, str], name: str | None = None, space_ids: Sequence[UUID] | None = None) -> WorkspaceFolder:
+        """Select a sync scope. A new scope is granted to ``space_ids`` or, when None, to the default Space (ADR-0021 D6/D9)."""
         self._require_connected_source(scope=scope, user_id=user_id, source_id=source_id)
         if not uniform_access_confirmed:
             raise ValueError("uniform access confirmation is required")
+        if space_ids is not None and len(enrollment.valid_space_ids(self.session, scope.organization_id, space_ids)) != len(set(space_ids)):
+            raise ValueError("space not found")
         normalized = self._normalize_scope(requested=requested, available_folder_names=available_folder_names)
         scope_key = self._scope_key(normalized)
         existing = self.session.scalar(select(WorkspaceFolder).where(WorkspaceFolder.source_id == source_id, WorkspaceFolder.external_folder_id == scope_key))
         if existing is not None:
-            return existing
+            return self._grant_spaces(scope, user_id, existing, space_ids, is_new=False)
         # Before F-014, the legacy external folder ID was stored directly on
         # the workspace. The additive migration creates its selection row but
         # deliberately retains that value, so recognize it on re-selection.
         # This keeps an existing index and its usage history canonical.
         legacy = self._legacy_match(source_id=source_id, requested=normalized)
         if legacy is not None:
-            return legacy
+            return self._grant_spaces(scope, user_id, legacy, space_ids, is_new=False)
         folder = WorkspaceFolder(organization_id=scope.organization_id, source_id=source_id, external_folder_id=scope_key, name=name or self._default_name(normalized, available_folder_names), uniform_access_confirmed=True)
         try:
             with self.session.begin_nested():
@@ -102,8 +107,14 @@ class WorkspaceService:
         except IntegrityError:
             folder = self.session.scalar(select(WorkspaceFolder).where(WorkspaceFolder.source_id == source_id, WorkspaceFolder.external_folder_id == scope_key))
             if folder is not None:
-                return folder
+                return self._grant_spaces(scope, user_id, folder, space_ids, is_new=False)
             raise
+        return self._grant_spaces(scope, user_id, folder, space_ids, is_new=True)
+
+    def _grant_spaces(self, scope: OrganizationScope, user_id: UUID, folder: WorkspaceFolder, space_ids: Sequence[UUID] | None, *, is_new: bool) -> WorkspaceFolder:
+        # Default-Space grant only for a brand-new scope; an explicit list is applied (idempotently) on every path.
+        if space_ids is not None or is_new:
+            enrollment.grant_scope(self.session, scope.organization_id, folder.id, user_id, space_ids)
         return folder
 
     def select_folder(self, *, scope: OrganizationScope, user_id: UUID, source_id: UUID, external_folder_id: str, name: str, uniform_access_confirmed: bool, available_folder_ids: set[str]) -> WorkspaceFolder:
