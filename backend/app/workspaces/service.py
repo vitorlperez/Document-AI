@@ -8,11 +8,14 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.access_errors import SyncAccessDenied
 from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
 from app.integrations.google_drive import GoogleAccessDenied
 from app.integrations.models import DataSource
 from app.organizations.models import Membership, MembershipRole
 from app.spaces import enrollment
+from app.spaces.access import SpaceAccessResolver
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 SCOPE_SELECTED = "selected"
@@ -34,17 +37,18 @@ class WorkspaceService:
         self.session = session
 
     def require_member_access(self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID) -> WorkspaceFolder:
-        member = self.session.scalar(select(Membership).where(Membership.organization_id == scope.organization_id, Membership.user_id == user_id, Membership.is_active.is_(True)))
-        folder = self.session.scalar(select(WorkspaceFolder).where(WorkspaceFolder.id == workspace_folder_id, WorkspaceFolder.organization_id == scope.organization_id))
-        if member is None or folder is None:
-            raise GoogleAccessDenied("workspace access denied")
-        return folder
+        """A folder the person can read through their Spaces (ADR-0021); same denial as before otherwise."""
+        try:
+            return SpaceAccessResolver(self.session).require_folder(scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id)
+        except SyncAccessDenied as error:
+            raise GoogleAccessDenied("workspace access denied") from error
 
     def folders(self, *, scope: OrganizationScope, user_id: UUID) -> list[WorkspaceFolder]:
-        member = self.session.scalar(select(Membership).where(Membership.organization_id == scope.organization_id, Membership.user_id == user_id, Membership.is_active.is_(True)))
-        if member is None:
-            raise GoogleAccessDenied("workspace access denied")
-        return list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolder.name)))
+        try:
+            access = SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id)
+        except SyncAccessDenied as error:
+            raise GoogleAccessDenied("workspace access denied") from error
+        return list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id, ids_clause(self.session, WorkspaceFolder.id, access.folder_ids)).order_by(WorkspaceFolder.name)))
 
     def selections(self, *, scope: OrganizationScope, workspace_folder_id: UUID) -> list[WorkspaceFolderSelection]:
         return list(self.session.scalars(select(WorkspaceFolderSelection).join(WorkspaceFolder, WorkspaceFolder.id == WorkspaceFolderSelection.workspace_folder_id).where(WorkspaceFolderSelection.workspace_folder_id == workspace_folder_id, WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolderSelection.kind, WorkspaceFolderSelection.external_folder_id)))

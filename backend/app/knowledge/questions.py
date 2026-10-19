@@ -29,7 +29,7 @@ from app.knowledge.queryability import folder_is_queryable
 from app.knowledge.similarity import PgVectorSimilarity, SimilarityIndex, default_similarity
 from app.knowledge.untrusted import UNTRUSTED_NOTICE, fence_sources, strip_invisible
 from app.workspaces.models import WorkspaceFolder
-from app.workspaces.service import WorkspaceService
+from app.spaces.access import SpaceAccessResolver
 from app.library.tool_groups import tool_group, tool_groups
 
 EMBEDDING_MODEL = "text-embedding-3-small"
@@ -1134,15 +1134,26 @@ class QuestionService:
             raise ValueError("at least one workspace folder is required")
         if document_ids is not None and not document_ids:
             raise ValueError("at least one indexed document is required")
-        for folder_id in folder_ids:
-            folder = WorkspaceService(self.session).require_member_access(
-                scope=scope, user_id=user_id, workspace_folder_id=folder_id
+        # One access resolution per question (spike M2): the same SpaceAccess authorizes every
+        # folder and feeds the coverage contexts, instead of one membership query per folder.
+        from app.ingestion.service import SyncAccessDenied
+        from app.integrations.google_drive import GoogleAccessDenied
+        from app.library.service import LibraryService, question_coverage
+        resolver = SpaceAccessResolver(self.session)
+        try:
+            access = resolver.resolve(scope=scope, user_id=user_id)
+            authorized_folders = resolver.require_folders(
+                scope=scope, user_id=user_id, workspace_folder_ids=folder_ids, access=access
             )
+        except SyncAccessDenied as error:
+            raise GoogleAccessDenied("workspace access denied") from error
+        for folder in authorized_folders:
             if not folder_is_queryable(folder, self.session):
                 raise ValueError("workspace folder is not ready")
-        from app.library.service import LibraryService, question_coverage
         coverage = question_coverage([
-            context for context in LibraryService(self.session).question_contexts(scope=scope, user_id=user_id)
+            context for context in LibraryService(self.session).question_contexts(
+                scope=scope, user_id=user_id, access=access
+            )
             if context.id in folder_ids
         ])
         sync_coverage = coverage if coverage["partial"] else None

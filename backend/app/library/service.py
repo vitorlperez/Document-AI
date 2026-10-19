@@ -9,6 +9,7 @@ from sqlalchemy import String, case, cast, delete, exists, func, literal, or_, s
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveredDocument, SyncAccessDenied
 from app.integrations.google_drive import RemoteFolder
@@ -17,9 +18,16 @@ from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.queryability import folder_is_queryable
 from app.knowledge.questions import EMBEDDING_MODEL
 from app.library.models import LibraryExclusion, LibraryNode, ManualSyncRun
+from app.library.tool_groups import (
+    LEGACY_SHARED_ROOT_NAME,
+    display_node_name,
+    provider_label,
+    tool_group,
+    tool_groups,
+)
 from app.organizations.models import Membership
+from app.spaces.access import SpaceAccess, SpaceAccessResolver, SpaceRef
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
-from app.library.tool_groups import LEGACY_SHARED_ROOT_NAME, display_node_name, provider_label, tool_group, tool_groups
 
 SOURCE_ROOT_EXTERNAL_ID = "__company_library_source_root__"
 PAGE_SIZE_MAX = 100
@@ -49,6 +57,7 @@ class LibraryContext:
     query_status: str
     sync_in_progress: bool = False
     source_status: str = "connected"
+    spaces: tuple[SpaceRef, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -908,8 +917,14 @@ class LibraryService:
             })
         return items
 
-    def question_contexts(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibraryContext]:
-        self.require_member(scope=scope, user_id=user_id)
+    def question_contexts(
+        self, *, scope: OrganizationScope, user_id: UUID, space_ids: Collection[UUID] | None = None,
+        access: SpaceAccess | None = None,
+    ) -> list[LibraryContext]:
+        """Scopes the person can ask about: the resolver's answer, never "every folder of the organization".
+
+        ``access`` lets a caller that already resolved this request's access avoid resolving twice."""
+        access = access or SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id, space_ids=space_ids)
         indexed_chunks = exists(
             select(DocumentChunk.id)
             .join(Document, Document.id == DocumentChunk.document_id)
@@ -942,6 +957,7 @@ class LibraryService:
                 source_id=folder.source_id,
                 source_provider=source.provider,
                 source_status=source.status,
+                spaces=access.spaces_of(folder.id),
                 sync_in_progress=has_active_job,
                 query_status=("not_ready" if not folder_is_queryable(folder, self.session, has_embeddings=has_embeddings)
                               else "ready" if has_embeddings else "no_indexed_content" if not has_content
@@ -958,6 +974,7 @@ class LibraryService:
                 .where(
                     WorkspaceFolder.organization_id == scope.organization_id,
                     DataSource.organization_id == scope.organization_id,
+                    ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),
                 )
                 .order_by(WorkspaceFolder.name, WorkspaceFolder.id)
             ).all()

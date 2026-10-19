@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog, SavedQuery
 from app.audit_usage.service import UsageLimitExceeded, UsageService, active_document_limit
+from app.core.access_errors import SyncAccessDenied
 from app.core.scoping import OrganizationScope
 from app.ingestion.blocks import ExtractedBlock
 from app.ingestion.extraction import (
@@ -28,10 +29,6 @@ from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 PROCESSING_VERSION = "v2"
 JOB_LEASE = timedelta(minutes=20)
 
-
-
-class SyncAccessDenied(PermissionError):
-    pass
 
 
 class ManagedDocumentNotFound(ValueError):

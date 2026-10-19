@@ -12,8 +12,8 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.access_errors import SyncAccessDenied
 from app.core.scoping import OrganizationScope
-from app.ingestion.service import SyncAccessDenied
 from app.organizations.models import Membership, Organization
 from app.spaces.models import Space, SpaceFolderGrant, SpaceMember
 from app.spaces.service import SpaceNotFound
@@ -75,10 +75,13 @@ class SpaceAccessResolver:
         return granted  # enforce, and any unknown mode value fails closed to the Space rules
 
     def require_folders(
-        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_ids: Collection[UUID]
+        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_ids: Collection[UUID],
+        access: SpaceAccess | None = None,
     ) -> list[WorkspaceFolder]:
-        """One access resolution + one folder query for any number of folders (replaces the per-folder loop)."""
-        access = self.resolve(scope=scope, user_id=user_id)
+        """One access resolution + one folder query for any number of folders (replaces the per-folder loop).
+
+        Pass the ``access`` already resolved for this request to avoid resolving twice."""
+        access = access or self.resolve(scope=scope, user_id=user_id)
         wanted = list(dict.fromkeys(workspace_folder_ids))
         if any(folder_id not in access.folder_ids for folder_id in wanted):
             raise SyncAccessDenied("workspace access denied")
