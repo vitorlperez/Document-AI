@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.access_errors import SyncAccessDenied
 from app.core.scoping import OrganizationScope
 from app.organizations.models import Membership, Organization
+from app.spaces.filter import current_space_filter
 from app.spaces.models import Space, SpaceFolderGrant, SpaceMember
 from app.spaces.service import SpaceNotFound
 from app.workspaces.models import WorkspaceFolder
@@ -61,6 +62,8 @@ class SpaceAccessResolver:
     ) -> SpaceAccess:
         """``space_ids`` only narrows. ``strict`` (routes) turns a Space the person is not in into SpaceNotFound."""
         mode = self._require_active_member(scope, user_id)
+        if space_ids is None:
+            space_ids = current_space_filter()  # the request's own narrowing, opened by the route/agent entry point
         if mode == MODE_OFF:
             return self._legacy(scope, user_id)
         granted = self._granted(scope, user_id, space_ids, strict)

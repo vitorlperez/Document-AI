@@ -4,7 +4,7 @@ import inspect
 from app.knowledge.agent import AgentRequest, LibraryToolExecutor
 from app.knowledge.intent import INTENT_SCHEMA
 
-FORBIDDEN = {"organization_id", "org_id", "tenant_id", "user_id", "scope", "providers", "workspace_folder_id"}
+FORBIDDEN = {"organization_id", "org_id", "tenant_id", "user_id", "scope", "providers", "workspace_folder_id", "space_ids", "spaces"}
 
 
 def assert_no_scope_parameters(function) -> None:

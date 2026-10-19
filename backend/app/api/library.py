@@ -18,13 +18,15 @@ from app.ingestion.service import (
 )
 from app.library.manual_sync import SyncCooldown, request_run, serialize_run
 from app.library.models import LibraryNode, ManualSyncRun
-from app.library.tool_groups import display_node_name
 from app.library.service import (
     PAGE_SIZE_MAX,
     FileIndexing,
     IndexedDocumentProvenance,
     LibraryService,
 )
+from app.library.tool_groups import display_node_name
+from app.spaces.access import SpaceAccessResolver
+from app.spaces.service import SpaceNotFound
 from app.workspaces.models import WorkspaceFolder
 
 router = APIRouter(tags=["library"])
@@ -114,15 +116,21 @@ def library_search(
 @router.get("/library/question-contexts")
 def library_question_contexts(
     organization_id: UUID,
+    space_ids: list[UUID] | None = Query(default=None, max_length=50),
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
 ) -> dict[str, object]:
+    scope = OrganizationScope(organization_id)
     try:
+        if space_ids:  # only narrows; a Space that is not the caller's does not exist for them (I7)
+            SpaceAccessResolver(session).resolve(scope=scope, user_id=user.id, space_ids=space_ids, strict=True)
         contexts = LibraryService(session).question_contexts(
-            scope=OrganizationScope(organization_id), user_id=user.id
+            scope=scope, user_id=user.id, space_ids=space_ids or None
         )
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    except SpaceNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="space not found") from error
     return {
         "items": [
             {
@@ -134,6 +142,7 @@ def library_question_contexts(
                 "source_status": item.source_status,
                 "query_status": item.query_status,
                 "sync_in_progress": item.sync_in_progress,
+                "spaces": [{"id": str(ref.id), "name": ref.name} for ref in item.spaces],
             }
             for item in contexts
         ]

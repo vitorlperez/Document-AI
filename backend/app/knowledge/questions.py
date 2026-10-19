@@ -5,7 +5,7 @@ import logging
 import random
 import re
 import time
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -31,6 +31,7 @@ from app.knowledge.similarity import PgVectorSimilarity, SimilarityIndex, defaul
 from app.knowledge.untrusted import UNTRUSTED_NOTICE, fence_sources, strip_invisible
 from app.workspaces.models import WorkspaceFolder
 from app.spaces.access import SpaceAccessResolver
+from app.spaces.filter import narrowed_to_spaces
 from app.library.tool_groups import tool_group, tool_groups
 
 EMBEDDING_MODEL = "text-embedding-3-small"
@@ -990,6 +991,24 @@ class QuestionService:
         mentions: list[tuple[str, UUID]],
         answer_mode: str | None = None,
         retrieval_question: str | None = None,
+        space_ids: Collection[UUID] | None = None,
+    ) -> QuestionResult:
+        with narrowed_to_spaces(space_ids):
+            return self._ask_selection(
+                scope=scope, user_id=user_id, question=question, providers=providers, mentions=mentions,
+                answer_mode=answer_mode, retrieval_question=retrieval_question,
+            )
+
+    def _ask_selection(
+        self,
+        *,
+        scope: OrganizationScope,
+        user_id: UUID,
+        question: str,
+        providers: list[str],
+        mentions: list[tuple[str, UUID]],
+        answer_mode: str | None = None,
+        retrieval_question: str | None = None,
     ) -> QuestionResult:
         from app.ingestion.service import SyncAccessDenied
         from app.integrations.google_drive import GoogleAccessDenied
@@ -1042,8 +1061,23 @@ class QuestionService:
         question: str,
         question_scope: str,
         provider: str | None = None,
+        space_ids: Collection[UUID] | None = None,
     ) -> QuestionResult:
         """Resolve the authorized index at the service boundary, never live tool data."""
+        with narrowed_to_spaces(space_ids):
+            return self._ask_scope(
+                scope=scope, user_id=user_id, question=question, question_scope=question_scope, provider=provider
+            )
+
+    def _ask_scope(
+        self,
+        *,
+        scope: OrganizationScope,
+        user_id: UUID,
+        question: str,
+        question_scope: str,
+        provider: str | None = None,
+    ) -> QuestionResult:
         # Local import avoids the library's embedding-model dependency cycle.
         from app.ingestion.service import SyncAccessDenied
         from app.integrations.google_drive import GoogleAccessDenied

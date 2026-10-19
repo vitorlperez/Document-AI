@@ -15,7 +15,7 @@ import re
 import time
 import unicodedata
 from collections import Counter
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Collection, Iterable
 from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from typing import ClassVar, Protocol, runtime_checkable
@@ -47,6 +47,7 @@ from app.knowledge.questions import (
 from app.knowledge.untrusted import sanitize_label, strip_invisible
 from app.library.models import LibraryNode
 from app.library.service import CatalogFileSnapshot, LibraryService, SyncAccessDenied
+from app.spaces.filter import narrowed_to_spaces
 from app.workspaces.models import WorkspaceFolder
 
 MAX_HISTORY_MESSAGES = 12
@@ -375,6 +376,8 @@ class AgentRequest:
     question: str
     providers: list[str]
     mentions: list[tuple[str, UUID]]
+    # Narrowing requested by the caller (a filter, never a grant); the model cannot set it.
+    space_ids: tuple[UUID, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -475,9 +478,20 @@ class AgentService:
         providers: list[str],
         mentions: list[tuple[str, UUID]],
         history: list[ConversationMessage],
+        space_ids: Collection[UUID] | None = None,
+    ) -> tuple[QuestionResult, list[dict[str, object]], list[dict[str, str]]]:
+        # Every library/retrieval call below resolves access under this request's Space filter.
+        with narrowed_to_spaces(space_ids):
+            return self._ask(scope, user_id, question, providers, mentions, history, space_ids)
+
+    def _ask(
+        self, scope, user_id, question, providers, mentions, history, space_ids,
     ) -> tuple[QuestionResult, list[dict[str, object]], list[dict[str, str]]]:
         deadline = time.monotonic() + self.limits.max_seconds
-        request = AgentRequest(scope, user_id, question, providers, list(mentions))
+        request = AgentRequest(
+            scope, user_id, question, providers, list(mentions),
+            tuple(space_ids) if space_ids is not None else None,
+        )
         # Provenance is rechecked against today's authorization before anything reaches the AI.
         excluded, usable_nodes = self._revalidate_memory(request, history)
         conversation = ConversationState.from_history(history, excluded=excluded)

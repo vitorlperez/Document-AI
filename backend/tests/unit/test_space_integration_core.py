@@ -118,3 +118,15 @@ def test_off_mode_matches_legacy_behaviour(session):
         assert {c.id for c in contexts(session, world, who)} == set(world.folders.values())
         assert all(c.spaces == () for c in contexts(session, world, who))
     assert set(FOLDERS) == set(world.folders)
+
+
+def test_request_filter_narrows_every_resolution_inside_it_and_never_widens(session):
+    from app.spaces.filter import narrowed_to_spaces
+
+    world = seed_world(session)
+    with narrowed_to_spaces([world.spaces["rh"]]):
+        assert [c.id for c in contexts(session, world, "carla")] == [world.folders["rh"]]
+        assert contexts(session, world, "daniel") == []  # a Space daniel is not in adds nothing
+        assert {c.id for c in contexts(session, world, "carla", space_ids=[world.spaces["geral"]])} == {
+            world.folders["politicas"]}  # an explicit argument wins over the request filter
+    assert len(contexts(session, world, "carla")) == 3

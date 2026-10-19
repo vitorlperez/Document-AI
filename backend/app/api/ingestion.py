@@ -41,6 +41,7 @@ from app.library.service import LibraryService
 from app.library.tool_groups import tool_group
 from app.organizations.models import Membership
 from app.spaces.access import SpaceAccessResolver
+from app.spaces.service import SpaceNotFound
 
 router = APIRouter(tags=["ingestion"])
 
@@ -83,9 +84,13 @@ class QuestionInput(BaseModel):
     providers: list[str] | None = None
     mentions: list[QuestionMention] | None = None
     conversation_id: UUID | None = None
+    # Optional narrowing to some of the caller's Spaces (ADR-0021 D4); an empty list means "no filter".
+    space_ids: list[UUID] | None = Field(default=None, max_length=50)
 
     @model_validator(mode="after")
     def validate_scope(self) -> "QuestionInput":
+        if not self.space_ids:
+            self.space_ids = None
         if self.scope == "provider" and self.provider is None:
             raise ValueError("provider is required")
         if self.scope != "provider" and self.provider is not None:
@@ -365,6 +370,11 @@ def ask_organization_question(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="provider is required")
     try:
         scope = OrganizationScope(organization_id)
+        if payload.space_ids:
+            # A Space that is not the caller's does not exist for them: uniform 404 before anything runs.
+            SpaceAccessResolver(session).resolve(
+                scope=scope, user_id=user.id, space_ids=payload.space_ids, strict=True
+            )
         service = QuestionService(session, request.app.state.semantic_provider)
         conversation_service = ConversationService(session)
         conversation, history = conversation_service.create_or_load(
@@ -378,6 +388,7 @@ def ask_organization_question(
                 {"kind": item.kind, "node_id": str(item.node_id), **({"name": item.name} if item.name else {})}
                 for item in payload.mentions or []
             ],
+            "space_ids": [str(item) for item in payload.space_ids or []],
         }
         conversation_service.append(
             conversation=conversation, role="user", content=payload.question, context=request_context
@@ -394,11 +405,12 @@ def ask_organization_question(
                     providers=payload.providers or [],
                     mentions=mentions,
                     history=history,
+                    space_ids=payload.space_ids,
                 )
             else:
                 result = service.ask_selection(
                     scope=scope, user_id=user.id, question=payload.question,
-                    providers=payload.providers or [], mentions=mentions,
+                    providers=payload.providers or [], mentions=mentions, space_ids=payload.space_ids,
                 )
                 tool_results = []
                 references = []
@@ -406,6 +418,7 @@ def ask_organization_question(
             result = service.ask_scope(
                 scope=scope, user_id=user.id,
                 question=payload.question, question_scope=payload.scope, provider=payload.provider,
+                space_ids=payload.space_ids,
             )
             tool_results = []
             references = []
@@ -423,6 +436,8 @@ def ask_organization_question(
         )
         conversation.last_message_at = datetime.now(UTC)
         session.commit()
+    except SpaceNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="space not found") from error
     except (GoogleAccessDenied, SyncAccessDenied) as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
     except AIProviderUnavailable as error:
