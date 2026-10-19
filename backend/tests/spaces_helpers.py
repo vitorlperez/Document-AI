@@ -5,7 +5,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.identity.models import User
+from app.identity.models import AuthIdentity, User
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.questions import EMBEDDING_MODEL
@@ -98,3 +98,11 @@ def seed_world(session: Session, *, mode: str = "enforce", name: str = "Acme") -
         session.flush()
         folders[key], documents[key], nodes[key] = folder.id, document.id, node.id
     return World(org.id, source.id, users, spaces, folders, documents, nodes)
+
+
+def bind_login_identities(session: Session, world: World) -> None:
+    """Let API tests log in as a seeded person: ``login(code=who, subject=who)`` resolves to that user."""
+    for who, user_id in world.users.items():
+        session.add(AuthIdentity(user_id=user_id, provider="workos", provider_subject=who,
+                                 verified_email=f"{who}@acme.test"))
+    session.flush()

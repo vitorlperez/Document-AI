@@ -179,7 +179,7 @@ def test_search_api_denies_a_user_from_another_organization(search_api) -> None:
         json={"query": "briefing"},
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 404  # ADR-0021 I7: a member's unreachable folder is uniformly "not found"
     assert "Campaign Briefing" not in response.text
 
 
@@ -215,7 +215,7 @@ def test_questions_api_returns_cited_answer_and_denies_cross_tenant(search_api) 
         f"/workspace-folders/{folder_id}/questions?organization_id={organization_b}",
         json={"question": "When does the campaign launch?"},
     )
-    assert denied.status_code == 403
+    assert denied.status_code == 404
     assert "September" not in denied.text
 
 

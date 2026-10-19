@@ -6,6 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, model_validator
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.auth import current_user, database_session
@@ -38,8 +39,26 @@ from app.knowledge.questions import AIProviderUnavailable, QuestionService
 from app.knowledge.search import SearchUnavailable, TextSearchService
 from app.library.service import LibraryService
 from app.library.tool_groups import tool_group
+from app.organizations.models import Membership
+from app.spaces.access import SpaceAccessResolver
 
 router = APIRouter(tags=["ingestion"])
+
+
+def _folder_readable(session: Session, organization_id: UUID, user_id: UUID, workspace_folder_id: UUID) -> bool:
+    """Whether the folder is in the caller's Spaces (ADR-0021). Not an active member -> SyncAccessDenied."""
+    access = SpaceAccessResolver(session).resolve(scope=OrganizationScope(organization_id), user_id=user_id)
+    return access.allows(workspace_folder_id)
+
+
+def _folder_denied(session: Session, organization_id: UUID, user_id: UUID) -> HTTPException:
+    """People outside the organization stay 403; members who cannot reach the folder get a uniform 404 (I7)."""
+    member = session.scalar(select(Membership.id).where(
+        Membership.organization_id == organization_id, Membership.user_id == user_id,
+        Membership.is_active.is_(True)))
+    if member is None:
+        return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed")
+    return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workspace not found")
 
 
 class TextSearchInput(BaseModel):
@@ -123,10 +142,23 @@ def documents(
     organization_id: UUID,
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
-) -> list[dict[str, str | None]]:
+) -> list[dict[str, str | None]] | dict[str, object]:
+    scope = OrganizationScope(organization_id)
     try:
+        if not _folder_readable(session, organization_id, user.id, workspace_folder_id):
+            # Not a reader: an org admin gets operational counts without file names; anyone else, 404 (I7).
+            try:
+                counts = IngestionService(session).document_counts(
+                    scope=scope, user_id=user.id, workspace_folder_id=workspace_folder_id
+                )
+            except SyncAccessDenied as error:
+                raise _folder_denied(session, organization_id, user.id) from error
+            return {
+                "readable": False, "counts": counts,
+                "items": [],  # file names are withheld until the admin enters the Space
+            }
         rows = IngestionService(session).indexed_documents(
-            scope=OrganizationScope(organization_id), user_id=user.id, workspace_folder_id=workspace_folder_id
+            scope=scope, user_id=user.id, workspace_folder_id=workspace_folder_id
         )
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
@@ -232,15 +264,17 @@ def document_failures(
         rows = IngestionService(session).nonindexed_documents(
             scope=OrganizationScope(organization_id), user_id=user.id, workspace_folder_id=workspace_folder_id
         )
+        readable = _folder_readable(session, organization_id, user.id, workspace_folder_id)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    # An admin who is not in the folder's Space still operates on failures, but never learns file names.
     return [
         {
             "id": str(row.id),
-            "name": row.name,
+            "name": row.name if readable else f"arquivo #{str(row.id)[:7]}",
             "status": row.index_status,
             "error_code": row.error_code,
-            "source_url": row.source_url,
+            "source_url": row.source_url if readable else None,
         }
         for row in rows
     ]
@@ -264,7 +298,7 @@ def text_search(
             page_size=payload.page_size,
         )
     except GoogleAccessDenied as error:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+        raise _folder_denied(session, organization_id, user.id) from error
     except SearchUnavailable as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="folder is not ready") from error
     except ValueError as error:
@@ -306,7 +340,7 @@ def ask_question(
             question=payload.question,
         )
     except GoogleAccessDenied as error:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+        raise _folder_denied(session, organization_id, user.id) from error
     except AIProviderUnavailable as error:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI provider unavailable") from error
     except UsageLimitExceeded as error:

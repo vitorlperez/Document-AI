@@ -258,6 +258,19 @@ class IngestionService:
             )
         )
 
+    def document_counts(
+        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID
+    ) -> dict[str, int]:
+        """Operational counts per index status; no file names (admin view of a folder they cannot read)."""
+        self.require_admin(scope=scope, user_id=user_id)
+        self.require_folder(scope=scope, workspace_folder_id=workspace_folder_id)
+        rows = self.session.execute(
+            select(Document.index_status, func.count())
+            .where(Document.organization_id == scope.organization_id, Document.workspace_folder_id == workspace_folder_id)
+            .group_by(Document.index_status)
+        )
+        return {status: count for status, count in rows}
+
     def remove_indexed_document(
         self,
         *,
