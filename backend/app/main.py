@@ -37,6 +37,7 @@ from app.api.overview import router as overview_router
 from app.api.platform import router as platform_router
 from app.api.public_v1 import router as public_v1_router
 from app.api.saved_queries import router as saved_queries_router
+from app.api.spaces import router as spaces_router
 from app.api.usage import router as usage_router
 from app.core.config import Settings, get_settings
 from app.core.database import build_engine, build_session_factory
@@ -194,6 +195,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(automation_webhooks_router, dependencies=authenticated)
     app.include_router(ingestion_router, dependencies=authenticated)
     app.include_router(library_router, dependencies=authenticated)
+    app.include_router(spaces_router, dependencies=authenticated)
     app.include_router(answer_feedback_router, dependencies=authenticated)
     app.include_router(answer_export_router, dependencies=authenticated)
     app.include_router(clickup_tasks_router, dependencies=authenticated)

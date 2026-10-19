@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
+from app.knowledge.models import Document
 from app.organizations.models import Membership, MembershipRole
 from app.spaces.models import SPACE_ROLE_MANAGER, SPACE_ROLES, Space, SpaceFolderGrant, SpaceMember
 from app.workspaces.models import WorkspaceFolder
@@ -257,6 +258,54 @@ class SpaceService:
         self._audit(scope, actor_user_id, "folder_revoked", "space", space.id)
         self._audit(scope, actor_user_id, "folder_revoked", "workspace_folder", workspace_folder_id)
         return grant
+
+    def enter_space(self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID) -> SpaceMember:
+        """An org admin joins a Space to read it: explicit, audited, visible to the Space's members (D2)."""
+        self._require_admin(scope, actor_user_id)
+        space, _, _ = self._space(scope, actor_user_id, space_id)
+        member = self.session.scalar(select(SpaceMember).where(
+            SpaceMember.space_id == space.id, SpaceMember.user_id == actor_user_id, SpaceMember.removed_at.is_(None)))
+        if member is None:
+            member = SpaceMember(
+                organization_id=scope.organization_id, space_id=space.id, user_id=actor_user_id,
+                role="member", added_by_user_id=actor_user_id)
+            self.session.add(member)
+            self.session.flush()
+        self._audit(scope, actor_user_id, "admin_entered", "space", space.id)
+        return member
+
+    def member_impact(
+        self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID, user_id: UUID
+    ) -> dict[str, int]:
+        """What removing ``user_id`` from the Space would cost them, considering their other Spaces. Read-only.
+
+        Derived-content counters (conversations, automations, followed queries) are filled by T-H6."""
+        space = self._manageable(scope, actor_user_id, space_id)
+        if self._my_space_role(space.id, user_id) is None:
+            raise SpaceNotFound("member not found")
+        this_space = self._folder_ids({space.id})
+        other_spaces = set(self.session.scalars(
+            select(SpaceMember.space_id)
+            .join(Space, Space.id == SpaceMember.space_id)
+            .where(SpaceMember.organization_id == scope.organization_id, SpaceMember.user_id == user_id,
+                   SpaceMember.removed_at.is_(None), Space.archived_at.is_(None), Space.id != space.id)))
+        lost = this_space - self._folder_ids(other_spaces)
+        documents_lost = 0
+        if lost:
+            files = (select(WorkspaceFolder.source_id, Document.external_file_id)
+                     .join(Document, Document.workspace_folder_id == WorkspaceFolder.id)
+                     .where(Document.organization_id == scope.organization_id,
+                            Document.workspace_folder_id.in_(list(lost)), Document.index_status == "indexed")
+                     .distinct().subquery())
+            documents_lost = self.session.scalar(select(func.count()).select_from(files)) or 0
+        return {"documents_lost": documents_lost, "conversations_hidden": 0, "automations_paused": 0,
+                "followed_queries_cleared": 0}
+
+    def _folder_ids(self, space_ids: set[UUID]) -> set[UUID]:
+        if not space_ids:
+            return set()
+        return set(self.session.scalars(select(SpaceFolderGrant.workspace_folder_id).where(
+            SpaceFolderGrant.space_id.in_(list(space_ids)), SpaceFolderGrant.revoked_at.is_(None))))
 
     # -- listing ---------------------------------------------------------------------------------
     def list_spaces_for_actor(self, scope: OrganizationScope, actor_user_id: UUID) -> list[SpaceView]:
