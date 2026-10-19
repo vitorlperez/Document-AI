@@ -13,7 +13,7 @@ from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.organizations.models import Membership, MembershipInvitation, MembershipRole, Organization
 from app.spaces import enrollment
-from app.spaces.models import SPACE_ROLE_MANAGER, Space
+from app.spaces.models import SPACE_ROLE_MANAGER, Space, SpaceMember
 
 
 class MembershipAlreadyExists(ValueError):
@@ -65,9 +65,11 @@ class OrganizationService:
         )
         self.session.add(geral)
         self.session.flush()
-        enrollment.enroll_member(
-            self.session, organization.id, user.id, [geral.id], added_by_user_id=user.id, role=SPACE_ROLE_MANAGER
-        )
+        self.session.add(SpaceMember(
+            organization_id=organization.id, space_id=geral.id, user_id=user.id, role=SPACE_ROLE_MANAGER,
+            added_by_user_id=user.id,
+        ))
+        self.session.flush()
         self._record_membership_audit(
             organization_id=organization.id,
             actor_user_id=user.id,

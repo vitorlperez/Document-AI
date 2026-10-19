@@ -37,6 +37,12 @@ class FakeSession:
         self.rollback_count += 1
 
 
+def _without_spaces(added: list[object]) -> list[object]:
+    from app.spaces.models import Space, SpaceMember
+
+    return [item for item in added if not isinstance(item, Space | SpaceMember)]
+
+
 def test_create_organization_creates_active_owner_membership() -> None:
     session = FakeSession()
 
@@ -50,8 +56,9 @@ def test_create_organization_creates_active_owner_membership() -> None:
     assert membership.user_id == user.id
     assert membership.role is MembershipRole.OWNER
     assert membership.is_active is True
-    audit_log = session.added[-1]
-    assert session.added[:-1] == [user, organization, membership]
+    added = _without_spaces(session.added)  # the initial "Geral" Space (ADR-0021) is covered in test_space_defaults
+    audit_log = added[-1]
+    assert added[:-1] == [user, organization, membership]
     assert isinstance(audit_log, AuditLog)
     assert audit_log.organization_id == organization.id
     assert audit_log.actor_user_id == user.id
@@ -70,8 +77,9 @@ def test_create_organization_reuses_existing_user() -> None:
 
     assert user is existing_user
     assert membership.user_id == existing_user.id
-    assert session.added[:-1] == [organization, membership]
-    assert isinstance(session.added[-1], AuditLog)
+    added = _without_spaces(session.added)
+    assert added[:-1] == [organization, membership]
+    assert isinstance(added[-1], AuditLog)
 
 
 def test_add_membership_requires_an_organization_scope() -> None:
