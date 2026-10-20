@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, FolderOpen, HardDrive, ShieldCheck, Sparkles } from "lucide-react";
+import { Clock3, FolderOpen, HardDrive, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Toast, ToastViewport } from "../ui";
@@ -68,7 +68,7 @@ function useTabIndicator(activeKey: string | null) {
 
 export function Shell({ user, company, companies, children, alertMessage, alertTone, alertAction, fillViewport, pageSurface, onDismiss, onCompanyChange, onNavigate, onLogout }: { user: User; company: Company; companies: Company[]; children: ReactNode; alertMessage: string | null; alertTone: "notice" | "error"; alertAction?: ToastAction | null; fillViewport: boolean; pageSurface: boolean; onDismiss: () => void; onCompanyChange: (id: string) => void; onNavigate: (path: string) => void; onLogout: () => void }) {
   const pathname = usePathname();
-  const chatScreen = !/\/(library|team|integrations|automations|developer|admin|profile)\/?$/.test(pathname ?? "");
+  const chatScreen = !/\/(library|team|integrations|automations|developer|admin|profile|spaces)\/?$/.test(pathname ?? "");
   const mobile = useIsMobileShell();
   useVisualViewportHeight(mobile, Boolean(fillViewport));
   const canManage = company.role !== "member";
@@ -77,6 +77,7 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
     { label: "Conversa", suffix: "", icon: Sparkles },
     { label: "Biblioteca", suffix: "/library", icon: FolderOpen },
     { label: "Automações", suffix: "/automations", icon: Clock3 },
+    { label: "Espaços", suffix: "/spaces", icon: Users },
     ...(canManage ? [{ label: "Integrações", suffix: "/integrations", icon: HardDrive }] : []),
   ];
   const activeTab = tabs.find((tab) => (tab.suffix === "" ? chatScreen : (pathname ?? "").replace(/\/$/, "").endsWith(tab.suffix)))?.suffix ?? null;
