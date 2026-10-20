@@ -15,3 +15,5 @@
   .theme-toggle.mobile-drawer-theme { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; width: 100%; padding: 4px; border-radius: 14px; }
   .theme-toggle.mobile-drawer-theme .theme-toggle-option { width: 100%; padding: 0 8px; border-radius: 10px; }
 }
+.theme-toggle.menu-theme { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+.theme-toggle.menu-theme .theme-toggle-option { width: 100%; min-height: 36px; padding: 0 6px; }
