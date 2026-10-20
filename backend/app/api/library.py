@@ -98,12 +98,14 @@ def library_search(
     try:
         scope = OrganizationScope(organization_id)
         service = LibraryService(session)
-        result = service.search_page(scope=scope, user_id=user.id, query=query, page=page, page_size=page_size)
+        space_access = service.access_for(scope=scope, user_id=user.id)
+        result = service.search_page(scope=scope, user_id=user.id, query=query, page=page, page_size=page_size,
+                                     access=space_access)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
-    documents, indexing = service.documents_and_indexing_for_nodes(scope=scope, nodes=result.items)
+    documents, indexing = service.documents_and_indexing_for_nodes(scope=scope, nodes=result.items, access=space_access)
     access = service.robot_access_states(scope=scope, nodes=result.items)
     return {
         "items": [_node(node=node, documents=documents.get(node.id, []), indexing=indexing.get(node.id),
@@ -222,17 +224,19 @@ def library_children(
     try:
         scope = OrganizationScope(organization_id)
         service = LibraryService(session)
+        space_access = service.access_for(scope=scope, user_id=user.id)
         result = service.children(
             scope=scope,
             user_id=user.id,
             parent_id=node_id,
             page=page,
             page_size=page_size,
+            access=space_access,
         )
     except SyncAccessDenied as error:
         # A foreign UUID is intentionally indistinguishable from an absent node.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="library node not found") from error
-    documents, indexing = service.documents_and_indexing_for_nodes(scope=scope, nodes=result.items)
+    documents, indexing = service.documents_and_indexing_for_nodes(scope=scope, nodes=result.items, access=space_access)
     access = service.robot_access_states(scope=scope, nodes=result.items)
     return {
         "items": [_node(node=node, documents=documents.get(node.id, []), indexing=indexing.get(node.id),
@@ -270,7 +274,7 @@ def reprocess_library_folder(
         scope = OrganizationScope(organization_id)
         run, jobs = request_run(session, scope=scope, user=user, node_id=node_id,
                                 full_mode=reprocess_all)
-        documents = LibraryService(session).indexed_documents_under(scope=scope, user_id=user.id, node_id=node_id, allow_source=True)
+        documents = LibraryService(session).indexed_documents_under(scope=scope, user_id=user.id, node_id=node_id, allow_source=True, system_view=True)
         if reprocess_all:
             from app.knowledge.models import Document
             for reference in documents:
@@ -317,7 +321,7 @@ def remove_library_folder_from_index(
         ).order_by(WorkspaceFolder.id).with_for_update()))
         for folder in folders:
             ingestion._require_no_active_job(scope=scope, workspace_folder_id=folder.id)
-        documents = library.indexed_documents_under(scope=scope, user_id=user.id, node_id=node_id)
+        documents = library.indexed_documents_under(scope=scope, user_id=user.id, node_id=node_id, system_view=True)
         for workspace_folder_id, document_ids in _documents_by_workspace(documents).items():
             for document_id in document_ids:
                 removed = ingestion.remove_indexed_document(

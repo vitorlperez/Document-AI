@@ -89,7 +89,7 @@ def test_notion_legacy_folder_collision_is_repaired_without_changing_document_id
     page = session.query(LibraryNode).filter_by(source_id=source.id, external_id="page").one()
     assert page.id == legacy_id
     assert page.kind == "file"
-    assert service.document_provenance(scope=OrganizationScope(organization.id), node=page)
+    assert service.document_provenance(scope=OrganizationScope(organization.id), node=page, access=None)
 
 
 def test_notion_tree_browses_content_and_children_and_resyncs_its_real_selection(session: Session) -> None:
@@ -191,7 +191,7 @@ def test_projects_nested_drive_tree_and_merges_overlapping_syncs(session: Sessio
     files = service.children(scope=OrganizationScope(organization.id), user_id=user.id, parent_id=campaign.id, page=1, page_size=100).items
     assert [(node.kind, node.name, node.source_url) for node in files] == [("file", "Brief.pdf", "https://drive.example.test/brief")]
     assert session.query(LibraryNode).filter_by(source_id=source.id, external_id="brief").count() == 1
-    assert set(service.workspace_provenance(scope=OrganizationScope(organization.id), node=files[0])) == {scope_a.id, scope_b.id}
+    assert set(service.workspace_provenance(scope=OrganizationScope(organization.id), node=files[0], access=None)) == {scope_a.id, scope_b.id}
 
     membership = session.query(Membership).filter_by(organization_id=organization.id, user_id=user.id).one()
     membership.role = MembershipRole.ADMIN
@@ -205,7 +205,7 @@ def test_projects_nested_drive_tree_and_merges_overlapping_syncs(session: Sessio
         scope=OrganizationScope(organization.id), source_id=removed_a.source_id, external_file_id=removed_a.external_file_id
     )
     assert session.query(LibraryNode).filter_by(source_id=source.id, external_id="brief").count() == 1
-    remaining = service.document_provenance(scope=OrganizationScope(organization.id), node=files[0])
+    remaining = service.document_provenance(scope=OrganizationScope(organization.id), node=files[0], access=None)
     assert [(item.workspace_folder_id, item.document_id) for item in remaining] == [(scope_b.id, document_b.id)]
 
     removed_b = ingestion.remove_indexed_document(

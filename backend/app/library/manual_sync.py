@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
 from app.identity.models import User
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveredDocument, IngestionService, SyncAccessDenied
@@ -129,7 +130,7 @@ def _containing_workspaces(session: Session, node: LibraryNode, folders: list[Wo
     if below:
         keep.update(session.scalars(select(Document.workspace_folder_id).where(
             Document.workspace_folder_id.in_([f.id for f in folders]),
-            Document.external_file_id.in_(below),
+            ids_clause(session, Document.external_file_id, below),
         )))
     return [folder for folder in folders if folder.id in keep]
 

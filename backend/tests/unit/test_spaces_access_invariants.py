@@ -1,7 +1,6 @@
 """T-B3 (skeleton): no surface returns anything outside the person's reachable set (ADR-0021 I1/I3).
 
-Surfaces still on the legacy path (library tree/search, Block D) are marked xfail and flip to green as
-each Block D task lands; the matrix then becomes a hard regression guard. Evidence/viewer, API key and MCP
+The library tree and name search (Block D) are now part of the matrix. Evidence/viewer, API key and MCP
 surfaces join in later waves.
 """
 
@@ -10,6 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.access_errors import SyncAccessDenied
 from app.core.models import Base
 from app.core.scoping import OrganizationScope
 from app.library.service import LibraryService
@@ -79,7 +79,6 @@ def test_mention_of_an_unreachable_file_is_rejected_like_a_missing_one(session, 
                 providers=["google_drive"], mentions=[("file", node_id)])
 
 
-@pytest.mark.xfail(reason="Block D (T-D1/T-D2): tree and name search still filter by organization only", strict=False)
 @pytest.mark.parametrize("who", PEOPLE)
 def test_library_tree_and_search_hide_unreachable_files(session, who):
     world = seed_world(session)
@@ -91,3 +90,19 @@ def test_library_tree_and_search_hide_unreachable_files(session, who):
     assert {node.name for node in children} == allowed
     found = service.search_page(scope=scope, user_id=user, query="pdf", page=1, page_size=50).items
     assert {node.name for node in found} <= allowed
+
+
+@pytest.mark.parametrize("who", PEOPLE)
+def test_catalog_snapshots_never_read_an_unreachable_file(session, who):
+    """A1: authorization is the person's Spaces, not the organization."""
+    world = seed_world(session)
+    service = LibraryService(session)
+    scope, user = OrganizationScope(world.organization_id), world.users[who]
+    for name in ("politicas", "rh", "diretoria"):
+        call = lambda: service.catalog_file_snapshots(  # noqa: E731
+            scope=scope, user_id=user, providers=["google_drive"], node_ids=[world.nodes[name]])
+        if name in EXPECTED[who]:
+            assert call()[0].index_status == "indexed"
+        else:
+            with pytest.raises(SyncAccessDenied):
+                call()
