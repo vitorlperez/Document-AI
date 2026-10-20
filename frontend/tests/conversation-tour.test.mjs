@@ -5,7 +5,7 @@ import test from "node:test";
 const read = (path) => readFileSync(new URL(`../app/${path}`, import.meta.url), "utf8");
 const tour = read("conversation-tour.tsx");
 const targets = [...tour.matchAll(/target: "([^"]+)"/g)].map((match) => match[1]);
-const sources = ["product/chat-workspace.tsx", "product/shell.tsx", "product/account-menu.tsx", "product/notification-bell.tsx", "product/shared-ui.tsx", "tools-sidebar.tsx", "mobile-nav.tsx"].map(read).join("\n");
+const sources = ["product/chat-workspace.tsx", "product/shell.tsx", "product/account-menu.tsx", "product/notification-bell.tsx", "product/shared-ui.tsx", "product/org-menu.tsx", "mobile-nav.tsx", "product/conversation-history.tsx"].map(read).join("\n");
 
 test("every tour step anchors on a data-tour attribute that still exists", () => {
   assert.ok(targets.length >= 8);
@@ -13,7 +13,7 @@ test("every tour step anchors on a data-tour attribute that still exists", () =>
 });
 
 test("tour covers only what exists in the empty chat of a first-time user", () => {
-  for (const target of ["composer", "tools", "history", "new-conversation", "tool-sidebar", "notifications", "account", "navigation"]) assert.ok(targets.includes(target), target);
+  for (const target of ["composer", "tools", "history", "new-conversation", "org", "notifications", "account", "navigation"]) assert.ok(targets.includes(target), target);
   assert.equal(targets.length, 8);
   // Steps for elements that only appear after the first answer must not come back.
   for (const target of ["suggestions", "sources", "answer-actions"]) assert.ok(!targets.includes(target), `step absent from the first-access empty chat: ${target}`);
@@ -25,8 +25,8 @@ test("post-answer elements no longer carry orphan data-tour anchors", () => {
   assert.doesNotMatch(read("product/chat-workspace.tsx"), /data-tour="(sources|suggestions)"/);
 });
 
-test("desktop-only anchors fall back to the ☰ button on mobile and a missing target never throws", () => {
-  assert.match(tour, /mobileFallback = new Set\(\["tool-sidebar", "history"\]\)/);
+test("desktop-only anchors fall back to the tab bar on mobile and a missing target never throws", () => {
+  assert.match(tour, /mobileFallback = new Set\(\["history"\]\)/);
   assert.match(tour, /rect \? "" : "tour-highlight-fallback"/);
 });
 

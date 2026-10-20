@@ -1,7 +1,6 @@
 "use client";
 
-import { ChevronRight, ExternalLink, FileText, HelpCircle, History, Send, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { ChevronRight, ExternalLink, FileText, History, Send, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
 import { type CSSProperties, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type OnboardingState } from "../organization-onboarding";
 import { ConversationTour } from "../conversation-tour";
@@ -14,13 +13,13 @@ import { FileViewerHost, type ViewerCitation, type ViewerTarget } from "../file-
 import { HIGHLIGHT_MS, type SourceHighlight, citationTarget, highlightAnnouncement, isHighlighted, nextHighlight } from "../file-viewer-logic";
 import { QuestionScopePicker, contextReady, toolLabel, providerKey } from "../question-scope";
 import { SyncIndicator, useSyncStatus } from "../sync-status";
-import { ToolsSidebar, useToolsSidebarCollapsed } from "../tools-sidebar";
 import { MentionComposer, type MentionCandidate } from "../mention-composer";
 import { mentionSummary } from "../mention-label";
 import { FollowToggle } from "./follow-toggle";
 import { usageLimitMessage } from "./usage-limit";
 import { type Company, type LibraryNode, type LibraryPage, type LibraryContext, type LibrarySync, type SavedQuery, type Evidence, type Answer, type ConversationMessage as BaseConversationMessage, type PersistedConversationMessage as BasePersistedConversationMessage, api, messageFor, useLatestRequest, answerText, citationSourceKey, compactCitations, libraryPath } from "./types-and-api";
 import { NewConversationButton } from "./shared-ui";
+import { REPLAY_TOUR_EVENT, consumeTourReplay } from "./nav-events";
 import { SpaceScopeBar, useChatSpaces } from "./chat-spaces";
 import { SpaceBadges } from "./library-spaces";
 import { contextsInSpaces, payloadSpaceIds, sourcesFromLabel } from "../question-spaces";
@@ -44,9 +43,16 @@ function restoredMessages(messages: PersistedConversationMessage[]): Conversatio
   });
 }
 
-export function CompanyDashboard({ company, onboarding, onOnboardingChange, onConnect, setError, setNotice }: { company: Company; onboarding: OnboardingState; onOnboardingChange: (state: OnboardingState) => void; onConnect: () => void; setError: (value: string | null) => void; setNotice: (value: string | null) => void }) {
+export function CompanyDashboard({ company, onboarding, onOnboardingChange, setError, setNotice }: { company: Company; onboarding: OnboardingState; onOnboardingChange: (state: OnboardingState) => void; onConnect?: () => void; setError: (value: string | null) => void; setNotice: (value: string | null) => void }) {
   const [replayTour, setReplayTour] = useState(false);
-  return <><ConversationLibraryWorkspace key={company.id} company={company} onConnect={onConnect} onShowTour={() => setReplayTour(true)} setError={setError} setNotice={setNotice} />
+  // "Conhecer o app" lives in the avatar menu / "Mais" sheet: it leaves a flag (screen change) or fires an event (already in the chat).
+  useEffect(() => {
+    const replay = () => { if (consumeTourReplay()) setReplayTour(true); };
+    replay();
+    window.addEventListener(REPLAY_TOUR_EVENT, replay);
+    return () => window.removeEventListener(REPLAY_TOUR_EVENT, replay);
+  }, []);
+  return <><ConversationLibraryWorkspace key={company.id} company={company} setError={setError} setNotice={setNotice} />
     {(onboarding.tour_required || replayTour) && <ConversationTour key={`tour-${company.id}`} onComplete={async (exit) => {
       const firstTime = onboarding.tour_required;
       try {
@@ -56,7 +62,7 @@ export function CompanyDashboard({ company, onboarding, onOnboardingChange, onCo
         window.requestAnimationFrame(() => {
           const visible = (element: HTMLElement | null) => element && element.getClientRects().length > 0 ? element : null;
           const composer = document.querySelector<HTMLTextAreaElement>('[data-tour="composer"] textarea');
-          const target = exit === "finished" && firstTime ? composer : visible(document.querySelector<HTMLElement>('button[aria-label="Rever tour do app"]')) ?? visible(document.querySelector<HTMLElement>('button[aria-label="Abrir menu"]')) ?? composer;
+          const target = exit === "finished" && firstTime ? composer : visible(document.querySelector<HTMLElement>('[data-testid="account-menu-trigger"]')) ?? visible(document.querySelector<HTMLElement>('.mobile-tab-bar [data-tour="account"]')) ?? composer;
           target?.focus();
         });
       } catch (caught) { throw new Error(messageFor(caught)); }
@@ -64,16 +70,12 @@ export function CompanyDashboard({ company, onboarding, onOnboardingChange, onCo
   </>;
 }
 
-function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError, setNotice }: { company: Company; onConnect: () => void; onShowTour: () => void; setError: (value: string | null) => void; setNotice: (value: string | null) => void }) {
-  const router = useRouter();
-  const { collapsed: toolsCollapsed, toggle: toggleTools } = useToolsSidebarCollapsed();
+function ConversationLibraryWorkspace({ company, setError, setNotice }: { company: Company; setError: (value: string | null) => void; setNotice: (value: string | null) => void }) {
   const syncStatus = useSyncStatus(company.id);
-  const [roots, setRoots] = useState<LibraryNode[]>([]);
   const [contexts, setContexts] = useState<LibraryContext[]>([]);
   const chatSpaces = useChatSpaces(company.id);
   const scopedContexts = useMemo(() => contextsInSpaces(contexts, chatSpaces.selected), [contexts, chatSpaces.selected]);
   const [syncs, setSyncs] = useState<LibrarySync[]>([]);
-  const { request: requestLibrary } = useLatestRequest<LibraryPage>();
   const { request: requestContexts } = useLatestRequest<{ items: LibraryContext[] }>();
   const { request: requestSyncs } = useLatestRequest<{ items: LibrarySync[] }>();
   const [contextLoading, setContextLoading] = useState(true);
@@ -113,7 +115,6 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
   const askSequence = useRef(0);
   const revealWaiters = useRef(new Map<string, () => void>());
   const followTranscript = useRef(true);
-  const canManage = company.role !== "member";
   const mentionsOutsideSelection = mentions.filter((item) => !allTools && !queryProviders.includes(providerKey(item.source_provider)));
   const syncInProgress = syncs.some((item) => item.status === "queued" || item.status === "syncing");
   const canAsk = !restoringConversation && !contextLoading && !contextError && mentionsOutsideSelection.length === 0 && (allTools || queryProviders.length > 0) && scopedContexts.some((item) => contextReady(item) && (allTools || queryProviders.includes(providerKey(item.source_provider))));
@@ -128,9 +129,6 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
       .catch(() => { if (!cancelled) setSuggestions([]); });
     return () => { cancelled = true; };
   }, [canAsk, company.id, overviewProviders]);
-  const loadLibrary = useCallback(() => {
-    void requestLibrary(`/library?organization_id=${company.id}`, (result) => setRoots(result.items), () => undefined);
-  }, [company.id, requestLibrary]);
   const loadOperations = useCallback((refreshContexts: "visible" | "silent" | "none" = "visible") => {
     if (refreshContexts !== "none") {
       const showLoading = refreshContexts === "visible";
@@ -140,7 +138,6 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
     }
     void requestSyncs(`/library/syncs?organization_id=${company.id}`, (result) => setSyncs(result.items), (caught) => setError(messageFor(caught)));
   }, [company.id, requestContexts, requestSyncs, setError]);
-  useEffect(() => { void Promise.resolve().then(loadLibrary); }, [loadLibrary]);
   useEffect(() => { void Promise.resolve().then(() => loadOperations()); }, [loadOperations]);
   useEffect(() => {
     const key = `arquivio:conversation:${company.id}`;
@@ -224,9 +221,9 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
       return;
     }
     syncWasActive.current = true;
-    const timer = window.setInterval(() => { loadOperations("none"); loadLibrary(); }, 5000);
+    const timer = window.setInterval(() => { loadOperations("none"); }, 5000);
     return () => window.clearInterval(timer);
-  }, [loadOperations, loadLibrary, syncs]);
+  }, [loadOperations, syncs]);
   useEffect(() => { const transcript = transcriptRef.current; if (transcript) { followTranscript.current = true; transcript.scrollTop = transcript.scrollHeight; } }, [messages]);
   // While an answer is being revealed the list does not change, so the transcript follows the text unless the reader scrolled up.
   const followReveal = useCallback(() => { const transcript = transcriptRef.current; if (transcript && followTranscript.current) transcript.scrollTop = transcript.scrollHeight; }, []);
@@ -290,10 +287,10 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
     finally { setAsking(false); }
   }
   return <><div className="workspace-frame chat-workspace overflow-hidden border border-line bg-panel">
-    <div ref={panelsRef} className={`grid workspace-panels${toolsCollapsed ? " tools-collapsed" : ""}`}>
-      <ToolsSidebar orgId={company.id} canManage={canManage} collapsed={toolsCollapsed} onToggle={toggleTools} tools={syncStatus.tools} loading={syncStatus.loading} libraryRoots={roots} onAdd={onConnect} onSelectTool={(tool) => router.push(libraryPath(company.id, tool.libraryNodeId))} />
+    <div ref={panelsRef} className="grid workspace-panels history-docked">
+      <ConversationHistory docked organizationId={company.id} activeId={conversationId} refreshKey={conversationId} disabled={asking} onNew={startNewConversation} onOpen={openConversation} onDeleted={conversationDeleted} onClose={closeHistory} />
       <main id="consultas" className="conversation-panel relative flex min-h-[560px] min-w-0 flex-col bg-panel">
-        <div className="chat-topbar flex shrink-0 items-center justify-end gap-1 border-b border-line-soft bg-panel px-3 py-1.5 sm:px-5"><button type="button" data-tour="history" onClick={() => setHistoryOpen((open) => !open)} ref={historyTrigger} aria-expanded={historyOpen} className="mr-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:bg-sage"><History size={16} aria-hidden="true" /><span className="hidden sm:inline">Conversas</span></button><SyncIndicator tools={syncStatus.tools} /><button type="button" onClick={onShowTour} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:bg-sage" aria-label="Rever tour do app"><HelpCircle size={16} aria-hidden="true" /><span className="hidden sm:inline">Conhecer o app</span></button><NewConversationButton onClick={startNewConversation} disabled={asking} /></div>
+        <div className="chat-topbar flex shrink-0 items-center justify-end gap-1 border-b border-line-soft bg-panel px-3 py-1.5 sm:px-5"><button type="button" data-tour="history" onClick={() => setHistoryOpen((open) => !open)} ref={historyTrigger} aria-expanded={historyOpen} className="chat-topbar-history mr-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:bg-sage"><History size={16} aria-hidden="true" /><span className="hidden sm:inline">Conversas</span></button><SyncIndicator tools={syncStatus.tools} /><span className="chat-topbar-new"><NewConversationButton onClick={startNewConversation} disabled={asking} /></span></div>
         <Transition show={historyOpen} variant="slide-x" className="conversation-history-presence"><ConversationHistory active={historyOpen} organizationId={company.id} activeId={conversationId} refreshKey={conversationId} disabled={asking} onOpen={openConversation} onDeleted={conversationDeleted} onClose={closeHistory} /></Transition>
         <div ref={transcriptRef} onScroll={(event) => { const el = event.currentTarget; followTranscript.current = el.scrollHeight - el.scrollTop - el.clientHeight < 96; }} role="log" aria-label="Conversa com seus documentos" aria-live="polite" className="flex-1 overflow-y-auto px-5 py-6 sm:px-7">{restoringConversation ? <LoadingBlock label="Restaurando sua conversa…" className="mx-auto max-w-3xl space-y-6"><SkeletonText lines={2} /><SkeletonText lines={4} /><SkeletonList rows={2} /></LoadingBlock> : messages.length > 0 ? <div className="mx-auto max-w-3xl space-y-5">{messages.map((message) => message.role === "user" ? <Enter key={message.id} variant="pop" origin="user" className="ml-auto max-w-[85%]"><p className="mb-1 text-right text-xs font-medium text-muted-foreground">{message.contextName}</p><div className="conversation-question px-4 py-3 text-sm leading-6">{message.content}{Boolean(message.mentions?.length) && <span className="mt-2 block text-xs">{mentionSummary(message.mentions ?? [])}</span>}</div>{message.contextId && (savedByMessage[message.id] ? <div className="mt-1.5 flex items-center justify-end gap-2 text-xs text-muted-foreground">Pergunta salva<FollowToggle organizationId={company.id} savedQueryId={savedByMessage[message.id].id} followed={savedByMessage[message.id].followed ?? false} onError={setError} /></div> : <button disabled={saving} onClick={() => { void saveQuestion(message); }} className="mt-1.5 block ml-auto text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-40">Salvar pergunta</button>)}</Enter> : <Enter as="article" key={message.id} variant="slide" origin="assistant" className="conversation-answer"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-sage-selected text-primary"><Sparkles size={15} /></span><div><p className="text-sm font-semibold text-ink">Arquivio</p><p className="text-xs text-muted-foreground">{message.contextName}</p></div></div>{(message.pending || (!message.error && message.answer && (message.fresh || Boolean(message.providers?.length)))) && <SourceReadingStatus providers={message.providers} reading={Boolean(message.pending)} />}{message.pending ? <PendingAnswer providers={message.providers} /> : message.error ? <div className="mt-4 text-sm leading-6 text-rose-700"><p>Não foi possível concluir esta pergunta: {message.error}</p><button type="button" className="mt-2 min-h-11 underline" onClick={() => { setQuestion(message.content); setMentions(message.mentions ?? []); setAllTools(message.allTools ?? true); setQueryProviders(message.providers ?? []); composerRef.current?.focus(); }}>Repetir com este contexto</button></div> : message.answer ? <><AssistantAnswer onOpenFile={openFile} messageId={message.id} answer={message.answer} animate={Boolean(message.fresh)} onProgress={followReveal} onRevealed={() => revealFinished(message.id)} />
         {message.persisted && conversationId && message.answer?.answer && <AnswerActions organizationId={company.id} conversationId={conversationId} messageId={message.id} text={message.answer.answer} sources={message.answer.citations} clickUpEnabled={clickUpConnected(contexts)} />}

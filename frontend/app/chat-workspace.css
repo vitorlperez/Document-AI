@@ -156,3 +156,17 @@
 @media (max-width: 767px) { .conversation-history-presence > .conversation-history { inset: 0; width: 100%; max-width: none; } }
 
 @media (max-width: 767px) { .chat-workspace .composer-send { min-width: 2.75rem; } }
+
+/* Conversation history is the chat sidebar: docked column from 1024px, slide-over panel below it (topbar button). */
+.conversation-history-docked { display: none; }
+@media (min-width: 768px) {
+  .chat-workspace > .workspace-panels.history-docked { --tools-sidebar-width: 0px; }
+  .conversation-history-docked { display: flex; width: 0; overflow: hidden; border-right: 0; visibility: hidden; }
+}
+@media (min-width: 1024px) {
+  .chat-workspace > .workspace-panels.history-docked { --tools-sidebar-width: 256px; }
+  .conversation-history-docked { width: auto; overflow: hidden; border-right: 1px solid var(--color-line); visibility: visible; }
+  .conversation-history-docked > div:last-child { overflow-y: auto; }
+  .chat-topbar-history, .chat-topbar-new { display: none; }
+}
+@media (max-width: 767px) { .chat-topbar-new { display: none; } }

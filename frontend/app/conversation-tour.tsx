@@ -9,16 +9,16 @@ import { playSurfaceEntry } from "./interface-motion";
 const steps = [
   { target: "composer", title: "Pergunte aos seus documentos", description: "Escreva uma pergunta em linguagem natural e envie. A resposta usa o conteúdo já indexado. Digite @ para mencionar um arquivo ou pasta." },
   { target: "tools", title: "Escolha onde procurar", description: "Use o seletor de ferramentas para limitar as fontes da pergunta. As menções a arquivos e pastas refinam ainda mais esse escopo." },
-  { target: "history", title: "Histórico de conversas", description: "Abra Conversas para retomar, renomear ou apagar consultas anteriores. No celular, ele fica no menu ☰." },
+  { target: "history", title: "Histórico de conversas", description: "A barra lateral lista suas conversas para retomar, renomear ou apagar. No celular, use o ícone de histórico no topo." },
   { target: "new-conversation", title: "Um novo assunto, uma nova conversa", description: "Nova conversa limpa o contexto do assunto anterior. Use-a quando quiser começar uma consulta independente." },
-  { target: "tool-sidebar", title: "Seu conhecimento, organizado", description: "Escolha uma ferramenta na barra lateral ou na aba Biblioteca para abrir a Biblioteca já com ela selecionada e acompanhar as sincronizações. Responsáveis e administradores também encontram Integrações para conectar fontes." },
+  { target: "org", title: "Sua organização", description: "Clique no nome da organização para trocar de organização e abrir Espaços e Automações. Responsáveis e administradores também encontram aqui Integrações, Uso e limites e API e MCP." },
   { target: "notifications", title: "Notificações e resumo semanal", description: "O sino reúne os avisos do seu espaço e permite gerar o resumo da semana na hora ou recebê-lo por e-mail." },
-  { target: "account", title: "Conta e configurações", description: "Clique no seu avatar com a engrenagem para abrir o menu: Perfil para todos e, conforme sua permissão, Equipe, Administração (uso, cotas e qualidade das respostas), Desenvolvedor (API e MCP) e Sair." },
-  { target: "navigation", title: "Navegue pelo seu espaço", description: "Use as abas no topo — ou o menu ☰ no celular — para alternar entre Conversa e Biblioteca. Conforme sua permissão, Integrações conecta fontes." },
+  { target: "account", title: "Conta e configurações", description: "No avatar ficam as coisas só suas: Perfil, Tema (claro, escuro ou sistema), Conhecer o app, Atalhos e Sair. No celular, tudo isso está em Mais." },
+  { target: "navigation", title: "Navegue pelo seu espaço", description: "Alterne entre Conversa e Biblioteca no topo — ou na barra inferior no celular. Use ⌘K (Ctrl K) para buscar arquivos ou ir direto a qualquer página." },
 ];
 
-// On narrow screens some desktop-only anchors are hidden; the drawer button (☰) is the closest visible stand-in.
-const mobileFallback = new Set(["tool-sidebar", "history"]);
+// On narrow screens the history toggle is hidden; the bottom tab bar is the closest visible stand-in.
+const mobileFallback = new Set(["history"]);
 
 export type TourExit = "finished" | "dismissed";
 
