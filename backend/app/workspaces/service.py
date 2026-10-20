@@ -15,7 +15,7 @@ from app.integrations.google_drive import GoogleAccessDenied
 from app.integrations.models import DataSource
 from app.organizations.models import Membership, MembershipRole
 from app.spaces import enrollment
-from app.spaces.access import SpaceAccessResolver, SpaceRef
+from app.spaces.access import SpaceAccess, SpaceAccessResolver, SpaceRef
 from app.spaces.models import Space, SpaceFolderGrant
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
@@ -49,6 +49,9 @@ class WorkspaceService:
             access = SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id)
         except SyncAccessDenied as error:
             raise GoogleAccessDenied("workspace access denied") from error
+        return self._readable_folders(scope, access)
+
+    def _readable_folders(self, scope: OrganizationScope, access: SpaceAccess) -> list[WorkspaceFolder]:
         return list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id, ids_clause(self.session, WorkspaceFolder.id, access.folder_ids)).order_by(WorkspaceFolder.name)))
 
     def folders_with_spaces(self, *, scope: OrganizationScope, user_id: UUID) -> list[tuple[WorkspaceFolder, tuple[SpaceRef, ...], bool]]:
@@ -65,7 +68,7 @@ class WorkspaceService:
             Membership.organization_id == scope.organization_id, Membership.user_id == user_id,
             Membership.is_active.is_(True), Membership.role.in_([MembershipRole.OWNER, MembershipRole.ADMIN]))) is not None
         if not is_admin:
-            rows = self.folders(scope=scope, user_id=user_id)
+            rows = self._readable_folders(scope, access)
             return [(folder, access.spaces_of(folder.id), True) for folder in rows]
         folders = list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolder.name)))
         granted: dict[UUID, dict[UUID, SpaceRef]] = {}
