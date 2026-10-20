@@ -19,11 +19,12 @@ def current_space_filter() -> frozenset[UUID] | None:
 
 @contextmanager
 def narrowed_to_spaces(space_ids: Collection[UUID] | None) -> Iterator[None]:
-    """``None`` leaves the surrounding filter untouched (no filter requested)."""
+    """``None`` leaves the surrounding filter untouched; a nested filter intersects with it, never replaces it."""
     if space_ids is None:
         yield
         return
-    token = _space_filter.set(frozenset(space_ids))
+    current = _space_filter.get()
+    token = _space_filter.set(frozenset(space_ids) if current is None else current & frozenset(space_ids))
     try:
         yield
     finally:

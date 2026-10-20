@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.core.access_errors import SyncAccessDenied
 from app.core.scoping import OrganizationScope
-from app.organizations.models import Membership, Organization
+from app.organizations.models import Membership, MembershipRole, Organization
 from app.spaces.filter import current_space_filter
 from app.spaces.models import Space, SpaceFolderGrant, SpaceMember
 from app.spaces.service import SpaceNotFound
@@ -22,6 +22,7 @@ from app.workspaces.models import WorkspaceFolder
 
 logger = logging.getLogger(__name__)
 MODE_OFF, MODE_SHADOW, MODE_ENFORCE = "off", "shadow", "enforce"
+ADMIN_ROLES = (MembershipRole.OWNER, MembershipRole.ADMIN)
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,10 @@ class SpaceAccess:
     user_id: UUID
     spaces: Mapping[UUID, SpaceRef]
     folder_spaces: Mapping[UUID, frozenset[UUID]]
+    # Legacy answer (rollout ``off``/``shadow``, no Space filter): nothing may narrow the library tree.
+    unrestricted: bool = False
+    # Owner/admin of the organization: sees catalog nodes no scope indexes (operational view, never content).
+    org_admin: bool = False
 
     @property
     def folder_ids(self) -> frozenset[UUID]:
@@ -61,21 +66,27 @@ class SpaceAccessResolver:
         strict: bool = False,
     ) -> SpaceAccess:
         """``space_ids`` only narrows. ``strict`` (routes) turns a Space the person is not in into SpaceNotFound."""
-        mode = self._require_active_member(scope, user_id)
-        if space_ids is None:
-            space_ids = current_space_filter()  # the request's own narrowing, opened by the route/agent entry point
+        mode, org_admin = self._require_active_member(scope, user_id)
+        space_ids = _intersect(space_ids, current_space_filter())  # the explicit filter and the request's own
         if mode == MODE_OFF:
-            return self._legacy(scope, user_id)
-        granted = self._granted(scope, user_id, space_ids, strict)
+            return self._legacy(scope, user_id, space_ids, org_admin)
         if mode == MODE_SHADOW:
-            legacy = self._legacy(scope, user_id)
+            # Shadow must never break the legacy answer: a bad filter or a failing Space query is logged, not raised.
+            legacy = self._legacy(scope, user_id, space_ids, org_admin)
+            try:
+                granted = self._granted(scope, user_id, space_ids, False, org_admin)
+            except Exception:
+                logger.exception("spaces.shadow_failed", extra={
+                    "organization_id": str(scope.organization_id), "user_id": str(user_id)})
+                return legacy
             only_legacy, only_spaces = legacy.folder_ids - granted.folder_ids, granted.folder_ids - legacy.folder_ids
             if only_legacy or only_spaces:
                 logger.warning("spaces.shadow_divergence", extra={
                     "organization_id": str(scope.organization_id), "user_id": str(user_id),
                     "only_legacy": len(only_legacy), "only_spaces": len(only_spaces)})
             return legacy
-        return granted  # enforce, and any unknown mode value fails closed to the Space rules
+        # enforce, and any unknown/empty mode value fails closed to the Space rules
+        return self._granted(scope, user_id, space_ids, strict, org_admin)
 
     def require_folders(
         self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_ids: Collection[UUID],
@@ -100,25 +111,40 @@ class SpaceAccessResolver:
         return self.require_folders(scope=scope, user_id=user_id, workspace_folder_ids=[workspace_folder_id])[0]
 
     # -- internals -------------------------------------------------------------------------------
-    def _require_active_member(self, scope: OrganizationScope, user_id: UUID) -> str:
-        """Membership check and rollout mode in one statement; returns the mode."""
+    def _require_active_member(self, scope: OrganizationScope, user_id: UUID) -> tuple[str, bool]:
+        """Membership check, rollout mode and admin role in one statement."""
         row = self.session.execute(
-            select(Organization.spaces_resolver_mode)
+            select(Organization.spaces_resolver_mode, Membership.role)
             .join(Membership, Membership.organization_id == Organization.id)
             .where(Organization.id == scope.organization_id, Membership.user_id == user_id,
                    Membership.is_active.is_(True))
             .limit(1)).first()
         if row is None:
             raise SyncAccessDenied("company library access denied")
-        return row[0] or MODE_OFF
+        mode = row[0]
+        if mode not in (MODE_OFF, MODE_SHADOW):
+            mode = MODE_ENFORCE  # only the two legacy degrees are honoured; empty/unknown is the strict one
+        return mode, row[1] in ADMIN_ROLES
 
-    def _legacy(self, scope: OrganizationScope, user_id: UUID) -> SpaceAccess:
-        ids = self.session.execute(
-            select(WorkspaceFolder.id).where(WorkspaceFolder.organization_id == scope.organization_id)).scalars()
-        return SpaceAccess(scope.organization_id, user_id, {}, {folder_id: frozenset() for folder_id in ids})
+    def _legacy(
+        self, scope: OrganizationScope, user_id: UUID, space_ids: Collection[UUID] | None, org_admin: bool
+    ) -> SpaceAccess:
+        """Every folder of the organization; a Space filter keeps only the folders those Spaces grant."""
+        query = select(WorkspaceFolder.id).where(WorkspaceFolder.organization_id == scope.organization_id)
+        if space_ids is not None:
+            query = query.where(WorkspaceFolder.id.in_(
+                select(SpaceFolderGrant.workspace_folder_id)
+                .join(Space, Space.id == SpaceFolderGrant.space_id)
+                .where(SpaceFolderGrant.organization_id == scope.organization_id,
+                       SpaceFolderGrant.revoked_at.is_(None), Space.organization_id == scope.organization_id,
+                       Space.archived_at.is_(None), SpaceFolderGrant.space_id.in_(list(space_ids)))))
+        ids = self.session.execute(query).scalars()
+        return SpaceAccess(scope.organization_id, user_id, {}, {folder_id: frozenset() for folder_id in ids},
+                           unrestricted=space_ids is None, org_admin=org_admin)
 
     def _granted(
-        self, scope: OrganizationScope, user_id: UUID, space_ids: Collection[UUID] | None, strict: bool
+        self, scope: OrganizationScope, user_id: UUID, space_ids: Collection[UUID] | None, strict: bool,
+        org_admin: bool = False,
     ) -> SpaceAccess:
         org = scope.organization_id
         spaces_query = (
@@ -141,4 +167,12 @@ class SpaceAccessResolver:
                        SpaceFolderGrant.space_id.in_(list(spaces)), WorkspaceFolder.organization_id == org))
             for folder_id, space_id in rows:
                 folder_spaces.setdefault(folder_id, set()).add(space_id)
-        return SpaceAccess(org, user_id, spaces, {k: frozenset(v) for k, v in folder_spaces.items()})
+        return SpaceAccess(org, user_id, spaces, {k: frozenset(v) for k, v in folder_spaces.items()},
+                           org_admin=org_admin)
+
+
+def _intersect(first: Collection[UUID] | None, second: Collection[UUID] | None) -> frozenset[UUID] | None:
+    """``None`` is "no filter"; two filters narrow each other, they never widen."""
+    if first is None:
+        return None if second is None else frozenset(second)
+    return frozenset(first) if second is None else frozenset(first) & frozenset(second)

@@ -154,3 +154,52 @@ def test_require_folders_is_one_batch_and_denies_any_outsider(session):
     with pytest.raises(SyncAccessDenied):
         resolver.require_folders(scope=scope, user_id=user,
                                  workspace_folder_ids=[world.folders["rh"], world.folders["diretoria"]])
+
+
+def _set_mode(session, world, mode):
+    session.get(Organization, world.organization_id).spaces_resolver_mode = mode
+    session.flush()
+
+
+def test_shadow_never_breaks_the_legacy_answer(session, monkeypatch):
+    """B1: an unknown space_id or a failure of the Space query must not turn into 404/500 while in shadow."""
+    world = seed_world(session)
+    _set_mode(session, world, "shadow")
+    from uuid import uuid4
+    legacy = resolve(session, world, "daniel", space_ids=[uuid4()], strict=True)  # no SpaceNotFound
+    assert legacy.folder_ids == frozenset()  # B2: the filter narrows the legacy answer too
+
+    def boom(self, *args, **kwargs):
+        raise RuntimeError("spaces query down")
+
+    monkeypatch.setattr(SpaceAccessResolver, "_granted", boom)
+    assert resolve(session, world, "daniel").folder_ids == set(world.folders.values())  # legacy served
+
+
+def test_space_filter_narrows_in_off_and_shadow_too(session):
+    """B2: space_ids intersects the legacy answer instead of being a no-op."""
+    world = seed_world(session)
+    for mode in ("off", "shadow"):
+        _set_mode(session, world, mode)
+        assert resolve(session, world, "daniel", space_ids=[world.spaces["rh"]]).folder_ids == {world.folders["rh"]}
+        assert resolve(session, world, "daniel").folder_ids == set(world.folders.values())
+
+
+def test_nested_space_filters_intersect(session):
+    """C2: a narrower filter inside a filtered request never widens it, and an explicit one intersects."""
+    from app.spaces.filter import narrowed_to_spaces
+    world = seed_world(session)
+    rh, diretoria, geral = world.spaces["rh"], world.spaces["diretoria"], world.spaces["geral"]
+    with narrowed_to_spaces([rh, geral]):
+        with narrowed_to_spaces([rh, diretoria]):
+            assert resolve(session, world, "carla").folder_ids == {world.folders["rh"]}
+        assert resolve(session, world, "carla", space_ids=[rh, diretoria]).folder_ids == {world.folders["rh"]}
+        assert resolve(session, world, "carla").folder_ids == {world.folders["rh"], world.folders["politicas"]}
+
+
+def test_empty_or_unknown_mode_is_enforced_never_off(session):
+    """C5: only the three known modes are honoured; everything else is the strict one."""
+    world = seed_world(session)
+    for mode in ("", "OFF ", "bogus"):
+        _set_mode(session, world, mode)
+        assert resolve(session, world, "daniel").folder_ids == {world.folders["politicas"], world.folders["diretoria"]}
