@@ -98,7 +98,7 @@ def test_provision_creates_dedicated_robot_encrypted_with_audit(env):
     assert (identity.status, identity.organization_id) == ("assigned", source.organization_id)
     assert "secret-pem" not in identity.encrypted_key
     assert ServiceAccountKeyCipher(key).decrypt(identity.encrypted_key)["private_key"] == "secret-pem"
-    project, account, name = iam.accounts[0]
+    project, _account, name = iam.accounts[0]
     assert project == "pool-a" and str(source.organization_id) in name
     actions = list(session.scalars(select(AuditLog.action).where(AuditLog.organization_id == source.organization_id)))
     assert actions == ["drive_sa.robot_provisioned"]
