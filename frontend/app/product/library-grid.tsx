@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, ExternalLink, File, FileSpreadsheet, FileText, Folder, Image as ImageIcon, LayoutGrid, List, MoreHorizontal, Presentation, RefreshCw, Trash2 } from "lucide-react";
+import { ChevronRight, ExternalLink, MessageSquare, File, FileSpreadsheet, FileText, Folder, Image as ImageIcon, LayoutGrid, List, MoreHorizontal, Presentation, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { FILE_KIND_LABEL, fileKind, withSpaceHeadings, type FileKind, type LibraryGridSize, type LibraryView } from "../library-view-logic";
 import { SpaceBadges } from "./library-spaces";
@@ -85,6 +85,10 @@ export type LibraryGridProps = {
   onOpen: (item: LibraryNode) => void;
   onReprocessFile: (item: LibraryNode) => void; onRemoveFile: (item: LibraryNode) => void;
   onSyncFolder: (item: LibraryNode) => void; onRemoveFolder: (item: LibraryNode) => void;
+  /** Biblioteca → Conversa: abre o chat com o item já mencionado. */
+  onAsk?: (item: LibraryNode) => void;
+  /** Item destacado pela ponte Conversa → Biblioteca. */
+  focusId?: string | null;
 };
 
 /** Placeholder com a forma real dos cards/linhas enquanto a biblioteca carrega (skeleton, não texto cru). */
@@ -93,7 +97,7 @@ export function LibraryLoadingSkeleton({ view, label = "Carregando arquivos…" 
   return <LoadingBlock label={label}><div aria-hidden="true" data-size={view.size} className="library-grid library-skeleton-grid">{Array.from({ length: view.size === "s" ? 12 : view.size === "m" ? 8 : 6 }, (_, i) => <div key={i} className="library-card library-skeleton-card"><span className="mo-skeleton library-skeleton-icon" /><SkeletonLine width={`${[78, 62, 70, 55][i % 4]}%`} /><SkeletonLine width="34%" /></div>)}</div></LoadingBlock>;
 }
 
-export function LibraryGrid({ items, groupBySpace = false, size, loading, canManage, busyNodeId, busyFileId, onOpen, onReprocessFile, onRemoveFile, onSyncFolder, onRemoveFolder }: LibraryGridProps) {
+export function LibraryGrid({ items, groupBySpace = false, size, loading, canManage, busyNodeId, busyFileId, onOpen, onReprocessFile, onRemoveFile, onSyncFolder, onRemoveFolder, onAsk, focusId }: LibraryGridProps) {
   return <ul key={size} aria-busy={loading} aria-label="Arquivos e pastas" data-size={size} className={`library-grid${loading ? " is-loading" : ""}`}>
     {withSpaceHeadings(items, groupBySpace).map((entry, index) => {
       if (entry.type === "heading") return <li key={entry.key} className="library-group-heading">{entry.label}<span>{entry.count} {entry.count === 1 ? "item" : "itens"}</span></li>;
@@ -111,7 +115,7 @@ export function LibraryGrid({ items, groupBySpace = false, size, loading, canMan
       if (item.kind === "folder" && canManage) actions.push({ key: "remove-folder", label: "Remover pasta", icon: <Trash2 size={15} aria-hidden="true" />, danger: true, disabled: busyNodeId !== null, run: () => onRemoveFolder(item) });
       const label = isFolder ? (item.kind === "source" ? "Integração" : "Pasta") : FILE_KIND_LABEL[kind];
       const working = busyNodeId === item.id || busyFileId === item.id;
-      return <li key={entry.key} className="library-card mo-stagger-item" data-step={size === "s" ? undefined : "md"} style={staggerStyle(index) as CSSProperties} data-kind={isFolder ? "folder" : kind} data-busy={working || undefined}>
+      return <li key={entry.key} className="library-card mo-stagger-item" data-step={size === "s" ? undefined : "md"} style={staggerStyle(index) as CSSProperties} data-kind={isFolder ? "folder" : kind} data-busy={working || undefined} data-node-id={item.id} data-focus={focusId === item.id ? "true" : undefined}>
         <button type="button" className="library-card-main" onClick={() => onOpen(item)} title={item.name} aria-label={isFolder ? `Abrir pasta ${item.name}` : item.source_url ? `${item.name} — abrir no provedor` : item.name}>
           <span className="library-card-icon" aria-hidden="true">{isFolder ? <Folder size={size === "s" ? 24 : size === "m" ? 30 : 38} /> : <Icon size={size === "s" ? 24 : size === "m" ? 30 : 38} />}{working && <span className="library-card-spin"><Spinner size={12} /></span>}</span>
           <span className="library-card-name">{item.name}</span>
@@ -120,6 +124,7 @@ export function LibraryGrid({ items, groupBySpace = false, size, loading, canMan
         </button>
         {!isFolder && <div className="library-card-indexing"><LibraryIndexingBadge item={item} /></div>}
         {item.access_state && <div className="library-card-indexing"><LibraryAccessBadge item={item} /></div>}
+        {onAsk && item.kind !== "source" && (isFolder || indexed) && <button type="button" className="library-card-ask" onClick={() => onAsk(item)} aria-label={isFolder ? `Perguntar sobre a pasta ${item.name}` : `Perguntar sobre ${item.name}`}><MessageSquare size={13} aria-hidden="true" /><span>{isFolder ? "Perguntar sobre esta pasta" : "Perguntar"}</span></button>}
         <CardMenu name={item.name} actions={actions} />
       </li>;
     })}
