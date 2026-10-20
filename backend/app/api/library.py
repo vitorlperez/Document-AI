@@ -26,7 +26,7 @@ from app.library.service import (
     LibraryService,
 )
 from app.library.tool_groups import display_node_name
-from app.spaces.access import SpaceAccessResolver
+from app.spaces.access import SpaceAccess, SpaceAccessResolver, SpaceRef
 from app.spaces.service import SpaceNotFound
 from app.workspaces.models import WorkspaceFolder
 
@@ -46,6 +46,7 @@ def _indexing(item: FileIndexing) -> dict[str, object]:
 def _node(
     *, node: LibraryNode, documents: list[IndexedDocumentProvenance], source_provider: str | None = None,
     indexing: FileIndexing | None = None, access: tuple[str, object] | None = None,
+    spaces: tuple[SpaceRef, ...] = (),
 ) -> dict[str, object]:
     return {
         "id": str(node.id),
@@ -64,25 +65,45 @@ def _node(
         ],
         **({"indexing": _indexing(indexing)} if node.kind == "file" and indexing else {}),
         **({"access_state": access[0], "purge_after": access[1].isoformat() if access[1] else None} if access else {}),
+        "spaces": _spaces(spaces),
     }
+
+
+def _spaces(refs: tuple[SpaceRef, ...]) -> list[dict[str, str]]:
+    return [{"id": str(ref.id), "name": ref.name} for ref in refs]
+
+
+def _caller_access(service: LibraryService, scope: OrganizationScope, user_id: UUID,
+                   space_ids: list[UUID] | None) -> SpaceAccess:
+    """The caller's access, narrowed to ``space_ids`` when asked. A Space that is not theirs does not exist (404)."""
+    if space_ids:
+        return SpaceAccessResolver(service.session).resolve(scope=scope, user_id=user_id, space_ids=space_ids, strict=True)
+    return service.access_for(scope=scope, user_id=user_id)
 
 
 @router.get("/library")
 def library_roots(
     organization_id: UUID,
+    space_ids: list[UUID] | None = Query(default=None, max_length=50),
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
 ) -> dict[str, object]:
     try:
         scope = OrganizationScope(organization_id)
         service = LibraryService(session)
-        roots = service.roots(scope=scope, user_id=user.id)
+        space_access = _caller_access(service, scope, user.id, space_ids)
+        roots = service.roots(scope=scope, user_id=user.id, access=space_access)
         providers = service.source_providers(scope=scope, user_id=user.id)
+        badges = service.spaces_for_nodes(scope=scope, nodes=roots, access=space_access)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    except SpaceNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="space not found") from error
     return {
         "items": [
-            _node(node=node, documents=[], source_provider=providers.get(node.source_id)) for node in roots
+            _node(node=node, documents=[], source_provider=providers.get(node.source_id),
+                  spaces=badges.get(node.id, ()))
+            for node in roots
         ]
     }
 
@@ -93,24 +114,28 @@ def library_search(
     query: str = Query(min_length=1, max_length=500),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=PAGE_SIZE_MAX),
+    space_ids: list[UUID] | None = Query(default=None, max_length=50),
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
 ) -> dict[str, object]:
     try:
         scope = OrganizationScope(organization_id)
         service = LibraryService(session)
-        space_access = service.access_for(scope=scope, user_id=user.id)
+        space_access = _caller_access(service, scope, user.id, space_ids)
         result = service.search_page(scope=scope, user_id=user.id, query=query, page=page, page_size=page_size,
                                      access=space_access)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    except SpaceNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="space not found") from error
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
     documents, indexing = service.documents_and_indexing_for_nodes(scope=scope, nodes=result.items, access=space_access)
     access = service.robot_access_states(scope=scope, nodes=result.items)
+    badges = service.spaces_for_nodes(scope=scope, nodes=result.items, access=space_access)
     return {
         "items": [_node(node=node, documents=documents.get(node.id, []), indexing=indexing.get(node.id),
-                        access=access.get(node.id))
+                        access=access.get(node.id), spaces=badges.get(node.id, ()))
                   for node in result.items],
         "page": result.page, "page_size": result.page_size, "total": result.total, "pages": result.pages,
     }
@@ -157,21 +182,27 @@ def library_mention_candidates(
     organization_id: UUID,
     q: str = Query(default="", max_length=500),
     limit: int = Query(default=20, ge=1, le=50),
+    space_ids: list[UUID] | None = Query(default=None, max_length=50),
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
 ) -> dict[str, object]:
     try:
-        items = LibraryService(session).mention_candidates(
-            scope=OrganizationScope(organization_id), user_id=user.id, query=q, limit=limit
-        )
+        scope = OrganizationScope(organization_id)
+        service = LibraryService(session)
+        space_access = _caller_access(service, scope, user.id, space_ids)
+        items = service.mention_candidates(scope=scope, user_id=user.id, query=q, limit=limit, access=space_access)
+        badges = service.spaces_for_nodes(scope=scope, nodes=[item.node for item in items], access=space_access)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    except SpaceNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="space not found") from error
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
     return {"items": [{
         "node_id": str(item.node.id), "kind": item.node.kind, "name": item.node.name,
         "source_id": str(item.node.source_id), "source_provider": item.source_provider,
         "path": item.path, "query_status": item.query_status,
+        "spaces": _spaces(badges.get(item.node.id, ())),
     } for item in items]}
 
 
@@ -219,13 +250,14 @@ def library_children(
     organization_id: UUID,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=100, ge=1, le=PAGE_SIZE_MAX),
+    space_ids: list[UUID] | None = Query(default=None, max_length=50),
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
 ) -> dict[str, object]:
     try:
         scope = OrganizationScope(organization_id)
         service = LibraryService(session)
-        space_access = service.access_for(scope=scope, user_id=user.id)
+        space_access = _caller_access(service, scope, user.id, space_ids)
         result = service.children(
             scope=scope,
             user_id=user.id,
@@ -237,11 +269,14 @@ def library_children(
     except SyncAccessDenied as error:
         # A foreign UUID is intentionally indistinguishable from an absent node.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="library node not found") from error
+    except SpaceNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="space not found") from error
     documents, indexing = service.documents_and_indexing_for_nodes(scope=scope, nodes=result.items, access=space_access)
     access = service.robot_access_states(scope=scope, nodes=result.items)
+    badges = service.spaces_for_nodes(scope=scope, nodes=result.items, access=space_access)
     return {
         "items": [_node(node=node, documents=documents.get(node.id, []), indexing=indexing.get(node.id),
-                        access=access.get(node.id))
+                        access=access.get(node.id), spaces=badges.get(node.id, ()))
                   for node in result.items],
         "page": result.page,
         "page_size": result.page_size,

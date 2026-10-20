@@ -479,6 +479,69 @@ class LibraryService:
         }
         return provenance, indexing
 
+    def spaces_for_nodes(
+        self, *, scope: OrganizationScope, nodes: Collection[LibraryNode], access: SpaceAccess
+    ) -> dict[UUID, tuple[SpaceRef, ...]]:
+        """Space badges of a page of nodes, from the caller's own Spaces only, in a constant number of queries.
+
+        A file carries the Spaces of every readable scope that holds a live copy; a folder the union over the files
+        below it; a source root the Spaces of its readable scopes."""
+        if not access.spaces or not nodes:
+            return {}
+        org = scope.organization_id
+        files = [node for node in nodes if node.kind == "file"]
+        folders = [node for node in nodes if node.kind == "folder"]
+        sources = {node.source_id for node in nodes if node.kind == "source"}
+        folder_sets: dict[UUID, set[UUID]] = {}
+        live = (Document.organization_id == org, Document.index_status.not_in(("removed", "deleted")),
+                ids_clause(self.session, Document.workspace_folder_id, access.folder_ids))
+        if files:
+            by_key: dict[tuple[UUID, str], list[UUID]] = {}
+            for node in files:
+                by_key.setdefault((node.source_id, node.external_id), []).append(node.id)
+            for source_id, external_id, folder_id in self.session.execute(
+                select(WorkspaceFolder.source_id, Document.external_file_id, Document.workspace_folder_id)
+                .select_from(Document).join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+                .where(*live, ids_clause(self.session, WorkspaceFolder.source_id, {n.source_id for n in files}),
+                       ids_clause(self.session, Document.external_file_id, {n.external_id for n in files}))
+                .distinct()
+            ):
+                for node_id in by_key.get((source_id, external_id), ()):
+                    folder_sets.setdefault(node_id, set()).add(folder_id)
+        if folders:
+            below = select(LibraryNode.id.label("root"), LibraryNode.id.label("node")).where(
+                LibraryNode.organization_id == org, ids_clause(self.session, LibraryNode.id, [n.id for n in folders]),
+            ).cte("badge_subtree", recursive=True)
+            child = aliased(LibraryNode)
+            below = below.union(select(below.c.root, child.id).where(
+                child.parent_id == below.c.node, child.organization_id == org))
+            file_node = aliased(LibraryNode)
+            for root_id, folder_id in self.session.execute(
+                select(below.c.root, Document.workspace_folder_id)
+                .select_from(below).join(file_node, file_node.id == below.c.node)
+                .join(WorkspaceFolder, WorkspaceFolder.source_id == file_node.source_id)
+                .join(Document, (Document.workspace_folder_id == WorkspaceFolder.id)
+                      & (Document.external_file_id == file_node.external_id))
+                .where(file_node.kind == "file", *live, WorkspaceFolder.organization_id == org).distinct()
+            ):
+                folder_sets.setdefault(root_id, set()).add(folder_id)
+        if sources:
+            by_source: dict[UUID, set[UUID]] = {}
+            for folder_id, source_id in self.session.execute(
+                select(WorkspaceFolder.id, WorkspaceFolder.source_id).where(
+                    WorkspaceFolder.organization_id == org, ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),
+                    ids_clause(self.session, WorkspaceFolder.source_id, sources))
+            ):
+                by_source.setdefault(source_id, set()).add(folder_id)
+            for node in nodes:
+                if node.kind == "source":
+                    folder_sets[node.id] = by_source.get(node.source_id, set())
+        result: dict[UUID, tuple[SpaceRef, ...]] = {}
+        for node_id, folder_ids in folder_sets.items():
+            merged = {ref.id: ref for folder_id in folder_ids for ref in access.spaces_of(folder_id)}
+            result[node_id] = tuple(sorted(merged.values(), key=lambda ref: (ref.name.casefold(), str(ref.id))))
+        return result
+
     def remove_file_if_unindexed(
         self, *, scope: OrganizationScope, source_id: UUID, external_file_id: str
     ) -> None:
