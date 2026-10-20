@@ -13,3 +13,7 @@ test("an admin without Spaces is warned before creating a key; members and admin
   assert.equal(adminWithoutSpacesWarning("admin", 1), null);
   assert.equal(adminWithoutSpacesWarning("admin", null), null, "unknown count never alarms");
 });
+
+test("reach sentence accepts the backend shape ({id, name}) as well as plain names", () => {
+  assert.equal(reachSentence({ spaces: [{ id: "1", name: "RH" }, { id: "2", name: "Geral" }], documents: 1 }), "Esta chave alcançará 1 documento em: RH, Geral.");
+});

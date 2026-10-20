@@ -310,7 +310,7 @@ def reprocess_library_folder(
         scope = OrganizationScope(organization_id)
         run, jobs = request_run(session, scope=scope, user=user, node_id=node_id,
                                 full_mode=reprocess_all)
-        documents = LibraryService(session).indexed_documents_under(scope=scope, user_id=user.id, node_id=node_id, allow_source=True, system_view=True)
+        documents = LibraryService(session).indexed_documents_under(scope=scope, user_id=user.id, node_id=node_id, allow_source=True, system_view=reprocess_all)  # system view only after the admin check of a full run
         if reprocess_all:
             from app.knowledge.models import Document
             for reference in documents:

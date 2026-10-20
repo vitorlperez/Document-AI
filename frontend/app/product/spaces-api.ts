@@ -17,7 +17,8 @@ export type SpaceFolder = { id: string; name: string; status: string; spaces: Sp
 /** Candidato a membro: usuário da organização (GET /organizations/{id}/people — só `user_id` e e-mail; owner, admin ou responsável de algum Espaço). */
 export type OrgPerson = { user_id: string | null; email: string };
 /** Alcance de uma chave de API para quem a cria (T-I2: `reach` em POST/GET /api-keys). */
-export type KeyReach = { spaces: string[]; documents: number };
+/** O backend devolve `{id, name}`; nomes soltos continuam aceitos. */
+export type KeyReach = { spaces: (string | { id?: string; name: string })[]; documents: number };
 
 export type SpacesErrorCode = "not_found" | "forbidden" | "conflict" | "invalid" | "unknown";
 export class SpacesError extends Error {
@@ -79,7 +80,7 @@ export function reachSentence(reach: KeyReach | null | undefined): string | null
   if (!reach) return null;
   if (reach.spaces.length === 0) return "Esta chave não lerá nenhum documento: quem a criou não participa de nenhum Espaço.";
   const docs = `${reach.documents.toLocaleString("pt-BR")} ${reach.documents === 1 ? "documento" : "documentos"}`;
-  return `Esta chave alcançará ${docs} em: ${reach.spaces.join(", ")}.`;
+  return `Esta chave alcançará ${docs} em: ${reach.spaces.map((space) => typeof space === "string" ? space : space.name).join(", ")}.`;
 }
 /** Aviso para quem cria a chave sendo admin sem nenhum Espaço (o admin não lê conteúdo por ser admin — D-2). */
 export const adminWithoutSpacesWarning = (orgRole: "owner" | "admin" | "member", mySpaceCount: number | null) =>
