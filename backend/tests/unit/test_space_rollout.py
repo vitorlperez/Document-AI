@@ -11,7 +11,6 @@ from app.identity.models import User
 from app.organizations.models import Membership, MembershipRole, Organization
 from app.spaces.models import SpaceFolderGrant, SpaceMember
 from app.spaces.rollout import run
-from app.workspaces.models import WorkspaceFolder
 from tests.spaces_helpers import seed_world
 
 
@@ -87,7 +86,7 @@ def test_unknown_organization_is_a_usage_error(session):
 
 
 def test_report_prints_counts_only(session):
-    world = seed_world(session, mode="shadow", name="Segredo SA")
+    seed_world(session, mode="shadow", name="Segredo SA")
     code, text = _cli(session, "report")
     assert code == 0
     assert "folders_without_space=0" in text and "people_without_space=0" in text

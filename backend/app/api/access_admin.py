@@ -11,17 +11,17 @@ from app.access.keys import generate_api_key
 from app.access.models import ALL_SCOPES, ApiKey, OrganizationAccessSettings
 from app.api.auth import current_user, database_session
 from app.audit_usage.models import AuditLog
-from app.identity.models import User
 from app.core.scoping import OrganizationScope
 from app.core.sqlids import ids_clause
+from app.identity.models import User
 from app.ingestion.service import SyncAccessDenied
 from app.knowledge.models import Document
 from app.library.models import LibraryNode
 from app.library.service import LibraryService
 from app.library.tool_groups import tool_groups
+from app.organizations.models import Membership, MembershipRole
 from app.spaces.access import SpaceAccessResolver
 from app.workspaces.models import WorkspaceFolder
-from app.organizations.models import Membership, MembershipRole
 
 router = APIRouter(prefix="/organizations/{organization_id}", tags=["access-administration"])
 

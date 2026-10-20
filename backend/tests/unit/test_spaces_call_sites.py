@@ -45,7 +45,7 @@ def call_sites() -> dict[str, set[str]]:
 
 
 def listed() -> set[str]:
-    return set(re.findall(r"^- `(app/[^`]+\.py)`", LIST.read_text(), flags=re.M))
+    return set(re.findall(r"^- `(app/[^`]+\.py)`", LIST.read_text(), flags=re.MULTILINE))
 
 
 def test_no_content_access_call_site_without_review():

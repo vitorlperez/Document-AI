@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.api.auth import current_user, database_session
 from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
 from app.identity.models import User
 from app.ingestion.models import ProcessingJob
 from app.ingestion.service import (
@@ -16,7 +17,6 @@ from app.ingestion.service import (
     SyncAccessDenied,
     SyncAlreadyActive,
 )
-from app.core.sqlids import ids_clause
 from app.library.manual_sync import SyncCooldown, request_run, serialize_run
 from app.library.models import LibraryNode, ManualSyncRun
 from app.library.service import (
