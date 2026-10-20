@@ -1,6 +1,6 @@
 # ADR-0021: Espaços — acesso a conteúdo por pessoa, com visão unificada
 
-- **Status:** Proposto (rascunho para aprovação do dono; nada implementado)
+- **Status:** Aprovado e implementado (branch `feat/espacos`; rollout por organização com `python -m app.spaces.rollout`)
 - **Data:** 2026-10-19
 - **Decisor:** produto (usuário). Decisões do dono já dadas em 2026-10-19: (P-1) o Drive em produção segue **por enquanto** com o robô (conta de serviço com quem o cliente compartilha pastas) — CASA/OAuth `drive.readonly` fora deste plano; (P-2) integrações de comunicação (WhatsApp, Slack, Teams) ficam para depois; (P-3) quem tem acesso a vários Espaços **não pode ficar trocando de Espaço** para achar as coisas.
 - **Relaciona-se com:** `specs/research/comunicacao-espacos-viabilidade-2026-10-15.md` (D-0…D-7; este ADR assume D-2, D-3, D-4, D-7 e deixa D-0/D-1/D-5/D-6 — chat — fora de escopo), `specs/plans/integracoes/03-api-mcp-e-canais.md` (D1: credencial ⊆ usuário), ADR-0006 (projeção da biblioteca), ADR-0007 (escopos de pergunta indexados), ADR-0013 (chave por provider), ADR-0015 (cerca anti-injeção), ADR-0020 (ação humana aprovada), `specs/espacos/plano-implementacao.md` (plano de execução).
@@ -34,7 +34,7 @@ Fatos que moldam a decisão (todos verificados em código em 2026-10-19):
 | D9 | **Migração sem mudança de comportamento:** Espaço **"Geral"** (`is_default`) por organização com **todos os membros ativos** (Owner/Admin como `manager`) e **todas as pastas**; modo por organização `off → shadow → enforce` (`organizations.spaces_resolver_mode`): em `shadow` serve o legado e registra divergência (só contagens); promove-se a `enforce` com zero divergência; rollback imediato para `shadow`. Novos membros/pastas entram no Espaço padrão enquanto o admin não decidir o contrário. |
 | D10 | **Vocabulário:** "Espaço" = o novo agrupamento com pessoas. O conceito legado (`WorkspaceFolder`) passa a "Pasta conectada" na UI antes de qualquer tela nova; no código permanece `WorkspaceFolder`. |
 | D11 | **Escala:** filtro por `workspace_folder_id IN :U` (já indexado nas tabelas grandes), **não** por `space_id`. Árvore/busca por nome: filtro em SQL por junção com `Document` (v1); projeção `library_node_folders` **somente se** o spike de escala (`spikes/library-scale/`) mostrar estouro do orçamento em 10k+ arquivos. Memoização do `SpaceAccess` por request é opcional. |
-| D12 | **Limites:** continuam **por organização** (`ACTIVE_DOCUMENT_LIMIT`, `MONTHLY_LIMITS`); consumo por Espaço é informativo (pasta em dois Espaços conta nos dois, rotulado). Hierarquia entre Espaços e limite por Espaço **fora** do escopo (adicionar a pessoa aos dois Espaços). |
+| D12 | **Limites:** continuam **por organização** (3.000 documentos ativos em `Settings.active_document_limit`, `MONTHLY_LIMITS`); consumo por Espaço é informativo (pasta em dois Espaços conta nos dois, rotulado). Hierarquia entre Espaços e limite por Espaço **fora** do escopo (adicionar a pessoa aos dois Espaços). |
 | D13 | **Fora de escopo (decisões do dono):** CASA/OAuth `drive.readonly`; WhatsApp/Slack/Teams. O modelo **não os bloqueia**: concessão por pasta/escopo e `disclosure` JSON comportam `public_in_source`/ciência quando voltarem. |
 
 ## Consequências
@@ -78,9 +78,18 @@ Fatos que moldam a decisão (todos verificados em código em 2026-10-19):
 8. Conceder a mesma pasta a dois Espaços não duplica `Document`/chunks; arquivo em duas pastas aparece uma vez com selos combinados.
 9. Eventos de auditoria de Espaço, membro, concessão e "admin entrou".
 
+## Implementação (o que mudou em relação à proposta)
+
+- Teto de documentos ativos: **3.000** por organização (era 500).
+- Modos: em `shadow` o legado nunca quebra e a divergência vai para o log; `space_ids` estreita também em `off`/`shadow`; modo vazio/desconhecido ⇒ `enforce`. `403`→`404` em pasta inalcançável só em `shadow`/`enforce`.
+- `access` é obrigatório nas funções de proveniência da biblioteca; `None` = visão de sistema, restrita a administração depois da checagem de admin, e proibida em código de aplicação por teste de CI (`test_spaces_call_sites.py`, lista em `specs/espacos/call-sites.md`).
+- Alcance de chave (`reach`) em `POST` e `GET /api-keys`, por criador; `/people` devolve só `user_id` e e-mail.
+- Escala (T-D0, `spikes/library-scale/results/api_10k_spaces.json`, `api_50k_spaces.json`): CTE recursiva dentro do orçamento até 50k arquivos; `library_node_folders` (T-D6) **não** foi liberada.
+- Rollout: `python -m app.spaces.rollout` (`status`, `report`, `off|shadow|enforce`, `enforce --all-clean`); `enforce` recusa organização com pasta/pessoa sem Espaço.
+- Fora do entregue: coluna "Espaços" por pasta em Integrações.
+
 ## Pontos em aberto
 
 - Q-2 (D-2 na operação): admin vê nomes de arquivo só após "Entrar" — confirmar com o dono.
 - Prazo de purga (24 h) e política de pausa de automações — confirmar.
-- Resultado de `spikes/library-scale/results/api_10k_spaces.json` (T-D0) decide se a projeção `library_node_folders` entra.
-- Revisar `automations/triggers.py`, `report_pdf.py`, `notifications/digest.py` (não lidos em profundidade).
+- Reavaliar `library_node_folders` se um cliente passar de 50k arquivos ou a busca de 2 letras em ≥ 20 escopos estourar 150 ms em produção.
