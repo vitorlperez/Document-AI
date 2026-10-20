@@ -10,6 +10,7 @@ writes the cookie values to --out; set the cookie ``document_intelligence_sessio
 
 import argparse
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy import select
@@ -17,7 +18,7 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.core.database import build_engine, build_session_factory
 from app.identity.auth import IdentityService
-from app.organizations.models import Organization
+from app.organizations.models import Membership, Organization
 from app.spaces import rollout
 from tests.spaces_helpers import seed_world
 
@@ -35,6 +36,10 @@ def main() -> None:
             if session.scalar(select(Organization).where(Organization.name == name)):
                 raise SystemExit(f"organização {name} já existe; resete o banco antes de semear de novo")
             world = seed_world(session, mode=mode, name=name)
+            org = session.get(Organization, world.organization_id)
+            org.onboarding_step, org.onboarding_completed_at = "complete", datetime.now(UTC)
+            for membership in session.scalars(select(Membership).where(Membership.organization_id == org.id)):
+                membership.tour_completed_at = datetime.now(UTC)  # demo people skip the product tour
             if name == "Beta":
                 session.flush()
                 if rollout.run(["enforce", "--organization", str(world.organization_id)], session) != 0:
