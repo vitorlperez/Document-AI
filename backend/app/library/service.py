@@ -315,6 +315,18 @@ class LibraryService:
             child.parent_id == tree.c.id, child.organization_id == scope.organization_id))
         return select(tree.c.id)
 
+    def indexed_documents_page(
+        self, *, scope: OrganizationScope, workspace_folder_id: UUID, page: int, page_size: int
+    ) -> tuple[list[Document], int]:
+        """One page of the indexed documents of a scope plus the total (the caller checked access to the folder)."""
+        base = (Document.organization_id == scope.organization_id,
+                Document.workspace_folder_id == workspace_folder_id, Document.index_status == "indexed")
+        total = int(self.session.scalar(select(func.count()).select_from(Document).where(*base)) or 0)
+        rows = list(self.session.scalars(
+            select(Document).where(*base).order_by(Document.name, Document.id)
+            .offset((page - 1) * page_size).limit(page_size)))
+        return rows, total
+
     def remove_folder_catalog(self, *, scope: OrganizationScope, node_id: UUID) -> None:
         """Remove only the explicitly selected local subtree, retaining siblings and source."""
         node = self.session.scalar(select(LibraryNode).where(

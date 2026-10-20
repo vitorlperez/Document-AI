@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -44,6 +44,7 @@ from app.spaces.access import SpaceAccessResolver
 from app.spaces.service import SpaceNotFound
 
 router = APIRouter(tags=["ingestion"])
+DOCUMENTS_PAGE_SIZE_MAX = 500
 
 
 def _folder_readable(session: Session, organization_id: UUID, user_id: UUID, workspace_folder_id: UUID) -> bool:
@@ -145,9 +146,13 @@ def enqueue_sync(
 def documents(
     workspace_folder_id: UUID,
     organization_id: UUID,
+    response: Response,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DOCUMENTS_PAGE_SIZE_MAX, ge=1, le=DOCUMENTS_PAGE_SIZE_MAX),
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
 ) -> list[dict[str, str | None]] | dict[str, object]:
+    """Indexed documents of one scope, ``page_size`` at a time (``X-Total-Count`` carries the total)."""
     scope = OrganizationScope(organization_id)
     try:
         if not _folder_readable(session, organization_id, user.id, workspace_folder_id):
@@ -162,11 +167,14 @@ def documents(
                 "readable": False, "counts": counts,
                 "items": [],  # file names are withheld until the admin enters the Space
             }
-        rows = IngestionService(session).indexed_documents(
-            scope=scope, user_id=user.id, workspace_folder_id=workspace_folder_id
-        )
+        ingestion = IngestionService(session)
+        ingestion.require_active_member(scope=scope, user_id=user.id)
+        ingestion.require_folder(scope=scope, workspace_folder_id=workspace_folder_id)
+        rows, total = LibraryService(session).indexed_documents_page(
+            scope=scope, workspace_folder_id=workspace_folder_id, page=page, page_size=page_size)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    response.headers["X-Total-Count"] = str(total)
     return [
         {
             "id": str(row.id),
