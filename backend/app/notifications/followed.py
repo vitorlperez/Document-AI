@@ -10,7 +10,9 @@ from sqlalchemy.orm import Session
 from app.audit_usage.models import SavedQuery
 from app.audit_usage.service import UsageLimitExceeded
 from app.core.scoping import OrganizationScope
+from app.ingestion.service import SyncAccessDenied
 from app.integrations.google_drive import GoogleAccessDenied
+from app.knowledge.derived_visibility import Provenance, build_index, provenance_of_documents
 from app.knowledge.models import Document
 from app.knowledge.questions import (
     AIProviderUnavailable,
@@ -19,6 +21,7 @@ from app.knowledge.questions import (
     SemanticProvider,
 )
 from app.notifications.service import NotificationService
+from app.spaces.access import SpaceAccess, SpaceAccessResolver
 from app.organizations.delivery import EmailDeliveryPort
 
 logger = logging.getLogger(__name__)
@@ -55,14 +58,19 @@ def _has_changes(session: Session, query: SavedQuery) -> bool:
 def refresh_followed_queries(session: Session, *, workspace_folder_id: UUID, provider: SemanticProvider,
                              email: EmailDeliveryPort | None = None, app_url: str = "") -> dict[str, int]:
     counts = {"considered": 0, "rerun": 0, "notified": 0}
+    accesses: dict[tuple[UUID, UUID], SpaceAccess | None] = {}
     queries = list(session.scalars(select(SavedQuery).where(
         SavedQuery.workspace_folder_id == workspace_folder_id, SavedQuery.followed.is_(True))
         .order_by(SavedQuery.created_at, SavedQuery.id)))
     for query in queries:
         counts["considered"] += 1
+        scope = OrganizationScope(query.organization_id)
+        # The owner's CURRENT access decides (ADR-0021 §8.2): no folder, no re-run and no model call.
+        access = _owner_access(session, accesses, scope, query.user_id)
+        if access is None or query.workspace_folder_id not in access.folder_ids:
+            continue
         if not _has_changes(session, query):
             continue
-        scope = OrganizationScope(query.organization_id)
         try:
             with session.begin_nested():
                 result = QuestionService(session, provider).ask(
@@ -75,6 +83,8 @@ def refresh_followed_queries(session: Session, *, workspace_folder_id: UUID, pro
                 ids = sorted({str(item.document_id) for item in result.citations})
                 snapshot = {"text": result.answer, "document_ids": ids, "at": checked_at.isoformat()}
                 previous = query.last_answer
+                if previous is not None and not _baseline_readable(session, access, previous):
+                    previous = None  # the old answer cited something the owner can no longer read: re-baseline silently
                 query.last_answer = snapshot
                 if previous is None or not answer_changed(previous, result.answer, ids):
                     continue  # first run only sets the baseline; identical answers stay silent
@@ -83,7 +93,9 @@ def refresh_followed_queries(session: Session, *, workspace_folder_id: UUID, pro
                     title=f"A resposta de “{query.name}” mudou",
                     body=result.answer[:BODY_CHARS],
                     data={"saved_query_id": str(query.id), "workspace_folder_id": str(query.workspace_folder_id),
-                          "query_name": query.name, "citations": citation_payload(result.citations)},
+                          "query_name": query.name, "citations": citation_payload(result.citations),
+                          "provenance": provenance_of_documents(
+                              session, query.organization_id, {item.document_id for item in result.citations}).to_data()},
                     email=email, app_url=app_url)
                 counts["notified"] += 1
         except UsageLimitExceeded:
@@ -95,3 +107,51 @@ def refresh_followed_queries(session: Session, *, workspace_folder_id: UUID, pro
         except (GoogleAccessDenied, ValueError):
             continue
     return counts
+
+
+def _owner_access(session: Session, cache: dict, scope: OrganizationScope, user_id: UUID) -> SpaceAccess | None:
+    key = (scope.organization_id, user_id)
+    if key not in cache:
+        try:
+            cache[key] = SpaceAccessResolver(session).resolve(scope=scope, user_id=user_id)
+        except SyncAccessDenied:
+            cache[key] = None
+    return cache[key]
+
+
+def _baseline_readable(session: Session, access: SpaceAccess, snapshot: dict[str, object]) -> bool:
+    ids = {UUID(str(item)) for item in snapshot.get("document_ids") or [] if _is_uuid(item)}
+    return build_index(session, access, [Provenance(document_ids=frozenset(ids))]).visible(
+        Provenance(document_ids=frozenset(ids)))
+
+
+def _is_uuid(value: object) -> bool:
+    try:
+        UUID(str(value))
+    except ValueError:
+        return False
+    return True
+
+
+def clear_followed_state_for_lost_access(session: Session, organization_id: UUID, user_id: UUID) -> int:
+    """Unfollow queries whose folder left the owner's access and wipe stale answers; returns rows changed.
+
+    Idempotent: a query already cleared is not touched again."""
+    scope = OrganizationScope(organization_id)
+    access = _owner_access(session, {}, scope, user_id)
+    changed = 0
+    for query in session.scalars(select(SavedQuery).where(
+            SavedQuery.organization_id == organization_id, SavedQuery.user_id == user_id)):
+        outside = access is None or query.workspace_folder_id not in access.folder_ids
+        dirty = query.followed or query.last_answer is not None or query.last_checked_at is not None
+        stale = (not outside and query.last_answer is not None
+                 and not _baseline_readable(session, access, query.last_answer))
+        if not ((outside and dirty) or stale):
+            continue
+        if outside:
+            query.followed = False
+        query.last_answer = None
+        query.last_checked_at = None
+        changed += 1
+    session.flush()
+    return changed
