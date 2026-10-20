@@ -23,6 +23,7 @@ from app.api.automations import router as automations_router
 from app.api.clickup_tasks import router as clickup_tasks_router
 from app.api.conversations import router as conversations_router
 from app.api.document_view import router as document_view_router
+from app.api.org_search import router as org_search_router
 from app.api.drive_sa import router as drive_sa_router
 from app.api.evidence import router as evidence_router
 from app.api.health import router as health_router
@@ -203,6 +204,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(overview_router, dependencies=authenticated)
     app.include_router(evidence_router, dependencies=authenticated)
     app.include_router(document_view_router, dependencies=authenticated)
+    app.include_router(org_search_router, dependencies=authenticated)
     return app
 
 
