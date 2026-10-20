@@ -82,7 +82,7 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
   ];
   const { nav: navRef, indicator: indicatorRef } = useTabIndicator(mobile ? null : active === null ? null : active);
   return <main data-mobile-shell={mobile ? "true" : undefined} className={`product-app ${fillViewport ? "flex h-dvh flex-col overflow-hidden" : mobile ? "flex min-h-dvh flex-col" : "min-h-screen"} bg-paper text-ink`}>
-    {mobile ? <MobileShellHeader company={company} pathname={pathname ?? ""} more={more} onOpenMore={() => setMore(true)} /> : <header className="product-header z-20 shrink-0 border-b border-line">
+    {mobile ? <MobileShellHeader company={company} pathname={pathname ?? ""} more={more} onOpenMore={() => setMore(true)} /> : <header className="product-header relative z-40 shrink-0 border-b border-line">
       <div className="product-header-inner mx-auto max-w-7xl px-4 py-4">
         <div className="product-header-start">
         <button onClick={() => go()} className="product-brand-button" aria-label="Arquivio, ir para a conversa"><Brand compact /></button>
