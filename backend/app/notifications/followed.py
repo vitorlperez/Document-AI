@@ -21,8 +21,8 @@ from app.knowledge.questions import (
     SemanticProvider,
 )
 from app.notifications.service import NotificationService
-from app.spaces.access import SpaceAccess, SpaceAccessResolver
 from app.organizations.delivery import EmailDeliveryPort
+from app.spaces.access import SpaceAccess, SpaceAccessResolver
 
 logger = logging.getLogger(__name__)
 SIMILARITY_UNCHANGED = 0.92

@@ -156,3 +156,18 @@ def test_clickup_preview_and_create_of_hidden_message_are_404(world_api):
     created = client.post(base, headers={"Idempotency-Key": "k1"},
                           json={"list_id": "abc", "name": "t", "description": "d"})
     assert created.status_code == 404
+
+
+def test_revocation_mid_conversation_cuts_the_next_turn_and_hides_the_old_one(world_api):
+    """T-G2: Carla asks, loses Diretoria, asks again in the same conversation."""
+    client, factory, gateway, world = world_api
+    conversation_id = ask_as(client, gateway, world, "carla", question="qual o reajuste?")
+    first = history(client, world, conversation_id)["messages"][1]
+    assert "diretoria.pdf" in str(first["response"]["citations"])
+    with factory.begin() as session:
+        remove_from_space(session, world, "carla", "diretoria")
+    ask_as(client, gateway, world, "carla", question="e o reajuste de novo?", conversation_id=conversation_id)
+    messages = history(client, world, conversation_id)["messages"]
+    assert messages[1]["content"] == HIDDEN_NOTICE  # the turn that cited Diretoria is hidden
+    assert "diretoria.pdf" not in str(messages[3])  # and the new turn never cites it
+    assert messages[3]["response"]["citations"]

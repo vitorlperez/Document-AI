@@ -11,7 +11,12 @@ from app.audit_usage.models import SavedQuery
 from app.automations.models import Automation, AutomationRun
 from app.core.models import Base
 from app.ingestion.tasks import beat_schedule, celery_app
-from app.knowledge.derived import derived_impact, purge_derived_for_folder, purge_derived_for_user, purge_hidden_derived
+from app.knowledge.derived import (
+    derived_impact,
+    purge_derived_for_folder,
+    purge_derived_for_user,
+    purge_hidden_derived,
+)
 from app.knowledge.derived_visibility import HIDDEN_NOTICE
 from app.knowledge.models import Conversation, ConversationMessage
 from app.notifications.models import Notification
