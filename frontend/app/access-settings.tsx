@@ -4,10 +4,11 @@ import { AlertTriangle, Check, ExternalLink, KeyRound } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { MentionComposer, type MentionCandidate } from "./mention-composer";
 import { EmptyState, ErrorState, LoadingBlock, SkeletonBlock, SkeletonLine, SkeletonList, Spinner, StaggerItem, btn } from "./ui";
+import { adminWithoutSpacesWarning, creatorReachHint, memberSpaces, reachSentence, type KeyReach, type SpaceSummary } from "./product/spaces-api";
 import "./interface-motion.css";
 
 type Api = <T>(path: string, init?: RequestInit) => Promise<T>;
-type Key = { id: string; name: string; prefix: string; scopes: string[]; last_used_at: string | null; expires_at: string | null; revoked_at: string | null };
+type Key = { id: string; name: string; prefix: string; scopes: string[]; last_used_at: string | null; expires_at: string | null; revoked_at: string | null; /** Alcance calculado para quem criou a chave (T-I2); ausente em backend sem Espaços. */ reach?: KeyReach };
 const scopeOptions = [
   { value: "search:read", label: "Buscar documentos", hint: "Procura trechos nos documentos que a chave enxerga." },
   { value: "documents:read", label: "Ler documentos", hint: "Abre o texto completo de um documento encontrado." },
@@ -28,7 +29,7 @@ function ScopeChips({ scopes }: { scopes: string[] }) {
   return <span className="flex flex-wrap gap-1">{scopes.map((scope) => <code key={scope} className="rounded bg-paper px-1.5 py-0.5 text-xs">{scope}</code>)}</span>;
 }
 
-export function AccessSettings({ organizationId, api }: { organizationId: string; api: Api }) {
+export function AccessSettings({ organizationId, api, orgRole = "member" }: { organizationId: string; api: Api; orgRole?: "owner" | "admin" | "member" }) {
   const [enabled, setEnabled] = useState(false);
   const [keys, setKeys] = useState<Key[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +42,14 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
   const [nodeQuery, setNodeQuery] = useState("");
   const [nodes, setNodes] = useState<MentionCandidate[]>([]);
   const [secret, setSecret] = useState<string | null>(null);
+  const [secretReach, setSecretReach] = useState<KeyReach | null>(null);
+  // Espaços de quem cria a chave: o alcance da chave é o do criador. `null` = indisponível (sem aviso).
+  const [mySpaces, setMySpaces] = useState<string[] | null>(null);
+  useEffect(() => {
+    let active = true;
+    api<SpaceSummary[]>(`/organizations/${organizationId}/spaces`).then((list) => { if (active) setMySpaces(memberSpaces(list).map((space) => space.name)); }).catch(() => { if (active) setMySpaces(null); });
+    return () => { active = false; };
+  }, [api, organizationId]);
   const [copied, setCopied] = useState(false);
   const [now, setNow] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -73,7 +82,7 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
     event.preventDefault(); setBusy(true); setError(null);
     try {
       const created = await api<Key & { key: string }>(`${base}/api-keys`, { method: "POST", body: JSON.stringify({ name: name.trim(), scopes: selectedScopes, node_ids: nodes.length ? nodes.map((node) => node.node_id) : null, expires_at: expiry ? new Date(expiry).toISOString() : null }) });
-      setSecret(created.key); setCopied(false); setName(""); setNodes([]); setNodeQuery(""); setExpiry(""); await load();
+      setSecret(created.key); setSecretReach(created.reach ?? null); setCopied(false); setName(""); setNodes([]); setNodeQuery(""); setExpiry(""); await load();
     } catch (caught) { showError(caught); } finally { setBusy(false); }
   }
   async function revoke(key: Key) {
@@ -109,9 +118,9 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
       <label className="mt-4 flex min-h-11 items-start gap-3"><input type="checkbox" checked={enabled} disabled={busy} onChange={() => void toggle()} className="mt-1" /><span>Habilitar API pública<span className="block text-sm text-muted-foreground">{enabled ? "As chaves ativas estão funcionando." : "Desligada: nenhuma chave desta organização funciona, mesmo as já criadas."}</span></span></label>
       <h3 className="mt-6 font-semibold">Chaves desta organização</h3>
       {keys.length === 0 ? <EmptyState className="mt-3" icon={<KeyRound size={24} />} title="Sua primeira integração começa aqui" description="Nenhuma chave criada ainda. Use o formulário abaixo para criar a primeira." actions={<button type="button" className="mo-interactive min-h-11 font-semibold text-primary" onClick={() => document.getElementById("new-api-key-name")?.focus()}>Criar primeira chave</button>} /> : <>
-        <div className="mt-3 hidden overflow-x-auto md:block"><table className="w-full text-left text-sm"><caption className="sr-only">Chaves desta organização</caption><thead><tr>{["Nome / prefixo", "Escopos", "Situação", "Último uso", "Expira", "Ação"].map((title) => <th key={title} scope="col" className="p-2">{title}</th>)}</tr></thead><tbody>{keys.map((key) => <tr key={key.id} className="border-t border-line-soft"><td className="p-2">{key.name}<code className="block text-xs">{key.prefix}</code></td><td className="p-2"><ScopeChips scopes={key.scopes} /></td><td className="p-2"><Status revokedAt={key.revoked_at} expired={isExpired(key)} /></td><td className="p-2">{dateLabel(key.last_used_at, "Nunca")}</td><td className="p-2">{dateLabel(key.expires_at, "Não expira")}</td><td className="p-2">{key.revoked_at ? "—" : revokeButton(key)}</td></tr>)}</tbody></table></div>
+        <div className="mt-3 hidden overflow-x-auto md:block"><table className="w-full text-left text-sm"><caption className="sr-only">Chaves desta organização</caption><thead><tr>{["Nome / prefixo", "Escopos", "Situação", "Último uso", "Expira", "Ação"].map((title) => <th key={title} scope="col" className="p-2">{title}</th>)}</tr></thead><tbody>{keys.map((key) => <tr key={key.id} className="border-t border-line-soft"><td className="p-2">{key.name}<code className="block text-xs">{key.prefix}</code>{reachSentence(key.reach) && <span className="mt-1 block text-xs text-muted-foreground">{reachSentence(key.reach)}</span>}</td><td className="p-2"><ScopeChips scopes={key.scopes} /></td><td className="p-2"><Status revokedAt={key.revoked_at} expired={isExpired(key)} /></td><td className="p-2">{dateLabel(key.last_used_at, "Nunca")}</td><td className="p-2">{dateLabel(key.expires_at, "Não expira")}</td><td className="p-2">{key.revoked_at ? "—" : revokeButton(key)}</td></tr>)}</tbody></table></div>
         <ul className="mt-3 space-y-3 md:hidden" aria-label="Chaves desta organização">{keys.map((key, index) => <StaggerItem as="li" index={index} key={key.id} className="rounded-lg border border-line-soft p-3 text-sm">
-          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="break-words font-semibold">{key.name}</p><code className="block break-all text-xs">{key.prefix}</code></div><Status revokedAt={key.revoked_at} expired={isExpired(key)} /></div>
+          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="break-words font-semibold">{key.name}</p><code className="block break-all text-xs">{key.prefix}</code>{reachSentence(key.reach) && <p className="mt-1 text-xs text-muted-foreground">{reachSentence(key.reach)}</p>}</div><Status revokedAt={key.revoked_at} expired={isExpired(key)} /></div>
           <div className="mt-2"><ScopeChips scopes={key.scopes} /></div>
           <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-muted-foreground"><dt>Último uso</dt><dd>{dateLabel(key.last_used_at, "Nunca")}</dd><dt>Expira</dt><dd>{dateLabel(key.expires_at, "Não expira")}</dd></dl>
           {!key.revoked_at && <div className="mt-2">{revokeButton(key)}</div>}
@@ -123,6 +132,9 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
         <fieldset><legend className="font-medium">Escopos</legend><p className="text-sm text-muted-foreground">Escolha o que esta chave pode fazer. Prefira o mínimo necessário.</p><div className="mt-2 grid gap-2 md:grid-cols-3">{scopeOptions.map((scope) => <label key={scope.value} className="flex min-h-11 items-start gap-3 rounded-lg border border-line-soft p-3"><input type="checkbox" checked={selectedScopes.includes(scope.value)} onChange={(event) => setSelectedScopes((current) => event.target.checked ? [...current, scope.value] : current.filter((item) => item !== scope.value))} className="mt-1" /><span><span className="block font-medium">{scope.label} <code className="text-xs font-normal text-muted-foreground">{scope.value}</code></span><span className="block text-sm text-muted-foreground">{scope.hint}</span></span></label>)}</div></fieldset>
         <label className="block font-medium">Expiração (opcional)<input type="datetime-local" value={expiry} onChange={(event) => setExpiry(event.target.value)} className={`${fieldClass} font-normal sm:w-auto`} /><span className="mt-1 block text-sm font-normal text-muted-foreground">Sem data, a chave não expira.</span></label>
         <fieldset><legend className="font-medium">Pastas ou arquivos (opcional)</legend><p className="mb-2 text-sm text-muted-foreground">Digite @ e o nome para escolher até {MAX_NODES}. Sem seleção, a chave acessa toda a organização.</p><div className="rounded-lg border border-[color:var(--control-edge)] bg-paper px-2 py-1"><MentionComposer organizationId={organizationId} value={nodeQuery} onChange={setNodeQuery} mentions={nodes} onMentionsChange={setNodes} all={true} providers={[]} disabled={busy} textareaRef={selector} onSubmit={() => {}} label="Pastas ou arquivos da chave" placeholder="Digite @ e o nome de uma pasta ou arquivo" /></div></fieldset>
+        {mySpaces && (adminWithoutSpacesWarning(orgRole, mySpaces.length)
+          ? <p role="alert" className="flex gap-2 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] p-3 text-sm text-[var(--danger-fg)]"><AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" /><span>{adminWithoutSpacesWarning(orgRole, mySpaces.length)}</span></p>
+          : creatorReachHint(mySpaces) && <p className="text-sm text-muted-foreground">{creatorReachHint(mySpaces)}</p>)}
         {formProblem && <p id="key-form-problem" role="alert" className="text-sm text-[var(--danger-fg)]">{formProblem}</p>}
         <button ref={createButton} disabled={busy || !name.trim() || Boolean(formProblem)} className={btn("primary", "md")}>{busy && <Spinner size={16} />}{busy ? "Salvando…" : "Criar chave"}</button>
       </form>
@@ -130,6 +142,7 @@ export function AccessSettings({ organizationId, api }: { organizationId: string
     {secret && <dialog ref={dialog} onCancel={closeSecret} onClose={() => setSecret(null)} aria-labelledby="api-secret-title" className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-lg border border-line-soft bg-panel p-4 text-foreground backdrop:bg-black/40 sm:p-6" data-arquivio-motion-root=""><div data-arquivio-motion="panel">
       <h3 id="api-secret-title" className="text-xl font-semibold">Copie sua chave agora</h3>
       <p className="mt-3 flex gap-2 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] p-3 text-sm text-[var(--danger-fg)]"><AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" /><span>Esta é a única vez que a chave aparece. Guarde-a em um local seguro (gerenciador de senhas ou variável de ambiente) e nunca a coloque em URLs ou repositórios.</span></p>
+      {reachSentence(secretReach) && <p role="status" className="mt-3 text-sm font-medium">{reachSentence(secretReach)}</p>}
       <textarea ref={secretField} readOnly rows={3} aria-label="Chave de API" value={secret} onFocus={(event) => event.currentTarget.select()} className="mt-4 w-full break-all rounded-lg border border-[color:var(--control-edge)] bg-paper p-3 font-mono text-sm" />
       <p className="mt-2 text-sm text-muted-foreground">Envie a chave no cabeçalho <code>Authorization: Bearer</code>. <a href="/docs/api" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-4">Ver documentação<span className="sr-only"> (abre em nova aba)</span></a></p>
       <div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => void copy()} className="mo-interactive inline-flex items-center justify-center gap-2 min-h-11 rounded-lg bg-primary px-5 font-semibold text-primary-foreground">{copied && <Check size={16} className="mo-check-pop" aria-hidden="true" />}{copied ? "Chave copiada" : "Copiar chave"}</button><button type="button" onClick={closeSecret} className={btn("secondary", "md")}>Já guardei, fechar</button></div>

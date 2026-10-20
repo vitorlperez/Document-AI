@@ -100,3 +100,7 @@ export const spaceRoleLabel = (role: SpaceRole | null) => role === "manager" ? "
 /** Espaços de que a pessoa participa — os únicos que podem filtrar leitura. Admin que não entrou num Espaço o gerencia, mas filtrar por ele daria 404. */
 export const memberSpaces = (spaces: Pick<SpaceSummary, "id" | "name" | "my_role">[]): SpaceRef[] =>
   spaces.filter((space) => space.my_role !== null).map((space) => ({ id: space.id, name: space.name }));
+
+/** Dica antes de criar a chave (a contagem de documentos só vem do servidor, depois da criação): a chave lê o que o criador lê. */
+export const creatorReachHint = (spaceNames: string[]): string | null =>
+  spaceNames.length ? `Esta chave lerá apenas o que está nos seus Espaços: ${spaceNames.join(", ")}.` : null;

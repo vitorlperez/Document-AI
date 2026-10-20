@@ -65,3 +65,9 @@ test("only Spaces the person belongs to can filter reads", async () => {
   const { memberSpaces } = await import("../app/product/spaces-api.ts");
   assert.deepEqual(memberSpaces([{ id: "a", name: "Geral", my_role: "member" }, { id: "b", name: "Diretoria", my_role: null }, { id: "c", name: "RH", my_role: "manager" }]), [{ id: "a", name: "Geral" }, { id: "c", name: "RH" }]);
 });
+
+test("creator hint lists the creator's Spaces and is silent when there are none", async () => {
+  const { creatorReachHint } = await import("../app/product/spaces-api.ts");
+  assert.equal(creatorReachHint(["RH", "Geral"]), "Esta chave lerá apenas o que está nos seus Espaços: RH, Geral.");
+  assert.equal(creatorReachHint([]), null);
+});
