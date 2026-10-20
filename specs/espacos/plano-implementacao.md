@@ -445,6 +445,7 @@ Tamanho: com 1k arquivos a tabela `document_chunks` pesa 108 MB; com 10k, **1,06
 
 - T-D0 (primeira tarefa da frente de árvore): **rerodar** `bench_api.py --label 10k` (e `50k` se o semeador terminar) **depois** de T-B/T-D1 mergeados, com `U` de 1, 5 e 20 pastas; salvar em `spikes/library-scale/results/api_10k_spaces.json` e anexar ao ADR-0021. Se estourar o orçamento ⇒ liberar T-D6.
 - Se `results/api_10k.json` aparecer antes de começarmos, T-D0 passa a ser só "comparar".
+- **Resultado do T-D0 (2026-10-19, banco de spike, `bench_spaces.py`; `results/api_10k_spaces.json` e `api_50k_spaces.json`):** com a visibilidade em CTE recursiva (v1) e os índices da migração 0037 (`pg_trgm` em `lower(name)`, `documents(organization_id, external_file_id)`), `children`/`search` com **1, 5 e 20 escopos legíveis** ficam em p95 ≤ 62 ms (10k: ≤ 40 ms) e 5 instruções SQL; no 50k a busca por nome com 20 escopos chega a p95 132 ms, ainda dentro do orçamento de 150 ms. `@`-menção (2 letras, o pior caso) 110–280 ms no 50k contra ~800 ms do caminho em Python. **Decisão: não liberar T-D6** (projeção `library_node_folders`); reavaliar se um cliente passar de 50k arquivos ou se a busca de 2 letras em `U` ≥ 20 escopos estourar 150 ms em produção.
 
 
 ---
