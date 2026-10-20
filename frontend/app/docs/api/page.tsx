@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/docs/api" },
 };
 
-const toc = [["introducao", "Introdução"], ["autenticacao", "Autenticação"], ["escopos", "Escopos"], ["limites", "Limites de uso"], ["erros", "Erros"], ["versionamento", "Versionamento"], ["seguranca", "Segurança"], ["referencia", "Referência"]];
+const toc = [["introducao", "Introdução"], ["autenticacao", "Autenticação"], ["escopos", "Escopos"], ["espacos", "Espaços"], ["limites", "Limites de uso"], ["erros", "Erros"], ["versionamento", "Versionamento"], ["seguranca", "Segurança"], ["referencia", "Referência"]];
 
 export default function ApiDocsPage() {
   return <div className="apidoc-page">
@@ -52,6 +52,15 @@ export default function ApiDocsPage() {
             <tr><th scope="row"><code>ask:run</code></th><td><code>POST /v1/ask</code> (precisa estar habilitado na plataforma)</td></tr>
             <tr><th scope="row">qualquer chave</th><td><code>GET /v1/whoami</code></td></tr>
           </tbody></table></div>
+        </section>
+
+        <section id="espacos" aria-labelledby="espacos-h"><h2 id="espacos-h">Espaços</h2>
+          <p>O conteúdo da organização é dividido em Espaços (por exemplo Geral, RH, Diretoria). O alcance de uma chave é a <strong>interseção</strong> entre o que o membro que a criou lê hoje, pelos Espaços de que participa, e as raízes (<code>node_ids</code>) da chave. Ser Owner/Admin da organização não dá leitura de um Espaço em que o membro não está.</p>
+          <ul>
+            <li><code>GET /v1/whoami</code> lista os Espaços do membro em <code>spaces</code>; <code>/v1/sources</code> e <code>/v1/search</code> trazem <code>spaces</code> em cada item, só com Espaços dele.</li>
+            <li><code>space_ids</code> (opcional, em <code>/v1/search</code> e <code>/v1/ask</code>) apenas <strong>estreita</strong> a busca. Um Espaço de que o membro não participa responde <code>404</code>, igual a um Espaço inexistente.</li>
+            <li>Se o membro sair de um Espaço, o alcance da chave diminui na próxima chamada. Uma chave criada por um administrador que não está em nenhum Espaço não lê nenhum documento.</li>
+          </ul>
         </section>
 
         <section id="limites" aria-labelledby="limites-h"><h2 id="limites-h">Limites de uso</h2>

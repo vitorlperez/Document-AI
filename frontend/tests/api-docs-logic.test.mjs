@@ -15,7 +15,7 @@ test("the five public endpoints are listed in reading order with their scope", (
 
 test("request bodies and path parameters come from the schema", () => {
   const search = endpoints.find((e) => e.path === "/v1/search");
-  assert.deepEqual(search.body.map((f) => [f.name, f.required]), [["limit", false], ["node_ids", false], ["query", true]]);
+  assert.deepEqual(search.body.map((f) => [f.name, f.required]), [["limit", false], ["node_ids", false], ["query", true], ["space_ids", false]]);
   assert.match(search.body.find((f) => f.name === "query").constraints, /1–500 caracteres/);
   assert.equal(search.body.find((f) => f.name === "node_ids").type, "string (uuid)[]");
   const document = endpoints.find((e) => e.path.startsWith("/v1/documents"));
@@ -36,4 +36,16 @@ test("code samples keep the key as a placeholder and the contract's URL", () => 
 
 test("an unexpected document yields no endpoints instead of throwing", () => {
   assert.deepEqual(endpointsFrom({}), []);
+});
+
+test("the public contract documents Spaces: space_ids narrows, spaces label results", () => {
+  const search = endpoints.find((e) => e.path === "/v1/search");
+  assert.equal(search.body.find((f) => f.name === "space_ids").type, "string (uuid)[]");
+  const ask = endpoints.find((e) => e.path === "/v1/ask");
+  assert.ok(ask.body.some((f) => f.name === "space_ids"));
+  const page = readFileSync(new URL("../app/docs/api/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /id="espacos"/);
+  assert.match(page, /space_ids/);
+  assert.match(page, /interseção/);
+  assert.match(page, /404/);
 });
