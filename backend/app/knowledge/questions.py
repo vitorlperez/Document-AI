@@ -16,7 +16,7 @@ from urllib.parse import urlsplit, urlunsplit
 from uuid import UUID
 
 import httpx
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.orm import Session, defer
 
 from app.audit_usage.service import UsageService
@@ -1666,9 +1666,7 @@ class QuestionService:
                 Document.id, Document.workspace_folder_id, Document.external_file_id,
                 Document.modified_at, Document.indexed_at,
             )
-            .join(DocumentChunk, DocumentChunk.document_id == Document.id)
-            .where(*scoped_filters)
-            .distinct()
+            .where(exists().where(DocumentChunk.document_id == Document.id, *scoped_filters))
         ).all()
         canonical: dict[tuple[UUID, str], object] = {}
         for row in rows:
