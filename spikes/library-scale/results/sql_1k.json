@@ -1,0 +1,290 @@
+{
+ "label": "1k",
+ "chunks": 4988,
+ "workspaces": 10,
+ "rows": [
+  {
+   "group": "app",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "count(chunks) in scope [questions.py:1164]",
+   "median_ms": 1.2,
+   "min_ms": 0.6,
+   "chunks_in_scope": 488
+  },
+  {
+   "group": "app",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "scoped_rows ORM load (1 run) [questions.py:1202]",
+   "median_ms": 41.3,
+   "min_ms": 41.3,
+   "rows": 488,
+   "py_heap_mb": 2,
+   "py_peak_mb": 3,
+   "rss_mb_after": 80
+  },
+  {
+   "group": "app",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "PgVectorSimilarity.scores = all chunks [similarity.py:30]",
+   "median_ms": 21.6,
+   "min_ms": 6.3,
+   "scores_returned": 488
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "ORDER BY <=> LIMIT 100 (exact, current indexes)",
+   "median_ms": 6.0,
+   "min_ms": 4.4,
+   "returned": 100
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "same, chunk-only filter (no documents join)",
+   "median_ms": 4.6,
+   "min_ms": 3.4,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "FTS common terms top-100 [retrieval.py:75]",
+   "median_ms": 0.7,
+   "min_ms": 0.5,
+   "returned": 0
+  },
+  {
+   "group": "fts",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "FTS rare term",
+   "median_ms": 0.4,
+   "min_ms": 0.4,
+   "returned": 0
+  },
+  {
+   "group": "app",
+   "folder_set": "50%",
+   "workspaces": 5,
+   "what": "count(chunks) in scope [questions.py:1164]",
+   "median_ms": 2.4,
+   "min_ms": 1.3,
+   "chunks_in_scope": 2495
+  },
+  {
+   "group": "app",
+   "folder_set": "50%",
+   "workspaces": 5,
+   "what": "scoped_rows ORM load (1 run) [questions.py:1202]",
+   "median_ms": 162.5,
+   "min_ms": 162.5,
+   "rows": 2495,
+   "py_heap_mb": 11,
+   "py_peak_mb": 13,
+   "rss_mb_after": 100
+  },
+  {
+   "group": "app",
+   "folder_set": "50%",
+   "workspaces": 5,
+   "what": "PgVectorSimilarity.scores = all chunks [similarity.py:30]",
+   "median_ms": 238.4,
+   "min_ms": 18.1,
+   "scores_returned": 2495
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "50%",
+   "workspaces": 5,
+   "what": "ORDER BY <=> LIMIT 100 (exact, current indexes)",
+   "median_ms": 15.0,
+   "min_ms": 14.1,
+   "returned": 100
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "50%",
+   "workspaces": 5,
+   "what": "same, chunk-only filter (no documents join)",
+   "median_ms": 15.0,
+   "min_ms": 14.8,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "50%",
+   "workspaces": 5,
+   "what": "FTS common terms top-100 [retrieval.py:75]",
+   "median_ms": 0.6,
+   "min_ms": 0.5,
+   "returned": 0
+  },
+  {
+   "group": "fts",
+   "folder_set": "50%",
+   "workspaces": 5,
+   "what": "FTS rare term",
+   "median_ms": 0.4,
+   "min_ms": 0.3,
+   "returned": 0
+  },
+  {
+   "group": "app",
+   "folder_set": "100%",
+   "workspaces": 10,
+   "what": "count(chunks) in scope [questions.py:1164]",
+   "median_ms": 1.5,
+   "min_ms": 1.2,
+   "chunks_in_scope": 4988
+  },
+  {
+   "group": "app",
+   "folder_set": "100%",
+   "workspaces": 10,
+   "what": "scoped_rows ORM load (1 run) [questions.py:1202]",
+   "median_ms": 565.1,
+   "min_ms": 565.1,
+   "rows": 4988,
+   "py_heap_mb": 22,
+   "py_peak_mb": 27,
+   "rss_mb_after": 126
+  },
+  {
+   "group": "app",
+   "folder_set": "100%",
+   "workspaces": 10,
+   "what": "PgVectorSimilarity.scores = all chunks [similarity.py:30]",
+   "median_ms": 315.8,
+   "min_ms": 96.0,
+   "scores_returned": 4988
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "100%",
+   "workspaces": 10,
+   "what": "ORDER BY <=> LIMIT 100 (exact, current indexes)",
+   "median_ms": 29.9,
+   "min_ms": 29.8,
+   "returned": 100
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "100%",
+   "workspaces": 10,
+   "what": "same, chunk-only filter (no documents join)",
+   "median_ms": 32.1,
+   "min_ms": 23.1,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "100%",
+   "workspaces": 10,
+   "what": "FTS common terms top-100 [retrieval.py:75]",
+   "median_ms": 0.7,
+   "min_ms": 0.6,
+   "returned": 0
+  },
+  {
+   "group": "fts",
+   "folder_set": "100%",
+   "workspaces": 10,
+   "what": "FTS rare term",
+   "median_ms": 0.4,
+   "min_ms": 0.4,
+   "returned": 0
+  },
+  {
+   "group": "tree",
+   "folder_set": "flat5000",
+   "workspaces": 0,
+   "what": "children(flat folder 5000 files) page 1/50 (+documents lookup)",
+   "median_ms": 6.2,
+   "min_ms": 6.1,
+   "items": 100,
+   "total": 1000
+  },
+  {
+   "group": "tree",
+   "folder_set": "flat5000",
+   "workspaces": 0,
+   "what": "children(flat folder 5000 files) page 25/50 (+documents lookup)",
+   "median_ms": 4.2,
+   "min_ms": 3.0,
+   "items": 0,
+   "total": 1000
+  },
+  {
+   "group": "tree",
+   "folder_set": "flat5000",
+   "workspaces": 0,
+   "what": "children(flat folder 5000 files) page 50/50 (+documents lookup)",
+   "median_ms": 2.3,
+   "min_ms": 2.3,
+   "items": 0,
+   "total": 1000
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "_selection_nodes: ORM-load every node of the org [library/service.py:985]",
+   "median_ms": 7.8,
+   "min_ms": 6.6,
+   "nodes": 1043
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "authorized_catalog(no mentions) [library/service.py:1002]",
+   "median_ms": 15.7,
+   "min_ms": 12.0,
+   "allowed": 1043
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "indexed_documents_under(source root) [library/service.py:256]",
+   "median_ms": 47.0,
+   "min_ms": 28.5,
+   "docs": 1007
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "recursive CTE: subtree files of the source root",
+   "median_ms": 1.0,
+   "min_ms": 0.9,
+   "files": 1000
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "1000",
+   "workspaces": 0,
+   "what": "Document.id IN (1000 binds)",
+   "median_ms": 3.7,
+   "min_ms": 3.1,
+   "count": 1000
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "1000",
+   "workspaces": 0,
+   "what": "documents.id = ANY(array of 1000)",
+   "median_ms": 3.1,
+   "min_ms": 3.0,
+   "count": 1000
+  }
+ ],
+ "indexed_ids": 1007
+}

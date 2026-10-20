@@ -1,0 +1,364 @@
+{
+ "label": "3k",
+ "chunks": 15179,
+ "workspaces": 20,
+ "rows": [
+  {
+   "group": "app",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "count(chunks) in scope [questions.py:1164]",
+   "median_ms": 0.9,
+   "min_ms": 0.7,
+   "chunks_in_scope": 744
+  },
+  {
+   "group": "app",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "scoped_rows ORM load (1 run) [questions.py:1202]",
+   "median_ms": 44.1,
+   "min_ms": 44.1,
+   "rows": 744,
+   "py_heap_mb": 3,
+   "py_peak_mb": 4,
+   "rss_mb_after": 87
+  },
+  {
+   "group": "app",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "PgVectorSimilarity.scores = all chunks [similarity.py:30]",
+   "median_ms": 33.9,
+   "min_ms": 7.5,
+   "scores_returned": 744
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "ORDER BY <=> LIMIT 100 (exact, current indexes)",
+   "median_ms": 6.4,
+   "min_ms": 6.1,
+   "returned": 100
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "same, chunk-only filter (no documents join)",
+   "median_ms": 5.2,
+   "min_ms": 5.2,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "FTS common terms top-100 [retrieval.py:75]",
+   "median_ms": 4.6,
+   "min_ms": 4.4,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "FTS rare term",
+   "median_ms": 1.0,
+   "min_ms": 0.5,
+   "returned": 6
+  },
+  {
+   "group": "app",
+   "folder_set": "10%",
+   "workspaces": 2,
+   "what": "count(chunks) in scope [questions.py:1164]",
+   "median_ms": 3.3,
+   "min_ms": 3.0,
+   "chunks_in_scope": 1474
+  },
+  {
+   "group": "app",
+   "folder_set": "10%",
+   "workspaces": 2,
+   "what": "scoped_rows ORM load (1 run) [questions.py:1202]",
+   "median_ms": 220.1,
+   "min_ms": 220.1,
+   "rows": 1474,
+   "py_heap_mb": 6,
+   "py_peak_mb": 8,
+   "rss_mb_after": 88
+  },
+  {
+   "group": "app",
+   "folder_set": "10%",
+   "workspaces": 2,
+   "what": "PgVectorSimilarity.scores = all chunks [similarity.py:30]",
+   "median_ms": 42.2,
+   "min_ms": 13.3,
+   "scores_returned": 1474
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "10%",
+   "workspaces": 2,
+   "what": "ORDER BY <=> LIMIT 100 (exact, current indexes)",
+   "median_ms": 12.0,
+   "min_ms": 11.7,
+   "returned": 100
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "10%",
+   "workspaces": 2,
+   "what": "same, chunk-only filter (no documents join)",
+   "median_ms": 9.9,
+   "min_ms": 8.9,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "10%",
+   "workspaces": 2,
+   "what": "FTS common terms top-100 [retrieval.py:75]",
+   "median_ms": 7.6,
+   "min_ms": 7.2,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "10%",
+   "workspaces": 2,
+   "what": "FTS rare term",
+   "median_ms": 0.5,
+   "min_ms": 0.5,
+   "returned": 8
+  },
+  {
+   "group": "app",
+   "folder_set": "50%",
+   "workspaces": 10,
+   "what": "count(chunks) in scope [questions.py:1164]",
+   "median_ms": 11.4,
+   "min_ms": 5.7,
+   "chunks_in_scope": 7527
+  },
+  {
+   "group": "app",
+   "folder_set": "50%",
+   "workspaces": 10,
+   "what": "scoped_rows ORM load (1 run) [questions.py:1202]",
+   "median_ms": 514.1,
+   "min_ms": 514.1,
+   "rows": 7527,
+   "py_heap_mb": 33,
+   "py_peak_mb": 41,
+   "rss_mb_after": 171
+  },
+  {
+   "group": "app",
+   "folder_set": "50%",
+   "workspaces": 10,
+   "what": "PgVectorSimilarity.scores = all chunks [similarity.py:30]",
+   "median_ms": 191.0,
+   "min_ms": 57.7,
+   "scores_returned": 7527
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "50%",
+   "workspaces": 10,
+   "what": "ORDER BY <=> LIMIT 100 (exact, current indexes)",
+   "median_ms": 44.2,
+   "min_ms": 41.9,
+   "returned": 100
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "50%",
+   "workspaces": 10,
+   "what": "same, chunk-only filter (no documents join)",
+   "median_ms": 70.9,
+   "min_ms": 46.0,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "50%",
+   "workspaces": 10,
+   "what": "FTS common terms top-100 [retrieval.py:75]",
+   "median_ms": 71.2,
+   "min_ms": 58.5,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "50%",
+   "workspaces": 10,
+   "what": "FTS rare term",
+   "median_ms": 1.7,
+   "min_ms": 1.5,
+   "returned": 45
+  },
+  {
+   "group": "app",
+   "folder_set": "100%",
+   "workspaces": 20,
+   "what": "count(chunks) in scope [questions.py:1164]",
+   "median_ms": 5.2,
+   "min_ms": 3.6,
+   "chunks_in_scope": 15179
+  },
+  {
+   "group": "app",
+   "folder_set": "100%",
+   "workspaces": 20,
+   "what": "scoped_rows ORM load (1 run) [questions.py:1202]",
+   "median_ms": 1191.0,
+   "min_ms": 1191.0,
+   "rows": 15179,
+   "py_heap_mb": 66,
+   "py_peak_mb": 81,
+   "rss_mb_after": 261
+  },
+  {
+   "group": "app",
+   "folder_set": "100%",
+   "workspaces": 20,
+   "what": "PgVectorSimilarity.scores = all chunks [similarity.py:30]",
+   "median_ms": 299.9,
+   "min_ms": 170.1,
+   "scores_returned": 15179
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "100%",
+   "workspaces": 20,
+   "what": "ORDER BY <=> LIMIT 100 (exact, current indexes)",
+   "median_ms": 99.2,
+   "min_ms": 93.7,
+   "returned": 100
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "100%",
+   "workspaces": 20,
+   "what": "same, chunk-only filter (no documents join)",
+   "median_ms": 88.6,
+   "min_ms": 87.8,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "100%",
+   "workspaces": 20,
+   "what": "FTS common terms top-100 [retrieval.py:75]",
+   "median_ms": 65.5,
+   "min_ms": 59.8,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "100%",
+   "workspaces": 20,
+   "what": "FTS rare term",
+   "median_ms": 2.2,
+   "min_ms": 1.6,
+   "returned": 100
+  },
+  {
+   "group": "tree",
+   "folder_set": "flat5000",
+   "workspaces": 0,
+   "what": "children(flat folder 5000 files) page 1/50 (+documents lookup)",
+   "median_ms": 6.5,
+   "min_ms": 5.9,
+   "items": 100,
+   "total": 3000
+  },
+  {
+   "group": "tree",
+   "folder_set": "flat5000",
+   "workspaces": 0,
+   "what": "children(flat folder 5000 files) page 25/50 (+documents lookup)",
+   "median_ms": 9.6,
+   "min_ms": 8.7,
+   "items": 100,
+   "total": 3000
+  },
+  {
+   "group": "tree",
+   "folder_set": "flat5000",
+   "workspaces": 0,
+   "what": "children(flat folder 5000 files) page 50/50 (+documents lookup)",
+   "median_ms": 4.9,
+   "min_ms": 4.8,
+   "items": 0,
+   "total": 3000
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "_selection_nodes: ORM-load every node of the org [library/service.py:985]",
+   "median_ms": 16.9,
+   "min_ms": 16.8,
+   "nodes": 3123
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "authorized_catalog(no mentions) [library/service.py:1002]",
+   "median_ms": 34.3,
+   "min_ms": 31.7,
+   "allowed": 3123
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "indexed_documents_under(source root) [library/service.py:256]",
+   "median_ms": 77.5,
+   "min_ms": 63.9,
+   "docs": 3047
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "recursive CTE: subtree files of the source root",
+   "median_ms": 2.4,
+   "min_ms": 2.3,
+   "files": 3000
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "1000",
+   "workspaces": 0,
+   "what": "Document.id IN (1000 binds)",
+   "median_ms": 5.6,
+   "min_ms": 4.3,
+   "count": 1000
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "1000",
+   "workspaces": 0,
+   "what": "documents.id = ANY(array of 1000)",
+   "median_ms": 4.0,
+   "min_ms": 3.5,
+   "count": 1000
+  }
+ ],
+ "fts_terms": {
+  "common": [
+   "ananlu",
+   "ananlupo",
+   "ananluvi"
+  ],
+  "rare": "neorbami"
+ },
+ "indexed_ids": 3047
+}

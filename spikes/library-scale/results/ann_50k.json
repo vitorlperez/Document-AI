@@ -1,0 +1,133 @@
+{
+ "label": "50k",
+ "rows": [
+  {
+   "folder_set": "1 scope",
+   "scopes": 1,
+   "ef_search": 40,
+   "median_ms": 11.1,
+   "recall_at_10": 1.0,
+   "exact_ms_per_query": 307.7
+  },
+  {
+   "folder_set": "1 scope",
+   "scopes": 1,
+   "ef_search": 100,
+   "median_ms": 12.2,
+   "recall_at_10": 1.0,
+   "exact_ms_per_query": 307.7
+  },
+  {
+   "folder_set": "1 scope",
+   "scopes": 1,
+   "ef_search": 200,
+   "median_ms": 11.7,
+   "recall_at_10": 1.0,
+   "exact_ms_per_query": 307.7
+  },
+  {
+   "folder_set": "1 scope",
+   "scopes": 1,
+   "ef_search": 400,
+   "median_ms": 10.8,
+   "recall_at_10": 1.0,
+   "exact_ms_per_query": 307.7
+  },
+  {
+   "folder_set": "10%",
+   "scopes": 10,
+   "ef_search": 40,
+   "median_ms": 572.5,
+   "recall_at_10": 0.66,
+   "exact_ms_per_query": 2740.6
+  },
+  {
+   "folder_set": "10%",
+   "scopes": 10,
+   "ef_search": 100,
+   "median_ms": 168.4,
+   "recall_at_10": 0.7,
+   "exact_ms_per_query": 2740.6
+  },
+  {
+   "folder_set": "10%",
+   "scopes": 10,
+   "ef_search": 200,
+   "median_ms": 303.8,
+   "recall_at_10": 0.68,
+   "exact_ms_per_query": 2740.6
+  },
+  {
+   "folder_set": "10%",
+   "scopes": 10,
+   "ef_search": 400,
+   "median_ms": 181.4,
+   "recall_at_10": 0.74,
+   "exact_ms_per_query": 2740.6
+  },
+  {
+   "folder_set": "50%",
+   "scopes": 50,
+   "ef_search": 40,
+   "median_ms": 78.7,
+   "recall_at_10": 0.48,
+   "exact_ms_per_query": 18371.4
+  },
+  {
+   "folder_set": "50%",
+   "scopes": 50,
+   "ef_search": 100,
+   "median_ms": 220.3,
+   "recall_at_10": 0.62,
+   "exact_ms_per_query": 18371.4
+  },
+  {
+   "folder_set": "50%",
+   "scopes": 50,
+   "ef_search": 200,
+   "median_ms": 135.0,
+   "recall_at_10": 0.66,
+   "exact_ms_per_query": 18371.4
+  },
+  {
+   "folder_set": "50%",
+   "scopes": 50,
+   "ef_search": 400,
+   "median_ms": 91.9,
+   "recall_at_10": 0.7,
+   "exact_ms_per_query": 18371.4
+  },
+  {
+   "folder_set": "100%",
+   "scopes": 100,
+   "ef_search": 40,
+   "median_ms": 272.9,
+   "recall_at_10": 0.42,
+   "exact_ms_per_query": 52763.2
+  },
+  {
+   "folder_set": "100%",
+   "scopes": 100,
+   "ef_search": 100,
+   "median_ms": 581.2,
+   "recall_at_10": 0.54,
+   "exact_ms_per_query": 52763.2
+  },
+  {
+   "folder_set": "100%",
+   "scopes": 100,
+   "ef_search": 200,
+   "median_ms": 722.3,
+   "recall_at_10": 0.78,
+   "exact_ms_per_query": 52763.2
+  },
+  {
+   "folder_set": "100%",
+   "scopes": 100,
+   "ef_search": 400,
+   "median_ms": 124.4,
+   "recall_at_10": 0.78,
+   "exact_ms_per_query": 52763.2
+  }
+ ]
+}

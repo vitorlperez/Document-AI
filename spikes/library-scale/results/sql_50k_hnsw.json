@@ -1,0 +1,476 @@
+{
+ "label": "50k",
+ "chunks": 254729,
+ "workspaces": 100,
+ "rows": [
+  {
+   "group": "app",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "count(chunks) in scope [questions.py:1164]",
+   "median_ms": 2.1,
+   "min_ms": 1.6,
+   "chunks_in_scope": 2557
+  },
+  {
+   "group": "app",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "scoped_rows ORM load (1 run) [questions.py:1202]",
+   "median_ms": 270.5,
+   "min_ms": 270.5,
+   "rows": 2557,
+   "py_heap_mb": 11,
+   "py_peak_mb": 14,
+   "rss_mb_after": 83
+  },
+  {
+   "group": "app",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "PgVectorSimilarity.scores = all chunks [similarity.py:30]",
+   "median_ms": 243.6,
+   "min_ms": 17.8,
+   "scores_returned": 2557
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "ORDER BY <=> LIMIT 100 (exact, current indexes)",
+   "median_ms": 21.7,
+   "min_ms": 17.3,
+   "returned": 100
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "same, chunk-only filter (no documents join)",
+   "median_ms": 19.5,
+   "min_ms": 15.2,
+   "returned": 100
+  },
+  {
+   "group": "hnsw",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "chunk-only filter + HNSW iterative scan (ef_search=100)",
+   "median_ms": 10.9,
+   "min_ms": 10.0,
+   "returned": 100,
+   "recall_at_100_vs_exact": 1.0
+  },
+  {
+   "group": "fts",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "FTS common terms top-100 [retrieval.py:75]",
+   "median_ms": 11.4,
+   "min_ms": 10.2,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "1",
+   "workspaces": 1,
+   "what": "FTS rare term",
+   "median_ms": 1.9,
+   "min_ms": 1.0,
+   "returned": 0
+  },
+  {
+   "group": "app",
+   "folder_set": "10%",
+   "workspaces": 10,
+   "what": "count(chunks) in scope [questions.py:1164]",
+   "median_ms": 17.1,
+   "min_ms": 17.1,
+   "chunks_in_scope": 25400
+  },
+  {
+   "group": "app",
+   "folder_set": "10%",
+   "workspaces": 10,
+   "what": "scoped_rows ORM load (1 run) [questions.py:1202]",
+   "median_ms": 2104.7,
+   "min_ms": 2104.7,
+   "rows": 25400,
+   "py_heap_mb": 111,
+   "py_peak_mb": 137,
+   "rss_mb_after": 397
+  },
+  {
+   "group": "app",
+   "folder_set": "10%",
+   "workspaces": 10,
+   "what": "PgVectorSimilarity.scores = all chunks [similarity.py:30]",
+   "median_ms": 3643.4,
+   "min_ms": 715.5,
+   "scores_returned": 25400
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "10%",
+   "workspaces": 10,
+   "what": "ORDER BY <=> LIMIT 100 (exact, current indexes)",
+   "median_ms": 205.2,
+   "min_ms": 188.6,
+   "returned": 100
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "10%",
+   "workspaces": 10,
+   "what": "same, chunk-only filter (no documents join)",
+   "median_ms": 9.5,
+   "min_ms": 3.6,
+   "returned": 7
+  },
+  {
+   "group": "hnsw",
+   "folder_set": "10%",
+   "workspaces": 10,
+   "what": "chunk-only filter + HNSW iterative scan (ef_search=100)",
+   "median_ms": 16.2,
+   "min_ms": 11.6,
+   "returned": 100,
+   "recall_at_100_vs_exact": 0.98
+  },
+  {
+   "group": "fts",
+   "folder_set": "10%",
+   "workspaces": 10,
+   "what": "FTS common terms top-100 [retrieval.py:75]",
+   "median_ms": 433.2,
+   "min_ms": 187.6,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "10%",
+   "workspaces": 10,
+   "what": "FTS rare term",
+   "median_ms": 1.3,
+   "min_ms": 1.2,
+   "returned": 0
+  },
+  {
+   "group": "app",
+   "folder_set": "50%",
+   "workspaces": 50,
+   "what": "count(chunks) in scope [questions.py:1164]",
+   "median_ms": 117.9,
+   "min_ms": 55.8,
+   "chunks_in_scope": 127328
+  },
+  {
+   "group": "app",
+   "folder_set": "50%",
+   "workspaces": 50,
+   "what": "scoped_rows ORM load (1 run) [questions.py:1202]",
+   "median_ms": 12767.4,
+   "min_ms": 12767.4,
+   "rows": 127328,
+   "py_heap_mb": 558,
+   "py_peak_mb": 685,
+   "rss_mb_after": 1194
+  },
+  {
+   "group": "app",
+   "folder_set": "50%",
+   "workspaces": 50,
+   "what": "PgVectorSimilarity.scores = all chunks [similarity.py:30]",
+   "median_ms": 47027.9,
+   "min_ms": 46944.8,
+   "scores_returned": 127328
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "50%",
+   "workspaces": 50,
+   "what": "ORDER BY <=> LIMIT 100 (exact, current indexes)",
+   "median_ms": 8253.3,
+   "min_ms": 1712.8,
+   "returned": 100
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "50%",
+   "workspaces": 50,
+   "what": "same, chunk-only filter (no documents join)",
+   "median_ms": 42.8,
+   "min_ms": 33.1,
+   "returned": 28
+  },
+  {
+   "group": "hnsw",
+   "folder_set": "50%",
+   "workspaces": 50,
+   "what": "chunk-only filter + HNSW iterative scan (ef_search=100)",
+   "median_ms": 7.0,
+   "min_ms": 6.9,
+   "returned": 100,
+   "recall_at_100_vs_exact": 0.92
+  },
+  {
+   "group": "fts",
+   "folder_set": "50%",
+   "workspaces": 50,
+   "what": "FTS common terms top-100 [retrieval.py:75]",
+   "median_ms": 12933.5,
+   "min_ms": 2354.8,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "50%",
+   "workspaces": 50,
+   "what": "FTS rare term",
+   "median_ms": 7.7,
+   "min_ms": 5.5,
+   "returned": 7
+  },
+  {
+   "group": "app",
+   "folder_set": "100%",
+   "workspaces": 100,
+   "what": "count(chunks) in scope [questions.py:1164]",
+   "median_ms": 97.8,
+   "min_ms": 96.7,
+   "chunks_in_scope": 254729
+  },
+  {
+   "group": "app",
+   "folder_set": "100%",
+   "workspaces": 100,
+   "what": "scoped_rows ORM load (1 run) [questions.py:1202]",
+   "median_ms": 33945.5,
+   "min_ms": 33945.5,
+   "rows": 254729,
+   "py_heap_mb": 1116,
+   "py_peak_mb": 1370,
+   "rss_mb_after": 1925
+  },
+  {
+   "group": "app",
+   "folder_set": "100%",
+   "workspaces": 100,
+   "what": "PgVectorSimilarity.scores = all chunks [similarity.py:30]",
+   "median_ms": 82175.4,
+   "min_ms": 71276.6,
+   "scores_returned": 254729
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "100%",
+   "workspaces": 100,
+   "what": "ORDER BY <=> LIMIT 100 (exact, current indexes)",
+   "median_ms": 45443.7,
+   "min_ms": 43318.7,
+   "returned": 100
+  },
+  {
+   "group": "topk-sql",
+   "folder_set": "100%",
+   "workspaces": 100,
+   "what": "same, chunk-only filter (no documents join)",
+   "median_ms": 68.6,
+   "min_ms": 30.3,
+   "returned": 40
+  },
+  {
+   "group": "hnsw",
+   "folder_set": "100%",
+   "workspaces": 100,
+   "what": "chunk-only filter + HNSW iterative scan (ef_search=100)",
+   "median_ms": 31.5,
+   "min_ms": 25.4,
+   "returned": 100,
+   "recall_at_100_vs_exact": 0.77
+  },
+  {
+   "group": "fts",
+   "folder_set": "100%",
+   "workspaces": 100,
+   "what": "FTS common terms top-100 [retrieval.py:75]",
+   "median_ms": 14798.0,
+   "min_ms": 7789.8,
+   "returned": 100
+  },
+  {
+   "group": "fts",
+   "folder_set": "100%",
+   "workspaces": 100,
+   "what": "FTS rare term",
+   "median_ms": 25.0,
+   "min_ms": 15.0,
+   "returned": 12
+  },
+  {
+   "group": "tree",
+   "folder_set": "flat5000",
+   "workspaces": 0,
+   "what": "children(flat folder 5000 files) page 1/50 (+documents lookup)",
+   "median_ms": 80.8,
+   "min_ms": 64.6,
+   "items": 100,
+   "total": 5000
+  },
+  {
+   "group": "tree",
+   "folder_set": "flat5000",
+   "workspaces": 0,
+   "what": "children(flat folder 5000 files) page 25/50 (+documents lookup)",
+   "median_ms": 92.2,
+   "min_ms": 62.9,
+   "items": 100,
+   "total": 5000
+  },
+  {
+   "group": "tree",
+   "folder_set": "flat5000",
+   "workspaces": 0,
+   "what": "children(flat folder 5000 files) page 50/50 (+documents lookup)",
+   "median_ms": 80.5,
+   "min_ms": 66.5,
+   "items": 100,
+   "total": 5000
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "_selection_nodes: ORM-load every node of the org [library/service.py:985]",
+   "median_ms": 3510.3,
+   "min_ms": 1026.1,
+   "nodes": 52003
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "authorized_catalog(no mentions) [library/service.py:1002]",
+   "median_ms": 2457.9,
+   "min_ms": 461.0,
+   "allowed": 52003
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "indexed_documents_under(source root) [library/service.py:256]",
+   "median_ms": 5213.9,
+   "min_ms": 3418.4,
+   "docs": 50827
+  },
+  {
+   "group": "tree",
+   "folder_set": "all",
+   "workspaces": 0,
+   "what": "recursive CTE: subtree files of the source root",
+   "median_ms": 76.0,
+   "min_ms": 72.0,
+   "files": 50000
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "1000",
+   "workspaces": 0,
+   "what": "Document.id IN (1000 binds)",
+   "median_ms": 101.8,
+   "min_ms": 12.2,
+   "count": 1000
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "1000",
+   "workspaces": 0,
+   "what": "documents.id = ANY(array of 1000)",
+   "median_ms": 5.9,
+   "min_ms": 4.8,
+   "count": 1000
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "10000",
+   "workspaces": 0,
+   "what": "Document.id IN (10000 binds)",
+   "median_ms": 146.6,
+   "min_ms": 78.9,
+   "count": 10000
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "10000",
+   "workspaces": 0,
+   "what": "documents.id = ANY(array of 10000)",
+   "median_ms": 29.9,
+   "min_ms": 24.6,
+   "count": 10000
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "30000",
+   "workspaces": 0,
+   "what": "Document.id IN (30000 binds)",
+   "median_ms": 195.0,
+   "min_ms": 135.3,
+   "count": 30000
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "30000",
+   "workspaces": 0,
+   "what": "documents.id = ANY(array of 30000)",
+   "median_ms": 68.5,
+   "min_ms": 56.3,
+   "count": 30000
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "2x20000",
+   "workspaces": 0,
+   "what": "two IN lists of 20000 binds (= 40000 params; lexical query shape, questions.py:1405)",
+   "median_ms": 0,
+   "min_ms": 0,
+   "count": 20000,
+   "ok": true
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "2x33000",
+   "workspaces": 0,
+   "what": "two IN lists of 33000 binds (= 66000 params) FAILED",
+   "median_ms": 0,
+   "min_ms": 0,
+   "error": "OperationalError: (psycopg.OperationalError) sending query and params failed: number of parameters must be between 0 and 65535\n[SQL: SELECT count(*) AS count_"
+  },
+  {
+   "group": "doc-in",
+   "folder_set": "2x40000",
+   "workspaces": 0,
+   "what": "two IN lists of 40000 binds (= 80000 params) FAILED",
+   "median_ms": 0,
+   "min_ms": 0,
+   "error": "OperationalError: (psycopg.OperationalError) sending query and params failed: number of parameters must be between 0 and 65535\n[SQL: SELECT count(*) AS count_"
+  }
+ ],
+ "hnsw_build_s": 17.8,
+ "hnsw_bytes": 2086748160,
+ "fts_terms": {
+  "common": [
+   "ananlu",
+   "ananlupo",
+   "ananluvi"
+  ],
+  "rare": "0032736.pdf"
+ },
+ "hnsw_plans": {
+  "1": "Limit (actual time=8.828..8.836 rows=100 loops=1)\n  ->  Sort (actual time=8.827..8.831 rows=100 loops=1)\n        Sort Key: ((embedding_vec <=> '[-0.00352158,0.03197535,0.02351477,-0.01690006,0.03180968,-0.03323582,-0.02544607,0.01629052,-0.00213019,-0.02408924,0.00449446,0.0267783,0.00019138,-0.02353881,-0.00956399,0.01205203,-0.00658842,-0.02149326,-0.02471334,0.00425405,0.00340101,0.0054057,0.03500399,0.03421206,-0.01205771,-0.05232891,0.00075301,-0.0060328,0.03506988,0.02869999,0.07150433,-0.02614333,-0.0188593,0.0380171,0.03080118,0.0319288,-0.03046975,-0.03529241,0.01901898,-0.03366572,-0.02235232,-0.02165075,-0.00639961,-0.00604934,0.02473771,-0.01714118,-0.00543698,0.0244589,0.04590458,0.01894769,0.01100852,-0.01656089,0.02747434,0.01417491,0.02887581,-0.00607033,0.02281903,-0.00679352,-0.01133969,-0.00486042,-0.0079803,0.00481188,-0.03891303,-0.07224416,-0.01397923,0.01003074,0.00145314,0.00260504,-0.05219915,-0.004637,0.03526628,-0.00926918,-0.01468116,0.00987285,0.00374859,0.04749344,-0.04028193,-0.01042287,-0.02055787,-0.00925877,0.02383306,0.01188202,-0.02763277,-0.04227157,-0.03213504,0.00366344,-0.0134365,-0.03205877,-0.00803978,-0.00588409,-0.01563204,0.01818917,-0.02475191,-0.0231805,0.00357162,-0.05841075,0.01550173,-0.00830213,-0.02102169,0.02453377,-0.03270872,0.00725137,-0.00345411,0.02435044,0.04690366,0.0175481,-0.01931908,-0.04847095,0.02665872,-0.01631816,0.02462799,-0.0006148,-0.0021371,0.01211639,0.01002691,0.00170108,0.02556929,-0.01622453,-0.00204774,0.01614355,0.03271642,-0.0139475,-0.07299401,-0.01623533,0.05963439,-0.01129519,-0.02483684,-0.00394318,-0.03917031,-0.01709054,-0.02191413,-0.00462362,-0.02596441,0.04167673,-0.00578595,-0.00063091,-0.00526885,0.00242016,0.0062859,-0.00620858,-0.02659383,-0.00255498,-0.00304237,0.00191839,0.0096",
+  "10%": "Limit (actual time=16.043..25.568 rows=100 loops=1)\n  ->  Index Scan using ix_spike_hnsw on document_chunks (actual time=16.042..25.558 rows=100 loops=1)\n        Order By: (embedding_vec <=> '[-0.00352158,0.03197535,0.02351477,-0.01690006,0.03180968,-0.03323582,-0.02544607,0.01629052,-0.00213019,-0.02408924,0.00449446,0.0267783,0.00019138,-0.02353881,-0.00956399,0.01205203,-0.00658842,-0.02149326,-0.02471334,0.00425405,0.00340101,0.0054057,0.03500399,0.03421206,-0.01205771,-0.05232891,0.00075301,-0.0060328,0.03506988,0.02869999,0.07150433,-0.02614333,-0.0188593,0.0380171,0.03080118,0.0319288,-0.03046975,-0.03529241,0.01901898,-0.03366572,-0.02235232,-0.02165075,-0.00639961,-0.00604934,0.02473771,-0.01714118,-0.00543698,0.0244589,0.04590458,0.01894769,0.01100852,-0.01656089,0.02747434,0.01417491,0.02887581,-0.00607033,0.02281903,-0.00679352,-0.01133969,-0.00486042,-0.0079803,0.00481188,-0.03891303,-0.07224416,-0.01397923,0.01003074,0.00145314,0.00260504,-0.05219915,-0.004637,0.03526628,-0.00926918,-0.01468116,0.00987285,0.00374859,0.04749344,-0.04028193,-0.01042287,-0.02055787,-0.00925877,0.02383306,0.01188202,-0.02763277,-0.04227157,-0.03213504,0.00366344,-0.0134365,-0.03205877,-0.00803978,-0.00588409,-0.01563204,0.01818917,-0.02475191,-0.0231805,0.00357162,-0.05841075,0.01550173,-0.00830213,-0.02102169,0.02453377,-0.03270872,0.00725137,-0.00345411,0.02435044,0.04690366,0.0175481,-0.01931908,-0.04847095,0.02665872,-0.01631816,0.02462799,-0.0006148,-0.0021371,0.01211639,0.01002691,0.00170108,0.02556929,-0.01622453,-0.00204774,0.01614355,0.03271642,-0.0139475,-0.07299401,-0.01623533,0.05963439,-0.01129519,-0.02483684,-0.00394318,-0.03917031,-0.01709054,-0.02191413,-0.00462362,-0.02596441,0.04167673,-0.00578595,-0.00063091,-0.00526885,0.00242016,0.0062859,-0.00620858,-0.02",
+  "50%": "Limit (actual time=11.325..16.444 rows=100 loops=1)\n  ->  Index Scan using ix_spike_hnsw on document_chunks (actual time=11.324..16.434 rows=100 loops=1)\n        Order By: (embedding_vec <=> '[-0.00352158,0.03197535,0.02351477,-0.01690006,0.03180968,-0.03323582,-0.02544607,0.01629052,-0.00213019,-0.02408924,0.00449446,0.0267783,0.00019138,-0.02353881,-0.00956399,0.01205203,-0.00658842,-0.02149326,-0.02471334,0.00425405,0.00340101,0.0054057,0.03500399,0.03421206,-0.01205771,-0.05232891,0.00075301,-0.0060328,0.03506988,0.02869999,0.07150433,-0.02614333,-0.0188593,0.0380171,0.03080118,0.0319288,-0.03046975,-0.03529241,0.01901898,-0.03366572,-0.02235232,-0.02165075,-0.00639961,-0.00604934,0.02473771,-0.01714118,-0.00543698,0.0244589,0.04590458,0.01894769,0.01100852,-0.01656089,0.02747434,0.01417491,0.02887581,-0.00607033,0.02281903,-0.00679352,-0.01133969,-0.00486042,-0.0079803,0.00481188,-0.03891303,-0.07224416,-0.01397923,0.01003074,0.00145314,0.00260504,-0.05219915,-0.004637,0.03526628,-0.00926918,-0.01468116,0.00987285,0.00374859,0.04749344,-0.04028193,-0.01042287,-0.02055787,-0.00925877,0.02383306,0.01188202,-0.02763277,-0.04227157,-0.03213504,0.00366344,-0.0134365,-0.03205877,-0.00803978,-0.00588409,-0.01563204,0.01818917,-0.02475191,-0.0231805,0.00357162,-0.05841075,0.01550173,-0.00830213,-0.02102169,0.02453377,-0.03270872,0.00725137,-0.00345411,0.02435044,0.04690366,0.0175481,-0.01931908,-0.04847095,0.02665872,-0.01631816,0.02462799,-0.0006148,-0.0021371,0.01211639,0.01002691,0.00170108,0.02556929,-0.01622453,-0.00204774,0.01614355,0.03271642,-0.0139475,-0.07299401,-0.01623533,0.05963439,-0.01129519,-0.02483684,-0.00394318,-0.03917031,-0.01709054,-0.02191413,-0.00462362,-0.02596441,0.04167673,-0.00578595,-0.00063091,-0.00526885,0.00242016,0.0062859,-0.00620858,-0.02",
+  "100%": "Limit (actual time=351.423..435.806 rows=100 loops=1)\n  ->  Index Scan using ix_spike_hnsw on document_chunks (actual time=351.422..435.791 rows=100 loops=1)\n        Order By: (embedding_vec <=> '[-0.00352158,0.03197535,0.02351477,-0.01690006,0.03180968,-0.03323582,-0.02544607,0.01629052,-0.00213019,-0.02408924,0.00449446,0.0267783,0.00019138,-0.02353881,-0.00956399,0.01205203,-0.00658842,-0.02149326,-0.02471334,0.00425405,0.00340101,0.0054057,0.03500399,0.03421206,-0.01205771,-0.05232891,0.00075301,-0.0060328,0.03506988,0.02869999,0.07150433,-0.02614333,-0.0188593,0.0380171,0.03080118,0.0319288,-0.03046975,-0.03529241,0.01901898,-0.03366572,-0.02235232,-0.02165075,-0.00639961,-0.00604934,0.02473771,-0.01714118,-0.00543698,0.0244589,0.04590458,0.01894769,0.01100852,-0.01656089,0.02747434,0.01417491,0.02887581,-0.00607033,0.02281903,-0.00679352,-0.01133969,-0.00486042,-0.0079803,0.00481188,-0.03891303,-0.07224416,-0.01397923,0.01003074,0.00145314,0.00260504,-0.05219915,-0.004637,0.03526628,-0.00926918,-0.01468116,0.00987285,0.00374859,0.04749344,-0.04028193,-0.01042287,-0.02055787,-0.00925877,0.02383306,0.01188202,-0.02763277,-0.04227157,-0.03213504,0.00366344,-0.0134365,-0.03205877,-0.00803978,-0.00588409,-0.01563204,0.01818917,-0.02475191,-0.0231805,0.00357162,-0.05841075,0.01550173,-0.00830213,-0.02102169,0.02453377,-0.03270872,0.00725137,-0.00345411,0.02435044,0.04690366,0.0175481,-0.01931908,-0.04847095,0.02665872,-0.01631816,0.02462799,-0.0006148,-0.0021371,0.01211639,0.01002691,0.00170108,0.02556929,-0.01622453,-0.00204774,0.01614355,0.03271642,-0.0139475,-0.07299401,-0.01623533,0.05963439,-0.01129519,-0.02483684,-0.00394318,-0.03917031,-0.01709054,-0.02191413,-0.00462362,-0.02596441,0.04167673,-0.00578595,-0.00063091,-0.00526885,0.00242016,0.0062859,-0.00620858,-"
+ },
+ "indexed_ids": 50827
+}

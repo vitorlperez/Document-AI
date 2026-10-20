@@ -1,0 +1,4 @@
+.pydeps/
+results/*.npy
+results/*.log
+__pycache__/
