@@ -276,6 +276,7 @@ function StepOne({ robot, folders, poll, checking, noneFound, hasExisting, onRes
 }
 
 function StepTwo({ robot, folders, all, choices, setChoices, picked, poll, onResume, paste, setPaste, pasteError, pasteChecking, onAddPasted, spaces, spaceIds, setSpaceIds, onConnect, onBack }: { spaces: LinkSpaceOption[] | null; spaceIds: string[]; setSpaceIds: (updater: (current: string[]) => string[]) => void; robot: string; folders: InboxFolder[]; all: InboxFolder[]; choices: SelectionChoices; setChoices: (updater: (c: SelectionChoices) => SelectionChoices) => void; picked: number; poll: ReturnType<typeof initialPollState>; onResume: () => void; paste: string; setPaste: (v: string) => void; pasteError: string | null; pasteChecking: boolean; onAddPasted: () => void; onConnect: () => void; onBack: () => void }) {
+  // eslint-disable-next-line react-hooks/purity -- timestamp only labels relative "agora"; recomputed each render by design
   const now = Date.now();
   const allOn = folders.length > 0 && picked === folders.length;
   return <div className="drive-step">

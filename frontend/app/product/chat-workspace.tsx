@@ -132,6 +132,7 @@ function ConversationLibraryWorkspace({ company, setError, setNotice }: { compan
     if (bridgeApplied.current || restoringConversation) return;
     bridgeApplied.current = true;
     const bridge = parseChatBridge(window.location.search);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot bridge from the URL on mount
     for (const nodeId of bridge.mentionNodeIds) void mentionFromLocate({ nodeId, documentId: null }, bridge.spaceIds, false);
   }, [restoringConversation, mentionFromLocate]);
   const openCitationInLibrary = useCallback((citation: Evidence) => {
