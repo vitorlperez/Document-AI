@@ -14,6 +14,7 @@ from app.audit_usage.models import AuditLog, SavedQuery
 from app.audit_usage.service import UsageLimitExceeded, UsageService, active_document_limit
 from app.core.access_errors import SyncAccessDenied
 from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
 from app.ingestion.blocks import ExtractedBlock
 from app.ingestion.extraction import (
     ELIGIBLE_MIME_TYPES,  # noqa: F401 -- compatibility re-export
@@ -566,7 +567,7 @@ class IngestionService:
                     select(Document).where(
                         Document.organization_id == job.organization_id,
                         Document.workspace_folder_id == job.workspace_folder_id,
-                        Document.external_file_id.in_(tombstones),
+                        ids_clause(self.session, Document.external_file_id, tombstones),
                     )
                 )
                 for document in removed_documents:

@@ -8,6 +8,7 @@ from sqlalchemy import func, literal_column, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.questions import join_overlapping_text, query_terms
@@ -51,14 +52,14 @@ class RetrievalService:
     def _scoped(self, scope: OrganizationScope, selection: QuestionSelection):
         filters = [
             Document.organization_id == scope.organization_id,
-            Document.workspace_folder_id.in_(selection.folder_ids),
+            ids_clause(self.session, Document.workspace_folder_id, selection.folder_ids),
             Document.index_status == "indexed",
             DocumentChunk.organization_id == scope.organization_id,
-            DocumentChunk.workspace_folder_id.in_(selection.folder_ids),
+            ids_clause(self.session, DocumentChunk.workspace_folder_id, selection.folder_ids),
             DocumentChunk.workspace_folder_id == Document.workspace_folder_id,
         ]
         if selection.document_ids is not None:
-            filters.append(Document.id.in_(selection.document_ids))
+            filters.append(ids_clause(self.session, Document.id, selection.document_ids))
         return filters
 
     def search(
@@ -112,7 +113,7 @@ class RetrievalService:
             .join(DataSource, DataSource.id == WorkspaceFolder.source_id)
             .where(
                 Document.id == document_id, Document.organization_id == scope.organization_id,
-                Document.workspace_folder_id.in_(selection.folder_ids), Document.index_status == "indexed",
+                ids_clause(self.session, Document.workspace_folder_id, selection.folder_ids), Document.index_status == "indexed",
                 DataSource.organization_id == scope.organization_id,
             )
         ).first()
