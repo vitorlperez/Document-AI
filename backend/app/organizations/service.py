@@ -128,6 +128,27 @@ class OrganizationService:
             )
         )
 
+    def people(self, *, scope: OrganizationScope, actor_user_id: UUID) -> list[tuple[UUID, str]]:
+        """Minimal (user_id, email) list for owner/admin or a manager of at least one live Space."""
+        role = self.session.scalar(select(Membership.role).where(
+            Membership.organization_id == scope.organization_id, Membership.user_id == actor_user_id,
+            Membership.is_active.is_(True)))
+        if role is None:
+            raise InvitationNotAllowed("not a member of this organization")
+        if role not in (MembershipRole.OWNER, MembershipRole.ADMIN) and self.session.scalar(
+            select(SpaceMember.id).join(Space, Space.id == SpaceMember.space_id).where(
+                SpaceMember.organization_id == scope.organization_id, SpaceMember.user_id == actor_user_id,
+                SpaceMember.role == SPACE_ROLE_MANAGER, SpaceMember.removed_at.is_(None),
+                Space.archived_at.is_(None)).limit(1)
+        ) is None:
+            raise InvitationNotAllowed("owner, admin or space manager required")
+        return [
+            (user_id, email) for user_id, email in self.session.execute(
+                select(User.id, User.email).join(Membership, Membership.user_id == User.id).where(
+                    Membership.organization_id == scope.organization_id, Membership.is_active.is_(True)
+                ).order_by(User.email))
+        ]
+
     def change_membership_role(
         self, *, scope: OrganizationScope, actor_user_id: UUID, membership_id: UUID, role: MembershipRole
     ) -> Membership:
@@ -160,6 +181,9 @@ class OrganizationService:
         )
         if owner is None:
             raise InvitationNotAllowed("only an owner can manage invitations")
+        space_ids = list(dict.fromkeys(space_ids)) if space_ids else None
+        if space_ids is not None and len(enrollment.valid_space_ids(self.session, scope.organization_id, space_ids)) != len(space_ids):
+            raise InvitationInvalid("space not found")
         normalized_email = _canonical_email(email)
         pending = self.session.scalar(
             select(MembershipInvitation).where(
@@ -219,11 +243,16 @@ class OrganizationService:
             self.session.rollback()
             raise InvitationInvalid("invitation is invalid") from error
         invitation.accepted_at = datetime.now(UTC)
-        enrollment.enroll_member(
+        joined = enrollment.enroll_member(
             self.session, invitation.organization_id, user.id,
             [UUID(item) for item in invitation.space_ids] if invitation.space_ids else None,
             added_by_user_id=invitation.invited_by_user_id,
         )
+        if not joined and invitation.space_ids:
+            # Every chosen Space was archived after the invitation: never leave the person with no Space.
+            enrollment.enroll_member(
+                self.session, invitation.organization_id, user.id, added_by_user_id=invitation.invited_by_user_id
+            )
         self._record_invitation_audit(
             organization_id=invitation.organization_id,
             actor_user_id=user.id,

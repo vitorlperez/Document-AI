@@ -131,7 +131,7 @@ function PeopleTab({ company, space, canEdit, visible, setError, setNotice, onCh
   useEffect(() => {
     if (!canEdit) return;
     let alive = true;
-    spacesApi.orgPeople(company.id).then((rows) => { if (alive) setPeople(rows); }).catch((caught) => { if (alive) { setPeople([]); setPeopleNote(toSpacesError(caught).code === "forbidden" ? "A lista de pessoas da organização só está disponível para o responsável pela organização." : toSpacesError(caught).message); } });
+    spacesApi.orgPeople(company.id).then((rows) => { if (alive) setPeople(rows); }).catch((caught) => { if (alive) { setPeople([]); setPeopleNote(toSpacesError(caught).code === "forbidden" ? "A lista de pessoas da organização só está disponível para administradores e responsáveis por Espaços." : toSpacesError(caught).message); } });
     return () => { alive = false; };
   }, [canEdit, company.id]);
 
@@ -164,7 +164,7 @@ function PeopleTab({ company, space, canEdit, visible, setError, setNotice, onCh
       <input id="space-add-person" value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Buscar por e-mail" autoComplete="off" className="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" />
       {peopleNote && <p className="mt-2 text-xs text-muted-foreground">{peopleNote}</p>}
       {term.trim() && people && !peopleNote && <ul className="mt-2 divide-y divide-line-soft rounded-md border border-line-soft" aria-label="Resultados da busca">
-        {candidates.length === 0 ? <li className="p-3 text-sm text-muted-foreground">Ninguém encontrado fora deste Espaço.</li> : candidates.map((person) => <li key={person.membership_id} className="flex items-center justify-between gap-3 p-3 text-sm">
+        {candidates.length === 0 ? <li className="p-3 text-sm text-muted-foreground">Ninguém encontrado fora deste Espaço.</li> : candidates.map((person) => <li key={person.user_id ?? person.email} className="flex items-center justify-between gap-3 p-3 text-sm">
           <span className="min-w-0 truncate">{person.email}</span><button type="button" className={btn("secondary", "sm")} onClick={() => void add(person)}>Habilitar</button></li>)}</ul>}
     </div>}
     {loading ? <LoadingBlock label="Carregando pessoas…" className="min-h-32"><SkeletonList rows={3} /></LoadingBlock>

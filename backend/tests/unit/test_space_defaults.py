@@ -97,15 +97,17 @@ def test_accept_invitation_joins_default_space(session):
 def test_accept_invitation_with_space_ids_joins_only_those(session):
     service, scope, org, owner = _org(session)
     rh = SpaceService(session).create_space(scope, owner.id, "RH")
+    gone = SpaceService(session).create_space(scope, owner.id, "Velho")
     _, token = service.create_invitation(scope=scope, actor_user_id=owner.id, email="n@example.test",
-                                         role=MembershipRole.MEMBER, space_ids=[rh.id, uuid4()])
+                                         role=MembershipRole.MEMBER, space_ids=[rh.id, gone.id])
+    SpaceService(session).archive_space(scope, owner.id, gone.id)
     user = User(email="n@example.test")
     session.add(user)
     session.flush()
     service.accept_invitation(raw_token=token, user=user)
     geral = SpaceService.default_space_id(session, org.id)
     assert user.id in {m.user_id for m in _active_members(session, rh.id)}
-    assert user.id not in {m.user_id for m in _active_members(session, geral)}  # unknown id ignored, no Geral
+    assert user.id not in {m.user_id for m in _active_members(session, geral)}  # archived id ignored, no Geral
 
 
 def test_select_scope_without_space_ids_grants_default_space(session):

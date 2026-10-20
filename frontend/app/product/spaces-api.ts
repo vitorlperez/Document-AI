@@ -14,8 +14,8 @@ export type SpaceMemberRow = { user_id: string; email: string; role: SpaceRole }
 export type SpaceImpact = { documents_lost: number; conversations_hidden: number; automations_paused: number; followed_queries_cleared?: number };
 /** Pasta conectada como a organização a vê (GET /workspace-folders). Para admin, `readable:false` = só metadados operacionais. */
 export type SpaceFolder = { id: string; name: string; status: string; spaces: SpaceRef[]; readable?: boolean };
-/** Candidato a membro: usuário da organização com `user_id` (precisa do backend expor `user_id` em /members). */
-export type OrgPerson = { user_id: string | null; membership_id: string; email: string; role: "owner" | "admin" | "member" };
+/** Candidato a membro: usuário da organização (GET /organizations/{id}/people — só `user_id` e e-mail; owner, admin ou responsável de algum Espaço). */
+export type OrgPerson = { user_id: string | null; email: string };
 /** Alcance de uma chave de API para quem a cria (T-I2: `reach` em POST/GET /api-keys). */
 export type KeyReach = { spaces: string[]; documents: number };
 
@@ -63,8 +63,8 @@ export function createSpacesApi(transport: Transport) {
     enter: (org: string, id: string) => call<{ space_id: string; role: SpaceRole }>(`${root(org)}/${id}/enter`, json("POST")),
     folders: (org: string) => call<SpaceFolder[]>(`/organizations/${org}/workspace-folders`),
     orgPeople: async (org: string): Promise<OrgPerson[]> => {
-      const rows = await call<{ id: string; user_id?: string | null; email: string; role: OrgPerson["role"] }[]>(`/organizations/${org}/members`);
-      return rows.map((row) => ({ user_id: row.user_id ?? null, membership_id: row.id, email: row.email, role: row.role }));
+      const rows = await call<{ user_id?: string | null; email: string }[]>(`/organizations/${org}/people`);
+      return rows.map((row) => ({ user_id: row.user_id ?? null, email: row.email }));
     },
   };
 }
