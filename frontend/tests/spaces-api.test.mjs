@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { addableCandidates, adminWithoutSpacesWarning, canEnterSpace, createSpacesApi, reachSentence, spaceFilterQuery, SpacesError, toSpacesError } from "../app/product/spaces-api.ts";
+import { addableCandidates, adminWithoutSpacesWarning, canEnterSpace, createSpacesApi, reachSentence, SpacesError, toSpacesError } from "../app/product/spaces-api.ts";
 
 function recorder(reply = {}) {
   const calls = [];
@@ -41,11 +41,6 @@ test("404/403/409/422 become typed errors", async () => {
   assert.equal(toSpacesError(new TypeError("net")).code, "unknown");
 });
 
-test("space filter query is absent when unified", () => {
-  assert.equal(spaceFilterQuery([]), "");
-  assert.equal(spaceFilterQuery(["a", "b"]), "&space_ids=a&space_ids=b");
-});
-
 test("key reach sentences", () => {
   assert.equal(reachSentence({ spaces: ["RH", "Geral"], documents: 214 }), "Esta chave alcançará 214 documentos em: RH, Geral.");
   assert.equal(reachSentence({ spaces: ["Geral"], documents: 1 }), "Esta chave alcançará 1 documento em: Geral.");
@@ -64,4 +59,9 @@ test("enter button only for admins who are not members; candidates skip current 
   const people = [{ user_id: "a", membership_id: "1", email: "Ána@x.com", role: "member" }, { user_id: "b", membership_id: "2", email: "bruno@x.com", role: "member" }, { user_id: null, membership_id: "3", email: "c@x.com", role: "member" }];
   assert.deepEqual(addableCandidates(people, [{ user_id: "b" }], "ana").map((p) => p.user_id), ["a"]);
   assert.deepEqual(addableCandidates(people, [], "").map((p) => p.user_id), ["a", "b"]);
+});
+
+test("only Spaces the person belongs to can filter reads", async () => {
+  const { memberSpaces } = await import("../app/product/spaces-api.ts");
+  assert.deepEqual(memberSpaces([{ id: "a", name: "Geral", my_role: "member" }, { id: "b", name: "Diretoria", my_role: null }, { id: "c", name: "RH", my_role: "manager" }]), [{ id: "a", name: "Geral" }, { id: "c", name: "RH" }]);
 });

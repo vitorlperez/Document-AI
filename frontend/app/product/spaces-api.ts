@@ -74,11 +74,6 @@ export type SpacesApi = ReturnType<typeof createSpacesApi>;
 export const DISCLOSURE_VERSION = "2026-10";
 export const DISCLOSURE_TEXT = "Todas as pessoas desses Espaços poderão ver o conteúdo desta pasta, e as respostas do assistente poderão citá-lo. Você pode mudar isso depois.";
 
-/** Parâmetro opcional de filtro por Espaço nas rotas de biblioteca/contextos. Vazio = visão unificada (nenhum parâmetro). */
-export function spaceFilterQuery(spaceIds: readonly string[]): string {
-  return spaceIds.length ? `&space_ids=${spaceIds.map(encodeURIComponent).join("&space_ids=")}` : "";
-}
-
 /** Texto da prévia de alcance de uma chave de API (T-F8). `reach` ausente (backend antigo) ⇒ null: não afirma nada. */
 export function reachSentence(reach: KeyReach | null | undefined): string | null {
   if (!reach) return null;
@@ -101,3 +96,7 @@ export function addableCandidates(people: OrgPerson[], members: Pick<SpaceMember
   return people.filter((person) => person.user_id && !taken.has(person.user_id) && (!needle || fold(person.email).includes(needle)));
 }
 export const spaceRoleLabel = (role: SpaceRole | null) => role === "manager" ? "Responsável" : role === "member" ? "Membro" : "Sem acesso";
+
+/** Espaços de que a pessoa participa — os únicos que podem filtrar leitura. Admin que não entrou num Espaço o gerencia, mas filtrar por ele daria 404. */
+export const memberSpaces = (spaces: Pick<SpaceSummary, "id" | "name" | "my_role">[]): SpaceRef[] =>
+  spaces.filter((space) => space.my_role !== null).map((space) => ({ id: space.id, name: space.name }));
