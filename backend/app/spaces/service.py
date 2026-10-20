@@ -196,6 +196,7 @@ class SpaceService:
         self.session.flush()
         self._audit(scope, actor_user_id, "member_removed", "space", space.id)
         self._audit(scope, actor_user_id, "member_removed", "user", user_id)
+        self._apply_lost_access(scope.organization_id, [user_id])
         return member
 
     def set_member_role(
@@ -213,6 +214,15 @@ class SpaceService:
         self.session.flush()
         self._audit(scope, actor_user_id, "member_role_changed", "space", space.id)
         return member
+
+    def _apply_lost_access(self, organization_id: UUID, user_ids: Sequence[UUID], lost: set[UUID] | None = None) -> None:
+        """Make the loss effective now: pause what the people can no longer run and unfollow stale queries."""
+        from app.automations.space_access import pause_automations_for_lost_access
+        from app.notifications.followed import clear_followed_state_for_lost_access
+
+        for user_id in user_ids:
+            pause_automations_for_lost_access(self.session, organization_id, user_id, lost)
+            clear_followed_state_for_lost_access(self.session, organization_id, user_id)
 
     def _keep_one_manager(self, space_id: UUID, member: SpaceMember) -> None:
         """A Space always keeps a manager: the last one can be neither removed nor demoted."""
@@ -281,6 +291,8 @@ class SpaceService:
         self.session.flush()
         self._audit(scope, actor_user_id, "folder_revoked", "space", space.id)
         self._audit(scope, actor_user_id, "folder_revoked", "workspace_folder", workspace_folder_id)
+        self._apply_lost_access(scope.organization_id, list(self.session.scalars(select(SpaceMember.user_id).where(
+            SpaceMember.space_id == space.id, SpaceMember.removed_at.is_(None)))), {workspace_folder_id})
         return grant
 
     def enter_space(self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID) -> SpaceMember:
@@ -322,8 +334,10 @@ class SpaceService:
                             Document.workspace_folder_id.in_(list(lost)), Document.index_status == "indexed")
                      .distinct().subquery())
             documents_lost = self.session.scalar(select(func.count()).select_from(files)) or 0
-        return {"documents_lost": documents_lost, "conversations_hidden": 0, "automations_paused": 0,
-                "followed_queries_cleared": 0}
+        from app.knowledge.derived import derived_impact
+
+        return {"documents_lost": documents_lost,
+                **derived_impact(self.session, scope.organization_id, user_id, lost_folder_ids=lost)}
 
     def _folder_ids(self, space_ids: set[UUID]) -> set[UUID]:
         if not space_ids:

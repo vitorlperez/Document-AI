@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, Response
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
@@ -680,6 +680,7 @@ def test_member_can_list_only_indexed_documents_in_their_own_folder(session: Ses
     session.commit()
 
     result = documents(
+        response=Response(), page=1, page_size=500,
         workspace_folder_id=folder.id,
         organization_id=organization.id,
         user=member,
@@ -702,13 +703,14 @@ def test_document_listing_rejects_cross_organization_scope(session: Session) -> 
 
     with pytest.raises(HTTPException) as error:
         documents(
+            response=Response(), page=1, page_size=500,
             workspace_folder_id=folder.id,
             organization_id=other_organization.id,
             user=outsider,
             session=session,
         )
 
-    assert error.value.status_code == 404
+    assert error.value.status_code == 403  # B3: organizations still on Spaces `off` keep the legacy 403
     assert member.id != outsider.id
     assert UUID(str(folder.organization_id)) == organization.id
 
