@@ -20,6 +20,7 @@ from app.automations.webhooks import enqueue_completed
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
 from app.integrations.google_drive import GoogleAccessDenied
+from app.knowledge.derived_visibility import provenance_of_documents
 from app.knowledge.models import Document
 from app.knowledge.questions import AIProviderUnavailable, QuestionService, SemanticProvider
 from app.library.service import LibraryService
@@ -148,6 +149,8 @@ def _deliver(session: Session, automation: Automation, run: AutomationRun, resul
              allowed: set[UUID] | None, folder_ids: list[UUID], email: EmailDeliveryPort | None, app_url: str) -> None:
     automation.last_run_at = datetime.now(UTC)
     citations = citation_payload(result.citations)
+    provenance = provenance_of_documents(
+        session, automation.organization_id, {item.document_id for item in result.citations}).to_data()
     if result.answer is None:
         _finish(run, "empty", result={"answer": None, "citations": [], "skipped_recipients": [], "notified": 0})
         return
@@ -157,7 +160,7 @@ def _deliver(session: Session, automation: Automation, run: AutomationRun, resul
     notified = 0
     wants = set(automation.output_formats or [])
     data: dict[str, object] = {"automation_id": str(automation.id), "run_id": str(run.id), "template": automation.template,
-                               "citations": citations}
+                               "citations": citations, "provenance": provenance}
     if "pdf" in wants:
         data["pdf_path"] = pdf_path(automation, run)
     email_content = None
@@ -192,4 +195,4 @@ def _deliver(session: Session, automation: Automation, run: AutomationRun, resul
     if skipped:
         logger.info("automation recipients skipped", extra={"automation_id": str(automation.id), "skipped": len(skipped)})
     _finish(run, "ok", result={"answer": result.answer, "citations": citations, "skipped_recipients": skipped,
-                               "notified": notified})
+                               "notified": notified, "provenance": provenance})

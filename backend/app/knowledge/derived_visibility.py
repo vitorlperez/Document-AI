@@ -74,6 +74,16 @@ def answer_provenance(response: object, context: object) -> Provenance:
     return Provenance(provenance_from_citations(citations).document_ids, frozenset(), _uuids(nodes))
 
 
+def provenance_of_documents(session: Session, organization_id: UUID, document_ids: Collection[UUID]) -> Provenance:
+    """The documents plus the folders that hold them: what a derivative written now is made of."""
+    ids = frozenset(document_ids)
+    if not ids:
+        return Provenance()
+    folders = session.scalars(select(Document.workspace_folder_id).where(
+        Document.organization_id == organization_id, ids_clause(session, Document.id, ids)))
+    return Provenance(document_ids=ids, folder_ids=frozenset(folders))
+
+
 def is_enforcing(session: Session, organization_id: UUID) -> bool:
     mode = session.scalar(select(Organization.spaces_resolver_mode).where(Organization.id == organization_id))
     return (mode or "off") not in _LEGACY_MODES
