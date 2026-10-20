@@ -122,6 +122,7 @@ def test_company_library_is_member_scoped_and_nodes_use_uuids(api: tuple[TestCli
             "workspace_folder_ids": children.json()["items"][0]["workspace_folder_ids"],
             "workspace_documents": children.json()["items"][0]["workspace_documents"],
             "indexing": children.json()["items"][0]["indexing"],
+            "spaces": [],  # an organization without Spaces has no badges
         }
     ]
     assert children.json()["items"][0]["indexing"]["state"] == "indexed"
