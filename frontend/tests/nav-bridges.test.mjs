@@ -47,3 +47,11 @@ test("locateQuery builds the backend query with space_ids", () => {
   assert.equal(locateQuery("org-1", { nodeId: A, documentId: null }, [B]), `organization_id=org-1&node_id=${A}&space_ids=${B}`);
   assert.equal(locateQuery("org-1", { nodeId: null, documentId: B }), `organization_id=org-1&document_id=${B}`);
 });
+
+test("library list view (the default) also carries the Perguntar bridge and the focus marker", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(new URL("../app/product/library-screen.tsx", import.meta.url), "utf8");
+  const row = source.slice(source.indexOf('className="library-file-row'));
+  assert.match(source, /<li key=\{entry\.key\}[^>]*data-node-id=\{item\.id\}[^>]*data-focus=/, "list rows expose data-node-id/data-focus for the citation highlight");
+  assert.match(row, /library-card-ask"[\s\S]{0,120}chatMentionPath\(company\.id, item\.id/, "list rows have the Perguntar button that opens the chat with the mention");
+});
