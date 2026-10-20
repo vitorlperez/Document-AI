@@ -3,6 +3,8 @@
 .command-palette[open] { display: flex; flex-direction: column; }
 .command-palette-input { display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid var(--card-edge); color: var(--color-muted-foreground); }
 .command-palette-input input { flex: 1; min-width: 0; min-height: 52px; border: 0; outline: 0; background: transparent; color: var(--color-ink); font-size: 16px; }
+/* The row itself is the field: neutralize the global input focus ring (surfaces.css) that boxed the input inside it. */
+.product-app .command-palette .command-palette-input input:is(:focus, :focus-visible) { outline: 0; box-shadow: none; border: 0; background: transparent; }
 .command-palette kbd { padding: 1px 6px; border: 1px solid var(--card-edge); border-radius: 6px; font: inherit; font-size: 11px; color: var(--color-muted-foreground); }
 .command-palette-list { margin: 0; padding: 6px; list-style: none; overflow-y: auto; }
 .command-palette-option { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; border-radius: 8px; cursor: pointer; font-size: 14px; }

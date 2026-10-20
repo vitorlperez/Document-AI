@@ -1,6 +1,6 @@
 "use client";
 
-import { File as FileIcon, Folder, Search } from "lucide-react";
+import { ArrowRight, File as FileIcon, Folder, Search } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { filterDestinations, paletteDestinations } from "./account-helpers";
 import { OPEN_PALETTE_EVENT, OPEN_SHORTCUTS_EVENT, isMac } from "./nav-events";
@@ -84,11 +84,11 @@ function CommandPalette({ company, onClose, onNavigate }: { company: Company; on
     else if (event.key === "Enter") { event.preventDefault(); const entry = entries[current]; if (entry) onNavigate(entry.path); }
   }
   return <dialog {...modal} aria-label="Paleta de comandos" className="command-palette" onKeyDown={onKeyDown}>
-    <div className="command-palette-input"><Search size={16} aria-hidden="true" /><input autoFocus role="combobox" aria-expanded="true" aria-controls={listId} aria-activedescendant={entries[current] ? `${listId}-${entries[current].id}` : undefined} aria-autocomplete="list" aria-label="Buscar arquivos, pastas ou páginas" placeholder="Ir para… ou buscar arquivos e pastas" value={query} onChange={(event) => { setQuery(event.target.value); setActive(0); }} /><kbd>Esc</kbd></div>
+    <div className="command-palette-input"><Search size={16} aria-hidden="true" /><input autoFocus role="combobox" aria-expanded="true" aria-controls={listId} aria-activedescendant={entries[current] ? `${listId}-${entries[current].id}` : undefined} aria-autocomplete="list" aria-label="Buscar arquivos, pastas ou páginas" placeholder="Ir para ou buscar arquivos…" value={query} onChange={(event) => { setQuery(event.target.value); setActive(0); }} /><kbd>Esc</kbd></div>
     <ul id={listId} role="listbox" aria-label="Resultados" className="command-palette-list">
       {entries.length === 0 && <li role="presentation" className="command-palette-empty">Nada encontrado.</li>}
       {entries.map((entry, index) => <li key={entry.id} id={`${listId}-${entry.id}`} role="option" aria-selected={index === current} onMouseMove={() => setActive(index)} onClick={() => onNavigate(entry.path)} className="command-palette-option">
-        {entry.kind === "folder" ? <Folder size={16} aria-hidden="true" /> : entry.kind === "file" ? <FileIcon size={16} aria-hidden="true" /> : <Search size={16} aria-hidden="true" />}
+        {entry.kind === "folder" ? <Folder size={16} aria-hidden="true" /> : entry.kind === "file" ? <FileIcon size={16} aria-hidden="true" /> : <ArrowRight size={16} aria-hidden="true" />}
         <span className="truncate">{entry.label}</span>{entry.detail && <small className="truncate">{entry.detail}</small>}
       </li>)}
     </ul>
