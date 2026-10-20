@@ -2,7 +2,7 @@
 
 import { ChevronRight, ExternalLink, FileText, HelpCircle, History, Send, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type CSSProperties, FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type CSSProperties, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type OnboardingState } from "../organization-onboarding";
 import { ConversationTour } from "../conversation-tour";
 import { AnswerActions } from "../answer-actions";
@@ -21,6 +21,9 @@ import { FollowToggle } from "./follow-toggle";
 import { usageLimitMessage } from "./usage-limit";
 import { type Company, type LibraryNode, type LibraryPage, type LibraryContext, type LibrarySync, type SavedQuery, type Evidence, type Answer, type ConversationMessage as BaseConversationMessage, type PersistedConversationMessage as BasePersistedConversationMessage, api, messageFor, useLatestRequest, answerText, citationSourceKey, compactCitations, libraryPath } from "./types-and-api";
 import { NewConversationButton } from "./shared-ui";
+import { SpaceScopeBar, useChatSpaces } from "./chat-spaces";
+import { SpaceBadges } from "./library-spaces";
+import { contextsInSpaces, payloadSpaceIds, sourcesFromLabel } from "../question-spaces";
 import { ConversationHistory } from "./conversation-history";
 import { Enter, LoadingBlock, SkeletonLine, SkeletonList, SkeletonText, StreamingText, TypingIndicator, Transition, btn, staggerStyle } from "../ui";
 
@@ -67,6 +70,8 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
   const syncStatus = useSyncStatus(company.id);
   const [roots, setRoots] = useState<LibraryNode[]>([]);
   const [contexts, setContexts] = useState<LibraryContext[]>([]);
+  const chatSpaces = useChatSpaces(company.id);
+  const scopedContexts = useMemo(() => contextsInSpaces(contexts, chatSpaces.selected), [contexts, chatSpaces.selected]);
   const [syncs, setSyncs] = useState<LibrarySync[]>([]);
   const { request: requestLibrary } = useLatestRequest<LibraryPage>();
   const { request: requestContexts } = useLatestRequest<{ items: LibraryContext[] }>();
@@ -111,7 +116,7 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
   const canManage = company.role !== "member";
   const mentionsOutsideSelection = mentions.filter((item) => !allTools && !queryProviders.includes(providerKey(item.source_provider)));
   const syncInProgress = syncs.some((item) => item.status === "queued" || item.status === "syncing");
-  const canAsk = !restoringConversation && !contextLoading && !contextError && mentionsOutsideSelection.length === 0 && (allTools || queryProviders.length > 0) && contexts.some((item) => contextReady(item) && (allTools || queryProviders.includes(providerKey(item.source_provider))));
+  const canAsk = !restoringConversation && !contextLoading && !contextError && mentionsOutsideSelection.length === 0 && (allTools || queryProviders.length > 0) && scopedContexts.some((item) => contextReady(item) && (allTools || queryProviders.includes(providerKey(item.source_provider))));
 
   const overviewProviders = allTools ? "" : [...queryProviders].sort().join(",");
   useEffect(() => {
@@ -252,7 +257,7 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
     const requestEpoch = conversationEpoch.current;
     const sequence = ++askSequence.current;
     const pendingId = `${requestId}:assistant`;
-    const selectedProviders = allTools ? [...new Set(contexts.filter((item) => item.query_status === "ready" || item.query_status === "no_compatible_embeddings").map((item) => providerKey(item.source_provider)))] : [...queryProviders];
+    const selectedProviders = allTools ? [...new Set(scopedContexts.filter((item) => item.query_status === "ready" || item.query_status === "no_compatible_embeddings").map((item) => providerKey(item.source_provider)))] : [...queryProviders];
     const selectedMentions = [...mentions];
     const contextName = allTools ? "Todas as ferramentas" : selectedProviders.map(toolLabel).join(", ");
     const messageSnapshot = { providers: selectedProviders, mentions: selectedMentions, allTools, contextName };
@@ -265,7 +270,7 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
     setMentions([]);
     setAsking(true);
     try {
-      const result = await api<Answer>(`/organizations/${company.id}/questions`, { method: "POST", body: JSON.stringify({ question: submittedQuestion, scope: "selection", providers: selectedProviders, mentions: selectedMentions.map((item) => ({ kind: item.kind, node_id: item.node_id, name: item.name })), conversation_id: conversationId }) });
+      const result = await api<Answer>(`/organizations/${company.id}/questions`, { method: "POST", body: JSON.stringify({ question: submittedQuestion, scope: "selection", providers: selectedProviders, mentions: selectedMentions.map((item) => ({ kind: item.kind, node_id: item.node_id, name: item.name })), conversation_id: conversationId, space_ids: payloadSpaceIds(chatSpaces.selected) }) });
       const answer = { ...result, citations: compactCitations(result.citations) };
       if (conversationEpoch.current !== requestEpoch) return;
       if (result.conversation_id) {
@@ -297,10 +302,11 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
           <div className="rounded-lg border border-line bg-panel p-2 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-sage-selected">
             <MentionComposer organizationId={company.id} value={question} onChange={setQuestion} mentions={mentions} onMentionsChange={setMentions} all={allTools} providers={queryProviders} disabled={asking || restoringConversation} textareaRef={composerRef} onSubmit={() => composerRef.current?.form?.requestSubmit()} />
             <div className="composer-toolbar flex items-center justify-between gap-2 border-t border-line-soft px-2 pt-2">
-              <div data-tour="tools"><QuestionScopePicker syncInProgress={syncInProgress || syncStatus.anySyncing} all={allTools} providers={queryProviders} contexts={contexts} loading={contextLoading} disabled={asking} error={contextError} onRetry={loadOperations} onChange={(all, providers) => { setAllTools(all); setQueryProviders(providers); }} /></div>
+              <div data-tour="tools"><QuestionScopePicker syncInProgress={syncInProgress || syncStatus.anySyncing} all={allTools} providers={queryProviders} contexts={scopedContexts} loading={contextLoading} disabled={asking} error={contextError} onRetry={loadOperations} onChange={(all, providers) => { setAllTools(all); setQueryProviders(providers); }} /></div>
               <div className="flex shrink-0 items-center gap-2"><span className="text-xs text-muted-foreground">{question.length}/1000</span><button disabled={!canAsk || !question.trim() || asking} aria-label={asking ? "Aguardando resposta" : "Enviar"} aria-busy={asking} className={btn("primary", "md", "composer-send")}><Send size={15} aria-hidden="true" /><span className="composer-send-label">{asking ? "Aguarde" : "Enviar"}</span></button></div>
             </div>
           </div>
+          <SpaceScopeBar spaces={chatSpaces.spaces} selected={chatSpaces.selected} onChange={chatSpaces.setSelected} disabled={asking} />
           {mentionsOutsideSelection.length > 0 && <p role="alert" className="mt-2 text-xs text-amber-800">Marque {mentionsOutsideSelection.map((item) => toolLabel(item.source_provider)).join(", ")} ou remova a menção antes de enviar.</p>}
           <p className="mt-2 text-xs text-muted-foreground">@ menciona arquivos e pastas · / abre comandos.</p>
         </form>
@@ -387,6 +393,7 @@ function SourceDocumentRow({ item, number, id, cited, onOpen }: { item: Evidence
       <span className="w-5 shrink-0 text-right text-xs font-semibold text-primary">{number}.</span>
       <FileText size={15} className="shrink-0 text-primary" aria-hidden="true" />
       <span className="min-w-0 flex-1 break-words text-xs font-medium leading-5 text-ink">{item.document_name}</span>
+      <SpaceBadges spaces={item.spaces} max={2} />
       {item.source_provider && <span className="citation-tool mb-0 shrink-0">{toolLabel(item.source_provider)}</span>}
     </button>
     {item.source_url && <a href={item.source_url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${item.document_name} no original`} title="Abrir original" className="shrink-0 cursor-pointer rounded-md p-1.5 text-primary hover:bg-sage focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"><ExternalLink size={14} aria-hidden="true" /></a>}
@@ -397,6 +404,7 @@ function SourceDocuments({ items, expanded, setExpanded, rowId, highlight, onOpe
   const remainingCount = Math.max(items.length - 3, 0);
   return <section className="mt-5 border-t border-line pt-4" aria-label="Documentos utilizados como fonte">
     <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fontes</h3>
+    {sourcesFromLabel(items) && <p className="mb-1 text-xs text-muted-foreground">{sourcesFromLabel(items)}</p>}
     <ol>{items.slice(0, expanded ? undefined : 3).map((item, index) => <SourceDocumentRow key={citationSourceKey(item)} item={item} number={index + 1} id={rowId(index + 1)} cited={isHighlighted(highlight, index + 1)} onOpen={onOpen} />)}</ol>
     {remainingCount > 0 && <button type="button" onClick={() => setExpanded((open) => !open)} aria-expanded={expanded} className="flex items-center gap-1 border-t border-line-soft py-2 text-xs font-semibold text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
       {expanded ? "Mostrar menos" : `Ver mais ${remainingCount} ${remainingCount === 1 ? "documento" : "documentos"}`}

@@ -4,6 +4,7 @@ import { FileText, FolderOpen, HardDrive, Table2 } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { errorDetail } from "../api-error-detail";
 import { cleanAnswerForDisplay } from "../answer-display";
+import { mergeSpaceTags } from "../question-spaces";
 import { providerKey, type QuestionContext } from "../question-scope";
 import { type MentionCandidate } from "../mention-composer";
 import { type CatalogFolder } from "../new-space-options";
@@ -36,7 +37,7 @@ export type ToolCategory = "Arquivos" | "Documentação" | "Projetos";
 type RemoteFolder = CatalogFolder;
 export type ScopeCatalog = { folders: RemoteFolder[]; root_files: { available: boolean; label: string }; all_accessible: { available: boolean; label: string } };
 export type SavedQuery = { id: string; workspace_folder_id: string; name: string; query: string };
-export type Evidence = { document_id: string; document_name: string; excerpt: string; page_number: number | null; source_url: string | null; source_provider?: string | null };
+export type Evidence = { /** Espaços do chamador que concedem o arquivo (T-E2); ausente ⇒ sem selo. */ spaces?: { id: string; name: string }[]; document_id: string; document_name: string; excerpt: string; page_number: number | null; source_url: string | null; source_provider?: string | null };
 export type Answer = { answer: string | null; confidence: string; citations: Evidence[]; retrieval_status: string; coverage?: { total_folders: number; eligible_folders: number; pending_folders: number }; conversation_id?: string };
 export type ConversationMessage = { id: string; role: "user" | "assistant"; content: string; contextName: string; contextId?: string; mentions?: MentionCandidate[]; providers?: string[]; allTools?: boolean; answer?: Answer; pending?: boolean; error?: string };
 export type PersistedConversationMessage = { id: string; role: "user" | "assistant"; content: string; context: { providers?: string[]; mentions?: MentionCandidate[] } | null; response: Answer | null };
@@ -129,6 +130,8 @@ export const compactCitations = (citations: Evidence[]): Evidence[] => {
     }
     if (!existing.source_url && citation.source_url) existing.source_url = citation.source_url;
     if (!existing.source_provider && citation.source_provider) existing.source_provider = citation.source_provider;
+    const spaces = mergeSpaceTags(existing.spaces, citation.spaces);
+    if (spaces) existing.spaces = spaces;
   }
   return [...grouped.values()];
 };

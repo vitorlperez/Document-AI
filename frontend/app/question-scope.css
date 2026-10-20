@@ -12,3 +12,12 @@
 @media (max-width: 639px) { .question-scope-count { display: none; } }
 .question-scope-warning, .question-scope-empty { width: 100%; color: var(--warn-fg); font-size: 11px; line-height: 1.5; }
 .question-scope-warning button { margin-left: 5px; text-decoration: underline; }
+
+/* Faixa "Procurando em…" (Espaços) sob o composer */
+.space-scope-bar { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted-foreground); position: relative; }
+.space-scope-trigger { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2rem; padding: 0.125rem 0.5rem; border-radius: 0.5rem; border: 1px solid transparent; background: transparent; color: inherit; font-size: inherit; cursor: pointer; text-align: left; }
+.space-scope-trigger:hover:not(:disabled) { background: var(--sage); border-color: var(--line); }
+.space-scope-trigger:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.space-scope-trigger:disabled { opacity: 0.6; cursor: not-allowed; }
+.space-scope-trigger b, .space-scope-bar b { color: var(--ink); font-weight: 600; }
+.space-scope-bar .question-scope-menu { bottom: auto; top: 100%; }

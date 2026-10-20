@@ -27,7 +27,7 @@ export type FileErrorCode =
 
 const FILE_ERRORS: Record<FileErrorCode, string> = {
   source_access_denied: "A conexão com a ferramenta de origem não permite abrir este arquivo agora. Reconecte a ferramenta ou abra o original.",
-  source_file_missing: "O arquivo não foi encontrado na ferramenta de origem — pode ter sido movido ou excluído.",
+  source_file_missing: "O arquivo não foi encontrado na ferramenta de origem — pode ter sido movido ou excluído, ou este conteúdo não está mais disponível para você.",
   source_file_unavailable: "A ferramenta de origem não liberou este arquivo para visualização.",
   file_too_large: "O arquivo é grande demais para visualizar aqui.",
   viewer_not_supported: "Este tipo de arquivo não tem visualização completa; mostramos o texto extraído.",
