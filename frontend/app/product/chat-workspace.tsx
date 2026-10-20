@@ -17,7 +17,7 @@ import { MentionComposer, type MentionCandidate } from "../mention-composer";
 import { mentionSummary } from "../mention-label";
 import { FollowToggle } from "./follow-toggle";
 import { usageLimitMessage } from "./usage-limit";
-import { type Company, type LibraryNode, type LibraryPage, type LibraryContext, type LibrarySync, type SavedQuery, type Evidence, type Answer, type ConversationMessage as BaseConversationMessage, type PersistedConversationMessage as BasePersistedConversationMessage, api, messageFor, useLatestRequest, answerText, citationSourceKey, compactCitations, libraryPath } from "./types-and-api";
+import { type Company, type LibraryContext, type LibrarySync, type SavedQuery, type Evidence, type Answer, type ConversationMessage as BaseConversationMessage, type PersistedConversationMessage as BasePersistedConversationMessage, api, messageFor, useLatestRequest, answerText, citationSourceKey, compactCitations, libraryPath } from "./types-and-api";
 import { NewConversationButton } from "./shared-ui";
 import { REPLAY_TOUR_EVENT, consumeTourReplay } from "./nav-events";
 import { SpaceScopeBar, useChatSpaces } from "./chat-spaces";
