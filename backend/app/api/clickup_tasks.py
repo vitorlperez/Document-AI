@@ -16,7 +16,6 @@ from app.api.auth import current_user, database_session
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.ingestion.service import SyncAccessDenied
-from app.knowledge.derived_visibility import message_is_visible
 from app.integrations.clickup import ClickUpOAuthClient
 from app.integrations.clickup_tasks import (
     ClickUpTaskError,
@@ -27,6 +26,7 @@ from app.integrations.clickup_tasks import (
     suggested_title,
 )
 from app.integrations.google_drive import CredentialCipher
+from app.knowledge.derived_visibility import message_is_visible
 from app.knowledge.models import Conversation, ConversationMessage
 from app.library.service import LibraryService
 

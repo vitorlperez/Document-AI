@@ -3,7 +3,7 @@
 import pytest
 
 from tests.api.test_text_search_api import login, search_api  # noqa: F401
-from tests.space_derived_helpers import CiteEverythingProvider, add_shared_copy, remove_from_space
+from tests.space_derived_helpers import CiteEverythingProvider, add_shared_copy
 from tests.spaces_helpers import bind_login_identities, seed_world
 
 

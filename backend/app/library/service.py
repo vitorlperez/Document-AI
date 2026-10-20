@@ -18,7 +18,6 @@ from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.queryability import folder_is_queryable
 from app.knowledge.questions import EMBEDDING_MODEL
 from app.library.models import LibraryExclusion, LibraryNode, ManualSyncRun
-from app.library.visibility import restrict_to_visible, visible_file_clause
 from app.library.tool_groups import (
     LEGACY_SHARED_ROOT_NAME,
     display_node_name,
@@ -26,6 +25,7 @@ from app.library.tool_groups import (
     tool_group,
     tool_groups,
 )
+from app.library.visibility import restrict_to_visible
 from app.organizations.models import Membership
 from app.spaces.access import SpaceAccess, SpaceAccessResolver, SpaceRef
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection

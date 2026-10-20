@@ -34,7 +34,7 @@ def client(factory, private_key):  # noqa: F811
         yield c
 
 
-def test_a_connection_cannot_search_or_fetch_outside_its_users_spaces(client, world, private_key):
+def test_a_connection_cannot_search_or_fetch_outside_its_users_spaces(client, world, private_key):  # noqa: F811
     token = _token(private_key, "eva")  # owner, member of Geral only
     found = call(client, token, "search", {"query": "reajuste"})["result"]["structuredContent"]["results"]
     assert found == []
@@ -55,7 +55,7 @@ def test_entering_the_space_opens_it_on_the_next_call(client, world, private_key
     assert [s["name"] for s in results[0]["spaces"]] == ["Diretoria"]
 
 
-def test_list_sources_and_search_report_spaces_and_space_ids_narrows(client, world, private_key):
+def test_list_sources_and_search_report_spaces_and_space_ids_narrows(client, world, private_key):  # noqa: F811
     token = _token(private_key, "bruno")
     sources = call(client, token, "list_sources", {})["result"]["structuredContent"]["sources"]
     assert {s["name"]: [x["name"] for x in s["spaces"]] for s in sources} == {"politicas": ["Geral"], "rh": ["RH"]}
@@ -65,7 +65,7 @@ def test_list_sources_and_search_report_spaces_and_space_ids_narrows(client, wor
     assert [r["title"] for r in only_rh["result"]["structuredContent"]["results"]] == ["rh.pdf"]
 
 
-def test_a_space_that_is_not_the_users_does_not_exist(client, world, private_key):
+def test_a_space_that_is_not_the_users_does_not_exist(client, world, private_key):  # noqa: F811
     token = _token(private_key, "bruno")
     foreign = call(client, token, "search", {"query": "politica", "space_ids": [str(world.spaces["diretoria"])]})
     assert foreign["result"]["isError"] is True

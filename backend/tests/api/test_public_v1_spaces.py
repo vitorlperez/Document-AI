@@ -3,9 +3,8 @@
 from datetime import UTC, datetime
 
 import pytest
-from sqlalchemy import select
 
-from app.access.models import ApiAuditEvent, OrganizationAccessSettings
+from app.access.models import OrganizationAccessSettings
 from app.access.ratelimit import InMemoryRateLimiter
 from app.organizations.models import Membership, MembershipRole
 from app.spaces.models import SpaceMember

@@ -23,7 +23,6 @@ from app.api.automations import router as automations_router
 from app.api.clickup_tasks import router as clickup_tasks_router
 from app.api.conversations import router as conversations_router
 from app.api.document_view import router as document_view_router
-from app.api.org_search import router as org_search_router
 from app.api.drive_sa import router as drive_sa_router
 from app.api.evidence import router as evidence_router
 from app.api.health import router as health_router
@@ -34,6 +33,7 @@ from app.api.library import router as library_router
 from app.api.mcp_admin import router as mcp_admin_router
 from app.api.notifications import router as notifications_router
 from app.api.onboarding import router as onboarding_router
+from app.api.org_search import router as org_search_router
 from app.api.overview import router as overview_router
 from app.api.platform import router as platform_router
 from app.api.public_v1 import router as public_v1_router

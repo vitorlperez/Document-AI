@@ -15,7 +15,6 @@ from app.integrations.google_drive import GoogleAccessDenied
 from app.workspaces.service import WorkspaceService
 
 
-
 def _settings(settings: Settings | None) -> Settings:
     if settings is not None: return settings
     try: return get_settings()

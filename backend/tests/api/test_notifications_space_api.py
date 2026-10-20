@@ -2,10 +2,10 @@
 
 import pytest
 
+from app.core.scoping import OrganizationScope
 from app.knowledge.derived_visibility import HIDDEN_NOTICE, Provenance
 from app.notifications.models import Notification
 from app.notifications.service import NotificationService
-from app.core.scoping import OrganizationScope
 from tests.api.test_text_search_api import login, search_api  # noqa: F401
 from tests.space_derived_helpers import remove_from_space
 from tests.spaces_helpers import bind_login_identities, seed_world

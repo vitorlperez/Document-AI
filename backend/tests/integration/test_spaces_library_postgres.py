@@ -49,8 +49,8 @@ def test_tree_search_mentions_and_snapshots_follow_the_spaces(session, who):
     catalog = service.authorized_catalog(scope=scope, user_id=user, providers=["google_drive"], mentions=[])
     assert {n.name for n in catalog.nodes.values() if n.kind == "file"} == allowed
     for name in ("politicas", "rh", "diretoria"):
-        call = lambda: service.catalog_file_snapshots(  # noqa: E731
-            scope=scope, user_id=user, providers=["google_drive"], node_ids=[world.nodes[name]])
+        call = lambda: service.catalog_file_snapshots(
+            scope=scope, user_id=user, providers=["google_drive"], node_ids=[world.nodes[name]])  # noqa: B023
         if name in EXPECTED[who]:
             assert call()[0].index_status == "indexed"
         else:

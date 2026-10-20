@@ -86,7 +86,7 @@ def test_statement_count_does_not_grow_with_the_page(world_api):
     as_user(client, gateway, "carla")
     seen: list[str] = []
     engine = factory.kw["bind"]
-    listener = lambda c, cur, st, p, ctx, m: seen.append(st)  # noqa: E731
+    listener = lambda c, cur, st, p, ctx, m: seen.append(st)
     event.listen(engine, "before_cursor_execute", listener)
     try:
         get(client, world, f"/library/nodes/{root}/children")

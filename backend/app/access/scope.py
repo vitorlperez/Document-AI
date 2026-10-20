@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.access.principal import Principal
 from app.library.service import LibraryService, QuestionSelection
-from app.library.tool_groups import tool_group, tool_groups
+from app.library.tool_groups import tool_groups
 from app.spaces.access import SpaceAccessResolver
 from app.spaces.filter import narrowed_to_spaces
 

@@ -29,10 +29,10 @@ from app.knowledge.presentation import strip_answer_links, strip_block_label
 from app.knowledge.queryability import folder_is_queryable
 from app.knowledge.similarity import PgVectorSimilarity, SimilarityIndex, default_similarity
 from app.knowledge.untrusted import UNTRUSTED_NOTICE, fence_sources, strip_invisible
-from app.workspaces.models import WorkspaceFolder
+from app.library.tool_groups import tool_group
 from app.spaces.access import SpaceAccessResolver
 from app.spaces.filter import narrowed_to_spaces
-from app.library.tool_groups import tool_group, tool_groups
+from app.workspaces.models import WorkspaceFolder
 
 EMBEDDING_MODEL = "text-embedding-3-small"
 ANSWER_MODEL = "gpt-5-mini"

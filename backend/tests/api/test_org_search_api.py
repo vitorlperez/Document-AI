@@ -69,17 +69,17 @@ def test_limit_is_capped_and_snippets_are_untrusted_content(world_api):
     from app.knowledge.models import DocumentChunk
     with factory.begin() as session:
         chunk = session.query(DocumentChunk).filter_by(workspace_folder_id=world.folders["politicas"], position=0).first()
-        chunk.text = "politica de ferias​ com texto oculto"
+        chunk.text = "politica de ferias\u200b com texto oculto"
         chunk.search_text = chunk.text.lower()
     as_user(client, gateway, "carla")
     assert search(client, world, "politica", limit=500).status_code == 422
     body = search(client, world, "politica", limit=20).json()
     assert len(body["results"]) <= 20
     assert body["metadata"]["content_trust"] == "untrusted_document_content"
-    assert all("​" not in item["snippet"] for item in body["results"])
+    assert all("\u200b" not in item["snippet"] for item in body["results"])
 
 
 def test_non_members_and_anonymous_are_refused(world_api):
-    client, _, gateway, world = world_api
+    client, _, _gateway, world = world_api
     client.cookies.clear()
     assert search(client, world, "politica").status_code == 401

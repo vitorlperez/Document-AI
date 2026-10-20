@@ -127,7 +127,7 @@ def test_purge_after_24_hours_tombstones_and_is_idempotent(session):
 
 def test_folder_revocation_purges_for_every_member_that_depended_on_it(session):
     world = seed_world(session)
-    _, _, queries, notes = derived_content(session, world, "ana")  # ana manages RH
+    _, _, queries, _notes = derived_content(session, world, "ana")  # ana manages RH
     _, _, bruno_queries, _ = derived_content(session, world, "bruno")
     grant = session.query(SpaceFolderGrant).filter_by(space_id=world.spaces["rh"], workspace_folder_id=world.folders["rh"]).one()
     grant.revoked_at = datetime.now(UTC) - timedelta(hours=30)

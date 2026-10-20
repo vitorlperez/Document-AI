@@ -1,10 +1,11 @@
 """C7: invitation fallback, the last manager, and concurrent duplicate inserts are handled, not 500s."""
 
+from uuid import uuid4
+
 import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
-from uuid import uuid4
 
 from app.core.models import Base
 from app.spaces import enrollment

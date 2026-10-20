@@ -10,7 +10,7 @@ from app.automations.models import Automation, AutomationRun
 from app.automations.space_access import pause_automations_for_lost_access
 from app.core.models import Base
 from app.notifications.models import Notification
-from tests.space_derived_helpers import CiteEverythingProvider, remove_from_space
+from tests.space_derived_helpers import CiteEverythingProvider
 from tests.spaces_helpers import seed_world
 
 WEEKLY = {"frequency": "weekly", "weekday": 0, "hour": 8, "timezone": "America/Sao_Paulo"}
@@ -57,8 +57,9 @@ def test_creator_who_lost_the_folder_gets_creator_access_lost_then_the_automatio
     world = seed_world(session)
     row = automation(session, world, "carla", ["diretoria"])
     session.commit()
-    from app.spaces.models import SpaceMember
     from datetime import UTC, datetime
+
+    from app.spaces.models import SpaceMember
     session.query(SpaceMember).filter_by(space_id=world.spaces["diretoria"], user_id=world.users["carla"]).update(
         {"removed_at": datetime.now(UTC)})
     session.commit()

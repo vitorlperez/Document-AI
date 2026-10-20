@@ -45,8 +45,8 @@ from app.knowledge.questions import (
     _number_answer_sources,
     _validate_citations,
 )
-from app.knowledge.untrusted import sanitize_label, strip_invisible
 from app.knowledge.space_seals import seal_result, spaces_by_document, spaces_payload
+from app.knowledge.untrusted import sanitize_label, strip_invisible
 from app.library.models import LibraryNode
 from app.library.service import CatalogFileSnapshot, LibraryService, SyncAccessDenied
 from app.spaces.access import SpaceAccessResolver

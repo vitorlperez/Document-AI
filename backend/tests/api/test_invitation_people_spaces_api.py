@@ -6,7 +6,7 @@ from uuid import UUID
 from sqlalchemy import select
 
 from app.identity.models import User
-from app.organizations.models import Membership, MembershipInvitation, MembershipRole
+from app.organizations.models import MembershipInvitation, MembershipRole
 from app.spaces.models import Space, SpaceMember
 from tests.api.test_auth_and_invitations import (  # noqa: F401
     auth_api,
@@ -79,7 +79,7 @@ def test_invitation_with_empty_space_ids_falls_back_to_default_space(auth_api):
 
 
 def test_invitation_refuses_foreign_or_archived_space_without_side_effects(auth_api):
-    client, factory, gateway, delivery, org = setup_org(auth_api)
+    client, factory, _gateway, delivery, org = setup_org(auth_api)
     other_org = client.post("/organizations", json={"name": "Other"}).json()["id"]
     foreign = make_space(client, other_org, "Foreign")
     archived = make_space(client, org, "Velho")
@@ -105,7 +105,7 @@ def test_space_archived_after_invitation_falls_back_to_default_on_accept(auth_ap
 
 def seed_people(auth_api):
     """owner, admin, plain member, a manager of RH (org member), and a person in another org."""
-    client, factory, gateway, delivery, org = setup_org(auth_api)
+    client, factory, gateway, _delivery, org = setup_org(auth_api)
     rh = make_space(client, org, "RH")
     ids = {}
     for who, role in (("admin", MembershipRole.ADMIN), ("plain", MembershipRole.MEMBER), ("boss", MembershipRole.MEMBER)):
@@ -125,7 +125,7 @@ def as_user(client, gateway, who):
 
 
 def test_people_list_is_minimal_and_open_to_owner_admin_and_space_manager(auth_api):
-    client, gateway, org, rh, ids = seed_people(auth_api)
+    client, gateway, org, _rh, ids = seed_people(auth_api)
     for who in ("owner", "admin", "boss"):
         as_user(client, gateway, who)
         response = client.get(f"/organizations/{org}/people")
@@ -139,7 +139,7 @@ def test_people_list_is_minimal_and_open_to_owner_admin_and_space_manager(auth_a
 
 
 def test_people_list_refuses_plain_members_and_outsiders(auth_api):
-    client, gateway, org, rh, ids = seed_people(auth_api)
+    client, gateway, org, _rh, _ids = seed_people(auth_api)
     as_user(client, gateway, "plain")
     assert client.get(f"/organizations/{org}/people").status_code == 403
     callback(client, gateway, code="stranger-again", email="stranger@elsewhere.test", subject="stranger")
@@ -147,7 +147,7 @@ def test_people_list_refuses_plain_members_and_outsiders(auth_api):
 
 
 def test_manager_of_archived_space_loses_people_list(auth_api):
-    client, gateway, org, rh, ids = seed_people(auth_api)
+    client, gateway, org, rh, _ids = seed_people(auth_api)
     callback(client, gateway, code="owner-again", email="owner@example.test", subject="owner")
     assert client.delete(f"/organizations/{org}/spaces/{rh}").status_code == 204
     as_user(client, gateway, "boss")
@@ -155,7 +155,7 @@ def test_manager_of_archived_space_loses_people_list(auth_api):
 
 
 def test_owner_members_list_now_carries_user_id(auth_api):
-    client, gateway, org, rh, ids = seed_people(auth_api)
+    client, gateway, org, _rh, _ids = seed_people(auth_api)
     callback(client, gateway, code="owner-three", email="owner@example.test", subject="owner")
     rows = client.get(f"/organizations/{org}/members").json()
     assert all(row["user_id"] for row in rows) and {"id", "email", "role", "user_id"} == set(rows[0])

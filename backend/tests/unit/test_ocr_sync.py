@@ -9,8 +9,8 @@ from test_ingestion_scheduler import (
     settings as settings,  # noqa: PLC0414 — pytest fixture discovery
 )
 
-from app.audit_usage.models import UsageRecord
 from app.audit_usage import service as usage_service
+from app.audit_usage.models import UsageRecord
 from app.audit_usage.service import monthly_limits
 from app.ingestion.blocks import ExtractedBlock
 from app.knowledge.models import Document

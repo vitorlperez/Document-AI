@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
-from app.audit_usage.service import UsageLimitExceeded, monthly_limits, UsageService
+from app.audit_usage.service import UsageLimitExceeded, UsageService, monthly_limits
 from app.core.models import Base
 from app.core.scoping import OrganizationScope
 from app.organizations.models import Organization

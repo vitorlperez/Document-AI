@@ -1,5 +1,6 @@
 """T-I2: Spaces in the public API (whoami, sources, search, key reach preview)."""
 
+import pytest
 from sqlalchemy import select
 
 from app.access.models import ApiAuditEvent, OrganizationAccessSettings
@@ -10,7 +11,6 @@ from tests.api.test_text_search_api import (
     search_api,  # noqa: F401 -- reuse the isolated API fixture
 )
 from tests.spaces_helpers import seed_world
-import pytest
 
 
 @pytest.fixture()
@@ -24,15 +24,6 @@ def world_api(search_api):  # noqa: F811
         # Ana is an org admin and a manager of RH only: her key must reach RH + Geral, never Diretoria
         session.query(Membership).filter_by(user_id=world.users["ana"]).update({"role": MembershipRole.ADMIN})
     return client, factory, world
-
-
-def key_for(factory, world, who, **kwargs):
-    tenant = Tenant(world.organization_id, world.users[who], world.folders["politicas"], world.documents["politicas"])
-    return mint_key(factory, tenant, **kwargs)
-
-
-def search(client, key, term, **extra):
-    return client.post("/v1/search", json={"query": term, **extra}, headers=bearer(key))
 
 
 def key_for(factory, world, who, **kwargs):

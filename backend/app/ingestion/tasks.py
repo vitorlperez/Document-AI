@@ -165,7 +165,11 @@ def drive_sa_maintenance_task():
 def build_robot_provisioner(session, settings):
     """Worker-only: needs the provisioner credential, which the API process never receives."""
     from app.integrations.google_drive_sa_service import key_cipher
-    from app.integrations.google_sa_provisioner import IamProvisionerClient, ProvisionerFatal, RobotProvisioner
+    from app.integrations.google_sa_provisioner import (
+        IamProvisionerClient,
+        ProvisionerFatal,
+        RobotProvisioner,
+    )
 
     if not settings.google_sa_provisioner_key_b64:
         raise ProvisionerFatal("provisioner_credential_missing")

@@ -99,8 +99,8 @@ def test_catalog_snapshots_never_read_an_unreachable_file(session, who):
     service = LibraryService(session)
     scope, user = OrganizationScope(world.organization_id), world.users[who]
     for name in ("politicas", "rh", "diretoria"):
-        call = lambda: service.catalog_file_snapshots(  # noqa: E731
-            scope=scope, user_id=user, providers=["google_drive"], node_ids=[world.nodes[name]])
+        call = lambda: service.catalog_file_snapshots(
+            scope=scope, user_id=user, providers=["google_drive"], node_ids=[world.nodes[name]])  # noqa: B023
         if name in EXPECTED[who]:
             assert call()[0].index_status == "indexed"
         else:

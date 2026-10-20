@@ -13,7 +13,10 @@ from app.core.models import Base
 from app.core.scoping import OrganizationScope
 from app.integrations.google_drive import GoogleAccessDenied
 from app.knowledge.models import Document
-from app.notifications.followed import clear_followed_state_for_lost_access, refresh_followed_queries
+from app.notifications.followed import (
+    clear_followed_state_for_lost_access,
+    refresh_followed_queries,
+)
 from app.notifications.models import Notification
 from tests.space_derived_helpers import CiteEverythingProvider, remove_from_space
 from tests.spaces_helpers import seed_world

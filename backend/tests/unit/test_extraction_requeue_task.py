@@ -2,8 +2,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 from uuid import uuid4
 
-import pytest
-
 from app.ingestion import tasks
 from app.ingestion.service import DiscoveredDocument
 from app.knowledge.questions import AIProviderRateLimited
