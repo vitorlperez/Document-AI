@@ -177,7 +177,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/v1/openapi.json", include_in_schema=False)
     def public_openapi() -> dict:
-        return get_openapi(title="Arquivio Public API", version="1.0.0",
+        return get_openapi(title="Arquivio Public API", version="1.1.0",
                           routes=public_v1_router.routes,
                           description="Read-only organization library. Bearer API keys.")
 
