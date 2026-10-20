@@ -132,7 +132,7 @@
 dialog[open]:not(.conversation-tour):not(.s_),
 [role="dialog"]:not(dialog):not([data-modal-overlay]):not(.s_),
 [role="alertdialog"]:not(.s_),
-.mobile-drawer.mobile-drawer:not(.s_),
+.mobile-more-sheet.mobile-more-sheet:not(.s_),
 [data-modal-overlay] > :is(section, div):not(.s_),
 .conversation-tour .tour-card:not(.s_) {
   background: var(--modal-bg);

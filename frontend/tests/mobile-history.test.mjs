@@ -8,10 +8,10 @@ test("the chat topbar history button is addressable so the mobile drawer can ope
   assert.match(read("product/chat-workspace.tsx"), /<button type="button" data-tour="history" onClick=\{\(\) => setHistoryOpen/);
 });
 
-test("the mobile drawer has a Conversas entry that opens the history", () => {
+test("the mobile header has a history button that opens the chat history", () => {
   const nav = read("mobile-nav.tsx");
   assert.match(nav, /\[data-tour="history"\]/);
-  assert.match(nav, /onClick=\{showHistory\}><History[^>]*\/>Conversas/);
+  assert.match(nav, /onClick=\{showHistory\}[^>]*aria-label="Conversas"/);
 });
 
 test("mobile history is a full-width sheet with 44px touch targets", () => {

@@ -1,20 +1,18 @@
 "use client";
 
-import { Clock3, FolderOpen, HardDrive, HelpCircle, History, Menu, Plus, ShieldCheck, Sparkles, Users, X } from "lucide-react";
-import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import { Check, ChevronDown, FolderOpen, HelpCircle, History, Keyboard, MoreHorizontal, Plus, Search, ShieldCheck, Sparkles, UserRound, LogOut, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
-import { Brand } from "./brand";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationBell } from "./product/notification-bell";
-import { AccountMenu } from "./product/account-menu";
-import { SyncBanner, useSyncStatus } from "./sync-status";
-import { ToolsSidebar, type ToolSelection } from "./tools-sidebar";
-import { staggerStyle } from "./ui";
-import { type Company, type LibraryNode, type LibraryPage, type User, api, companyPath, roleLabel } from "./product/types-and-api";
+import { accountMenuItems, activePrimaryTab, orgMenuSections } from "./product/account-helpers";
+import { orgItemIcons } from "./product/org-menu";
+import { openPalette, openShortcuts, requestTourReplay } from "./product/nav-events";
+import { type Company, type User, companyPath, roleLabel } from "./product/types-and-api";
 import "./mobile-chat.css";
 import "./interface-motion.css";
 
-/** Contract C5: below 768px the mobile shell (header + drawer) replaces the desktop header. */
+/** Contract C5: below 768px the mobile shell (header + bottom tab bar + "Mais" sheet) replaces the desktop header. */
 const MOBILE_QUERY = "(max-width: 767px)";
 
 export function useIsMobileShell() {
@@ -57,83 +55,77 @@ export function useVisualViewportHeight(enabled: boolean, lockDocument = false) 
 
 const chatSelector = (suffix: string) => `#consultas ${suffix}`;
 
-export function MobileShellHeader({ user, company, companies, screen, activePath, onCompanyChange, onNavigate, onLogout }: { user: User; company: Company; companies: Company[]; screen: "chat" | "other"; activePath: string; onCompanyChange: (id: string) => void; onNavigate: (path: string) => void; onLogout: () => void }) {
+/** The soft keyboard shrinks the visual viewport; the tab bar steps aside so it never sits on top of the composer. */
+function useKeyboardOpen() {
   const [open, setOpen] = useState(false);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const restoreMenuFocus = useRef(true);
-  const canManage = company.role !== "member";
-  const sync = useSyncStatus(company.id, { enabled: true });
-  const [roots, setRoots] = useState<LibraryNode[]>([]);
   useEffect(() => {
-    const controller = new AbortController();
-    api<LibraryPage>(`/library?organization_id=${company.id}`, { signal: controller.signal })
-      .then((page) => setRoots(page.items ?? []))
-      .catch(() => { if (!controller.signal.aborted) setRoots([]); });
-    return () => controller.abort();
-  }, [company.id, sync.anySyncing]);
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const update = () => setOpen(window.innerHeight - viewport.height > 150);
+    update();
+    viewport.addEventListener("resize", update);
+    return () => viewport.removeEventListener("resize", update);
+  }, []);
+  return open;
+}
 
-  const go = useCallback((path: string) => { setOpen(false); onNavigate(path); }, [onNavigate]);
+/** Sheet with the org menu content (orgs, work, manage) plus the personal items; the same source of items as the desktop menus. */
+export function MoreSheet({ open, onOpenChange, user, company, companies, onCompanyChange, onNavigate, onLogout, pathname }: { open: boolean; onOpenChange: (open: boolean) => void; user: User; company: Company; companies: Company[]; onCompanyChange: (id: string) => void; onNavigate: (path: string) => void; onLogout: () => void; pathname: string }) {
+  const sections = orgMenuSections(company.role);
+  const go = (action: () => void) => () => { onOpenChange(false); action(); };
+  return <Sheet open={open} onOpenChange={onOpenChange}>
+    <SheetContent side="bottom" showCloseButton={false} motionProfile="arquivio" id="mobile-more-sheet" className="mobile-more-sheet" aria-describedby="mobile-more-description">
+      <div className="mobile-more-head"><SheetTitle className="mobile-more-title">Menu</SheetTitle><SheetClose className="mobile-header-button" aria-label="Fechar menu"><X size={20} aria-hidden="true" /></SheetClose></div>
+      <SheetDescription id="mobile-more-description" className="sr-only">Organização, trabalho, gerenciamento e conta</SheetDescription>
+      <div className="mobile-more-body">
+        <section aria-label="Organização"><p className="mobile-more-label">Organização</p>
+          <div className="mobile-drawer-nav">{companies.map((item) => <button key={item.id} type="button" aria-current={item.id === company.id ? "true" : undefined} onClick={go(() => { if (item.id !== company.id) onCompanyChange(item.id); })}><span className="mobile-more-grow">{item.name}</span><small>{roleLabel(item.role)}</small>{item.id === company.id && <Check size={16} aria-hidden="true" />}</button>)}</div>
+        </section>
+        {sections.map((section) => <section key={section.key} aria-label={section.label}><p className="mobile-more-label">{section.key === "manage" ? "Gerenciar" : section.label}</p>
+          <div className="mobile-drawer-nav">{section.items.map((item) => { const Icon = orgItemIcons[item.key]; const path = companyPath(company.id, item.suffix); return <button key={item.key} type="button" aria-current={pathname.replace(/\/$/, "") === path ? "page" : undefined} onClick={go(() => onNavigate(path))}><Icon size={18} aria-hidden="true" />{item.label}</button>; })}</div>
+        </section>)}
+        <section aria-label="Eu"><p className="mobile-more-label">Eu · {user.email}</p>
+          <div className="mobile-drawer-nav">
+            {accountMenuItems(company.role).map((item) => <button key={item.key} type="button" aria-current={pathname.replace(/\/$/, "") === companyPath(company.id, item.suffix) ? "page" : undefined} onClick={go(() => onNavigate(companyPath(company.id, item.suffix)))}><UserRound size={18} aria-hidden="true" />{item.label}</button>)}
+          </div>
+          <ThemeToggle className="mobile-drawer-theme" showLabels />
+          <div className="mobile-drawer-nav">
+            <button type="button" onClick={go(() => requestTourReplay(pathname, company.id, onNavigate))}><HelpCircle size={18} aria-hidden="true" />Conhecer o app</button>
+            <button type="button" onClick={go(openShortcuts)}><Keyboard size={18} aria-hidden="true" />Atalhos</button>
+            {user.is_platform_staff && <button type="button" onClick={go(() => onNavigate("/staff"))}><ShieldCheck size={18} aria-hidden="true" />Suporte</button>}
+            <button type="button" onClick={go(onLogout)}><LogOut size={18} aria-hidden="true" />Sair</button>
+          </div>
+        </section>
+      </div>
+    </SheetContent>
+  </Sheet>;
+}
+
+/** Mobile top bar: org chip (opens the "Mais" sheet), search, conversation history (chat only) and the bell. */
+export function MobileShellHeader({ company, pathname, more, onOpenMore }: { company: Company; pathname: string; more: boolean; onOpenMore: () => void }) {
+  const screen = activePrimaryTab(pathname) === "chat" ? "chat" : "other";
+  const showHistory = () => document.querySelector<HTMLButtonElement>(chatSelector('[data-tour="history"]'))?.click();
+  return <header className="mobile-header" role="banner">
+    <button type="button" data-tour="org" className="mobile-header-org" onClick={onOpenMore} aria-haspopup="dialog" aria-expanded={more} aria-controls="mobile-more-sheet" aria-label={`Organização ativa: ${company.name}. Abrir menu`}><span>{company.name}</span><ChevronDown size={14} aria-hidden="true" /></button>
+    <span className="mobile-header-title" />
+    <button type="button" className="mobile-header-button" onClick={openPalette} aria-label="Buscar"><Search size={20} aria-hidden="true" /></button>
+    {screen === "chat" && <button type="button" data-testid="mobile-history" className="mobile-header-button" onClick={showHistory} aria-label="Conversas"><History size={20} aria-hidden="true" /></button>}
+    <NotificationBell key={company.id} company={company} />
+  </header>;
+}
+
+export function MobileTabBar({ user, company, pathname, onNavigate, onOpenMore }: { user: User; company: Company; pathname: string; onNavigate: (path: string) => void; onOpenMore: () => void }) {
+  const keyboardOpen = useKeyboardOpen();
+  const active = activePrimaryTab(pathname);
+  const chat = active === "chat";
   const newConversation = () => {
-    setOpen(false);
-    if (screen === "chat") document.querySelector<HTMLButtonElement>(chatSelector('[data-tour="new-conversation"]'))?.click();
+    if (chat) document.querySelector<HTMLButtonElement>(chatSelector('[data-tour="new-conversation"]'))?.click();
     else onNavigate(companyPath(company.id));
   };
-  // The history panel lives in the chat; the topbar button that toggles it is hidden on mobile, so the drawer opens it programmatically.
-  const showHistory = () => {
-    restoreMenuFocus.current = false;
-    setOpen(false);
-    document.querySelector<HTMLButtonElement>(chatSelector('[data-tour="history"]'))?.click();
-  };
-  const showTour = () => {
-    setOpen(false);
-    const trigger = () => document.querySelector<HTMLButtonElement>(chatSelector('button[aria-label="Rever tour do app"]'))?.click();
-    if (screen === "chat") trigger(); else onNavigate(companyPath(company.id));
-  };
-  const selectTool = (tool: ToolSelection) => go(`${companyPath(company.id, "/library")}?source=${encodeURIComponent(tool.libraryNodeId)}`);
-
-  const navItems = [
-    { key: "chat", label: "Consultas", icon: Sparkles, path: companyPath(company.id) },
-    { key: "library", label: "Biblioteca", icon: FolderOpen, path: companyPath(company.id, "/library") },
-    { key: "automations", label: "Automações", icon: Clock3, path: companyPath(company.id, "/automations") },
-    { key: "spaces", label: "Espaços", icon: Users, path: companyPath(company.id, "/spaces") },
-    ...(canManage ? [{ key: "integrations", label: "Integrações", icon: HardDrive, path: companyPath(company.id, "/integrations") }] : []),
-  ];
-
-  return <>
-    <header className="mobile-header" role="banner">
-      <button ref={menuButtonRef} type="button" data-tour="navigation" className="mobile-header-button" onClick={() => setOpen(true)} aria-label="Abrir menu" aria-expanded={open} aria-controls="mobile-drawer" aria-haspopup="dialog"><Menu size={22} aria-hidden="true" /></button>
-      <div className="mobile-header-title"><span>{company.name}</span></div>
-      <button type="button" data-tour="new-conversation" className="mobile-header-new" onClick={newConversation}><Plus size={16} aria-hidden="true" />Nova conversa</button>
-      <NotificationBell key={company.id} company={company} />
-      <AccountMenu user={user} company={company} onNavigate={onNavigate} onLogout={onLogout} />
-    </header>
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="left" showCloseButton={false} motionProfile="arquivio" id="mobile-drawer" className="mobile-drawer" aria-describedby="mobile-drawer-description" onCloseAutoFocus={(event) => { event.preventDefault(); if (restoreMenuFocus.current) menuButtonRef.current?.focus({ preventScroll: true }); restoreMenuFocus.current = true; }}>
-        <div className="mobile-drawer-head">
-          <Brand compact />
-          <SheetClose className="mobile-header-button" aria-label="Fechar menu"><X size={20} aria-hidden="true" /></SheetClose>
-        </div>
-        <SheetTitle className="sr-only">Menu</SheetTitle>
-        <SheetDescription id="mobile-drawer-description" className="sr-only">Navegação, ferramentas e conta</SheetDescription>
-        <div className="mobile-drawer-body">
-          <label className="mobile-drawer-field"><span>Organização</span>
-            <select aria-label="Organização ativa" value={company.id} onChange={(event) => { setOpen(false); onCompanyChange(event.target.value); }}>{companies.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
-          </label>
-          <nav aria-label="Navegação principal" className="mobile-drawer-nav">
-            {navItems.map(({ key, label, icon: Icon, path }, index) => <button key={key} type="button" className="mo-stagger-item" style={staggerStyle(index) as CSSProperties} onClick={() => go(path)} aria-current={activePath.replace(/\/$/, "") === path ? "page" : undefined}><Icon size={18} aria-hidden="true" />{label}</button>)}
-            {screen === "chat" && <button type="button" data-testid="drawer-history" className="mo-stagger-item" style={staggerStyle(navItems.length) as CSSProperties} onClick={showHistory}><History size={18} aria-hidden="true" />Conversas</button>}
-            {screen === "chat" && <button type="button" className="mo-stagger-item" style={staggerStyle(navItems.length + 1) as CSSProperties} onClick={showTour}><HelpCircle size={18} aria-hidden="true" />Conhecer o app</button>}
-          </nav>
-          <section aria-label="Ferramentas" className="mobile-drawer-section">
-            <ToolsSidebar variant="list" orgId={company.id} canManage={canManage} collapsed={false} onToggle={() => undefined} onSelectTool={selectTool} onAdd={() => go(companyPath(company.id, "/integrations"))} tools={sync.tools} loading={sync.loading} libraryRoots={roots} />
-          </section>
-          <SyncBanner tools={sync.tools} className="mobile-drawer-sync" />
-        </div>
-        <div className="mobile-drawer-foot">
-          <ThemeToggle className="mobile-drawer-theme" showLabels /><div className="mobile-drawer-user"><span title={user.email}>{user.email}</span><small>{roleLabel(company.role)}</small></div>
-          {user.is_platform_staff && <button type="button" onClick={() => go("/staff")}><ShieldCheck size={18} aria-hidden="true" />Suporte</button>}
-        </div>
-      </SheetContent>
-    </Sheet>
-  </>;
+  return <nav aria-label="Navegação principal" data-tour="navigation" className="mobile-tab-bar" hidden={keyboardOpen}>
+    <button type="button" onClick={() => onNavigate(companyPath(company.id))} aria-current={active === "chat" ? "page" : undefined}><Sparkles size={22} aria-hidden="true" /><span>Conversa</span></button>
+    <button type="button" onClick={() => onNavigate(companyPath(company.id, "/library"))} aria-current={active === "library" ? "page" : undefined}><FolderOpen size={22} aria-hidden="true" /><span>Biblioteca</span></button>
+    <button type="button" data-tour="new-conversation" onClick={newConversation} aria-label="Nova conversa"><Plus size={22} aria-hidden="true" /><span>Nova</span></button>
+    <button type="button" data-tour="account" onClick={onOpenMore} aria-haspopup="dialog" aria-controls="mobile-more-sheet" aria-label={`Mais e conta de ${user.email}`}><MoreHorizontal size={22} aria-hidden="true" /><span>Mais</span></button>
+  </nav>;
 }
