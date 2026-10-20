@@ -127,6 +127,8 @@ def test_request_filter_narrows_every_resolution_inside_it_and_never_widens(sess
     with narrowed_to_spaces([world.spaces["rh"]]):
         assert [c.id for c in contexts(session, world, "carla")] == [world.folders["rh"]]
         assert contexts(session, world, "daniel") == []  # a Space daniel is not in adds nothing
-        assert {c.id for c in contexts(session, world, "carla", space_ids=[world.spaces["geral"]])} == {
-            world.folders["politicas"]}  # an explicit argument wins over the request filter
+        # C2: an explicit argument intersects with the request filter, it never replaces it
+        assert contexts(session, world, "carla", space_ids=[world.spaces["geral"]]) == []
+        assert [c.id for c in contexts(session, world, "carla", space_ids=[world.spaces["geral"], world.spaces["rh"]])] == [
+            world.folders["rh"]]
     assert len(contexts(session, world, "carla")) == 3
