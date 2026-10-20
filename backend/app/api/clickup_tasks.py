@@ -16,6 +16,7 @@ from app.api.auth import current_user, database_session
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.ingestion.service import SyncAccessDenied
+from app.knowledge.derived_visibility import message_is_visible
 from app.integrations.clickup import ClickUpOAuthClient
 from app.integrations.clickup_tasks import (
     ClickUpTaskError,
@@ -75,7 +76,7 @@ def _own_answer(session: Session, organization_id: UUID, conversation_id: UUID, 
         ConversationMessage.id == message_id, ConversationMessage.conversation_id == conversation.id,
         ConversationMessage.role == 'assistant',
     ))
-    if message is None:
+    if message is None or not message_is_visible(session, organization_id, user.id, message):
         raise HTTPException(404, 'answer not found')
     return message
 

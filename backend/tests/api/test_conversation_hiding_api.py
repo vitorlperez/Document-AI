@@ -123,3 +123,36 @@ def test_history_costs_a_constant_number_of_queries(world_api):
     statements.clear()
     assert len(history(client, world, conversation_id)["messages"]) == 12
     assert len(statements) <= first + 2
+
+
+def _assistant_id(factory):
+    from app.knowledge.models import ConversationMessage
+    with factory.begin() as session:
+        return session.query(ConversationMessage).filter_by(role="assistant").one().id
+
+
+def test_answer_export_of_hidden_message_is_404(world_api):
+    client, factory, gateway, world = world_api
+    conversation_id = ask_as(client, gateway, world, "bruno")
+    message_id = _assistant_id(factory)
+    url = f"/organizations/{world.organization_id}/conversations/{conversation_id}/messages/{message_id}/export"
+    assert client.get(url).status_code == 200
+    with factory.begin() as session:
+        remove_from_space(session, world, "bruno", "rh")
+    as_user(client, gateway, "bruno")
+    assert client.get(url).status_code == 404
+
+
+def test_clickup_preview_and_create_of_hidden_message_are_404(world_api):
+    client, factory, gateway, world = world_api
+    conversation_id = ask_as(client, gateway, world, "bruno")
+    message_id = _assistant_id(factory)
+    base = f"/organizations/{world.organization_id}/conversations/{conversation_id}/messages/{message_id}/clickup-task"
+    with factory.begin() as session:
+        remove_from_space(session, world, "bruno", "rh")
+    as_user(client, gateway, "bruno")
+    assert client.get(base + "/preview").status_code == 404
+    assert client.get(base + "/lists/abc/options").status_code == 404
+    created = client.post(base, headers={"Idempotency-Key": "k1"},
+                          json={"list_id": "abc", "name": "t", "description": "d"})
+    assert created.status_code == 404

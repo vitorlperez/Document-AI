@@ -11,6 +11,7 @@ from app.api.auth import current_user, database_session
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.ingestion.service import SyncAccessDenied
+from app.knowledge.derived_visibility import message_is_visible
 from app.knowledge.export import FORMATS, ExportSource, render
 from app.knowledge.models import Conversation, ConversationMessage
 from app.knowledge.untrusted import sanitize_label
@@ -48,7 +49,8 @@ def export_answer(organization_id: UUID, conversation_id: UUID, message_id: UUID
         ConversationMessage.id == message_id, ConversationMessage.conversation_id == conversation.id,
         ConversationMessage.role == 'assistant',
     ))
-    if message is None:
+    # A stored answer that cites content the person can no longer read is not exportable (ADR-0021 §8.2).
+    if message is None or not message_is_visible(session, organization_id, user.id, message):
         raise HTTPException(404, 'answer not found')
     question = session.scalar(select(ConversationMessage.content).where(
         ConversationMessage.conversation_id == conversation.id, ConversationMessage.role == 'user',

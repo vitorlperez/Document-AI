@@ -175,3 +175,12 @@ def message_visibility(session: Session, access: SpaceAccess, messages: Iterable
     provenance = {message.id: answer_provenance(message.response, message.context) for message in assistants}
     index = build_index(session, access, provenance.values())
     return {message.id: index.visible(provenance[message.id]) for message in assistants}
+
+
+def message_is_visible(session: Session, organization_id: UUID, user_id: UUID, message) -> bool:
+    """Single-message check for export-style routes (one resolution, constant queries)."""
+    from app.core.scoping import OrganizationScope
+    from app.spaces.access import SpaceAccessResolver
+
+    access = SpaceAccessResolver(session).resolve(scope=OrganizationScope(organization_id), user_id=user_id)
+    return message_visibility(session, access, [message]).get(message.id, True)
