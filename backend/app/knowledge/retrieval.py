@@ -1,6 +1,6 @@
 """Evidence retrieval without generation, always tenant/member scoped (search and fetch tools)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from uuid import UUID
 
@@ -13,8 +13,10 @@ from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.questions import join_overlapping_text, query_terms
 from app.knowledge.search import _excerpt
+from app.knowledge.space_seals import spaces_by_document
 from app.knowledge.untrusted import strip_invisible
 from app.library.service import LibraryService, QuestionSelection
+from app.spaces.access import SpaceAccessResolver, SpaceRef
 from app.workspaces.models import WorkspaceFolder
 
 MAX_FETCH_CHARS = 100_000  # Claude tolerates ~150k characters per tool result
@@ -31,6 +33,7 @@ class SearchHit:
     page_number: int | None
     score: float
     source_provider: str | None
+    spaces: tuple[SpaceRef, ...] = ()  # the caller's Spaces that grant this file (all copies merged)
 
 
 @dataclass(frozen=True)
@@ -67,6 +70,7 @@ class RetrievalService:
         limit: int = 10,
     ) -> list[SearchHit]:
         LibraryService(self.session).require_member(scope=scope, user_id=user_id)
+        access = SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id)
         terms = sorted(query_terms(query))  # alphanumeric tokens only: safe to join into a tsquery
         if not terms or selection is None or not selection.folder_ids:
             return []
@@ -81,7 +85,7 @@ class RetrievalService:
             rank = func.length(DocumentChunk.text) * 0 + 1.0
             filters.append(or_(*(func.lower(DocumentChunk.search_text).contains(t) for t in terms)))
         rows = self.session.execute(
-            select(Document, DocumentChunk, rank.label("score"), DataSource.provider)
+            select(Document, DocumentChunk, rank.label("score"), DataSource.provider, WorkspaceFolder.source_id)
             .join(DocumentChunk, DocumentChunk.document_id == Document.id)
             .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
             .join(DataSource, DataSource.id == WorkspaceFolder.source_id)
@@ -89,16 +93,20 @@ class RetrievalService:
             .order_by(rank.desc(), Document.name, Document.id, DocumentChunk.position)
             .limit(limit * 5)
         ).all()
-        best: dict[UUID, SearchHit] = {}
-        for document, chunk, score, provider in rows:
-            if document.id in best:
+        # One logical file = (source, external id): copies in several folders collapse into the best-ranked hit.
+        best: dict[tuple[UUID, str], SearchHit] = {}
+        for document, chunk, score, provider, source_id in rows:
+            key = (source_id, document.external_file_id)
+            if key in best:
                 continue
-            best[document.id] = SearchHit(
+            best[key] = SearchHit(
                 document_id=document.id, title=document.name, url=document.source_url,
                 snippet=strip_invisible(_excerpt(chunk.text, " ".join(terms), limit=SNIPPET_CHARS)),
                 page_number=chunk.page_number, score=float(score), source_provider=provider,
             )
-        return list(best.values())[:limit]
+        hits = list(best.values())[:limit]
+        sealed = spaces_by_document(self.session, access, [hit.document_id for hit in hits])
+        return [replace(hit, spaces=sealed.get(hit.document_id, ())) for hit in hits]
 
     def fetch(
         self, *, scope: OrganizationScope, user_id: UUID, document_id: UUID,
