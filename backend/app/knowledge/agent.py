@@ -26,6 +26,7 @@ from sqlalchemy.orm import Session
 
 from app.core.logging import log_agent_phase
 from app.core.scoping import OrganizationScope
+from app.knowledge.derived_visibility import HIDDEN_NOTICE, hidden_response, message_visibility
 from app.knowledge.intent import IntentDecision, InvalidIntent, fallback_intent, parse_intent
 from app.knowledge.models import Conversation, ConversationMessage, Document
 from app.knowledge.questions import (
@@ -45,8 +46,10 @@ from app.knowledge.questions import (
     _validate_citations,
 )
 from app.knowledge.untrusted import sanitize_label, strip_invisible
+from app.knowledge.space_seals import seal_result, spaces_by_document, spaces_payload
 from app.library.models import LibraryNode
 from app.library.service import CatalogFileSnapshot, LibraryService, SyncAccessDenied
+from app.spaces.access import SpaceAccessResolver
 from app.spaces.filter import narrowed_to_spaces
 from app.workspaces.models import WorkspaceFolder
 
@@ -201,7 +204,35 @@ class ConversationService:
                 .limit(MAX_HISTORY_MESSAGES)
             )
         )
-        return conversation, list(reversed(messages))
+        return conversation, self._present(scope, user_id, list(reversed(messages)))
+
+    def _present(
+        self, scope: OrganizationScope, user_id: UUID, messages: list[ConversationMessage]
+    ) -> list[ConversationMessage]:
+        """Stored answers as the person may see them NOW (ADR-0021 §8.2): an answer that cites anything outside
+        their current access is replaced by a tombstone, and surviving citations get today's Space seals.
+
+        Messages are detached before they change, so nothing here can be flushed back to the database."""
+        assistants = [message for message in messages if message.role == "assistant"]
+        if not assistants:
+            return messages
+        access = SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id)
+        visible = message_visibility(self.session, access, assistants)
+        cited = [UUID(str(item["document_id"])) for message in assistants if visible[message.id]
+                 for item in _stored_citations(message)]
+        seals = spaces_by_document(self.session, access, cited)
+        for message in assistants:
+            if message in self.session:
+                self.session.expunge(message)
+            if not visible[message.id]:
+                message.content, message.context, message.response = HIDDEN_NOTICE, None, hidden_response()
+                continue
+            citations = _stored_citations(message)
+            if citations:
+                message.response = {**message.response, "citations": [
+                    {**item, "spaces": spaces_payload(seals.get(UUID(str(item["document_id"])), ()))}
+                    for item in citations]}
+        return messages
 
     def create_or_load(
         self, *, scope: OrganizationScope, user_id: UUID, conversation_id: UUID | None, question: str
@@ -482,7 +513,8 @@ class AgentService:
     ) -> tuple[QuestionResult, list[dict[str, object]], list[dict[str, str]]]:
         # Every library/retrieval call below resolves access under this request's Space filter.
         with narrowed_to_spaces(space_ids):
-            return self._ask(scope, user_id, question, providers, mentions, history, space_ids)
+            result, tool_results, references = self._ask(scope, user_id, question, providers, mentions, history, space_ids)
+            return seal_result(self.session, scope, user_id, result), tool_results, references
 
     def _ask(
         self, scope, user_id, question, providers, mentions, history, space_ids,
@@ -1464,6 +1496,19 @@ def _document_citations(evidence: Iterable[Evidence]) -> list[Evidence]:
         if current is None or (not current.source_url.strip() and item.source_url.strip()):
             chosen[item.document_id] = item
     return list(chosen.values())
+
+
+def _stored_citations(message: ConversationMessage) -> list[dict]:
+    """Citations of a stored answer that name a well-formed document id."""
+    items = (message.response or {}).get("citations")
+    found = []
+    for item in items if isinstance(items, list) else []:
+        try:
+            UUID(str((item or {}).get("document_id")))
+        except (AttributeError, ValueError):
+            continue
+        found.append(item)
+    return found
 
 
 def _answer_provenance(message: ConversationMessage) -> tuple[set[UUID], set[UUID]]:

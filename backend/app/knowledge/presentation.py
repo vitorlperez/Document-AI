@@ -47,6 +47,7 @@ def serialize_question_result(
             "excerpt": short_citation_excerpt(strip_invisible(item.excerpt)),
             "page_number": item.page_number,
             "source_url": item.source_url,
+            "spaces": [{"id": str(ref.id), "name": ref.name} for ref in getattr(item, "spaces", ())],
         }
         if include_provider and item.source_provider:
             citation["source_provider"] = item.source_provider

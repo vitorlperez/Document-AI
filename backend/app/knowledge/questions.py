@@ -283,6 +283,8 @@ class Evidence:
     # Original provenance survives merging; chunk_id/page_number anchor the passage.
     chunk_ids: tuple[UUID, ...] = ()
     chunk_positions: tuple[int, ...] = ()
+    # The caller's Spaces that grant this file (SpaceRef tuples), filled by the service after retrieval.
+    spaces: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -1127,7 +1129,15 @@ class QuestionService:
             )
         return replace(result, coverage=coverage)
 
-    def ask(
+    def ask(self, *, scope: OrganizationScope, user_id: UUID, **kwargs) -> QuestionResult:
+        """Answer from folders the caller may read; every citation carries the caller's Spaces (ADR-0021 E2)."""
+        from app.knowledge.space_seals import seal_citations
+
+        resolved: list = []  # the single access resolution of this question, reused for the seals
+        result = self._ask(scope=scope, user_id=user_id, resolved_access=resolved, **kwargs)
+        return seal_citations(self.session, resolved[0], result) if resolved else result
+
+    def _ask(
         self,
         *,
         scope: OrganizationScope,
@@ -1139,6 +1149,7 @@ class QuestionService:
         answer_mode: str | None = None,
         read_selected_documents: bool | None = None,
         retrieval_question: str | None = None,
+        resolved_access: list | None = None,
     ) -> QuestionResult:
         """answer_mode "summary" or "relevance" is a decision already made by the
         agent's intent classifier; None keeps the keyword rules. "evidence" returns
@@ -1177,6 +1188,8 @@ class QuestionService:
         resolver = SpaceAccessResolver(self.session)
         try:
             access = resolver.resolve(scope=scope, user_id=user_id)
+            if resolved_access is not None:
+                resolved_access.append(access)
             authorized_folders = resolver.require_folders(
                 scope=scope, user_id=user_id, workspace_folder_ids=folder_ids, access=access
             )
