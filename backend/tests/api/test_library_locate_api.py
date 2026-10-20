@@ -2,10 +2,11 @@
 
 from uuid import uuid4
 
-import pytest
-
-from tests.api.test_library_space_badges_api import as_user, get
-from tests.api.test_library_space_badges_api import world_api  # noqa: F401 -- fixture
+from tests.api.test_library_space_badges_api import (
+    as_user,
+    get,
+    world_api,  # noqa: F401 -- fixture
+)
 from tests.api.test_text_search_api import search_api  # noqa: F401 -- fixture dependency
 
 
