@@ -109,13 +109,13 @@ def build_mcp_app(settings: Settings, session_factory, rate_limiter: RateLimiter
     metadata_path = f"/.well-known/oauth-protected-resource{path}"
     audit = AuditWriter(session_factory)
 
-    def run_sync(name: str, arguments: dict[str, str], principal: Principal) -> dict[str, object] | None:
+    def run_sync(name: str, arguments: dict[str, object], principal: Principal) -> dict[str, object] | None:
         started, status, count, document_id, result = time.perf_counter(), "ok", None, None, None
         query = arguments.get("query")
         try:
             with session_factory() as session:
                 if name == "search":
-                    result = tools.run_search(session, principal, arguments["query"])
+                    result = tools.run_search(session, principal, arguments["query"], arguments.get("space_ids"))
                     count = len(result["results"])
                 elif name == "fetch":
                     result = tools.run_fetch(session, principal, arguments["id"])
@@ -139,7 +139,7 @@ def build_mcp_app(settings: Settings, session_factory, rate_limiter: RateLimiter
             )
         return result
 
-    async def run_tool(name: str, arguments: dict[str, str]) -> dict[str, object] | None:
+    async def run_tool(name: str, arguments: dict[str, object]) -> dict[str, object] | None:
         return await run_in_threadpool(run_sync, name, arguments, _principal.get())
 
     hosts = [host.strip() for host in settings.mcp_allowed_hosts.split(",") if host.strip()]

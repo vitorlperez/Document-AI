@@ -12,6 +12,7 @@ from app.knowledge.models import Document
 from app.knowledge.retrieval import RetrievalService
 from app.knowledge.untrusted import UNTRUSTED_NOTICE, strip_invisible
 from app.library.service import LibraryService
+from app.spaces.service import SpaceNotFound
 
 MCP_TOOL_NAMES = ("search", "fetch", "list_sources")
 TITLE_CHARS = 300
@@ -29,15 +30,31 @@ def _selection(session: Session, principal: Principal):
         return None
 
 
-def run_search(session: Session, principal: Principal, query: str) -> dict[str, object]:
+def _space_ids(raw: list[str] | None) -> list[UUID] | None:
+    try:
+        return [UUID(item) for item in raw] if raw else None
+    except (ValueError, AttributeError, TypeError) as error:
+        raise ToolNotFound from error
+
+
+def _spaces(refs) -> list[dict[str, str]]:
+    return [{"id": str(ref.id), "name": strip_invisible(ref.name)[:TITLE_CHARS]} for ref in refs]
+
+
+def run_search(session: Session, principal: Principal, query: str, space_ids: list[str] | None = None) -> dict[str, object]:
     principal.require("search:read")
-    hits = RetrievalService(session).search(
-        scope=principal.scope, user_id=principal.user_id, query=query[:500],
-        selection=_selection(session, principal), limit=SEARCH_LIMIT,
-    )
+    access = ScopedAccess(session, principal)
+    try:
+        with access.narrowed(_space_ids(space_ids)):  # a Space that is not the user's does not exist
+            hits = RetrievalService(session).search(
+                scope=principal.scope, user_id=principal.user_id, query=query[:500],
+                selection=_selection(session, principal), limit=SEARCH_LIMIT,
+            )
+    except SpaceNotFound as error:
+        raise ToolNotFound from error
     return {"results": [
         {"id": str(hit.document_id), "title": strip_invisible(hit.title)[:TITLE_CHARS], "url": hit.url,
-         "text": strip_invisible(hit.snippet)}
+         "text": strip_invisible(hit.snippet), "spaces": _spaces(hit.spaces)}
         for hit in hits
     ], "metadata": {"content_trust": "untrusted_document_content", "notice": UNTRUSTED_NOTICE}}
 
@@ -78,6 +95,6 @@ def run_list_sources(session: Session, principal: Principal) -> dict[str, object
         contexts = [context for context in contexts if context.id in folders]
     return {"sources": [
         {"id": str(c.id), "name": strip_invisible(c.name)[:TITLE_CHARS], "provider": c.source_provider,
-         "status": c.query_status}
+         "status": c.query_status, "spaces": _spaces(c.spaces)}
         for c in contexts
     ]}

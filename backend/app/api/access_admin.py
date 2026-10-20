@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.access.keys import generate_api_key
@@ -12,7 +12,15 @@ from app.access.models import ALL_SCOPES, ApiKey, OrganizationAccessSettings
 from app.api.auth import current_user, database_session
 from app.audit_usage.models import AuditLog
 from app.identity.models import User
+from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
+from app.ingestion.service import SyncAccessDenied
+from app.knowledge.models import Document
 from app.library.models import LibraryNode
+from app.library.service import LibraryService
+from app.library.tool_groups import tool_groups
+from app.spaces.access import SpaceAccessResolver
+from app.workspaces.models import WorkspaceFolder
 from app.organizations.models import Membership, MembershipRole
 
 router = APIRouter(prefix="/organizations/{organization_id}", tags=["access-administration"])
@@ -91,7 +99,33 @@ def create_key(organization_id: UUID, payload: KeyInput, response: Response,
     session.flush()
     _audit(session, organization_id, user.id, "api_key.created", "api_key", key.id)
     response.headers["Cache-Control"] = "no-store"
-    return _serialize(key) | {"key": generated.raw}
+    return _serialize(key) | {"key": generated.raw, "reach": _reach(session, organization_id, user.id, node_ids)}
+
+
+def _reach(session: Session, organization_id: UUID, user_id: UUID, node_ids: list[UUID]) -> dict[str, object]:
+    """What the new key will be able to read today: the creator's Spaces and distinct files (intersected with the nodes).
+
+    A key never exceeds its creator: a Space they leave later narrows the key on the next request."""
+    scope = OrganizationScope(organization_id)
+    library = LibraryService(session)
+    access = SpaceAccessResolver(session).resolve(scope=scope, user_id=user_id)
+    spaces = sorted(access.spaces.values(), key=lambda ref: (ref.name.casefold(), str(ref.id)))
+    if node_ids:
+        try:
+            mentions = library.authorize_mentions(scope=scope, user_id=user_id, root_ids=node_ids, requested_ids=[])
+            selection = library.resolve_question_selection(
+                scope=scope, user_id=user_id, providers=sorted(tool_groups(library.source_providers(
+                    scope=scope, user_id=user_id).values())), mentions=mentions)
+            documents = len(selection.document_ids or ())
+        except (SyncAccessDenied, ValueError):
+            documents = 0  # the nodes are outside the creator's Spaces: the key would read nothing
+    else:
+        files = (select(WorkspaceFolder.source_id, Document.external_file_id)
+                 .join(Document, Document.workspace_folder_id == WorkspaceFolder.id)
+                 .where(Document.organization_id == organization_id, Document.index_status == "indexed",
+                        ids_clause(session, Document.workspace_folder_id, access.folder_ids)).distinct().subquery())
+        documents = session.scalar(select(func.count()).select_from(files)) or 0
+    return {"spaces": [{"id": str(ref.id), "name": ref.name} for ref in spaces], "documents": documents}
 
 
 @router.get("/api-keys")
