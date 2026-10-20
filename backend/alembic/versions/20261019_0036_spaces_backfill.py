@@ -18,8 +18,10 @@ def upgrade():
 
 
 def downgrade():
-    # Best effort: remove only what the migration created. The safe rollback is `rollout shadow`/`off` (plan §11);
+    # Best effort: remove only what the migration created and put the rollout back to `off`; re-upgrading completes
+    # "Geral" (members and folders that are missing) instead of skipping the organization. The safe rollback is `rollout shadow`/`off` (plan §11);
     # the 0035 downgrade drops the tables anyway.
     bind = op.get_bind()
+    bind.execute(sa.text("UPDATE organizations SET spaces_resolver_mode = 'off' WHERE spaces_resolver_mode = 'shadow'"))
     if bind.dialect.name == "postgresql":
         bind.execute(sa.text("DELETE FROM space_folder_grants WHERE disclosure->>'origin' = 'migration'"))

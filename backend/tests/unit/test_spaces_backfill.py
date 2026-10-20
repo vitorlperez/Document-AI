@@ -69,3 +69,81 @@ def test_new_organizations_default_to_off_mode():
     org_id = _legacy_org(engine)
     with sessionmaker(bind=engine)() as s:
         assert s.get(Organization, org_id).spaces_resolver_mode == "off"
+
+
+def test_reupgrade_after_downgrade_restores_geral_grants_and_missing_members():
+    """A2: 0036 downgrade deletes the migration grants; the next upgrade must complete Geral, not skip the org."""
+    from sqlalchemy import delete, update
+
+    engine = _engine()
+    org_id = _legacy_org(engine)
+    with engine.begin() as connection:
+        backfill_default_spaces(connection)
+    with sessionmaker(bind=engine).begin() as s:
+        geral_id = s.scalar(select(Space.id).where(Space.organization_id == org_id))
+        s.execute(delete(SpaceFolderGrant))  # what the downgrade removes
+        # a member who left Geral on purpose must stay out; a new active member must come in
+        member_row = s.scalars(select(SpaceMember).where(SpaceMember.role == "member")).one()
+        s.execute(update(SpaceMember).where(SpaceMember.id == member_row.id).values(removed_at=__import__("datetime").datetime.now()))
+        newcomer = User(email="new@example.test")
+        s.add(newcomer)
+        s.flush()
+        newcomer_id = newcomer.id
+        s.add(Membership(organization_id=org_id, user_id=newcomer.id, role=MembershipRole.MEMBER, is_active=True))
+        s.execute(update(Organization).where(Organization.id == org_id).values(spaces_resolver_mode="enforce"))
+    with engine.begin() as connection:
+        assert backfill_default_spaces(connection) == 1
+    with sessionmaker(bind=engine)() as s:
+        assert len(s.scalars(select(SpaceFolderGrant).where(SpaceFolderGrant.space_id == geral_id)).all()) == 2
+        active = s.scalars(select(SpaceMember).where(SpaceMember.removed_at.is_(None))).all()
+        assert len(active) == 2 and any(m.user_id == newcomer_id for m in active)
+        assert s.get(Organization, org_id).spaces_resolver_mode == "enforce"  # completing never changes the mode
+    with engine.begin() as connection:
+        assert backfill_default_spaces(connection) == 0
+
+
+def test_backfill_leaves_deliberately_assigned_folders_alone_and_batches_inserts():
+    engine = _engine()
+    org_id = _legacy_org(engine)
+    with engine.begin() as connection:
+        backfill_default_spaces(connection)
+    with sessionmaker(bind=engine).begin() as s:
+        from sqlalchemy import delete
+        rh = Space(organization_id=org_id, name="RH", name_key="rh")
+        s.add(rh)
+        s.flush()
+        folder = s.scalars(select(WorkspaceFolder)).first()
+        s.execute(delete(SpaceFolderGrant).where(SpaceFolderGrant.workspace_folder_id == folder.id))
+        s.add(SpaceFolderGrant(organization_id=org_id, space_id=rh.id, workspace_folder_id=folder.id,
+                               disclosure={"text_version": "v1"}))
+        kept, rh_id = folder.id, rh.id
+    with engine.begin() as connection:
+        assert backfill_default_spaces(connection) == 0  # every folder has an owner Space already
+    with sessionmaker(bind=engine)() as s:
+        assert [g.space_id for g in s.scalars(select(SpaceFolderGrant).where(SpaceFolderGrant.workspace_folder_id == kept))] == [rh_id]
+
+
+def test_backfill_uses_one_statement_per_table_not_one_per_row():
+    from sqlalchemy import event
+
+    engine = _engine()
+    with sessionmaker(bind=engine).begin() as s:
+        org = Organization(name="Big")
+        s.add(org)
+        s.flush()
+        users = [User(email=f"u{i}@x.test") for i in range(30)]
+        s.add_all(users)
+        s.flush()
+        s.add_all([Membership(organization_id=org.id, user_id=u.id, role=MembershipRole.MEMBER, is_active=True) for u in users])
+        source = DataSource(organization_id=org.id, provider="google_drive", encrypted_credentials="x",
+                            status="connected", connected_by_user_id=users[0].id)
+        s.add(source)
+        s.flush()
+        s.add_all([WorkspaceFolder(organization_id=org.id, source_id=source.id, external_folder_id=f"f{i}", name=f"f{i}",
+                                   uniform_access_confirmed=True, status="ready") for i in range(30)])
+    seen: list[str] = []
+    event.listen(engine, "before_cursor_execute", lambda c, cur, st, p, ctx, many: seen.append((st, many)))
+    with engine.begin() as connection:
+        backfill_default_spaces(connection)
+    inserts = [st for st, many in seen if st.lstrip().upper().startswith("INSERT")]
+    assert len(inserts) <= 3  # spaces, members, grants (executemany batches)
