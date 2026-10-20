@@ -46,6 +46,9 @@ def enroll_member(
         targets = [default] if default is not None else []
     else:
         targets = valid_space_ids(session, organization_id, space_ids)
+        if not targets:  # every requested Space is gone/invalid: never leave the person in zero Spaces
+            default = default_space_id(session, organization_id)
+            targets = [default] if default is not None else []
     joined = []
     for space_id in targets:
         exists = session.scalar(select(SpaceMember.id).where(

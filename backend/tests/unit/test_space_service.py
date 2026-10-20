@@ -143,6 +143,7 @@ def test_every_mutation_writes_an_audit_log(session):
     service.rename_space(w.scope, w.users["eva"], rh.id, "People", None)
     service.add_member(w.scope, w.users["eva"], rh.id, w.users["ana"])
     service.set_member_role(w.scope, w.users["eva"], rh.id, w.users["ana"], "manager")
+    service.add_member(w.scope, w.users["eva"], rh.id, w.users["bruno"], role="manager")  # a Space keeps a manager
     service.grant_folder(w.scope, w.users["eva"], rh.id, w.folder, {"text_version": "v1"})
     service.revoke_folder(w.scope, w.users["eva"], rh.id, w.folder)
     service.remove_member(w.scope, w.users["eva"], rh.id, w.users["ana"])

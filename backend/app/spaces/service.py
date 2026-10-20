@@ -173,8 +173,13 @@ class SpaceService:
         member = SpaceMember(
             organization_id=scope.organization_id, space_id=space.id, user_id=user_id, role=role,
             added_by_user_id=actor_user_id)
-        self.session.add(member)
-        self.session.flush()
+        try:
+            with self.session.begin_nested():
+                self.session.add(member)
+                self.session.flush()
+        except IntegrityError:  # a concurrent request added the same person first: it is already there
+            return self.session.scalar(select(SpaceMember).where(
+                SpaceMember.space_id == space.id, SpaceMember.user_id == user_id, SpaceMember.removed_at.is_(None)))
         self._audit(scope, actor_user_id, "member_added", "space", space.id)
         self._audit(scope, actor_user_id, "member_added", "user", user_id)
         return member
@@ -185,6 +190,7 @@ class SpaceService:
             SpaceMember.space_id == space.id, SpaceMember.user_id == user_id, SpaceMember.removed_at.is_(None)))
         if member is None:
             raise SpaceNotFound("member not found")
+        self._keep_one_manager(space.id, member)
         member.removed_at = datetime.now(UTC)
         member.removed_by_user_id = actor_user_id
         self.session.flush()
@@ -201,10 +207,22 @@ class SpaceService:
             SpaceMember.space_id == space.id, SpaceMember.user_id == user_id, SpaceMember.removed_at.is_(None)))
         if member is None:
             raise SpaceNotFound("member not found")
+        if role != SPACE_ROLE_MANAGER:
+            self._keep_one_manager(space.id, member)
         member.role = role
         self.session.flush()
         self._audit(scope, actor_user_id, "member_role_changed", "space", space.id)
         return member
+
+    def _keep_one_manager(self, space_id: UUID, member: SpaceMember) -> None:
+        """A Space always keeps a manager: the last one can be neither removed nor demoted."""
+        if member.role != SPACE_ROLE_MANAGER:
+            return
+        others = self.session.scalar(select(func.count()).select_from(SpaceMember).where(
+            SpaceMember.space_id == space_id, SpaceMember.role == SPACE_ROLE_MANAGER,
+            SpaceMember.removed_at.is_(None), SpaceMember.id != member.id)) or 0
+        if not others:
+            raise SpaceConflict("a space needs at least one manager")
 
     def members(self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID) -> list[SpaceMemberView]:
         space, _, _ = self._space(scope, actor_user_id, space_id)
@@ -236,8 +254,14 @@ class SpaceService:
         grant = SpaceFolderGrant(
             organization_id=scope.organization_id, space_id=space.id, workspace_folder_id=workspace_folder_id,
             granted_by_user_id=actor_user_id, disclosure=dict(disclosure))
-        self.session.add(grant)
-        self.session.flush()
+        try:
+            with self.session.begin_nested():
+                self.session.add(grant)
+                self.session.flush()
+        except IntegrityError:  # granted concurrently: idempotent, report the existing grant
+            return self.session.scalar(select(SpaceFolderGrant).where(
+                SpaceFolderGrant.space_id == space.id, SpaceFolderGrant.workspace_folder_id == workspace_folder_id,
+                SpaceFolderGrant.revoked_at.is_(None)))
         self._audit(scope, actor_user_id, "folder_granted", "space", space.id)
         self._audit(scope, actor_user_id, "folder_granted", "workspace_folder", workspace_folder_id)
         return grant
