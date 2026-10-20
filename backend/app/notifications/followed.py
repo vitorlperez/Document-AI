@@ -93,9 +93,9 @@ def refresh_followed_queries(session: Session, *, workspace_folder_id: UUID, pro
                     title=f"A resposta de “{query.name}” mudou",
                     body=result.answer[:BODY_CHARS],
                     data={"saved_query_id": str(query.id), "workspace_folder_id": str(query.workspace_folder_id),
-                          "query_name": query.name, "citations": citation_payload(result.citations),
-                          "provenance": provenance_of_documents(
-                              session, query.organization_id, {item.document_id for item in result.citations}).to_data()},
+                          "query_name": query.name, "citations": citation_payload(result.citations)},
+                    provenance=provenance_of_documents(
+                        session, query.organization_id, {item.document_id for item in result.citations}),
                     email=email, app_url=app_url)
                 counts["notified"] += 1
         except UsageLimitExceeded:
