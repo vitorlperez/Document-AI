@@ -132,8 +132,20 @@ def _reach(session: Session, organization_id: UUID, user_id: UUID, node_ids: lis
 def list_keys(organization_id: UUID, user: User = Depends(current_user),
               session: Session = Depends(database_session)):
     _require_admin(session, organization_id, user.id)
-    return [_serialize(key) for key in session.scalars(select(ApiKey).where(
-        ApiKey.organization_id == organization_id).order_by(ApiKey.created_at.desc()))]
+    keys = list(session.scalars(select(ApiKey).where(
+        ApiKey.organization_id == organization_id).order_by(ApiKey.created_at.desc())))
+    reach: dict[tuple, dict[str, object]] = {}
+    items = []
+    for key in keys:
+        item = _serialize(key)
+        if key.revoked_at is None and key.created_by_user_id is not None:
+            nodes = [UUID(node) for node in key.node_ids or []]
+            signature = (key.created_by_user_id, tuple(nodes))
+            if signature not in reach:  # same creator and same nodes: one computation
+                reach[signature] = _reach(session, organization_id, key.created_by_user_id, nodes)
+            item["reach"] = reach[signature]
+        items.append(item)
+    return items
 
 
 @router.delete("/api-keys/{key_id}", status_code=204)

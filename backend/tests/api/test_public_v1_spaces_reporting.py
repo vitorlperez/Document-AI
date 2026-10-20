@@ -89,3 +89,21 @@ def test_key_creation_previews_the_creators_reach(world_api):
     reach = response.json()["reach"]
     assert sorted(s["name"] for s in reach["spaces"]) == ["Geral", "RH"]
     assert reach["documents"] == 2
+
+
+def test_key_listing_carries_the_same_reach_as_creation(world_api):
+    client, factory, world = world_api
+    from tests.api.test_text_search_api import login
+    client.cookies.clear()
+    gateway = client.app.state.auth_gateway
+    with factory.begin() as session:
+        from tests.spaces_helpers import bind_login_identities
+        bind_login_identities(session, world)
+    login(client, gateway, code="ana", email="ana@acme.test", subject="ana")
+    base = f"/organizations/{world.organization_id}/api-keys"
+    created = client.post(base, json={"name": "k", "scopes": ["search:read"]}).json()
+    listed = client.get(base).json()
+    assert listed[0]["id"] == created["id"] and "key" not in listed[0]
+    assert listed[0]["reach"] == created["reach"]
+    client.delete(f"{base}/{created['id']}")
+    assert "reach" not in client.get(base).json()[0]  # revoked keys read nothing: no promise
