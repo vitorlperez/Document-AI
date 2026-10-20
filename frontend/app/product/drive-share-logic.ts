@@ -236,6 +236,19 @@ export function nestedWarning(folder: DetectedFolder, all: DetectedFolder[], cho
 }
 export const nestedWarningText = (parentName: string) => `Esta pasta está dentro de “${parentName}” — os arquivos já serão incluídos.`;
 
+export const nestedSeparationHint = "Para separar por Espaço, compartilhe cada subpasta com o e-mail da sua empresa.";
+
+/** Espaços oferecidos ao ligar pasta ("Quem poderá ver esta pasta?"). */
+export type LinkSpaceOption = { id: string; name: string; is_default?: boolean };
+/** Pré-marca o Espaço padrão; sem padrão e com um só Espaço, esse; senão nada (a pessoa precisa escolher). */
+export function defaultSpaceSelection(spaces: LinkSpaceOption[]): string[] {
+  const preset = spaces.filter((space) => space.is_default).map((space) => space.id);
+  return preset.length ? preset : spaces.length === 1 ? [spaces[0].id] : [];
+}
+/** Não liga pasta sem Espaço. `spacesKnown=false` (lista indisponível) não bloqueia: o servidor usa o Espaço padrão. */
+export const canLink = ({ spaceIds, spacesKnown = true }: { spaceIds: string[]; spacesKnown?: boolean }) => !spacesKnown || spaceIds.length > 0;
+export const toggleSpace = (selected: string[], id: string) => selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id];
+
 export function selectedIds(folders: DetectedFolder[], choices: SelectionChoices): string[] {
   return folders.filter((f) => isSelected(f, folders, choices)).map((f) => f.id);
 }

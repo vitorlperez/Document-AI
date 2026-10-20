@@ -156,3 +156,24 @@
 @media (max-width: 767px) { .conversation-history-presence > .conversation-history { inset: 0; width: 100%; max-width: none; } }
 
 @media (max-width: 767px) { .chat-workspace .composer-send { min-width: 2.75rem; } }
+
+/* Conversation history is the chat sidebar: docked column from 1024px, slide-over panel below it (topbar button). */
+.conversation-history-docked { display: none; }
+@media (min-width: 768px) {
+  .chat-workspace > .workspace-panels.history-docked { --tools-sidebar-width: 0px; }
+  .conversation-history-docked { display: flex; width: 0; overflow: hidden; border-right: 0; visibility: hidden; }
+}
+@media (min-width: 1024px) {
+  .chat-workspace > .workspace-panels.history-docked { --tools-sidebar-width: 256px; }
+  .conversation-history-docked { width: auto; overflow: hidden; border-right: 1px solid var(--color-line); visibility: visible; }
+  .conversation-history-docked > div:last-child { overflow-y: auto; }
+  .chat-topbar-history, .chat-topbar-new { display: none; }
+}
+@media (max-width: 767px) { .chat-topbar-new { display: none; } }
+
+/* Pontes Conversa ↔ Biblioteca nas fontes da resposta. */
+.source-bridge-actions { display: flex; flex-wrap: wrap; gap: 0.25rem; flex: 0 0 auto; }
+.source-bridge-actions button { display: inline-flex; align-items: center; gap: 0.25rem; min-height: 1.75rem; padding: 0.125rem 0.5rem; border-radius: 0.375rem; color: var(--color-primary); font-size: 0.6875rem; font-weight: 600; cursor: pointer; }
+.source-bridge-actions button:hover { background: var(--color-sage); }
+.source-bridge-actions button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+@media (max-width: 767px) { .source-row { flex-wrap: wrap; } .source-bridge-actions { flex-basis: 100%; padding-left: 1.5rem; } .source-bridge-actions button { min-height: 2.75rem; } }

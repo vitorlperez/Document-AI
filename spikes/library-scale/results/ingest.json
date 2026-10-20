@@ -1,0 +1,122 @@
+[
+ {
+  "step_new_docs": 500,
+  "docs_in_snapshot": 500,
+  "active_after": 500,
+  "chunks_after": 500,
+  "reconcile_s": 6.99,
+  "statements": 3539,
+  "sql_s": 4.55,
+  "py_peak_mb": 1,
+  "top_repeated_statements": [
+   [
+    "SELECT documents.organization_id, documents.workspace_folder_id, documents.external_file_id, documents.name, d",
+    501
+   ],
+   [
+    "SELECT count(*) AS count_1 FROM documents WHERE documents.organization_id = ?::UUID AND documents.index_status",
+    501
+   ],
+   [
+    "SELECT organizations.name, organizations.onboarding_step, organizations.onboarding_completed_at, organizations",
+    500
+   ]
+  ]
+ },
+ {
+  "step_new_docs": 500,
+  "docs_in_snapshot": 1000,
+  "active_after": 1000,
+  "chunks_after": 1000,
+  "reconcile_s": 7.78,
+  "statements": 4035,
+  "sql_s": 5.08,
+  "py_peak_mb": 1,
+  "top_repeated_statements": [
+   [
+    "SELECT documents.organization_id, documents.workspace_folder_id, documents.external_file_id, documents.name, d",
+    1001
+   ],
+   [
+    "SELECT count(*) AS count_1 FROM documents WHERE documents.organization_id = ?::UUID AND documents.index_status",
+    501
+   ],
+   [
+    "SELECT organizations.name, organizations.onboarding_step, organizations.onboarding_completed_at, organizations",
+    500
+   ]
+  ]
+ },
+ {
+  "step_new_docs": 1000,
+  "docs_in_snapshot": 2000,
+  "active_after": 2000,
+  "chunks_after": 2000,
+  "reconcile_s": 15.85,
+  "statements": 8035,
+  "sql_s": 10.57,
+  "py_peak_mb": 2,
+  "top_repeated_statements": [
+   [
+    "SELECT documents.organization_id, documents.workspace_folder_id, documents.external_file_id, documents.name, d",
+    2001
+   ],
+   [
+    "SELECT count(*) AS count_1 FROM documents WHERE documents.organization_id = ?::UUID AND documents.index_status",
+    1001
+   ],
+   [
+    "SELECT organizations.name, organizations.onboarding_step, organizations.onboarding_completed_at, organizations",
+    1000
+   ]
+  ]
+ },
+ {
+  "step_new_docs": 2000,
+  "docs_in_snapshot": 4000,
+  "active_after": 4000,
+  "chunks_after": 4000,
+  "reconcile_s": 33.61,
+  "statements": 16035,
+  "sql_s": 23.0,
+  "py_peak_mb": 3,
+  "top_repeated_statements": [
+   [
+    "SELECT documents.organization_id, documents.workspace_folder_id, documents.external_file_id, documents.name, d",
+    4001
+   ],
+   [
+    "SELECT count(*) AS count_1 FROM documents WHERE documents.organization_id = ?::UUID AND documents.index_status",
+    2001
+   ],
+   [
+    "SELECT organizations.name, organizations.onboarding_step, organizations.onboarding_completed_at, organizations",
+    2000
+   ]
+  ]
+ },
+ {
+  "step_new_docs": 4000,
+  "docs_in_snapshot": 8000,
+  "active_after": 8000,
+  "chunks_after": 8000,
+  "reconcile_s": 59.82,
+  "statements": 32035,
+  "sql_s": 39.05,
+  "py_peak_mb": 6,
+  "top_repeated_statements": [
+   [
+    "SELECT documents.organization_id, documents.workspace_folder_id, documents.external_file_id, documents.name, d",
+    8001
+   ],
+   [
+    "SELECT count(*) AS count_1 FROM documents WHERE documents.organization_id = ?::UUID AND documents.index_status",
+    4001
+   ],
+   [
+    "SELECT organizations.name, organizations.onboarding_step, organizations.onboarding_completed_at, organizations",
+    4000
+   ]
+  ]
+ }
+]

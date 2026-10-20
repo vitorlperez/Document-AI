@@ -285,3 +285,16 @@ test("fluxo multi-pasta: passo 1 com contador ao vivo, botão principal e atalho
   assert.match(api, /folders\/batch/); assert.match(api, /folder_ids/);
   assert.match(css, /\.drive-pick-list/); assert.match(css, /prefers-reduced-motion/);
 });
+
+test("ligar pasta exige ao menos um Espaço e pré-marca o padrão", async () => {
+  const { canLink, defaultSpaceSelection, toggleSpace, nestedSeparationHint } = await import("../app/product/drive-share-logic.ts");
+  assert.equal(canLink({ spaceIds: [] }), false);
+  assert.equal(canLink({ spaceIds: ["g"] }), true);
+  assert.equal(canLink({ spaceIds: [], spacesKnown: false }), true);
+  assert.deepEqual(defaultSpaceSelection([{ id: "g", name: "Geral", is_default: true }, { id: "r", name: "RH" }]), ["g"]);
+  assert.deepEqual(defaultSpaceSelection([{ id: "r", name: "RH" }]), ["r"]);
+  assert.deepEqual(defaultSpaceSelection([{ id: "r", name: "RH" }, { id: "d", name: "Diretoria" }]), []);
+  assert.deepEqual(toggleSpace(["g"], "r"), ["g", "r"]);
+  assert.deepEqual(toggleSpace(["g", "r"], "g"), ["r"]);
+  assert.match(nestedSeparationHint, /separar por Espaço/);
+});

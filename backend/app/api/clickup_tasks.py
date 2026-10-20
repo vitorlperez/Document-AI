@@ -26,6 +26,7 @@ from app.integrations.clickup_tasks import (
     suggested_title,
 )
 from app.integrations.google_drive import CredentialCipher
+from app.knowledge.derived_visibility import message_is_visible
 from app.knowledge.models import Conversation, ConversationMessage
 from app.library.service import LibraryService
 
@@ -75,7 +76,7 @@ def _own_answer(session: Session, organization_id: UUID, conversation_id: UUID, 
         ConversationMessage.id == message_id, ConversationMessage.conversation_id == conversation.id,
         ConversationMessage.role == 'assistant',
     ))
-    if message is None:
+    if message is None or not message_is_visible(session, organization_id, user.id, message):
         raise HTTPException(404, 'answer not found')
     return message
 

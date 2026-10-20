@@ -16,6 +16,11 @@ from app.library.service import LibraryService
 from app.notifications.digest import build_digest
 from app.notifications.models import Notification
 from app.notifications.service import NotificationService
+from app.notifications.visibility import (
+    hidden_body,
+    hidden_data,
+    notifications_visibility,
+)
 
 router = APIRouter(tags=["notifications"])
 
@@ -37,8 +42,9 @@ def _member_scope(session: Session, organization_id: UUID, user: User) -> Organi
     return scope
 
 
-def _serialize(item: Notification) -> dict[str, object]:
-    return {"id": str(item.id), "kind": item.kind, "title": item.title, "body": item.body, "data": item.data,
+def _serialize(item: Notification, *, visible: bool = True) -> dict[str, object]:
+    body, data = (item.body, item.data) if visible else (hidden_body(), hidden_data(item.data))
+    return {"id": str(item.id), "kind": item.kind, "title": item.title, "body": body, "data": data,
             "created_at": item.created_at, "read": item.read_at is not None}
 
 
@@ -47,8 +53,10 @@ def list_notifications(organization_id: UUID, limit: int = Query(30, ge=1, le=10
                        session: Session = Depends(database_session)) -> dict[str, object]:
     scope = _member_scope(session, organization_id, user)
     service = NotificationService(session)
+    items = service.list(scope=scope, user_id=user.id, limit=limit)
+    seen = notifications_visibility(session, organization_id, user.id, items)
     return {"unread": service.unread_count(scope=scope, user_id=user.id),
-            "items": [_serialize(item) for item in service.list(scope=scope, user_id=user.id, limit=limit)]}
+            "items": [_serialize(item, visible=seen[item.id]) for item in items]}
 
 
 @router.post("/organizations/{organization_id}/notifications/read")

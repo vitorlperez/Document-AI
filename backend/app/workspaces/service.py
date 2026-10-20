@@ -1,5 +1,6 @@
 import hashlib
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -7,10 +8,15 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.access_errors import SyncAccessDenied
 from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
 from app.integrations.google_drive import GoogleAccessDenied
 from app.integrations.models import DataSource
 from app.organizations.models import Membership, MembershipRole
+from app.spaces import enrollment
+from app.spaces.access import SpaceAccess, SpaceAccessResolver, SpaceRef
+from app.spaces.models import Space, SpaceFolderGrant
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 SCOPE_SELECTED = "selected"
@@ -32,17 +38,52 @@ class WorkspaceService:
         self.session = session
 
     def require_member_access(self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID) -> WorkspaceFolder:
-        member = self.session.scalar(select(Membership).where(Membership.organization_id == scope.organization_id, Membership.user_id == user_id, Membership.is_active.is_(True)))
-        folder = self.session.scalar(select(WorkspaceFolder).where(WorkspaceFolder.id == workspace_folder_id, WorkspaceFolder.organization_id == scope.organization_id))
-        if member is None or folder is None:
-            raise GoogleAccessDenied("workspace access denied")
-        return folder
+        """A folder the person can read through their Spaces (ADR-0021); same denial as before otherwise."""
+        try:
+            return SpaceAccessResolver(self.session).require_folder(scope=scope, user_id=user_id, workspace_folder_id=workspace_folder_id)
+        except SyncAccessDenied as error:
+            raise GoogleAccessDenied("workspace access denied") from error
 
     def folders(self, *, scope: OrganizationScope, user_id: UUID) -> list[WorkspaceFolder]:
-        member = self.session.scalar(select(Membership).where(Membership.organization_id == scope.organization_id, Membership.user_id == user_id, Membership.is_active.is_(True)))
-        if member is None:
-            raise GoogleAccessDenied("workspace access denied")
-        return list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolder.name)))
+        try:
+            access = SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id)
+        except SyncAccessDenied as error:
+            raise GoogleAccessDenied("workspace access denied") from error
+        return self._readable_folders(scope, access)
+
+    def _readable_folders(self, scope: OrganizationScope, access: SpaceAccess) -> list[WorkspaceFolder]:
+        return list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id, ids_clause(self.session, WorkspaceFolder.id, access.folder_ids)).order_by(WorkspaceFolder.name)))
+
+    def folders_with_spaces(self, *, scope: OrganizationScope, user_id: UUID) -> list[tuple[WorkspaceFolder, tuple[SpaceRef, ...], bool]]:
+        """(folder, Space badges, readable) for the Fontes screen (ADR-0021 D5).
+
+        Members get the folders they can read, badged with their own Spaces. Org owners/admins get every
+        folder of the organization with every Space that grants it (configuration, never content); ``readable``
+        says whether the admin may also read it through a Space of their own."""
+        try:
+            access = SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id)
+        except SyncAccessDenied as error:
+            raise GoogleAccessDenied("workspace access denied") from error
+        is_admin = self.session.scalar(select(Membership.id).where(
+            Membership.organization_id == scope.organization_id, Membership.user_id == user_id,
+            Membership.is_active.is_(True), Membership.role.in_([MembershipRole.OWNER, MembershipRole.ADMIN]))) is not None
+        if not is_admin:
+            rows = self._readable_folders(scope, access)
+            return [(folder, access.spaces_of(folder.id), True) for folder in rows]
+        folders = list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolder.name)))
+        granted: dict[UUID, dict[UUID, SpaceRef]] = {}
+        for folder_id, space_id, space_name in self.session.execute(
+            select(SpaceFolderGrant.workspace_folder_id, Space.id, Space.name)
+            .join(Space, Space.id == SpaceFolderGrant.space_id)
+            .where(SpaceFolderGrant.organization_id == scope.organization_id, SpaceFolderGrant.revoked_at.is_(None),
+                   Space.organization_id == scope.organization_id, Space.archived_at.is_(None))
+        ):
+            granted.setdefault(folder_id, {})[space_id] = SpaceRef(space_id, space_name)
+        return [
+            (folder, tuple(sorted(granted.get(folder.id, {}).values(), key=lambda ref: (ref.name.casefold(), str(ref.id)))),
+             access.allows(folder.id))
+            for folder in folders
+        ]
 
     def selections(self, *, scope: OrganizationScope, workspace_folder_id: UUID) -> list[WorkspaceFolderSelection]:
         return list(self.session.scalars(select(WorkspaceFolderSelection).join(WorkspaceFolder, WorkspaceFolder.id == WorkspaceFolderSelection.workspace_folder_id).where(WorkspaceFolderSelection.workspace_folder_id == workspace_folder_id, WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolderSelection.kind, WorkspaceFolderSelection.external_folder_id)))
@@ -75,22 +116,25 @@ class WorkspaceService:
         """Return only operational folder metadata after platform grant authorization."""
         return list(self.session.scalars(select(WorkspaceFolder).where(WorkspaceFolder.organization_id == scope.organization_id).order_by(WorkspaceFolder.name, WorkspaceFolder.id)))
 
-    def select_scope(self, *, scope: OrganizationScope, user_id: UUID, source_id: UUID, requested: WorkspaceScope, uniform_access_confirmed: bool, available_folder_names: dict[str, str], name: str | None = None) -> WorkspaceFolder:
+    def select_scope(self, *, scope: OrganizationScope, user_id: UUID, source_id: UUID, requested: WorkspaceScope, uniform_access_confirmed: bool, available_folder_names: dict[str, str], name: str | None = None, space_ids: Sequence[UUID] | None = None) -> WorkspaceFolder:
+        """Select a sync scope. A new scope is granted to ``space_ids`` or, when None, to the default Space (ADR-0021 D6/D9)."""
         self._require_connected_source(scope=scope, user_id=user_id, source_id=source_id)
         if not uniform_access_confirmed:
             raise ValueError("uniform access confirmation is required")
+        if space_ids is not None and len(enrollment.valid_space_ids(self.session, scope.organization_id, space_ids)) != len(set(space_ids)):
+            raise ValueError("space not found")
         normalized = self._normalize_scope(requested=requested, available_folder_names=available_folder_names)
         scope_key = self._scope_key(normalized)
         existing = self.session.scalar(select(WorkspaceFolder).where(WorkspaceFolder.source_id == source_id, WorkspaceFolder.external_folder_id == scope_key))
         if existing is not None:
-            return existing
+            return self._grant_spaces(scope, user_id, existing, space_ids, is_new=False)
         # Before F-014, the legacy external folder ID was stored directly on
         # the workspace. The additive migration creates its selection row but
         # deliberately retains that value, so recognize it on re-selection.
         # This keeps an existing index and its usage history canonical.
         legacy = self._legacy_match(source_id=source_id, requested=normalized)
         if legacy is not None:
-            return legacy
+            return self._grant_spaces(scope, user_id, legacy, space_ids, is_new=False)
         folder = WorkspaceFolder(organization_id=scope.organization_id, source_id=source_id, external_folder_id=scope_key, name=name or self._default_name(normalized, available_folder_names), uniform_access_confirmed=True)
         try:
             with self.session.begin_nested():
@@ -102,8 +146,14 @@ class WorkspaceService:
         except IntegrityError:
             folder = self.session.scalar(select(WorkspaceFolder).where(WorkspaceFolder.source_id == source_id, WorkspaceFolder.external_folder_id == scope_key))
             if folder is not None:
-                return folder
+                return self._grant_spaces(scope, user_id, folder, space_ids, is_new=False)
             raise
+        return self._grant_spaces(scope, user_id, folder, space_ids, is_new=True)
+
+    def _grant_spaces(self, scope: OrganizationScope, user_id: UUID, folder: WorkspaceFolder, space_ids: Sequence[UUID] | None, *, is_new: bool) -> WorkspaceFolder:
+        # Default-Space grant only for a brand-new scope; an explicit list is applied (idempotently) on every path.
+        if space_ids is not None or is_new:
+            enrollment.grant_scope(self.session, scope.organization_id, folder.id, user_id, space_ids)
         return folder
 
     def select_folder(self, *, scope: OrganizationScope, user_id: UUID, source_id: UUID, external_folder_id: str, name: str, uniform_access_confirmed: bool, available_folder_ids: set[str]) -> WorkspaceFolder:

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
+from app.knowledge.derived_visibility import Provenance
 from app.notifications.automation_email import EmailContent
 from app.notifications.models import Notification, NotificationPreference
 from app.organizations.delivery import EmailDeliveryPort
@@ -38,8 +39,13 @@ class NotificationService:
 
     def notify(self, *, scope: OrganizationScope, user_id: UUID, kind: str, title: str, body: str,
                data: dict[str, object], email: EmailDeliveryPort | None = None, app_url: str = "",
-               email_content: EmailContent | None = None) -> Notification:
-        """Persist the in-app notification; e-mail it too when the member has not opted out."""
+               email_content: EmailContent | None = None, provenance: Provenance | None = None) -> Notification:
+        """Persist the in-app notification; e-mail it too when the member has not opted out.
+
+        ``provenance`` (documents/folders the content came from) is stored in ``data`` so the bell can hide the
+        item once the person loses access to any of them (ADR-0021 §8.2)."""
+        if provenance:
+            data = {**data, "provenance": provenance.to_data()}
         notification = Notification(organization_id=scope.organization_id, user_id=user_id, kind=kind,
                                     title=title[:200], body=body, data=data)
         self.session.add(notification)

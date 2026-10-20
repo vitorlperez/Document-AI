@@ -9,8 +9,9 @@ from test_ingestion_scheduler import (
     settings as settings,  # noqa: PLC0414 — pytest fixture discovery
 )
 
+from app.audit_usage import service as usage_service
 from app.audit_usage.models import UsageRecord
-from app.audit_usage.service import MONTHLY_LIMITS
+from app.audit_usage.service import monthly_limits
 from app.ingestion.blocks import ExtractedBlock
 from app.knowledge.models import Document
 
@@ -24,7 +25,7 @@ def test_sync_debits_ocr_pages(session):
 
 
 def test_monthly_budget_fails_document_and_continues(session, monkeypatch):
-    monkeypatch.setitem(MONTHLY_LIMITS, "ocr_pages", 0)
+    monkeypatch.setattr(usage_service, "monthly_limits", lambda settings=None: {**monthly_limits(), "ocr_pages": 0})
     org, user, folder = workspace(session)
     item = replace(document("ação no contrato"), blocks=(ExtractedBlock("ação no contrato", 1, ocr=True),))
     other = replace(document("normal text"), external_file_id="other")

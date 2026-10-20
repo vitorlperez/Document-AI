@@ -1,0 +1,147 @@
+{
+  "label": "10k",
+  "scopes_total": 40,
+  "runs": 7,
+  "results": [
+    {
+      "readable_scopes": "all (legacy)",
+      "case": "roots",
+      "median_ms": 1.2,
+      "p95_ms": 2.4,
+      "statements": 1
+    },
+    {
+      "readable_scopes": "all (legacy)",
+      "case": "children_p1",
+      "median_ms": 3.9,
+      "p95_ms": 13.6,
+      "statements": 5
+    },
+    {
+      "readable_scopes": "all (legacy)",
+      "case": "children_p5",
+      "median_ms": 2.9,
+      "p95_ms": 4.4,
+      "statements": 5
+    },
+    {
+      "readable_scopes": "all (legacy)",
+      "case": "search_ra",
+      "median_ms": 8.6,
+      "p95_ms": 14.3,
+      "statements": 2
+    },
+    {
+      "readable_scopes": "all (legacy)",
+      "case": "mention_ra",
+      "median_ms": 320.0,
+      "p95_ms": 389.5,
+      "statements": 3
+    },
+    {
+      "readable_scopes": 1,
+      "case": "roots",
+      "median_ms": 4.2,
+      "p95_ms": 5.3,
+      "statements": 1
+    },
+    {
+      "readable_scopes": 1,
+      "case": "children_p1",
+      "median_ms": 14.4,
+      "p95_ms": 35.7,
+      "statements": 5
+    },
+    {
+      "readable_scopes": 1,
+      "case": "children_p5",
+      "median_ms": 16.7,
+      "p95_ms": 55.4,
+      "statements": 5
+    },
+    {
+      "readable_scopes": 1,
+      "case": "search_ra",
+      "median_ms": 17.1,
+      "p95_ms": 28.1,
+      "statements": 2
+    },
+    {
+      "readable_scopes": 1,
+      "case": "mention_ra",
+      "median_ms": 74.4,
+      "p95_ms": 915.1,
+      "statements": 3
+    },
+    {
+      "readable_scopes": 5,
+      "case": "roots",
+      "median_ms": 7.5,
+      "p95_ms": 9.5,
+      "statements": 1
+    },
+    {
+      "readable_scopes": 5,
+      "case": "children_p1",
+      "median_ms": 12.1,
+      "p95_ms": 16.0,
+      "statements": 5
+    },
+    {
+      "readable_scopes": 5,
+      "case": "children_p5",
+      "median_ms": 10.9,
+      "p95_ms": 15.4,
+      "statements": 5
+    },
+    {
+      "readable_scopes": 5,
+      "case": "search_ra",
+      "median_ms": 22.8,
+      "p95_ms": 28.6,
+      "statements": 2
+    },
+    {
+      "readable_scopes": 5,
+      "case": "mention_ra",
+      "median_ms": 54.9,
+      "p95_ms": 93.5,
+      "statements": 3
+    },
+    {
+      "readable_scopes": 20,
+      "case": "roots",
+      "median_ms": 11.2,
+      "p95_ms": 12.3,
+      "statements": 1
+    },
+    {
+      "readable_scopes": 20,
+      "case": "children_p1",
+      "median_ms": 19.1,
+      "p95_ms": 27.6,
+      "statements": 5
+    },
+    {
+      "readable_scopes": 20,
+      "case": "children_p5",
+      "median_ms": 22.2,
+      "p95_ms": 29.6,
+      "statements": 5
+    },
+    {
+      "readable_scopes": 20,
+      "case": "search_ra",
+      "median_ms": 28.9,
+      "p95_ms": 38.9,
+      "statements": 2
+    },
+    {
+      "readable_scopes": 20,
+      "case": "mention_ra",
+      "median_ms": 108.2,
+      "p95_ms": 167.4,
+      "statements": 3
+    }
+  ]
+}

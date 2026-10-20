@@ -4,8 +4,9 @@ from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, Field, model_validator
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.auth import current_user, database_session
@@ -38,8 +39,33 @@ from app.knowledge.questions import AIProviderUnavailable, QuestionService
 from app.knowledge.search import SearchUnavailable, TextSearchService
 from app.library.service import LibraryService
 from app.library.tool_groups import tool_group
+from app.organizations.models import Membership, Organization
+from app.spaces.access import SpaceAccessResolver
+from app.spaces.service import SpaceNotFound
 
 router = APIRouter(tags=["ingestion"])
+DOCUMENTS_PAGE_SIZE_MAX = 500
+
+
+def _folder_readable(session: Session, organization_id: UUID, user_id: UUID, workspace_folder_id: UUID) -> bool:
+    """Whether the folder is in the caller's Spaces (ADR-0021). Not an active member -> SyncAccessDenied."""
+    access = SpaceAccessResolver(session).resolve(scope=OrganizationScope(organization_id), user_id=user_id)
+    return access.allows(workspace_folder_id)
+
+
+def _folder_denied(session: Session, organization_id: UUID, user_id: UUID) -> HTTPException:
+    """People outside the organization stay 403; members who cannot reach the folder get a uniform 404 (I7).
+
+    The 404 contract starts with Spaces (shadow/enforce). An organization still on ``off`` keeps the legacy 403
+    (B3), so nothing a client sees changes until the rollout reaches it."""
+    row = session.execute(
+        select(Membership.id, Organization.spaces_resolver_mode)
+        .join(Organization, Organization.id == Membership.organization_id)
+        .where(Membership.organization_id == organization_id, Membership.user_id == user_id,
+               Membership.is_active.is_(True))).first()
+    if row is None or row[1] == "off":
+        return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed")
+    return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workspace not found")
 
 
 class TextSearchInput(BaseModel):
@@ -64,9 +90,13 @@ class QuestionInput(BaseModel):
     providers: list[str] | None = None
     mentions: list[QuestionMention] | None = None
     conversation_id: UUID | None = None
+    # Optional narrowing to some of the caller's Spaces (ADR-0021 D4); an empty list means "no filter".
+    space_ids: list[UUID] | None = Field(default=None, max_length=50)
 
     @model_validator(mode="after")
     def validate_scope(self) -> "QuestionInput":
+        if not self.space_ids:
+            self.space_ids = None
         if self.scope == "provider" and self.provider is None:
             raise ValueError("provider is required")
         if self.scope != "provider" and self.provider is not None:
@@ -121,15 +151,35 @@ def enqueue_sync(
 def documents(
     workspace_folder_id: UUID,
     organization_id: UUID,
+    response: Response,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DOCUMENTS_PAGE_SIZE_MAX, ge=1, le=DOCUMENTS_PAGE_SIZE_MAX),
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
-) -> list[dict[str, str | None]]:
+) -> list[dict[str, str | None]] | dict[str, object]:
+    """Indexed documents of one scope, ``page_size`` at a time (``X-Total-Count`` carries the total)."""
+    scope = OrganizationScope(organization_id)
     try:
-        rows = IngestionService(session).indexed_documents(
-            scope=OrganizationScope(organization_id), user_id=user.id, workspace_folder_id=workspace_folder_id
-        )
+        if not _folder_readable(session, organization_id, user.id, workspace_folder_id):
+            # Not a reader: an org admin gets operational counts without file names; anyone else, 404 (I7).
+            try:
+                counts = IngestionService(session).document_counts(
+                    scope=scope, user_id=user.id, workspace_folder_id=workspace_folder_id
+                )
+            except SyncAccessDenied as error:
+                raise _folder_denied(session, organization_id, user.id) from error
+            return {
+                "readable": False, "counts": counts,
+                "items": [],  # file names are withheld until the admin enters the Space
+            }
+        ingestion = IngestionService(session)
+        ingestion.require_active_member(scope=scope, user_id=user.id)
+        ingestion.require_folder(scope=scope, workspace_folder_id=workspace_folder_id)
+        rows, total = LibraryService(session).indexed_documents_page(
+            scope=scope, workspace_folder_id=workspace_folder_id, page=page, page_size=page_size)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    response.headers["X-Total-Count"] = str(total)
     return [
         {
             "id": str(row.id),
@@ -232,15 +282,17 @@ def document_failures(
         rows = IngestionService(session).nonindexed_documents(
             scope=OrganizationScope(organization_id), user_id=user.id, workspace_folder_id=workspace_folder_id
         )
+        readable = _folder_readable(session, organization_id, user.id, workspace_folder_id)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    # An admin who is not in the folder's Space still operates on failures, but never learns file names.
     return [
         {
             "id": str(row.id),
-            "name": row.name,
+            "name": row.name if readable else f"arquivo #{str(row.id)[:7]}",
             "status": row.index_status,
             "error_code": row.error_code,
-            "source_url": row.source_url,
+            "source_url": row.source_url if readable else None,
         }
         for row in rows
     ]
@@ -264,7 +316,7 @@ def text_search(
             page_size=payload.page_size,
         )
     except GoogleAccessDenied as error:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+        raise _folder_denied(session, organization_id, user.id) from error
     except SearchUnavailable as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="folder is not ready") from error
     except ValueError as error:
@@ -306,7 +358,7 @@ def ask_question(
             question=payload.question,
         )
     except GoogleAccessDenied as error:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+        raise _folder_denied(session, organization_id, user.id) from error
     except AIProviderUnavailable as error:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI provider unavailable") from error
     except UsageLimitExceeded as error:
@@ -331,6 +383,11 @@ def ask_organization_question(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="provider is required")
     try:
         scope = OrganizationScope(organization_id)
+        if payload.space_ids:
+            # A Space that is not the caller's does not exist for them: uniform 404 before anything runs.
+            SpaceAccessResolver(session).resolve(
+                scope=scope, user_id=user.id, space_ids=payload.space_ids, strict=True
+            )
         service = QuestionService(session, request.app.state.semantic_provider)
         conversation_service = ConversationService(session)
         conversation, history = conversation_service.create_or_load(
@@ -344,6 +401,7 @@ def ask_organization_question(
                 {"kind": item.kind, "node_id": str(item.node_id), **({"name": item.name} if item.name else {})}
                 for item in payload.mentions or []
             ],
+            "space_ids": [str(item) for item in payload.space_ids or []],
         }
         conversation_service.append(
             conversation=conversation, role="user", content=payload.question, context=request_context
@@ -360,11 +418,12 @@ def ask_organization_question(
                     providers=payload.providers or [],
                     mentions=mentions,
                     history=history,
+                    space_ids=payload.space_ids,
                 )
             else:
                 result = service.ask_selection(
                     scope=scope, user_id=user.id, question=payload.question,
-                    providers=payload.providers or [], mentions=mentions,
+                    providers=payload.providers or [], mentions=mentions, space_ids=payload.space_ids,
                 )
                 tool_results = []
                 references = []
@@ -372,6 +431,7 @@ def ask_organization_question(
             result = service.ask_scope(
                 scope=scope, user_id=user.id,
                 question=payload.question, question_scope=payload.scope, provider=payload.provider,
+                space_ids=payload.space_ids,
             )
             tool_results = []
             references = []
@@ -389,6 +449,8 @@ def ask_organization_question(
         )
         conversation.last_message_at = datetime.now(UTC)
         session.commit()
+    except SpaceNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="space not found") from error
     except (GoogleAccessDenied, SyncAccessDenied) as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
     except AIProviderUnavailable as error:

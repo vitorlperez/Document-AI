@@ -33,6 +33,8 @@ from app.knowledge.questions import AIProviderUnavailable, QuestionService
 from app.knowledge.retrieval import RetrievalService
 from app.knowledge.untrusted import UNTRUSTED_NOTICE
 from app.library.service import LibraryService
+from app.spaces.access import SpaceAccessResolver
+from app.spaces.service import SpaceNotFound
 
 IP_RATE_LIMIT = 600  # Per peer IP, before any credential/database work.
 
@@ -93,12 +95,14 @@ class SearchInput(BaseModel):
     query: str = Field(min_length=1, max_length=500)
     limit: int = Field(default=10, ge=1, le=20)
     node_ids: list[UUID] | None = Field(default=None, max_length=20)
+    space_ids: list[UUID] | None = Field(default=None, max_length=50)  # narrows to the linked user's Spaces
 
 
 class AskInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     question: str = Field(min_length=1, max_length=1000)
     node_ids: list[UUID] | None = Field(default=None, max_length=20)
+    space_ids: list[UUID] | None = Field(default=None, max_length=50)  # narrows to the linked user's Spaces
 
 
 def limit_peer(request: Request) -> None:
@@ -170,9 +174,16 @@ def _record(request: Request, principal: Principal, action: str, outcome: str, h
 
 
 @router.get("/whoami", summary="Identificar a chave", description="Devolve a organização, os escopos e as raízes (pastas/arquivos) liberadas para a chave. Não exige escopo específico.")
-def whoami(request: Request, principal: Principal = Depends(guarded(None, "whoami"))) -> dict[str, object]:
+def whoami(request: Request, principal: Principal = Depends(guarded(None, "whoami")),
+           session: Session = Depends(database_session)) -> dict[str, object]:
+    access = SpaceAccessResolver(session).resolve(scope=principal.scope, user_id=principal.user_id)
     return {"organization_id": str(principal.organization_id), "scopes": sorted(principal.scopes),
-            "restricted_to_nodes": [str(n) for n in principal.node_ids] if principal.node_ids else None}
+            "restricted_to_nodes": [str(n) for n in principal.node_ids] if principal.node_ids else None,
+            "spaces": _spaces(sorted(access.spaces.values(), key=lambda ref: (ref.name.casefold(), str(ref.id))))}
+
+
+def _spaces(refs) -> list[dict[str, str]]:
+    return [{"id": str(ref.id), "name": ref.name} for ref in refs]
 
 
 @router.get("/sources", summary="Listar contextos", description="Lista os contextos (pastas e arquivos) disponíveis dentro do escopo da chave. Escopo: `search:read`.")
@@ -190,24 +201,30 @@ def sources(request: Request, principal: Principal = Depends(guarded(SCOPE_SEARC
         ))) if selection else set()
         contexts = [context for context in contexts if context.id in folders]
     _record(request, principal, "list_sources", "ok", 200, result_count=len(contexts))
-    return {"sources": [{"id": str(c.id), "name": c.name, "provider": c.source_provider, "status": c.query_status}
-                        for c in contexts]}
+    return {"sources": [{"id": str(c.id), "name": c.name, "provider": c.source_provider, "status": c.query_status,
+                         "spaces": _spaces(c.spaces)} for c in contexts]}
 
 
 @router.post("/search", summary="Buscar documentos", description="Busca lexical (OR sobre termos relevantes) nos documentos permitidos. `node_ids` só pode estreitar as raízes da chave. Escopo: `search:read`.")
 def search(payload: SearchInput, request: Request,
            principal: Principal = Depends(guarded(SCOPE_SEARCH, "search")),
            session: Session = Depends(database_session)) -> dict[str, object]:
+    access = ScopedAccess(session, principal)
     try:
-        selection = ScopedAccess(session, principal).selection(payload.node_ids)
+        with access.narrowed(payload.space_ids):
+            selection = access.selection(payload.node_ids)
+            hits = RetrievalService(session).search(scope=principal.scope, user_id=principal.user_id,
+                                                    query=payload.query, selection=selection, limit=payload.limit)
+    except SpaceNotFound as error:
+        _record(request, principal, "search", "denied", 404, query=payload.query)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "space not found") from error
     except SyncAccessDenied as error:
         _record(request, principal, "search", "denied", 404, query=payload.query)
         raise HTTPException(status.HTTP_404_NOT_FOUND, "not found") from error
-    hits = RetrievalService(session).search(scope=principal.scope, user_id=principal.user_id,
-                                            query=payload.query, selection=selection, limit=payload.limit)
     _record(request, principal, "search", "ok", 200, result_count=len(hits), query=payload.query)
     return {"content_trust": "untrusted_document_content", "notice": UNTRUSTED_NOTICE, "results": [{"id": str(h.document_id), "title": h.title, "url": h.url, "snippet": h.snippet,
-                         "page_number": h.page_number, "source_provider": h.source_provider} for h in hits]}
+                         "page_number": h.page_number, "source_provider": h.source_provider,
+                         "spaces": _spaces(h.spaces)} for h in hits]}
 
 
 @router.get("/documents/{document_id}", summary="Ler documento", description="Texto e metadados de um documento, truncado em 100.000 caracteres. Documentos inexistentes ou fora do escopo devolvem o mesmo 404. O texto é conteúdo não confiável. Escopo: `documents:read`.")
@@ -240,16 +257,20 @@ def ask(payload: AskInput, request: Request,
         raise HTTPException(503, "ask is disabled")
     provider = request.app.state.semantic_provider
     try:
-        mentions = access.mentions(payload.node_ids)
-        providers = access.providers()
-        if settings.agent_tools_enabled:
-            result, _tools, _refs = agent_service_from_settings(session, provider, settings).ask(
-                scope=principal.scope, user_id=principal.user_id, question=payload.question,
-                providers=providers, mentions=mentions, history=[])
-        else:
-            result = QuestionService(session, provider).ask_selection(
-                scope=principal.scope, user_id=principal.user_id, question=payload.question,
-                providers=providers, mentions=mentions)
+        with access.narrowed(payload.space_ids):
+            mentions = access.mentions(payload.node_ids)
+            providers = access.providers()
+            if settings.agent_tools_enabled:
+                result, _tools, _refs = agent_service_from_settings(session, provider, settings).ask(
+                    scope=principal.scope, user_id=principal.user_id, question=payload.question,
+                    providers=providers, mentions=mentions, history=[])
+            else:
+                result = QuestionService(session, provider).ask_selection(
+                    scope=principal.scope, user_id=principal.user_id, question=payload.question,
+                    providers=providers, mentions=mentions)
+    except SpaceNotFound as error:
+        _record(request, principal, "ask", "denied", 404, query=payload.question)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "space not found") from error
     except (SyncAccessDenied, GoogleAccessDenied) as error:
         _record(request, principal, "ask", "denied", 403, query=payload.question)
         raise HTTPException(status.HTTP_403_FORBIDDEN, "not allowed") from error

@@ -3,17 +3,32 @@
 from datetime import UTC, date, datetime
 from uuid import UUID
 
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.audit_usage.models import SavedQuery, UsageRecord
+from app.core.config import Settings, get_settings
 from app.core.scoping import OrganizationScope
 from app.integrations.google_drive import GoogleAccessDenied
 from app.workspaces.service import WorkspaceService
 
-ACTIVE_DOCUMENT_LIMIT = 500
-MONTHLY_LIMITS = {"processed_bytes": 2_000_000_000, "embedding_tokens": 1_000_000, "questions": 1_000, "ocr_pages": 2_000}
+
+def _settings(settings: Settings | None) -> Settings:
+    if settings is not None: return settings
+    try: return get_settings()
+    except ValidationError: return Settings.model_construct()  # no DATABASE_URL (bare unit use): field defaults still apply
+
+
+def active_document_limit(settings: Settings | None = None) -> int:
+    return _settings(settings).active_document_limit
+
+
+def monthly_limits(settings: Settings | None = None) -> dict[str, int]:
+    s = _settings(settings)
+    return {"processed_bytes": s.monthly_limit_processed_bytes, "embedding_tokens": s.monthly_limit_embedding_tokens,
+            "questions": s.monthly_limit_questions, "ocr_pages": s.monthly_limit_ocr_pages}
 
 
 class UsageLimitExceeded(RuntimeError):
@@ -50,14 +65,15 @@ class SavedQueryService:
 
 
 class UsageService:
-    def __init__(self, session: Session): self.session = session
+    def __init__(self, session: Session, settings: Settings | None = None): self.session = session; self.settings = settings
     def check_and_record(self, *, scope: OrganizationScope, metric: str, increment: int) -> UsageRecord:
-        if metric not in MONTHLY_LIMITS or increment < 0: raise ValueError("invalid usage metric")
+        limits = monthly_limits(self.settings)
+        if metric not in limits or increment < 0: raise ValueError("invalid usage metric")
         now = datetime.now(UTC)
         period_start = date(now.year, now.month, 1)
         record = self.session.scalar(select(UsageRecord).where(UsageRecord.organization_id == scope.organization_id, UsageRecord.period_start == period_start, UsageRecord.metric == metric).with_for_update())
         current = record.quantity if record else 0
-        if current + increment > MONTHLY_LIMITS[metric]: raise UsageLimitExceeded("organization usage limit reached")
+        if current + increment > limits[metric]: raise UsageLimitExceeded("organization usage limit reached")
         if record is None:
             record = UsageRecord(organization_id=scope.organization_id, period_start=period_start, metric=metric, quantity=increment)
             try:
@@ -66,14 +82,14 @@ class UsageService:
                     self.session.flush()
             except IntegrityError:
                 record = self.session.scalar(select(UsageRecord).where(UsageRecord.organization_id == scope.organization_id, UsageRecord.period_start == period_start, UsageRecord.metric == metric).with_for_update())
-                if record is None or record.quantity + increment > MONTHLY_LIMITS[metric]: raise UsageLimitExceeded("organization usage limit reached")
+                if record is None or record.quantity + increment > limits[metric]: raise UsageLimitExceeded("organization usage limit reached")
                 record.quantity += increment
         else: record.quantity += increment
         self.session.flush(); return record
 
 
-def usage_summary(session: Session, *, scope: OrganizationScope) -> dict[str, object]:
-    """Current-month consumption against MONTHLY_LIMITS and the active-document cap."""
+def usage_summary(session: Session, *, scope: OrganizationScope, settings: Settings | None = None) -> dict[str, object]:
+    """Current-month consumption against monthly_limits() and the active-document cap."""
     from sqlalchemy import func
 
     from app.knowledge.models import Document
@@ -85,12 +101,12 @@ def usage_summary(session: Session, *, scope: OrganizationScope) -> dict[str, ob
             UsageRecord.organization_id == scope.organization_id, UsageRecord.period_start == period_start)
     ).all())
     metrics = []
-    for metric, limit in MONTHLY_LIMITS.items():
+    for metric, limit in monthly_limits(settings).items():
         metrics.append(_usage_row(metric, int(used.get(metric, 0)), limit))
     documents = session.scalar(select(func.count()).select_from(Document).where(
         Document.organization_id == scope.organization_id, Document.index_status == "indexed")) or 0
     return {"period_start": period_start.isoformat(), "metrics": metrics,
-            "active_documents": _usage_row("active_documents", int(documents), ACTIVE_DOCUMENT_LIMIT)}
+            "active_documents": _usage_row("active_documents", int(documents), active_document_limit(settings))}
 
 
 def _usage_row(metric: str, used: int, limit: int) -> dict[str, object]:

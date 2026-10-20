@@ -4,6 +4,7 @@ import { FileText, FolderOpen, HardDrive, Table2 } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { errorDetail } from "../api-error-detail";
 import { cleanAnswerForDisplay } from "../answer-display";
+import { mergeSpaceTags } from "../question-spaces";
 import { providerKey, type QuestionContext } from "../question-scope";
 import { type MentionCandidate } from "../mention-composer";
 import { type CatalogFolder } from "../new-space-options";
@@ -15,13 +16,13 @@ export const SESSION_PATH = API_BASE.replace(/\/$/, "") === "/api" ? "/session" 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type Role = "owner" | "admin" | "member";
-export type Screen = "home" | "company" | "library" | "team" | "integrations" | "developer" | "automations" | "admin" | "profile" | "staff" | "invitation";
+export type Screen = "home" | "company" | "library" | "team" | "integrations" | "developer" | "automations" | "spaces" | "admin" | "profile" | "staff" | "invitation";
 export type Company = { id: string; name: string; membership_id: string; role: Role };
 export type User = { id: string; email: string; created_at?: string; is_platform_staff?: boolean };
 export type Folder = { id: string; name: string; status: string; last_synced_at: string | null; source_id?: string; external_folder_id?: string; selection_kind?: string; selection_folder_ids?: string[] };
 export type DocumentFailure = { id: string; name: string; status: "failed"; error_code: string | null; source_url: string };
 export type LibraryDocumentRef = { workspace_folder_id: string; document_id: string };
-export type LibraryNode = LibraryIndexingFields & { /** modo e-mail-robô do Drive: compartilhamento removido (ver drive-share-logic.libraryAccessBadge) */ access_state?: "access_lost" | "purge_scheduled" | null; purge_after?: string | null; id: string; parent_id: string | null; source_id: string; source_provider?: string | null; kind: "source" | "folder" | "file"; external_id?: string; name: string; mime_type: string | null; source_url: string | null; workspace_documents?: LibraryDocumentRef[] };
+export type LibraryNode = LibraryIndexingFields & { /** modo e-mail-robô do Drive: compartilhamento removido (ver drive-share-logic.libraryAccessBadge) */ access_state?: "access_lost" | "purge_scheduled" | null; purge_after?: string | null; id: string; parent_id: string | null; source_id: string; source_provider?: string | null; kind: "source" | "folder" | "file"; external_id?: string; name: string; mime_type: string | null; source_url: string | null; workspace_documents?: LibraryDocumentRef[]; /** Espaços do chamador que concedem este item (T-E1); ausente ⇒ sem selo. */ spaces?: { id: string; name: string }[] };
 export type LibraryPage = { items: LibraryNode[]; page?: number; pages?: number; total?: number };
 export type LibraryContext = QuestionContext;
 export type LibrarySync = { id: string; source_id: string; workspace_folder_id: string; workspace_name: string; status: string; created_at: string; started_at: string | null; completed_at: string | null; error_code: string | null };
@@ -36,7 +37,7 @@ export type ToolCategory = "Arquivos" | "Documentação" | "Projetos";
 type RemoteFolder = CatalogFolder;
 export type ScopeCatalog = { folders: RemoteFolder[]; root_files: { available: boolean; label: string }; all_accessible: { available: boolean; label: string } };
 export type SavedQuery = { id: string; workspace_folder_id: string; name: string; query: string };
-export type Evidence = { document_id: string; document_name: string; excerpt: string; page_number: number | null; source_url: string | null; source_provider?: string | null };
+export type Evidence = { /** Espaços do chamador que concedem o arquivo (T-E2); ausente ⇒ sem selo. */ spaces?: { id: string; name: string }[]; document_id: string; document_name: string; excerpt: string; page_number: number | null; source_url: string | null; source_provider?: string | null };
 export type Answer = { answer: string | null; confidence: string; citations: Evidence[]; retrieval_status: string; coverage?: { total_folders: number; eligible_folders: number; pending_folders: number }; conversation_id?: string };
 export type ConversationMessage = { id: string; role: "user" | "assistant"; content: string; contextName: string; contextId?: string; mentions?: MentionCandidate[]; providers?: string[]; allTools?: boolean; answer?: Answer; pending?: boolean; error?: string };
 export type PersistedConversationMessage = { id: string; role: "user" | "assistant"; content: string; context: { providers?: string[]; mentions?: MentionCandidate[] } | null; response: Answer | null };
@@ -129,6 +130,8 @@ export const compactCitations = (citations: Evidence[]): Evidence[] => {
     }
     if (!existing.source_url && citation.source_url) existing.source_url = citation.source_url;
     if (!existing.source_provider && citation.source_provider) existing.source_provider = citation.source_provider;
+    const spaces = mergeSpaceTags(existing.spaces, citation.spaces);
+    if (spaces) existing.spaces = spaces;
   }
   return [...grouped.values()];
 };

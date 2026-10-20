@@ -86,6 +86,7 @@ class OrganizationCreateInput(BaseModel):
 class InvitationCreateInput(BaseModel):
     email: EmailStr
     role: Literal[MembershipRole.ADMIN, MembershipRole.MEMBER]
+    space_ids: list[UUID] | None = Field(default=None, max_length=50)
 
 
 class MembershipRoleUpdateInput(BaseModel):
@@ -423,7 +424,19 @@ def organization_members(
         rows = OrganizationService(session).members(scope=OrganizationScope(organization_id), actor_user_id=user.id)
     except InvitationNotAllowed as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
-    return [{"id": str(membership.id), "email": member.email, "role": membership.role.value} for membership, member in rows]
+    return [{"id": str(membership.id), "user_id": str(member.id), "email": member.email, "role": membership.role.value} for membership, member in rows]
+
+
+@router.get("/organizations/{organization_id}/people")
+def organization_people(
+    organization_id: UUID, user: User = Depends(current_user), session: Session = Depends(database_session)
+) -> list[dict[str, str]]:
+    """Candidates for enabling in a Space: owner, admin or a Space manager; only user_id and e-mail."""
+    try:
+        rows = OrganizationService(session).people(scope=OrganizationScope(organization_id), actor_user_id=user.id)
+    except InvitationNotAllowed as error:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    return [{"user_id": str(user_id), "email": email} for user_id, email in rows]
 
 
 @router.patch("/organizations/{organization_id}/members/{membership_id}")
@@ -455,7 +468,8 @@ def create_invitation(
 ) -> dict[str, str]:
     try:
         invitation, raw_token = OrganizationService(session).create_invitation(
-            scope=OrganizationScope(organization_id), actor_user_id=user.id, email=str(payload.email), role=payload.role
+            scope=OrganizationScope(organization_id), actor_user_id=user.id, email=str(payload.email), role=payload.role,
+            space_ids=payload.space_ids,
         )
         delivery: InvitationDeliveryPort = request.app.state.invitation_delivery
         delivery.send(
@@ -464,6 +478,8 @@ def create_invitation(
         )
     except InvitationNotAllowed as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed") from error
+    except InvitationInvalid as error:
+        raise HTTPException(status_code=422, detail="space not found") from error
     except RuntimeError as error:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="invitation unavailable") from error
     return {"status": "sent"}

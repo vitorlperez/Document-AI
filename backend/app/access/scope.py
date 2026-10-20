@@ -1,18 +1,35 @@
-"""Confine every programmatic query to the credential's organization (and optional folders)."""
+"""Confine every programmatic query to the credential's organization, the linked user's Spaces and optional nodes."""
 
+from collections.abc import Collection, Iterator
+from contextlib import contextmanager
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from app.access.principal import Principal
 from app.library.service import LibraryService, QuestionSelection
-from app.library.tool_groups import tool_group, tool_groups
+from app.library.tool_groups import tool_groups
+from app.spaces.access import SpaceAccessResolver
+from app.spaces.filter import narrowed_to_spaces
 
 
 class ScopedAccess:
     def __init__(self, session: Session, principal: Principal):
         self.session, self.principal = session, principal
         self._library = LibraryService(session)
+
+    @contextmanager
+    def narrowed(self, space_ids: Collection[UUID] | None) -> Iterator[None]:
+        """Narrow every resolution inside the block to ``space_ids`` of the linked user (never widens).
+
+        A Space the linked user is not in does not exist for them: ``SpaceNotFound``, like any unknown id."""
+        if not space_ids:
+            yield
+            return
+        SpaceAccessResolver(self.session).resolve(
+            scope=self.principal.scope, user_id=self.principal.user_id, space_ids=space_ids, strict=True)
+        with narrowed_to_spaces(space_ids):
+            yield
 
     def providers(self) -> list[str]:
         found = self._library.source_providers(scope=self.principal.scope, user_id=self.principal.user_id)

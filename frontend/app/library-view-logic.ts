@@ -1,10 +1,10 @@
 export type LibraryViewMode = "list" | "grid";
 export type LibraryGridSize = "s" | "m" | "l";
-export type LibraryView = { mode: LibraryViewMode; size: LibraryGridSize };
+export type LibraryView = { mode: LibraryViewMode; size: LibraryGridSize; /** "Agrupar por Espaço": mesma lista, com cabeçalhos por Espaço. */ groupBySpace: boolean };
 export type FileKind = "pdf" | "doc" | "sheet" | "slides" | "image" | "generic";
 
 export const LIBRARY_VIEW_KEY = "arquivio:library-view";
-export const DEFAULT_LIBRARY_VIEW: LibraryView = { mode: "list", size: "m" };
+export const DEFAULT_LIBRARY_VIEW: LibraryView = { mode: "list", size: "m", groupBySpace: false };
 
 const EXTENSIONS: Record<string, FileKind> = {
   pdf: "pdf",
@@ -37,17 +37,48 @@ export function parseLibraryView(raw: string | null | undefined): LibraryView {
   try {
     const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== "object") return { ...DEFAULT_LIBRARY_VIEW };
-    const { mode, size } = value as { mode?: unknown; size?: unknown };
+    const { mode, size, groupBySpace } = value as { mode?: unknown; size?: unknown; groupBySpace?: unknown };
     return {
       mode: mode === "grid" || mode === "list" ? mode : DEFAULT_LIBRARY_VIEW.mode,
       size: size === "s" || size === "m" || size === "l" ? size : DEFAULT_LIBRARY_VIEW.size,
+      groupBySpace: groupBySpace === true,
     };
   } catch {
     return { ...DEFAULT_LIBRARY_VIEW };
   }
 }
 
-export const serializeLibraryView = (view: LibraryView) => JSON.stringify({ mode: view.mode, size: view.size });
+export const serializeLibraryView = (view: LibraryView) => JSON.stringify({ mode: view.mode, size: view.size, groupBySpace: view.groupBySpace });
+
+/** Filtro por Espaço nas rotas da biblioteca. Vazio = visão unificada: o parâmetro é omitido (nunca `space_ids=`). */
+export function buildLibraryQuery({ spaces }: { spaces: readonly string[] }): string {
+  return spaces.length ? spaces.map((id) => `&space_ids=${encodeURIComponent(id)}`).join("") : "";
+}
+
+export type SpaceTag = { id: string; name: string };
+export type SpaceListEntry<T> = { type: "heading"; key: string; label: string; count: number } | { type: "item"; key: string; item: T };
+export const NO_SPACE_LABEL = "Sem Espaço informado";
+/**
+ * "Agrupar por Espaço": a mesma página de itens, com um cabeçalho por Espaço. Um item em dois Espaços aparece nos dois grupos.
+ * Sem nenhum selo nos itens (organização em modo off/shadow ou backend sem selos), devolve a lista plana.
+ */
+export function withSpaceHeadings<T extends { id: string; spaces?: SpaceTag[] }>(items: T[], groupBySpace: boolean): SpaceListEntry<T>[] {
+  const flat = (): SpaceListEntry<T>[] => items.map((item) => ({ type: "item", key: item.id, item }));
+  if (!groupBySpace || !items.some((item) => item.spaces?.length)) return flat();
+  const groups = new Map<string, { label: string; items: T[] }>();
+  for (const item of items) {
+    const tags = item.spaces?.length ? item.spaces : [{ id: "", name: NO_SPACE_LABEL }];
+    for (const tag of tags) {
+      const group = groups.get(tag.id) ?? { label: tag.name, items: [] };
+      group.items.push(item); groups.set(tag.id, group);
+    }
+  }
+  const ordered = [...groups.entries()].sort(([a, x], [b, y]) => a === "" ? 1 : b === "" ? -1 : x.label.localeCompare(y.label, "pt-BR"));
+  return ordered.flatMap(([id, group]) => [
+    { type: "heading" as const, key: `h:${id}`, label: group.label, count: group.items.length },
+    ...group.items.map((item) => ({ type: "item" as const, key: `${id}:${item.id}`, item })),
+  ]);
+}
 
 export const LIBRARY_BATCH_SIZE = 50;
 export type ProgressiveLibraryPage<T> = { items: T[]; page?: number; pages?: number };

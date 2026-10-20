@@ -32,6 +32,7 @@ from app.automations.scope import (
     resolve_nodes,
     scope_node_ids,
 )
+from app.automations.space_access import hidden_result, runs_visibility
 from app.automations.triggers import queue_run
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
@@ -138,7 +139,12 @@ def _iso(value: datetime | None) -> str | None:
     return (value if value.tzinfo else value.replace(tzinfo=UTC)).astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
-def _serialize_run(run: AutomationRun) -> dict[str, object]:
+def _serialize_run(run: AutomationRun, *, visible: bool = True) -> dict[str, object]:
+    if not visible:  # the viewer lost access to something this run was made of (ADR-0021 §8.2)
+        return {"id": str(run.id), "automation_id": str(run.automation_id), "status": run.status,
+                "trigger_ref": run.trigger_ref, "started_at": _iso(run.started_at), "finished_at": _iso(run.finished_at),
+                "documents_considered": run.documents_considered, "questions_used": run.questions_used,
+                "error_code": run.error_code, "result": hidden_result(), "pdf_available": False}
     return {"id": str(run.id), "automation_id": str(run.automation_id), "status": run.status, "trigger_ref": run.trigger_ref,
             "started_at": _iso(run.started_at), "finished_at": _iso(run.finished_at),
             "documents_considered": run.documents_considered, "questions_used": run.questions_used,
@@ -381,14 +387,17 @@ def list_runs(organization_id: UUID, automation_id: UUID, limit: int = Query(20,
     automation, _ = _load(session, organization_id, automation_id, user)
     rows = session.scalars(select(AutomationRun).where(AutomationRun.automation_id == automation.id)
                            .order_by(AutomationRun.created_at.desc(), AutomationRun.id.desc()).limit(limit))
-    return {"items": [_serialize_run(item) for item in rows]}
+    rows = list(rows)
+    seen = runs_visibility(session, organization_id, user.id, rows)
+    return {"items": [_serialize_run(item, visible=seen[item.id]) for item in rows]}
 
 
 @router.get("/organizations/{organization_id}/automations/{automation_id}/runs/{run_id}")
 def get_run(organization_id: UUID, automation_id: UUID, run_id: UUID, user: User = Depends(current_user),
             session: Session = Depends(database_session)) -> dict[str, object]:
     automation = _load_reader(session, organization_id, automation_id, user)
-    return _serialize_run(_run_of(session, automation, run_id))
+    run = _run_of(session, automation, run_id)
+    return _serialize_run(run, visible=runs_visibility(session, organization_id, user.id, [run])[run.id])
 
 
 @router.get("/organizations/{organization_id}/automations/{automation_id}/runs/{run_id}/view")
@@ -396,9 +405,10 @@ def view_run(organization_id: UUID, automation_id: UUID, run_id: UUID, user: Use
              session: Session = Depends(database_session)) -> dict[str, object]:
     """Read-only report view for e-mail links (recipients included): name, folders and the run, nothing editable."""
     automation = _load_reader(session, organization_id, automation_id, user)
+    run = _run_of(session, automation, run_id)
     return {"automation": {"id": str(automation.id), "name": automation.name,
                            "folders": list(_folder_labels(session, automation))},
-            "run": _serialize_run(_run_of(session, automation, run_id))}
+            "run": _serialize_run(run, visible=runs_visibility(session, organization_id, user.id, [run])[run.id])}
 
 
 @router.get("/organizations/{organization_id}/automations/{automation_id}/runs/{run_id}/pdf")
@@ -406,6 +416,8 @@ def run_pdf(organization_id: UUID, automation_id: UUID, run_id: UUID, user: User
             session: Session = Depends(database_session)) -> Response:
     automation = _load_reader(session, organization_id, automation_id, user)
     run = _run_of(session, automation, run_id)
+    if not runs_visibility(session, organization_id, user.id, [run])[run.id]:
+        raise HTTPException(404, "run_has_no_result")
     answer = (run.result or {}).get("answer")
     if not isinstance(answer, str) or not answer:
         raise HTTPException(404, "run_has_no_result")

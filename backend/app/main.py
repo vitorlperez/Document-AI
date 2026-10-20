@@ -33,10 +33,12 @@ from app.api.library import router as library_router
 from app.api.mcp_admin import router as mcp_admin_router
 from app.api.notifications import router as notifications_router
 from app.api.onboarding import router as onboarding_router
+from app.api.org_search import router as org_search_router
 from app.api.overview import router as overview_router
 from app.api.platform import router as platform_router
 from app.api.public_v1 import router as public_v1_router
 from app.api.saved_queries import router as saved_queries_router
+from app.api.spaces import router as spaces_router
 from app.api.usage import router as usage_router
 from app.core.config import Settings, get_settings
 from app.core.database import build_engine, build_session_factory
@@ -175,7 +177,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/v1/openapi.json", include_in_schema=False)
     def public_openapi() -> dict:
-        return get_openapi(title="Arquivio Public API", version="1.0.0",
+        return get_openapi(title="Arquivio Public API", version="1.1.0",
                           routes=public_v1_router.routes,
                           description="Read-only organization library. Bearer API keys.")
 
@@ -194,6 +196,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(automation_webhooks_router, dependencies=authenticated)
     app.include_router(ingestion_router, dependencies=authenticated)
     app.include_router(library_router, dependencies=authenticated)
+    app.include_router(spaces_router, dependencies=authenticated)
     app.include_router(answer_feedback_router, dependencies=authenticated)
     app.include_router(answer_export_router, dependencies=authenticated)
     app.include_router(clickup_tasks_router, dependencies=authenticated)
@@ -201,6 +204,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(overview_router, dependencies=authenticated)
     app.include_router(evidence_router, dependencies=authenticated)
     app.include_router(document_view_router, dependencies=authenticated)
+    app.include_router(org_search_router, dependencies=authenticated)
     return app
 
 

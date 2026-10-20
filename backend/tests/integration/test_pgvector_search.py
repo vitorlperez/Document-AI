@@ -208,3 +208,36 @@ def test_syncing_queryability_uses_committed_compatible_chunks(engine):
         session.scalar(select(DocumentChunk)).embedding_model = "incompatible"
         session.commit()
         assert not folder_is_queryable(folder, session)
+
+
+def test_top_k_and_ask_run_in_sql_with_any_arrays(engine) -> None:
+    """Spike M1/M3: top-K comes from SQL, folder/document sets travel as one array bind."""
+    from app.core.scoping import OrganizationScope
+    from app.knowledge.questions import (
+        MAX_SEMANTIC_CANDIDATES,
+        RETRIEVAL_STATUS_SUFFICIENT,
+        QuestionService,
+    )
+    from app.organizations.models import Membership, MembershipRole
+    from tests.unit.test_semantic_questions import FakeProvider
+
+    rng = random.Random(7)
+    with Session(engine) as session:
+        organization, user = tenant(session)
+        session.add(Membership(organization_id=organization.id, user_id=user.id, role=MembershipRole.MEMBER, is_active=True))
+        folder = folder_for(session, organization, user)
+        vectors = [random_vector(rng) for _ in range(160)]
+        for vector in vectors:
+            seed(session, folder, [vector], dual_write=True)
+        session.commit()
+        filters = [Document.organization_id == organization.id, DocumentChunk.organization_id == organization.id]
+        top = PgVectorSimilarity().top(session, filters=filters, question_embedding=vectors[0], limit=5)
+        assert len(top) == 5 and list(top.values()) == sorted(top.values(), reverse=True)
+        assert abs(next(iter(top.values())) - 1.0) < 1e-6
+        reference = PythonSimilarity().top(session, filters=filters, question_embedding=vectors[0], limit=5)
+        assert set(top) == set(reference)
+        provider = FakeProvider({"launch?": vectors[0]})
+        result = QuestionService(session, provider, similarity=PgVectorSimilarity()).ask(
+            scope=OrganizationScope(organization.id), user_id=user.id, workspace_folder_id=folder.id, question="launch?")
+        assert result.retrieval_status == RETRIEVAL_STATUS_SUFFICIENT
+        assert provider.answer_calls and len(provider.answer_calls[0][1]) <= MAX_SEMANTIC_CANDIDATES

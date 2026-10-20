@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
 from app.library.service import LibraryService, QuestionSelection
-from app.library.tool_groups import tool_group, tool_groups
+from app.library.tool_groups import tool_groups
 
 MAX_SCOPE_NODES = 20
 

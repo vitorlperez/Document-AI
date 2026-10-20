@@ -9,6 +9,8 @@ export type QuestionContext = {
   id: string; name: string; status: string; source_id: string; source_provider: string;
   query_status: "ready" | "no_indexed_content" | "no_compatible_embeddings" | "not_ready";
   sync_in_progress?: boolean; source_status?: string;
+  /** Espaços do chamador que concedem esta pasta (T-C3). */
+  spaces?: { id: string; name: string }[];
 };
 export { providerKey, toolLabel };
 export const contextSyncing = (context: QuestionContext) => Boolean(context.sync_in_progress) || context.status === "queued" || context.status === "syncing";

@@ -25,6 +25,8 @@ from app.integrations.oauth_base import OAuthConnectionServiceBase
 from app.knowledge.models import Document, DocumentChunk
 from app.library.models import LibraryNode
 from app.organizations.models import Organization
+from app.spaces import enrollment
+from app.spaces.service import SpaceNotFound, SpaceService
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 from app.workspaces.service import WorkspaceScope, WorkspaceService
 
@@ -293,14 +295,35 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
             "blocked_download_count": blocked,
         }, root
 
-    def link(self, *, scope, user_id, source_id, folder_id):
+    SPACE_DISCLOSURE_VERSION = "2026-10"
+
+    def check_spaces(self, scope, space_ids):
+        """Refuse before touching Drive: every Space must be a live Space of this organization."""
+        if space_ids is None:
+            return None
+        ids = list(dict.fromkeys(space_ids))
+        if len(enrollment.valid_space_ids(self.session, scope.organization_id, ids)) != len(ids):
+            raise SpaceNotFound("space not found")
+        return ids
+
+    def _grant_spaces(self, scope, user_id, link, space_ids):
+        if space_ids is None or link.workspace_folder_id is None:
+            return
+        spaces = SpaceService(self.session)
+        for space_id in space_ids:
+            spaces.grant_folder(
+                scope, user_id, space_id, link.workspace_folder_id, {"text_version": self.SPACE_DISCLOSURE_VERSION}
+            )
+
+    def link(self, *, scope, user_id, source_id, folder_id, space_ids=None):
         source = self.source(scope=scope, user_id=user_id, source_id=source_id)
+        space_ids = self.check_spaces(scope, space_ids)
         # Serialize link creation against recheck and unlink in this source.
         self.session.scalar(select(DataSource).where(DataSource.id == source.id).with_for_update())
         data, root = self.verify(source, folder_id, sample=False, count=False)
-        return self._connect(source, scope, user_id, data, root)
+        return self._connect(source, scope, user_id, data, root, space_ids=space_ids)
 
-    def _connect(self, source, scope, user_id, data, root, *, blocked=None, chain=None):
+    def _connect(self, source, scope, user_id, data, root, *, blocked=None, chain=None, space_ids=None):
         link = self.session.scalar(
             select(DriveFolderLink).where(
                 DriveFolderLink.organization_id == scope.organization_id,
@@ -308,6 +331,7 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
             )
         )
         if link and link.status == "verified":
+            self._grant_spaces(scope, user_id, link, space_ids)
             return link
         self.check_nested(source, root, chain)
         source.status = "connected"
@@ -319,6 +343,7 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
             requested=WorkspaceScope(mode="selected", folder_ids=(data["folder_id"],)),
             uniform_access_confirmed=True,
             available_folder_names={data["folder_id"]: data["name"]},
+            space_ids=[] if space_ids is not None else None,  # explicit Spaces replace the default-Space grant
         )
         if not link:
             link = DriveFolderLink(
@@ -339,14 +364,16 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
         # verify (count=False) skips the listing; the blocked count was reported by the earlier verify call.
         self.restore(link)
         self.session.flush()
+        self._grant_spaces(scope, user_id, link, space_ids)
         self.audit(source, user_id, "drive_sa.folder_linked", link.id)
         return link
 
     MAX_BATCH = 20
 
-    def link_batch(self, *, scope, user_id, source_id, folder_ids):
+    def link_batch(self, *, scope, user_id, source_id, folder_ids, space_ids=None):
         """Verify + link several folders; one result per requested folder, a failure never aborts the rest."""
         source = self.source(scope=scope, user_id=user_id, source_id=source_id)
+        space_ids = self.check_spaces(scope, space_ids)
         ids = list(dict.fromkeys(x.strip() for x in folder_ids if x and x.strip()))
         if not ids or len(ids) > self.MAX_BATCH:
             raise SaRequestError("invalid_request")
@@ -372,6 +399,7 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
                         root,
                         blocked=data["blocked_download_count"],
                         chain=chains[folder_id],
+                        space_ids=space_ids,
                     )
                 results[folder_id] = {
                     "folder_id": data["folder_id"],

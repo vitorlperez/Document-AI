@@ -27,13 +27,13 @@ test("parseLibraryView validates the stored preference", () => {
   assert.deepEqual(parseLibraryView(null), DEFAULT_LIBRARY_VIEW);
   assert.deepEqual(parseLibraryView("not json"), DEFAULT_LIBRARY_VIEW);
   assert.deepEqual(parseLibraryView("42"), DEFAULT_LIBRARY_VIEW);
-  assert.deepEqual(parseLibraryView('{"mode":"grid","size":"l"}'), { mode: "grid", size: "l" });
-  assert.deepEqual(parseLibraryView('{"mode":"grid","size":"xl"}'), { mode: "grid", size: "m" });
-  assert.deepEqual(parseLibraryView('{"mode":"cards","size":"s"}'), { mode: "list", size: "s" });
+  assert.deepEqual(parseLibraryView('{"mode":"grid","size":"l"}'), { mode: "grid", size: "l", groupBySpace: false });
+  assert.deepEqual(parseLibraryView('{"mode":"grid","size":"xl"}'), { mode: "grid", size: "m", groupBySpace: false });
+  assert.deepEqual(parseLibraryView('{"mode":"cards","size":"s"}'), { mode: "list", size: "s", groupBySpace: false });
 });
 
 test("serializeLibraryView round-trips", () => {
-  const view = { mode: "grid", size: "s" };
+  const view = { mode: "grid", size: "s", groupBySpace: false };
   assert.deepEqual(parseLibraryView(serializeLibraryView(view)), view);
 });
 

@@ -41,7 +41,7 @@ def _worker(monkeypatch, tmp_path, documents):
         def folders(self, **kwargs):
             return []
 
-    monkeypatch.setattr(tasks, "get_settings", lambda: SimpleNamespace(openai_api_key=None, active_document_limit=500))
+    monkeypatch.setattr(tasks, "get_settings", lambda: SimpleNamespace(openai_api_key=None, active_document_limit=3000))
     monkeypatch.setattr(tasks, "build_engine", lambda _: engine)
     monkeypatch.setattr(tasks, "build_session_factory", lambda _: factory)
     monkeypatch.setattr(tasks, "IntegrationRegistry", lambda _: SimpleNamespace(get=lambda *a, **kw: Provider()))

@@ -134,6 +134,8 @@
   --btn-disabled-bg: #17241e; --btn-disabled-fg: #8a9a92;
   color-scheme: dark;
   --modal-border: 1px solid var(--edge-strong);
+  /* O verde-primário a 40% (claro: escurece a página) vira uma lavagem menta no escuro; usa o scrim neutro. */
+  --modal-backdrop: var(--scrim);
   --background: var(--surface-canvas);
   --foreground: #e6eee9;
   --card: var(--surface-raised);
@@ -215,6 +217,7 @@
   --color-amber-50: #33270c;
   --color-amber-100: #44330d;
   --color-amber-200: #7a5a14;
+  --color-amber-700: #fbbf24;
   --color-amber-800: #fcd34d;
   --color-amber-900: #fde68a;
   --color-amber-950: #fef3c7;
@@ -334,6 +337,12 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Checkbox/radio nativos herdam a cor da marca (antes ficavam no azul padrão do navegador, destoando no escuro). */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--btn-primary-bg);
 }
 
 button,

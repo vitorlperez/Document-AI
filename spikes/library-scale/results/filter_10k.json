@@ -1,0 +1,351 @@
+{
+ "label": "10k",
+ "total_files": 10000,
+ "hnsw": true,
+ "rows": [
+  {
+   "share": "0.2%",
+   "what": "tree: descendants of allowed roots (recursive CTE) -> files",
+   "median_ms": 6.4,
+   "min_ms": 3.3,
+   "roots": 6,
+   "files": 21,
+   "files_found": 21
+  },
+  {
+   "share": "0.2%",
+   "what": "tree: ancestors of allowed roots (breadcrumb set)",
+   "median_ms": 2.5,
+   "min_ms": 2.0,
+   "nodes": 17
+  },
+  {
+   "share": "0.2%",
+   "what": "tree: same walk level-by-level in Python (as indexed_documents_under)",
+   "median_ms": 6.4,
+   "min_ms": 3.6,
+   "files_found": 21
+  },
+  {
+   "share": "0.2%",
+   "what": "visible indexed document ids (CTE + join documents)",
+   "median_ms": 9.3,
+   "min_ms": 6.0,
+   "documents": 21
+  },
+  {
+   "share": "0.2%",
+   "what": "search (a) one SQL CTE+join, ann",
+   "median_ms": 56.0,
+   "min_ms": 45.5,
+   "returned": 100
+  },
+  {
+   "share": "0.2%",
+   "what": "search (b) document_id = ANY(21 ids), ann",
+   "median_ms": 6.6,
+   "min_ms": 2.9,
+   "returned": 100
+  },
+  {
+   "share": "0.2%",
+   "what": "search (a) one SQL CTE+join, exact",
+   "median_ms": 45.6,
+   "min_ms": 36.1,
+   "returned": 100
+  },
+  {
+   "share": "0.2%",
+   "what": "   recall@100 of (a) ann vs exact",
+   "median_ms": 0,
+   "min_ms": 0,
+   "recall": 1.0
+  },
+  {
+   "share": "0.2%",
+   "what": "search (b) document_id = ANY(21 ids), exact",
+   "median_ms": 7.6,
+   "min_ms": 6.0,
+   "returned": 100
+  },
+  {
+   "share": "0.2%",
+   "what": "search (c) workspace_folder_id = ANY(1 scopes), ann",
+   "median_ms": 23.7,
+   "min_ms": 22.5,
+   "returned": 100
+  },
+  {
+   "share": "0.2%",
+   "what": "search (c) workspace_folder_id = ANY(1 scopes), exact",
+   "median_ms": 18.1,
+   "min_ms": 16.6,
+   "returned": 100
+  },
+  {
+   "share": "0.2%",
+   "what": "fts moderately common term 'anlupo', document_id = ANY(ids)",
+   "median_ms": 3.4,
+   "min_ms": 2.9,
+   "returned": 15
+  },
+  {
+   "share": "2%",
+   "what": "tree: descendants of allowed roots (recursive CTE) -> files",
+   "median_ms": 5.7,
+   "min_ms": 3.2,
+   "roots": 8,
+   "files": 217,
+   "files_found": 217
+  },
+  {
+   "share": "2%",
+   "what": "tree: ancestors of allowed roots (breadcrumb set)",
+   "median_ms": 3.1,
+   "min_ms": 2.5,
+   "nodes": 25
+  },
+  {
+   "share": "2%",
+   "what": "tree: same walk level-by-level in Python (as indexed_documents_under)",
+   "median_ms": 5.1,
+   "min_ms": 4.1,
+   "files_found": 217
+  },
+  {
+   "share": "2%",
+   "what": "visible indexed document ids (CTE + join documents)",
+   "median_ms": 10.9,
+   "min_ms": 8.5,
+   "documents": 214
+  },
+  {
+   "share": "2%",
+   "what": "search (a) one SQL CTE+join, ann",
+   "median_ms": 38.5,
+   "min_ms": 31.5,
+   "returned": 100
+  },
+  {
+   "share": "2%",
+   "what": "search (b) document_id = ANY(214 ids), ann",
+   "median_ms": 8.7,
+   "min_ms": 6.1,
+   "returned": 100
+  },
+  {
+   "share": "2%",
+   "what": "search (a) one SQL CTE+join, exact",
+   "median_ms": 30.1,
+   "min_ms": 29.1,
+   "returned": 100
+  },
+  {
+   "share": "2%",
+   "what": "   recall@100 of (a) ann vs exact",
+   "median_ms": 0,
+   "min_ms": 0,
+   "recall": 1.0
+  },
+  {
+   "share": "2%",
+   "what": "search (b) document_id = ANY(214 ids), exact",
+   "median_ms": 5.8,
+   "min_ms": 5.6,
+   "returned": 100
+  },
+  {
+   "share": "2%",
+   "what": "search (c) workspace_folder_id = ANY(1 scopes), ann",
+   "median_ms": 6.9,
+   "min_ms": 6.9,
+   "returned": 100
+  },
+  {
+   "share": "2%",
+   "what": "search (c) workspace_folder_id = ANY(1 scopes), exact",
+   "median_ms": 6.8,
+   "min_ms": 6.2,
+   "returned": 100
+  },
+  {
+   "share": "2%",
+   "what": "fts moderately common term 'anluanti', document_id = ANY(ids)",
+   "median_ms": 3.6,
+   "min_ms": 3.0,
+   "returned": 20
+  },
+  {
+   "share": "10%",
+   "what": "tree: descendants of allowed roots (recursive CTE) -> files",
+   "median_ms": 4.9,
+   "min_ms": 4.4,
+   "roots": 15,
+   "files": 1056,
+   "files_found": 1056
+  },
+  {
+   "share": "10%",
+   "what": "tree: ancestors of allowed roots (breadcrumb set)",
+   "median_ms": 3.1,
+   "min_ms": 2.1,
+   "nodes": 44
+  },
+  {
+   "share": "10%",
+   "what": "tree: same walk level-by-level in Python (as indexed_documents_under)",
+   "median_ms": 24.7,
+   "min_ms": 9.5,
+   "files_found": 1056
+  },
+  {
+   "share": "10%",
+   "what": "visible indexed document ids (CTE + join documents)",
+   "median_ms": 17.3,
+   "min_ms": 9.6,
+   "documents": 1063
+  },
+  {
+   "share": "10%",
+   "what": "search (a) one SQL CTE+join, ann",
+   "median_ms": 56.9,
+   "min_ms": 47.0,
+   "returned": 100
+  },
+  {
+   "share": "10%",
+   "what": "search (b) document_id = ANY(1063 ids), ann",
+   "median_ms": 41.0,
+   "min_ms": 24.0,
+   "returned": 100
+  },
+  {
+   "share": "10%",
+   "what": "search (a) one SQL CTE+join, exact",
+   "median_ms": 40.4,
+   "min_ms": 37.7,
+   "returned": 100
+  },
+  {
+   "share": "10%",
+   "what": "   recall@100 of (a) ann vs exact",
+   "median_ms": 0,
+   "min_ms": 0,
+   "recall": 0.9
+  },
+  {
+   "share": "10%",
+   "what": "search (b) document_id = ANY(1063 ids), exact",
+   "median_ms": 20.0,
+   "min_ms": 19.8,
+   "returned": 100
+  },
+  {
+   "share": "10%",
+   "what": "search (c) workspace_folder_id = ANY(4 scopes), ann",
+   "median_ms": 28.7,
+   "min_ms": 24.1,
+   "returned": 100
+  },
+  {
+   "share": "10%",
+   "what": "search (c) workspace_folder_id = ANY(4 scopes), exact",
+   "median_ms": 17.9,
+   "min_ms": 16.1,
+   "returned": 100
+  },
+  {
+   "share": "10%",
+   "what": "fts moderately common term 'anketone', document_id = ANY(ids)",
+   "median_ms": 16.7,
+   "min_ms": 9.2,
+   "returned": 20
+  },
+  {
+   "share": "50%",
+   "what": "tree: descendants of allowed roots (recursive CTE) -> files",
+   "median_ms": 5.0,
+   "min_ms": 4.5,
+   "roots": 95,
+   "files": 5001,
+   "files_found": 5001
+  },
+  {
+   "share": "50%",
+   "what": "tree: ancestors of allowed roots (breadcrumb set)",
+   "median_ms": 2.5,
+   "min_ms": 1.9,
+   "nodes": 185
+  },
+  {
+   "share": "50%",
+   "what": "tree: same walk level-by-level in Python (as indexed_documents_under)",
+   "median_ms": 85.6,
+   "min_ms": 57.1,
+   "files_found": 5001
+  },
+  {
+   "share": "50%",
+   "what": "visible indexed document ids (CTE + join documents)",
+   "median_ms": 49.1,
+   "min_ms": 24.7,
+   "documents": 5093
+  },
+  {
+   "share": "50%",
+   "what": "search (a) one SQL CTE+join, ann",
+   "median_ms": 343.9,
+   "min_ms": 187.6,
+   "returned": 100
+  },
+  {
+   "share": "50%",
+   "what": "search (b) document_id = ANY(5093 ids), ann",
+   "median_ms": 168.3,
+   "min_ms": 158.0,
+   "returned": 100
+  },
+  {
+   "share": "50%",
+   "what": "search (a) one SQL CTE+join, exact",
+   "median_ms": 130.5,
+   "min_ms": 121.7,
+   "returned": 100
+  },
+  {
+   "share": "50%",
+   "what": "   recall@100 of (a) ann vs exact",
+   "median_ms": 0,
+   "min_ms": 0,
+   "recall": 0.92
+  },
+  {
+   "share": "50%",
+   "what": "search (b) document_id = ANY(5093 ids), exact",
+   "median_ms": 272.3,
+   "min_ms": 168.4,
+   "returned": 100
+  },
+  {
+   "share": "50%",
+   "what": "search (c) workspace_folder_id = ANY(20 scopes), ann",
+   "median_ms": 3.1,
+   "min_ms": 2.8,
+   "returned": 100
+  },
+  {
+   "share": "50%",
+   "what": "search (c) workspace_folder_id = ANY(20 scopes), exact",
+   "median_ms": 113.5,
+   "min_ms": 81.0,
+   "returned": 100
+  },
+  {
+   "share": "50%",
+   "what": "fts moderately common term 'anlusara', document_id = ANY(ids)",
+   "median_ms": 35.8,
+   "min_ms": 30.4,
+   "returned": 20
+  }
+ ]
+}

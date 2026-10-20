@@ -75,7 +75,7 @@ def test_scoped_access_and_overview_group_both_connections(factory):
 
 
 def test_library_root_of_the_shared_folder_connection_is_named_google_drive(factory):
-    from app.library.models import LibraryNode  # noqa: PLC0415
+    from app.library.models import LibraryNode
     tenant = seed_tenant(factory, "A", "a")
     _make_sa(factory, tenant)
     with factory.begin() as session:
@@ -89,7 +89,7 @@ def test_library_root_of_the_shared_folder_connection_is_named_google_drive(fact
 
 
 def _add_sa_root(factory, tenant, folder_name):
-    from app.library.models import LibraryNode  # noqa: PLC0415
+    from app.library.models import LibraryNode
     with factory.begin() as session:
         source = DataSource(organization_id=tenant.organization_id, provider="google_drive_sa",
                             encrypted_credentials="x", status="connected", connected_by_user_id=tenant.user_id)
@@ -105,7 +105,7 @@ def _add_sa_root(factory, tenant, folder_name):
 
 
 def test_children_of_the_drive_root_list_folders_of_both_connections_without_leaking_orgs(factory):
-    from app.library.models import LibraryNode  # noqa: PLC0415
+    from app.library.models import LibraryNode
     a, b = seed_tenant(factory, "A", "a"), seed_tenant(factory, "B", "b")
     _add_sa_root(factory, a, "Contratos")
     _add_sa_root(factory, b, "Segredo-B")
@@ -121,7 +121,7 @@ def test_children_of_the_drive_root_list_folders_of_both_connections_without_lea
 
 def test_legacy_root_name_never_leaks_in_mention_paths(factory):
     """Raiz antiga '(pasta compartilhada)' ainda gravada no banco: o caminho mostrado ao usuário usa 'Google Drive'."""
-    from app.library.models import LibraryNode  # noqa: PLC0415
+    from app.library.models import LibraryNode
     tenant = seed_tenant(factory, "A", "a")
     root_id = _add_sa_root(factory, tenant, "Contratos")
     with factory.begin() as session:

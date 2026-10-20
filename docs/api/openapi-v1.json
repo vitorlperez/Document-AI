@@ -25,6 +25,22 @@
             "minLength": 1,
             "title": "Question",
             "type": "string"
+          },
+          "space_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 50,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Space Ids"
           }
         },
         "required": [
@@ -77,6 +93,22 @@
             "minLength": 1,
             "title": "Query",
             "type": "string"
+          },
+          "space_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 50,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Space Ids"
           }
         },
         "required": [

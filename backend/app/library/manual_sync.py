@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
 from app.identity.models import User
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveredDocument, IngestionService, SyncAccessDenied
@@ -16,6 +17,7 @@ from app.knowledge.models import Document
 from app.library.models import LibraryNode, ManualSyncRun
 from app.library.sync_outcomes import aggregate_status, normalize_task
 from app.organizations.models import Membership
+from app.spaces.access import SpaceAccess
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 # An incremental sync is open to every member, so each space is rate limited.
@@ -129,7 +131,7 @@ def _containing_workspaces(session: Session, node: LibraryNode, folders: list[Wo
     if below:
         keep.update(session.scalars(select(Document.workspace_folder_id).where(
             Document.workspace_folder_id.in_([f.id for f in folders]),
-            Document.external_file_id.in_(below),
+            ids_clause(session, Document.external_file_id, below),
         )))
     return [folder for folder in folders if folder.id in keep]
 
@@ -400,9 +402,30 @@ def update_progress(session: Session, job: ProcessingJob, **values):
     session.flush()
 
 
-def serialize_run(run: ManualSyncRun):
+def scoped_progress(run: ManualSyncRun, access: SpaceAccess | None) -> dict | None:
+    """The part of a run a person may see (ADR-0021 D5), or ``None`` when none of it is theirs.
+
+    Members keep the tasks of scopes they can read. Owners/admins keep every task but the file names of the
+    scopes they cannot read are blanked: operational metadata, never content. ``access=None`` is the system view."""
+    if access is None or access.unrestricted:
+        return run.progress
+    kept: dict = {}
+    for key, task in run.progress.items():
+        folder_id = task.get("workspace_folder_id")
+        readable = folder_id is not None and UUID(folder_id) in access.folder_ids
+        if readable:
+            kept[key] = task
+        elif access.org_admin:
+            kept[key] = {**task, "outcomes": [{**item, "name": ""} for item in task.get("outcomes", [])]}
+    return kept or None
+
+
+def serialize_run(run: ManualSyncRun, access: SpaceAccess | None = None):
+    progress = scoped_progress(run, access)
+    if progress is None:
+        return None
     sync = run.scope_kind == "sync"
-    tasks = [normalize_task(task) for task in run.progress.values()]
+    tasks = [normalize_task(task) for task in progress.values()]
     if sync:
         # Compact legacy snapshots at the API boundary too. Counts are independent
         # of the bounded error samples stored by new workers.
@@ -433,7 +456,7 @@ def serialize_run(run: ManualSyncRun):
         "source_id": str(run.source_id),
         "scope_kind": run.scope_kind,
         "mode": None if run.scope_kind == "sync" else next(
-            (task.get("mode", "full") for task in run.progress.values()), None),
+            (task.get("mode", "full") for task in progress.values()), None),
         "scope_name": run.scope_name,
         "triggered_by": run.triggered_by,
         "triggered_by_user_id": str(run.triggered_by_user_id) if run.triggered_by_user_id else None,
@@ -442,14 +465,14 @@ def serialize_run(run: ManualSyncRun):
         "started_at": run.started_at.isoformat() if run.started_at else None,
         "completed_at": run.completed_at.isoformat() if run.completed_at else None,
         "total": sum(task["total"] for task in tasks) if sync else len(outcomes)
-        + sum(task["total"] for task in run.progress.values() if not task["outcomes"]),
+        + sum(task["total"] for task in progress.values() if not task["outcomes"]),
         "processed": sum(task.get("processed", 0) for task in tasks) if sync else sum(bool(item.get("processed")) for item in outcomes.values())
-        + sum(task.get("processed", 0) for task in run.progress.values() if not task["outcomes"]),
+        + sum(task.get("processed", 0) for task in progress.values() if not task["outcomes"]),
         "failed": sum(task["failed"] for task in tasks) if sync else len(failures),
         "skipped": sum(task.get("skipped", 0) for task in tasks) if sync else len(skipped),
         "stage": next((stage for stage in ("discovering", "indexing", "embedding", "done")
-                       if any(task.get("stage") == stage for task in run.progress.values())), None),
-        "docs_ready": sum(task.get("docs_ready", 0) for task in run.progress.values()),
+                       if any(task.get("stage") == stage for task in progress.values())), None),
+        "docs_ready": sum(task.get("docs_ready", 0) for task in progress.values()),
         "failures": failures[:MAX_SYNC_FAILURES] if sync else failures,
         "skipped_items": skipped[:MAX_SYNC_SKIPPED],
         "tasks": tasks,

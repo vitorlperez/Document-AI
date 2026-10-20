@@ -35,6 +35,10 @@ def test_tool_names_are_the_read_only_contract():
 def test_tool_signatures_expose_no_scope_parameters():
     for name in ("run_search", "run_fetch", "run_list_sources"):
         function = getattr(tools, name)
+        if name == "run_search":
+            # space_ids only NARROWS to the linked user's own Spaces (a foreign one is "not found"); it never grants.
+            assert set(inspect.signature(function).parameters) - {"session", "principal"} == {"query", "space_ids"}
+            continue
         assert_no_scope_parameters(function)
         assert set(inspect.signature(function).parameters) - {"session", "principal"} <= {"query", "id"}
 
@@ -93,7 +97,7 @@ def test_list_sources_returns_only_public_fields(factory):
     a, _b = seed_tenant(factory, "A", "x"), seed_tenant(factory, "B", "y")
     with factory() as session:
         sources = tools.run_list_sources(session, _principal(a))["sources"]
-    assert len(sources) == 1 and set(sources[0]) == {"id", "name", "provider", "status"}
+    assert len(sources) == 1 and set(sources[0]) == {"id", "name", "provider", "status", "spaces"}
 
 
 def test_poisoned_documents_never_change_scope_or_add_links(factory):
@@ -123,7 +127,7 @@ def test_search_sanitizes_snippets_and_marks_all_results_untrusted(factory, monk
 
     a = seed_tenant(factory, "A", "Aurora")
     hit = SimpleNamespace(document_id=a.document_id, title="plano", url="https://drive.example.test/A",
-                          snippet="Aurora" + chr(0xE0041) + chr(0x202E))
+                          snippet="Aurora" + chr(0xE0041) + chr(0x202E), spaces=())
     monkeypatch.setattr(tools.RetrievalService, "search", lambda *_args, **_kwargs: [hit])
     with factory() as session:
         result = tools.run_search(session, _principal(a), "Aurora")

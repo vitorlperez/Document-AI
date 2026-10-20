@@ -6,9 +6,10 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import String, case, cast, delete, exists, func, literal, or_, select, union_all
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
 from app.ingestion.models import ProcessingJob, ProcessingJobStatus
 from app.ingestion.service import DiscoveredDocument, SyncAccessDenied
 from app.integrations.google_drive import RemoteFolder
@@ -17,14 +18,23 @@ from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.queryability import folder_is_queryable
 from app.knowledge.questions import EMBEDDING_MODEL
 from app.library.models import LibraryExclusion, LibraryNode, ManualSyncRun
+from app.library.tool_groups import (
+    LEGACY_SHARED_ROOT_NAME,
+    display_node_name,
+    provider_label,
+    tool_group,
+    tool_groups,
+)
+from app.library.visibility import restrict_to_visible
 from app.organizations.models import Membership
+from app.spaces.access import SpaceAccess, SpaceAccessResolver, SpaceRef
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
-from app.library.tool_groups import LEGACY_SHARED_ROOT_NAME, display_node_name, provider_label, tool_group, tool_groups
 
 SOURCE_ROOT_EXTERNAL_ID = "__company_library_source_root__"
 PAGE_SIZE_MAX = 100
 SEARCH_RESULT_LIMIT = 50
 SYNC_RESULT_LIMIT = 20
+MENTION_CANDIDATE_CAP = 2000  # name-narrowed candidates whose full path is built for one @ query
 
 
 @dataclass(frozen=True)
@@ -49,6 +59,7 @@ class LibraryContext:
     query_status: str
     sync_in_progress: bool = False
     source_status: str = "connected"
+    spaces: tuple[SpaceRef, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -170,15 +181,22 @@ class LibraryService:
         if member is None:
             raise SyncAccessDenied("company library access denied")
 
-    def roots(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibraryNode]:
-        self.require_member(scope=scope, user_id=user_id)
+    def access_for(
+        self, *, scope: OrganizationScope, user_id: UUID, space_ids: Collection[UUID] | None = None
+    ) -> SpaceAccess:
+        """What this person may read right now (membership check included): the one door of Block D."""
+        return SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id, space_ids=space_ids)
+
+    def roots(
+        self, *, scope: OrganizationScope, user_id: UUID, access: SpaceAccess | None = None
+    ) -> list[LibraryNode]:
+        access = access or self.access_for(scope=scope, user_id=user_id)
         return list(
             self.session.scalars(
-                select(LibraryNode)
-                .where(
+                restrict_to_visible(self.session, access, scope.organization_id, select(LibraryNode).where(
                     LibraryNode.organization_id == scope.organization_id,
                     LibraryNode.kind == "source",
-                )
+                ))
                 .order_by(LibraryNode.name, LibraryNode.id)
             )
         )
@@ -228,9 +246,10 @@ class LibraryService:
         return roots or [parent.id]
 
     def children(
-        self, *, scope: OrganizationScope, user_id: UUID, parent_id: UUID, page: int, page_size: int
+        self, *, scope: OrganizationScope, user_id: UUID, parent_id: UUID, page: int, page_size: int,
+        access: SpaceAccess | None = None,
     ) -> BrowsePage:
-        self.require_member(scope=scope, user_id=user_id)
+        access = access or self.access_for(scope=scope, user_id=user_id)
         parent = self.session.scalar(
             select(LibraryNode).where(
                 LibraryNode.id == parent_id,
@@ -239,10 +258,14 @@ class LibraryService:
         )
         if parent is None or parent.kind == "file":
             raise SyncAccessDenied("company library node unavailable")
-        statement = select(LibraryNode).where(
+        if parent.kind != "source" and self.session.scalar(restrict_to_visible(
+            self.session, access, scope.organization_id,
+            select(LibraryNode.id).where(LibraryNode.id == parent.id))) is None:
+            raise SyncAccessDenied("company library node unavailable")  # same answer as a node that does not exist
+        statement = restrict_to_visible(self.session, access, scope.organization_id, select(LibraryNode).where(
             LibraryNode.organization_id == scope.organization_id,
             LibraryNode.parent_id.in_(self._same_tool_roots(scope=scope, parent=parent)),
-        )
+        ))
         total = int(self.session.scalar(select(func.count()).select_from(statement.subquery())) or 0)
         items = list(
             self.session.scalars(
@@ -254,10 +277,18 @@ class LibraryService:
         return BrowsePage(items=items, page=page, page_size=page_size, total=total)
 
     def indexed_documents_under(
-        self, *, scope: OrganizationScope, user_id: UUID, node_id: UUID, allow_source: bool = False
+        self, *, scope: OrganizationScope, user_id: UUID, node_id: UUID, allow_source: bool = False,
+        access: SpaceAccess | None = None, system_view: bool = False,
     ) -> list[IndexedDocumentProvenance]:
-        """Indexed documents of every file below one folder node (any depth)."""
-        self.require_member(scope=scope, user_id=user_id)
+        """Indexed documents, in scopes the person can read, of every file below one folder node (any depth).
+
+        ``system_view`` is for administration (reprocess, remove from index) after the caller checked the admin
+        role: it acts on every scope, whatever the Spaces of the person."""
+        if system_view:
+            self.require_member(scope=scope, user_id=user_id)
+            access = None
+        else:
+            access = access or self.access_for(scope=scope, user_id=user_id)
         folder = self.session.scalar(
             select(LibraryNode).where(
                 LibraryNode.id == node_id,
@@ -267,21 +298,34 @@ class LibraryService:
         )
         if folder is None:
             raise SyncAccessDenied("company library node unavailable")
-        files: list[LibraryNode] = []
-        pending = [folder.id]
-        while pending:
-            children = list(
-                self.session.scalars(
-                    select(LibraryNode).where(
-                        LibraryNode.organization_id == scope.organization_id,
-                        LibraryNode.parent_id.in_(pending),
-                    )
-                )
-            )
-            files.extend(child for child in children if child.kind == "file")
-            pending = [child.id for child in children if child.kind == "folder"]
-        documents = self.documents_for_nodes(scope=scope, nodes=files)
+        files = list(self.session.scalars(select(LibraryNode).where(
+            LibraryNode.id.in_(self._descendants_query(scope, [folder.id])), LibraryNode.kind == "file")))
+        documents = self.documents_for_nodes(scope=scope, nodes=files, access=access)
         return [reference for references in documents.values() for reference in references]
+
+    def _descendants_query(self, scope: OrganizationScope, roots):
+        """``select(id)`` of the nodes (roots included) at any depth below ``roots`` (ids or a ``select(id)``)."""
+        seeds = (LibraryNode.id.in_(roots) if hasattr(roots, "subquery")
+                 else ids_clause(self.session, LibraryNode.id, roots))
+        tree = select(LibraryNode.id).where(
+            LibraryNode.organization_id == scope.organization_id, seeds,
+        ).cte("descendants", recursive=True)
+        child = aliased(LibraryNode)
+        tree = tree.union(select(child.id).where(
+            child.parent_id == tree.c.id, child.organization_id == scope.organization_id))
+        return select(tree.c.id)
+
+    def indexed_documents_page(
+        self, *, scope: OrganizationScope, workspace_folder_id: UUID, page: int, page_size: int
+    ) -> tuple[list[Document], int]:
+        """One page of the indexed documents of a scope plus the total (the caller checked access to the folder)."""
+        base = (Document.organization_id == scope.organization_id,
+                Document.workspace_folder_id == workspace_folder_id, Document.index_status == "indexed")
+        total = int(self.session.scalar(select(func.count()).select_from(Document).where(*base)) or 0)
+        rows = list(self.session.scalars(
+            select(Document).where(*base).order_by(Document.name, Document.id)
+            .offset((page - 1) * page_size).limit(page_size)))
+        return rows, total
 
     def remove_folder_catalog(self, *, scope: OrganizationScope, node_id: UUID) -> None:
         """Remove only the explicitly selected local subtree, retaining siblings and source."""
@@ -296,13 +340,13 @@ class LibraryService:
         while children := list(self.session.scalars(select(LibraryNode.id).where(
             LibraryNode.organization_id == scope.organization_id,
             LibraryNode.source_id == node.source_id,
-            LibraryNode.parent_id.in_(levels[-1]),
+            ids_clause(self.session, LibraryNode.parent_id, levels[-1]),
         ))):
             levels.append(children)
         nodes = list(self.session.scalars(select(LibraryNode).where(
             LibraryNode.organization_id == scope.organization_id,
             LibraryNode.source_id == node.source_id,
-            LibraryNode.id.in_([item for level in levels for item in level]),
+            ids_clause(self.session, LibraryNode.id, [item for level in levels for item in level]),
         )))
         self._remember_exclusions(scope=scope, source_id=node.source_id,
                                   items={item.external_id: item.kind for item in nodes})
@@ -311,13 +355,16 @@ class LibraryService:
             self.session.execute(delete(LibraryNode).where(
                 LibraryNode.organization_id == scope.organization_id,
                 LibraryNode.source_id == node.source_id,
-                LibraryNode.id.in_(ids),
+                ids_clause(self.session, LibraryNode.id, ids),
             ))
         self.session.flush()
 
-    def workspace_provenance(self, *, scope: OrganizationScope, node: LibraryNode) -> list[UUID]:
-        """Return only sync-scope UUIDs that currently index this file.
+    def workspace_provenance(
+        self, *, scope: OrganizationScope, node: LibraryNode, access: SpaceAccess | None
+    ) -> list[UUID]:
+        """Return only sync-scope UUIDs that currently index this file (and the person may read).
 
+        ``access=None`` is the system view (unrestricted); member-facing callers always pass theirs.
         The tree itself is provider-centric; this metadata makes an overlap
         auditable without turning each synchronization back into a visual silo.
         """
@@ -332,14 +379,21 @@ class LibraryService:
                     WorkspaceFolder.source_id == node.source_id,
                     Document.external_file_id == node.external_id,
                     Document.index_status == "indexed",
+                    *self._readable_folders(access, Document.workspace_folder_id),
                 )
                 .distinct()
                 .order_by(Document.workspace_folder_id)
             )
         )
 
+    def _readable_folders(self, access: SpaceAccess | None, column) -> tuple:
+        """Predicate keeping only scopes the person can read; none for the system view or the legacy answer."""
+        if access is None or access.unrestricted:
+            return ()
+        return (ids_clause(self.session, column, access.folder_ids),)
+
     def document_provenance(
-        self, *, scope: OrganizationScope, node: LibraryNode
+        self, *, scope: OrganizationScope, node: LibraryNode, access: SpaceAccess | None
     ) -> list[IndexedDocumentProvenance]:
         """Expose only local UUIDs used for authorized file management actions."""
         if node.kind != "file":
@@ -355,27 +409,30 @@ class LibraryService:
                     WorkspaceFolder.source_id == node.source_id,
                     Document.external_file_id == node.external_id,
                     Document.index_status == "indexed",
+                    *self._readable_folders(access, Document.workspace_folder_id),
                 )
                 .order_by(Document.workspace_folder_id, Document.id)
             )
         ]
 
     def documents_for_nodes(
-        self, *, scope: OrganizationScope, nodes: list[LibraryNode]
+        self, *, scope: OrganizationScope, nodes: list[LibraryNode], access: SpaceAccess | None
     ) -> dict[UUID, list[IndexedDocumentProvenance]]:
         """Load indexed document references for a browse page in one query."""
-        return self.documents_and_indexing_for_nodes(scope=scope, nodes=nodes)[0]
+        return self.documents_and_indexing_for_nodes(scope=scope, nodes=nodes, access=access)[0]
 
     def indexing_for_nodes(
-        self, *, scope: OrganizationScope, nodes: list[LibraryNode]
+        self, *, scope: OrganizationScope, nodes: list[LibraryNode], access: SpaceAccess | None
     ) -> dict[UUID, FileIndexing]:
         """Indexing state of each file node of a page (no document text is read)."""
-        return self.documents_and_indexing_for_nodes(scope=scope, nodes=nodes)[1]
+        return self.documents_and_indexing_for_nodes(scope=scope, nodes=nodes, access=access)[1]
 
     def documents_and_indexing_for_nodes(
-        self, *, scope: OrganizationScope, nodes: list[LibraryNode]
+        self, *, scope: OrganizationScope, nodes: list[LibraryNode], access: SpaceAccess | None
     ) -> tuple[dict[UUID, list[IndexedDocumentProvenance]], dict[UUID, FileIndexing]]:
-        """Indexed provenance and indexing state of a browse page, from one query over `documents`."""
+        """Indexed provenance and indexing state of a browse page, from one query over `documents`.
+
+        Only scopes in ``access`` count: a copy of the file in a scope the person cannot read is invisible here."""
         files = [node for node in nodes if node.kind == "file"]
         if not files:
             return {}, {}
@@ -393,8 +450,9 @@ class LibraryService:
             .where(
                 Document.organization_id == scope.organization_id,
                 WorkspaceFolder.organization_id == scope.organization_id,
-                WorkspaceFolder.source_id.in_({node.source_id for node in files}),
-                Document.external_file_id.in_({node.external_id for node in files}),
+                ids_clause(self.session, WorkspaceFolder.source_id, {node.source_id for node in files}),
+                ids_clause(self.session, Document.external_file_id, {node.external_id for node in files}),
+                *self._readable_folders(access, Document.workspace_folder_id),
             )
             .order_by(Document.workspace_folder_id, Document.id)
         ).all()
@@ -420,6 +478,69 @@ class LibraryService:
             for node in files
         }
         return provenance, indexing
+
+    def spaces_for_nodes(
+        self, *, scope: OrganizationScope, nodes: Collection[LibraryNode], access: SpaceAccess
+    ) -> dict[UUID, tuple[SpaceRef, ...]]:
+        """Space badges of a page of nodes, from the caller's own Spaces only, in a constant number of queries.
+
+        A file carries the Spaces of every readable scope that holds a live copy; a folder the union over the files
+        below it; a source root the Spaces of its readable scopes."""
+        if not access.spaces or not nodes:
+            return {}
+        org = scope.organization_id
+        files = [node for node in nodes if node.kind == "file"]
+        folders = [node for node in nodes if node.kind == "folder"]
+        sources = {node.source_id for node in nodes if node.kind == "source"}
+        folder_sets: dict[UUID, set[UUID]] = {}
+        live = (Document.organization_id == org, Document.index_status.not_in(("removed", "deleted")),
+                ids_clause(self.session, Document.workspace_folder_id, access.folder_ids))
+        if files:
+            by_key: dict[tuple[UUID, str], list[UUID]] = {}
+            for node in files:
+                by_key.setdefault((node.source_id, node.external_id), []).append(node.id)
+            for source_id, external_id, folder_id in self.session.execute(
+                select(WorkspaceFolder.source_id, Document.external_file_id, Document.workspace_folder_id)
+                .select_from(Document).join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+                .where(*live, ids_clause(self.session, WorkspaceFolder.source_id, {n.source_id for n in files}),
+                       ids_clause(self.session, Document.external_file_id, {n.external_id for n in files}))
+                .distinct()
+            ):
+                for node_id in by_key.get((source_id, external_id), ()):
+                    folder_sets.setdefault(node_id, set()).add(folder_id)
+        if folders:
+            below = select(LibraryNode.id.label("root"), LibraryNode.id.label("node")).where(
+                LibraryNode.organization_id == org, ids_clause(self.session, LibraryNode.id, [n.id for n in folders]),
+            ).cte("badge_subtree", recursive=True)
+            child = aliased(LibraryNode)
+            below = below.union(select(below.c.root, child.id).where(
+                child.parent_id == below.c.node, child.organization_id == org))
+            file_node = aliased(LibraryNode)
+            for root_id, folder_id in self.session.execute(
+                select(below.c.root, Document.workspace_folder_id)
+                .select_from(below).join(file_node, file_node.id == below.c.node)
+                .join(WorkspaceFolder, WorkspaceFolder.source_id == file_node.source_id)
+                .join(Document, (Document.workspace_folder_id == WorkspaceFolder.id)
+                      & (Document.external_file_id == file_node.external_id))
+                .where(file_node.kind == "file", *live, WorkspaceFolder.organization_id == org).distinct()
+            ):
+                folder_sets.setdefault(root_id, set()).add(folder_id)
+        if sources:
+            by_source: dict[UUID, set[UUID]] = {}
+            for folder_id, source_id in self.session.execute(
+                select(WorkspaceFolder.id, WorkspaceFolder.source_id).where(
+                    WorkspaceFolder.organization_id == org, ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),
+                    ids_clause(self.session, WorkspaceFolder.source_id, sources))
+            ):
+                by_source.setdefault(source_id, set()).add(folder_id)
+            for node in nodes:
+                if node.kind == "source":
+                    folder_sets[node.id] = by_source.get(node.source_id, set())
+        result: dict[UUID, tuple[SpaceRef, ...]] = {}
+        for node_id, folder_ids in folder_sets.items():
+            merged = {ref.id: ref for folder_id in folder_ids for ref in access.spaces_of(folder_id)}
+            result[node_id] = tuple(sorted(merged.values(), key=lambda ref: (ref.name.casefold(), str(ref.id))))
+        return result
 
     def remove_file_if_unindexed(
         self, *, scope: OrganizationScope, source_id: UUID, external_file_id: str
@@ -540,17 +661,18 @@ class LibraryService:
         return self.search_page(scope=scope, user_id=user_id, query=query, page=1, page_size=limit).items
 
     def search_page(
-        self, *, scope: OrganizationScope, user_id: UUID, query: str, page: int, page_size: int
+        self, *, scope: OrganizationScope, user_id: UUID, query: str, page: int, page_size: int,
+        access: SpaceAccess | None = None,
     ) -> BrowsePage:
-        self.require_member(scope=scope, user_id=user_id)
+        access = access or self.access_for(scope=scope, user_id=user_id)
         normalized = query.strip()
         if not normalized or len(normalized) > 500:
             raise ValueError("query must contain between 1 and 500 characters")
-        statement = select(LibraryNode).where(
+        statement = restrict_to_visible(self.session, access, scope.organization_id, select(LibraryNode).where(
             LibraryNode.organization_id == scope.organization_id,
             LibraryNode.kind.in_(["folder", "file"]),
             func.lower(LibraryNode.name).contains(normalized.lower(), autoescape=True),
-        )
+        ))
         total = int(self.session.scalar(select(func.count()).select_from(statement.subquery())) or 0)
         items = list(self.session.scalars(
             statement.order_by(LibraryNode.kind.desc(), LibraryNode.name, LibraryNode.id)
@@ -647,12 +769,15 @@ class LibraryService:
         self, *, scope: OrganizationScope, user_id: UUID, providers: list[str], node_ids: list[UUID],
         validate_references: bool = True, inventory_folder_ids: dict[UUID, UUID] | None = None,
     ) -> list[CatalogFileSnapshot]:
-        """Reauthorize persisted inventory references before reading local content."""
-        self.require_member(scope=scope, user_id=user_id)
+        """Reauthorize persisted inventory references before reading local content.
+
+        Authority is the person's own Spaces (A1): the node map, the admitted scopes and the documents read
+        are all bounded by ``access.folder_ids``, never by the organization."""
+        access = self.access_for(scope=scope, user_id=user_id)
         if not node_ids:
             return []
         normalized_providers = tool_groups(providers)
-        nodes = self._selection_nodes(scope=scope)
+        nodes = self._selection_nodes(scope=scope, access=access)
         sources = {
             source_id: provider
             for source_id, provider in self.session.execute(
@@ -661,20 +786,21 @@ class LibraryService:
                 )
             )
         }
+        admitted_folders = list(self.session.scalars(
+            select(WorkspaceFolder.id).where(
+                WorkspaceFolder.organization_id == scope.organization_id,
+                ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),
+                folder_is_queryable(),
+            )
+        ))
         ready_sources = set(
             self.session.scalars(
                 select(WorkspaceFolder.source_id).where(
                     WorkspaceFolder.organization_id == scope.organization_id,
-                    folder_is_queryable(),
+                    ids_clause(self.session, WorkspaceFolder.id, admitted_folders),
                 )
             )
         )
-        admitted_folders = list(self.session.scalars(
-            select(WorkspaceFolder.id).where(
-                WorkspaceFolder.organization_id == scope.organization_id,
-                folder_is_queryable(),
-            )
-        ))
         files: list[LibraryNode] = []
         for node_id in node_ids:
             node = nodes.get(node_id)
@@ -706,9 +832,9 @@ class LibraryService:
                 Document.organization_id == scope.organization_id,
                 WorkspaceFolder.organization_id == scope.organization_id,
                 Document.index_status == "indexed",
-                Document.workspace_folder_id.in_(admitted_folders),
-                Document.external_file_id.in_({node.external_id for node in files}),
-                WorkspaceFolder.source_id.in_({node.source_id for node in files}),
+                ids_clause(self.session, Document.workspace_folder_id, admitted_folders),
+                ids_clause(self.session, Document.external_file_id, {node.external_id for node in files}),
+                ids_clause(self.session, WorkspaceFolder.source_id, {node.source_id for node in files}),
             )
             .subquery()
         )
@@ -772,10 +898,17 @@ class LibraryService:
         return snapshots
 
     def sync_status(self, *, scope: OrganizationScope, user_id: UUID) -> list[dict]:
-        """Folder sync progress, with isolated file failures reported as partial."""
-        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        """Folder sync progress, with isolated file failures reported as partial.
+
+        Members see the scopes they can read; owners/admins see the operational state of every scope (never names
+        of files), so a failing Space they are not in is still theirs to fix."""
+        access = self.access_for(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
+        operational = access.unrestricted or access.org_admin
         folders = list(self.session.scalars(select(WorkspaceFolder).where(
-            WorkspaceFolder.organization_id == scope.organization_id)))
+            WorkspaceFolder.organization_id == scope.organization_id,
+            *(() if operational else (ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),)))))
+        listed_folder_ids = {folder.id for folder in folders}
         active_first = case((ProcessingJob.status.in_([
             ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING,
         ]), 0), else_=1)
@@ -788,6 +921,7 @@ class LibraryService:
 
         def newest_jobs(is_file_scope):
             conditions = (ProcessingJob.organization_id == scope.organization_id,
+                          ids_clause(self.session, ProcessingJob.workspace_folder_id, listed_folder_ids),
                           file_scope if is_file_scope else ~file_scope)
             # File retries cannot replace a completed/active folder-wide sync.
             job_order = ordering if not is_file_scope else (
@@ -867,6 +1001,8 @@ class LibraryService:
             DataSource.organization_id == scope.organization_id,
         ).order_by(DataSource.provider, DataSource.id)):
             spaces = [folder for folder in folders if folder.source_id == source.id]
+            if not spaces and not operational:
+                continue  # a tool with no scope the person can read does not exist for them
             source_jobs = [latest[folder.id] for folder in spaces if folder.id in latest]
             tasks = [progress.get(str(job.id), {}) for job in source_jobs]
             states = [job.status.value for job in source_jobs]
@@ -908,8 +1044,14 @@ class LibraryService:
             })
         return items
 
-    def question_contexts(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibraryContext]:
-        self.require_member(scope=scope, user_id=user_id)
+    def question_contexts(
+        self, *, scope: OrganizationScope, user_id: UUID, space_ids: Collection[UUID] | None = None,
+        access: SpaceAccess | None = None,
+    ) -> list[LibraryContext]:
+        """Scopes the person can ask about: the resolver's answer, never "every folder of the organization".
+
+        ``access`` lets a caller that already resolved this request's access avoid resolving twice."""
+        access = access or SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id, space_ids=space_ids)
         indexed_chunks = exists(
             select(DocumentChunk.id)
             .join(Document, Document.id == DocumentChunk.document_id)
@@ -942,6 +1084,7 @@ class LibraryService:
                 source_id=folder.source_id,
                 source_provider=source.provider,
                 source_status=source.status,
+                spaces=access.spaces_of(folder.id),
                 sync_in_progress=has_active_job,
                 query_status=("not_ready" if not folder_is_queryable(folder, self.session, has_embeddings=has_embeddings)
                               else "ready" if has_embeddings else "no_indexed_content" if not has_content
@@ -958,6 +1101,7 @@ class LibraryService:
                 .where(
                     WorkspaceFolder.organization_id == scope.organization_id,
                     DataSource.organization_id == scope.organization_id,
+                    ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),
                 )
                 .order_by(WorkspaceFolder.name, WorkspaceFolder.id)
             ).all()
@@ -974,7 +1118,7 @@ class LibraryService:
             .join(DataSource, DataSource.id == WorkspaceFolder.source_id)
             .where(
                 Document.organization_id == scope.organization_id,
-                Document.workspace_folder_id.in_(folder_ids),
+                ids_clause(self.session, Document.workspace_folder_id, folder_ids),
                 Document.index_status == "indexed",
                 WorkspaceFolder.organization_id == scope.organization_id,
                 folder_is_queryable(),
@@ -982,13 +1126,18 @@ class LibraryService:
             )
         ))
 
-    def _selection_nodes(self, *, scope: OrganizationScope) -> dict[UUID, LibraryNode]:
-        return {node.id: node for node in self.session.scalars(
-            select(LibraryNode).join(DataSource, DataSource.id == LibraryNode.source_id).where(
-                LibraryNode.organization_id == scope.organization_id,
-                DataSource.organization_id == scope.organization_id,
-            )
-        )}
+    def _selection_nodes(
+        self, *, scope: OrganizationScope, access: SpaceAccess | None = None
+    ) -> dict[UUID, LibraryNode]:
+        """The node map of a request. With ``access`` only the nodes the person may see are loaded (ancestors
+        included, so paths still resolve); ``None`` is the system view used by internal callers."""
+        statement = select(LibraryNode).join(DataSource, DataSource.id == LibraryNode.source_id).where(
+            LibraryNode.organization_id == scope.organization_id,
+            DataSource.organization_id == scope.organization_id,
+        )
+        if access is not None:
+            statement = restrict_to_visible(self.session, access, scope.organization_id, statement)
+        return {node.id: node for node in self.session.scalars(statement)}
 
     def _authorized_catalog_nodes(
         self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
@@ -1008,11 +1157,12 @@ class LibraryService:
         Same rule as every catalog tool; pass the `all_nodes` of an earlier result to avoid reloading
         the catalog when resolving again in the same request.
         """
+        access = self.access_for(scope=scope, user_id=user_id)
+        nodes = all_nodes if all_nodes is not None else self._selection_nodes(scope=scope, access=access)
         selection = self.resolve_question_selection(
-            scope=scope, user_id=user_id, providers=providers, mentions=mentions, all_nodes=all_nodes,
+            scope=scope, user_id=user_id, providers=providers, mentions=mentions, all_nodes=nodes, access=access,
         )
-        nodes = all_nodes if all_nodes is not None else self._selection_nodes(scope=scope)
-        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
         normalized_providers = tool_groups(providers)
         allowed_sources = {
             context.source_id
@@ -1020,12 +1170,13 @@ class LibraryService:
             if tool_group(context.source_provider) in normalized_providers
             and context.id in selection.folder_ids
         }
-        roots = [nodes[node_id] for node_id in selection.accepted_node_ids]
+        root_ids = list(dict.fromkeys(selection.accepted_node_ids))
+        under_roots = set(self.session.scalars(self._descendants_query(scope, root_ids))) if root_ids else None
         allowed: dict[UUID, LibraryNode] = {}
         for node in nodes.values():
             if node.source_id not in allowed_sources:
                 continue
-            if roots and not any(self._descends_from(node, root, nodes) for root in roots):
+            if under_roots is not None and node.id not in under_roots:
                 continue
             allowed[node.id] = node
         return AuthorizedCatalog(allowed, frozenset(selection.folder_ids), nodes)
@@ -1071,62 +1222,133 @@ class LibraryService:
         return paths
 
     def mention_candidates(
-        self, *, scope: OrganizationScope, user_id: UUID, query: str, limit: int = 20
+        self, *, scope: OrganizationScope, user_id: UUID, query: str, limit: int = 20,
+        access: SpaceAccess | None = None,
     ) -> list[MentionCandidate]:
-        self.require_member(scope=scope, user_id=user_id)
+        """``@`` suggestions, resolved in the database (spike M4/M5): only nodes that lead to indexed content in
+        a scope the person can read, narrowed by name before any path is built."""
+        access = access or self.access_for(scope=scope, user_id=user_id)
         normalized = query.strip().casefold()
         if len(normalized) > 500 or not 1 <= limit <= 50:
             raise ValueError("invalid mention search")
-        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
         eligible = [item.id for item in contexts if folder_is_queryable(item, self.session)]
-        documents = self._indexed_selection_documents(scope=scope, folder_ids=eligible)
-        indexed_files = {(source_id, external_id) for _, source_id, external_id in documents}
-        nodes = self._selection_nodes(scope=scope)
-        indexed_folder_ids: set[UUID] = set()
-        for file in nodes.values():
-            if file.kind != "file" or (file.source_id, file.external_id) not in indexed_files:
-                continue
-            current = file
-            visited = {file.id}
-            while current.parent_id is not None:
-                parent = nodes.get(current.parent_id)
-                if parent is None or parent.source_id != file.source_id or parent.id in visited:
-                    break
-                if parent.kind == "folder":
-                    indexed_folder_ids.add(parent.id)
-                visited.add(parent.id)
-                current = parent
+        if not eligible:
+            return []
         providers = {item.source_id: item.source_provider for item in contexts}
         source_statuses: dict[UUID, set[str]] = {}
         for context in contexts:
             source_statuses.setdefault(context.source_id, set()).add(context.query_status)
+        org = scope.organization_id
+        indexed_file = exists(
+            select(Document.id).select_from(Document)
+            .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
+            .join(DataSource, DataSource.id == WorkspaceFolder.source_id)
+            .where(
+                Document.organization_id == org, Document.external_file_id == LibraryNode.external_id,
+                WorkspaceFolder.source_id == LibraryNode.source_id, Document.index_status == "indexed",
+                ids_clause(self.session, Document.workspace_folder_id, eligible),
+                WorkspaceFolder.organization_id == org, folder_is_queryable(), DataSource.organization_id == org))
+        seeds = select(LibraryNode.id, LibraryNode.parent_id).where(
+            LibraryNode.organization_id == org, LibraryNode.kind == "file", indexed_file,
+        ).cte("mention_closure", recursive=True)
+        parent = aliased(LibraryNode)
+        closure = seeds.union(select(parent.id, parent.parent_id).where(
+            parent.id == seeds.c.parent_id, parent.organization_id == org))
+        # the path contains the query: its last segment sits in the node's own name or in an ancestor's name
+        last = normalized.rsplit("/", 1)[-1]
+        candidates = select(LibraryNode).where(
+            LibraryNode.organization_id == org, LibraryNode.kind.in_(["file", "folder"]),
+            LibraryNode.id.in_(select(closure.c.id)))
+        if last:
+            by_name = aliased(LibraryNode)
+            named = select(by_name.id).where(
+                by_name.organization_id == org, func.lower(by_name.name).contains(last, autoescape=True))
+            candidates = candidates.where(LibraryNode.id.in_(self._descendants_query(scope, named)))
         found: list[MentionCandidate] = []
-        for node in nodes.values():
-            if node.kind not in {"file", "folder"}:
-                continue
+        rows = list(self.session.scalars(
+            candidates.order_by(func.lower(LibraryNode.name), LibraryNode.id).limit(MENTION_CANDIDATE_CAP)))
+        nodes = self._ancestor_map(scope, rows)
+        for node in rows:
             path = self._node_path(node, nodes)
-            if path is None or normalized not in path.casefold():
+            if path is None or normalized not in path.casefold() or node.source_id not in providers:
                 continue
-            if node.kind == "file":
-                has_index = (node.source_id, node.external_id) in indexed_files
-            else:
-                has_index = node.id in indexed_folder_ids
-            if has_index and node.source_id in providers:
-                statuses = source_statuses[node.source_id]
-                query_status = (
-                    "ready" if "ready" in statuses else
-                    "no_compatible_embeddings" if "no_compatible_embeddings" in statuses else
-                    "no_indexed_content"
-                )
-                found.append(MentionCandidate(node, providers[node.source_id], path, query_status))
+            statuses = source_statuses[node.source_id]
+            query_status = (
+                "ready" if "ready" in statuses else
+                "no_compatible_embeddings" if "no_compatible_embeddings" in statuses else
+                "no_indexed_content"
+            )
+            found.append(MentionCandidate(node, providers[node.source_id], path, query_status))
         return sorted(found, key=lambda item: (item.path.casefold(), str(item.node.id)))[:limit]
+
+    def locate(
+        self, *, scope: OrganizationScope, user_id: UUID, node_id: UUID | None = None,
+        document_id: UUID | None = None, access: SpaceAccess | None = None,
+    ) -> tuple[MentionCandidate, list[LibraryNode]]:
+        """Resolve a library node (or the node of an indexed document) to what the UI needs to jump to it: the
+        mention candidate and the chain of ancestors (source first). Anything the person may not see answers like
+        a node that does not exist (``SyncAccessDenied``)."""
+        if (node_id is None) == (document_id is None):
+            raise ValueError("exactly one of node_id and document_id is required")
+        access = access or self.access_for(scope=scope, user_id=user_id)
+        org = scope.organization_id
+        if document_id is not None:
+            row = self.session.execute(
+                select(Document.external_file_id, WorkspaceFolder.source_id).join(
+                    WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id).where(
+                    Document.id == document_id, Document.organization_id == org,
+                    WorkspaceFolder.organization_id == org)).first()
+            if row is None:
+                raise SyncAccessDenied("company library node unavailable")
+            found = self.session.scalar(select(LibraryNode.id).where(
+                LibraryNode.organization_id == org, LibraryNode.source_id == row.source_id,
+                LibraryNode.external_id == row.external_file_id, LibraryNode.kind == "file"))
+            if found is None:
+                raise SyncAccessDenied("company library node unavailable")
+            node_id = found
+        nodes = self._selection_nodes(scope=scope, access=access)  # only what the person may see, ancestors included
+        node = nodes.get(node_id)
+        path = self._node_path(node, nodes) if node is not None else None
+        if node is None or path is None or node.kind not in ("file", "folder"):
+            raise SyncAccessDenied("company library node unavailable")
+        chain: list[LibraryNode] = []
+        current = node
+        while current.parent_id is not None:
+            current = nodes[current.parent_id]
+            chain.append(current)
+        chain.reverse()
+        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
+        provider = next((item.source_provider for item in contexts if item.source_id == node.source_id), None)
+        if provider is None:
+            raise SyncAccessDenied("company library node unavailable")
+        statuses = {item.query_status for item in contexts if item.source_id == node.source_id}
+        query_status = (
+            "ready" if "ready" in statuses else
+            "no_compatible_embeddings" if "no_compatible_embeddings" in statuses else "no_indexed_content")
+        return MentionCandidate(node, provider, path, query_status), chain
+
+    def _ancestor_map(self, scope: OrganizationScope, nodes: Collection[LibraryNode]) -> dict[UUID, LibraryNode]:
+        """The given nodes and every ancestor, enough to build their paths (one recursive CTE)."""
+        if not nodes:
+            return {}
+        up = select(LibraryNode.id, LibraryNode.parent_id).where(
+            LibraryNode.organization_id == scope.organization_id,
+            ids_clause(self.session, LibraryNode.id, [node.id for node in nodes]),
+        ).cte("ancestors", recursive=True)
+        parent = aliased(LibraryNode)
+        up = up.union(select(parent.id, parent.parent_id).where(
+            parent.id == up.c.parent_id, parent.organization_id == scope.organization_id))
+        return {node.id: node for node in self.session.scalars(select(LibraryNode).where(
+            LibraryNode.id.in_(select(up.c.id))))}
 
     def resolve_question_selection(
         self, *, scope: OrganizationScope, user_id: UUID, providers: list[str],
         mentions: list[tuple[str, UUID]], all_nodes: dict[UUID, LibraryNode] | None = None,
+        access: SpaceAccess | None = None,
     ) -> QuestionSelection:
-        self.require_member(scope=scope, user_id=user_id)
-        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        access = access or self.access_for(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
         selected = [item for item in contexts if
                     tool_group(item.source_provider) in tool_groups(providers)]
         eligible = [item for item in selected if folder_is_queryable(item, self.session)]
@@ -1134,7 +1356,7 @@ class LibraryService:
         folder_ids = [item.id for item in eligible]
         if not mentions:
             return QuestionSelection(folder_ids, None, coverage, [])
-        nodes = all_nodes if all_nodes is not None else self._selection_nodes(scope=scope)
+        nodes = all_nodes if all_nodes is not None else self._selection_nodes(scope=scope, access=access)
         source_providers = {item.source_id: item.source_provider for item in selected}
         documents = self._indexed_selection_documents(scope=scope, folder_ids=folder_ids)
         document_ids: set[UUID] = set()
@@ -1144,10 +1366,10 @@ class LibraryService:
                 raise ValueError("mention is unavailable")
             if self._node_path(node, nodes) is None:
                 raise ValueError("mention is unavailable")
-            matching_files = [node] if kind == "file" else [
-                file for file in nodes.values() if file.kind == "file" and self._descends_from(file, node, nodes)
-            ]
-            keys = {(file.source_id, file.external_id) for file in matching_files}
+            keys = {(node.source_id, node.external_id)} if kind == "file" else {
+                (source_id, external_id) for source_id, external_id in self.session.execute(
+                    select(LibraryNode.source_id, LibraryNode.external_id).where(
+                        LibraryNode.id.in_(self._descendants_query(scope, [node.id])), LibraryNode.kind == "file"))}
             matched = {document_id for document_id, source_id, external_id in documents
                        if (source_id, external_id) in keys}
             if not matched:
@@ -1163,8 +1385,8 @@ class LibraryService:
 
         Fails closed: an unknown/foreign node, a vanished root or a node outside the roots is denied.
         """
-        self.require_member(scope=scope, user_id=user_id)
-        nodes = self._selection_nodes(scope=scope)
+        access = self.access_for(scope=scope, user_id=user_id)
+        nodes = self._selection_nodes(scope=scope, access=access)
         roots = []
         for root_id in dict.fromkeys(root_ids or []):
             root = nodes.get(root_id)
@@ -1183,13 +1405,15 @@ class LibraryService:
         return mentions
 
     def recent_syncs(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibrarySync]:
-        self.require_member(scope=scope, user_id=user_id)
+        access = self.access_for(scope=scope, user_id=user_id)
+        operational = access.unrestricted or access.org_admin
         rows = self.session.execute(
             select(ProcessingJob, WorkspaceFolder)
             .join(WorkspaceFolder, WorkspaceFolder.id == ProcessingJob.workspace_folder_id)
             .where(
                 ProcessingJob.organization_id == scope.organization_id,
                 WorkspaceFolder.organization_id == scope.organization_id,
+                *(() if operational else (ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),)),
             )
             .order_by(
                 case(
@@ -1327,7 +1551,7 @@ class LibraryService:
         stale = list(self.session.scalars(select(LibraryNode).where(
             LibraryNode.source_id == source.id,
             LibraryNode.kind == "file",
-            LibraryNode.external_id.in_(gone),
+            ids_clause(self.session, LibraryNode.external_id, gone),
         )))
         parents = {node.parent_id for node in stale if node.parent_id is not None}
         for node in stale:

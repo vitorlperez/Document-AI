@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, String, Uuid
+from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Index, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, CreatedAtMixin, UUIDPrimaryKeyMixin
@@ -22,6 +22,10 @@ class Organization(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         String(24), nullable=False, default="welcome", server_default="welcome"
     )
     onboarding_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # ADR-0021 rollout switch: off (legacy) -> shadow (serve legacy, log divergence) -> enforce.
+    spaces_resolver_mode: Mapped[str] = mapped_column(
+        String(8), nullable=False, default="off", server_default="off"
+    )
 
 
 class Membership(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
@@ -60,6 +64,7 @@ class MembershipInvitation(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    space_ids: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
 
 
 class PlatformStaff(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):

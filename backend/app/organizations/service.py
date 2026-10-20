@@ -1,4 +1,5 @@
 import secrets
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from uuid import UUID
@@ -11,6 +12,8 @@ from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.organizations.models import Membership, MembershipInvitation, MembershipRole, Organization
+from app.spaces import enrollment
+from app.spaces.models import SPACE_ROLE_MANAGER, Space, SpaceMember
 
 
 class MembershipAlreadyExists(ValueError):
@@ -48,13 +51,24 @@ class OrganizationService:
             self.session.add(user)
             self.session.flush()
 
-        organization = Organization(name=name)
+        organization = Organization(name=name, spaces_resolver_mode=enrollment.new_org_mode())
         self.session.add(organization)
         self.session.flush()
         membership = Membership(
             organization_id=organization.id, user_id=user.id, role=MembershipRole.OWNER, is_active=True
         )
         self.session.add(membership)
+        self.session.flush()
+        geral = Space(
+            organization_id=organization.id, name="Geral", name_key="geral", is_default=True,
+            description="Espaço inicial — todos os membros e todas as pastas", created_by_user_id=user.id,
+        )
+        self.session.add(geral)
+        self.session.flush()
+        self.session.add(SpaceMember(
+            organization_id=organization.id, space_id=geral.id, user_id=user.id, role=SPACE_ROLE_MANAGER,
+            added_by_user_id=user.id,
+        ))
         self.session.flush()
         self._record_membership_audit(
             organization_id=organization.id,
@@ -74,6 +88,9 @@ class OrganizationService:
         except IntegrityError as error:
             self.session.rollback()
             raise MembershipAlreadyExists("active membership already exists for this organization") from error
+        enrollment.enroll_member(
+            self.session, scope.organization_id, user_id, added_by_user_id=actor_user_id
+        )
         self._record_membership_audit(
             organization_id=scope.organization_id,
             actor_user_id=actor_user_id or user_id,
@@ -111,6 +128,27 @@ class OrganizationService:
             )
         )
 
+    def people(self, *, scope: OrganizationScope, actor_user_id: UUID) -> list[tuple[UUID, str]]:
+        """Minimal (user_id, email) list for owner/admin or a manager of at least one live Space."""
+        role = self.session.scalar(select(Membership.role).where(
+            Membership.organization_id == scope.organization_id, Membership.user_id == actor_user_id,
+            Membership.is_active.is_(True)))
+        if role is None:
+            raise InvitationNotAllowed("not a member of this organization")
+        if role not in (MembershipRole.OWNER, MembershipRole.ADMIN) and self.session.scalar(
+            select(SpaceMember.id).join(Space, Space.id == SpaceMember.space_id).where(
+                SpaceMember.organization_id == scope.organization_id, SpaceMember.user_id == actor_user_id,
+                SpaceMember.role == SPACE_ROLE_MANAGER, SpaceMember.removed_at.is_(None),
+                Space.archived_at.is_(None)).limit(1)
+        ) is None:
+            raise InvitationNotAllowed("owner, admin or space manager required")
+        return [
+            (user_id, email) for user_id, email in self.session.execute(
+                select(User.id, User.email).join(Membership, Membership.user_id == User.id).where(
+                    Membership.organization_id == scope.organization_id, Membership.is_active.is_(True)
+                ).order_by(User.email))
+        ]
+
     def change_membership_role(
         self, *, scope: OrganizationScope, actor_user_id: UUID, membership_id: UUID, role: MembershipRole
     ) -> Membership:
@@ -128,7 +166,8 @@ class OrganizationService:
         return membership
 
     def create_invitation(
-        self, *, scope: OrganizationScope, actor_user_id: UUID, email: str, role: MembershipRole
+        self, *, scope: OrganizationScope, actor_user_id: UUID, email: str, role: MembershipRole,
+        space_ids: Sequence[UUID] | None = None,
     ) -> tuple[MembershipInvitation, str]:
         if role not in {MembershipRole.ADMIN, MembershipRole.MEMBER}:
             raise InvitationInvalid("only admin or member invitations are allowed")
@@ -142,6 +181,9 @@ class OrganizationService:
         )
         if owner is None:
             raise InvitationNotAllowed("only an owner can manage invitations")
+        space_ids = list(dict.fromkeys(space_ids)) if space_ids else None
+        if space_ids is not None and len(enrollment.valid_space_ids(self.session, scope.organization_id, space_ids)) != len(space_ids):
+            raise InvitationInvalid("space not found")
         normalized_email = _canonical_email(email)
         pending = self.session.scalar(
             select(MembershipInvitation).where(
@@ -165,6 +207,7 @@ class OrganizationService:
             token_hash=_hash_token(raw_token),
             invited_by_user_id=actor_user_id,
             expires_at=datetime.now(UTC) + timedelta(days=7),
+            space_ids=[str(item) for item in space_ids] if space_ids else None,
         )
         self.session.add(invitation)
         self.session.flush()
@@ -200,6 +243,16 @@ class OrganizationService:
             self.session.rollback()
             raise InvitationInvalid("invitation is invalid") from error
         invitation.accepted_at = datetime.now(UTC)
+        joined = enrollment.enroll_member(
+            self.session, invitation.organization_id, user.id,
+            [UUID(item) for item in invitation.space_ids] if invitation.space_ids else None,
+            added_by_user_id=invitation.invited_by_user_id,
+        )
+        if not joined and invitation.space_ids:
+            # Every chosen Space was archived after the invitation: never leave the person with no Space.
+            enrollment.enroll_member(
+                self.session, invitation.organization_id, user.id, added_by_user_id=invitation.invited_by_user_id
+            )
         self._record_invitation_audit(
             organization_id=invitation.organization_id,
             actor_user_id=user.id,
@@ -245,6 +298,7 @@ class OrganizationService:
             raise InvitationInvalid("membership is invalid")
         membership.is_active = False
         membership.deactivated_at = datetime.now(UTC)
+        enrollment.deactivate_member(self.session, scope.organization_id, membership.user_id, actor_user_id)
         self._record_membership_audit(
             organization_id=scope.organization_id,
             actor_user_id=actor_user_id,

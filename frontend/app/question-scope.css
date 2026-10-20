@@ -12,3 +12,10 @@
 @media (max-width: 639px) { .question-scope-count { display: none; } }
 .question-scope-warning, .question-scope-empty { width: 100%; color: var(--warn-fg); font-size: 11px; line-height: 1.5; }
 .question-scope-warning button { margin-left: 5px; text-decoration: underline; }
+
+/* Botão "Espaços" no composer, ao lado de Ferramentas (mesmo trigger/menu; o menu abre para cima) */
+.space-scope { flex-wrap: nowrap; }
+.space-scope-label { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.space-scope-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 10px; color: var(--muted-foreground); font-size: 12px; font-weight: 600; min-width: 0; }
+.composer-scopes { display: flex; align-items: center; flex-wrap: wrap; gap: 0 4px; min-width: 0; }
+@media (max-width: 639px) { .space-scope .question-scope-menu { left: auto; right: 0; width: min(280px, calc(100vw - 32px)); } }

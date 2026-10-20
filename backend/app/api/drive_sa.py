@@ -23,6 +23,7 @@ from app.integrations.google_drive_sa import (
 )
 from app.integrations.google_drive_sa_service import DriveSaConnectionService
 from app.integrations.http import RemoteThrottled
+from app.spaces.service import SpaceDenied, SpaceNotFound
 
 logger = logging.getLogger("document_intelligence.integration")
 
@@ -62,10 +63,12 @@ class VerifyInput(BaseModel):
 
 class LinkInput(BaseModel):
     folder_id: str = Field(min_length=10, max_length=128)
+    space_ids: list[UUID] | None = Field(default=None, max_length=50)
 
 
 class BatchInput(BaseModel):
     folder_ids: list[str] = Field(min_length=1, max_length=20)
+    space_ids: list[UUID] | None = Field(default=None, max_length=50)
 
 
 @contextmanager
@@ -79,6 +82,10 @@ def api_errors():
         ) from None
     except SaRequestError as error:
         raise HTTPException(error.status, {"code": error.code}) from None
+    except SpaceNotFound:
+        raise HTTPException(404, {"code": "space_not_found"}) from None
+    except SpaceDenied:
+        raise HTTPException(403, {"code": "forbidden"}) from None
     except FolderAccessLost:
         raise HTTPException(404, {"code": "not_shared"}) from None
     except RobotUnavailable:
@@ -210,6 +217,7 @@ def link(
             user_id=user.id,
             source_id=source_id,
             folder_id=payload.folder_id,
+            space_ids=payload.space_ids,
         )
         return {
             "link_id": str(linked.id),
@@ -238,6 +246,7 @@ def link_batch(
                 user_id=user.id,
                 source_id=source_id,
                 folder_ids=payload.folder_ids,
+                space_ids=payload.space_ids,
             )
         }
 

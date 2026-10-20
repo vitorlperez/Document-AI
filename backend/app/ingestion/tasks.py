@@ -69,6 +69,10 @@ def beat_schedule(interval_minutes: int, sa_enabled: bool = False) -> dict[str, 
             "task": "document_intelligence.ingestion.purge_extraction_cache",
             "schedule": timedelta(days=1),
         },
+        "purge-hidden-derived": {
+            "task": "document_intelligence.ingestion.purge_hidden_derived",
+            "schedule": timedelta(days=1),
+        },
         "weekly-what-changed-digest": {
             "task": "document_intelligence.ingestion.weekly_digest",
             "schedule": crontab(day_of_week=1, hour=8, minute=0),
@@ -161,7 +165,11 @@ def drive_sa_maintenance_task():
 def build_robot_provisioner(session, settings):
     """Worker-only: needs the provisioner credential, which the API process never receives."""
     from app.integrations.google_drive_sa_service import key_cipher
-    from app.integrations.google_sa_provisioner import IamProvisionerClient, ProvisionerFatal, RobotProvisioner
+    from app.integrations.google_sa_provisioner import (
+        IamProvisionerClient,
+        ProvisionerFatal,
+        RobotProvisioner,
+    )
 
     if not settings.google_sa_provisioner_key_b64:
         raise ProvisionerFatal("provisioner_credential_missing")
@@ -449,6 +457,18 @@ def purge_extraction_cache_task() -> int:
         removed = purge_cache(session)
         session.commit()
         return removed
+
+
+@celery_app.task(name="document_intelligence.ingestion.purge_hidden_derived")
+def purge_hidden_derived_task() -> dict[str, int]:
+    """Replace derived content hidden by an access loss ≥ 24 h ago with tombstones (ADR-0021 §8.4)."""
+    from app.knowledge.derived import purge_hidden_derived
+
+    session_factory = build_session_factory(build_engine(get_settings()))
+    with session_factory() as session:
+        counts = purge_hidden_derived(session)
+        session.commit()
+        return counts
 
 
 def _semantic_provider(settings: Settings) -> OpenAIQuestionProvider | None:

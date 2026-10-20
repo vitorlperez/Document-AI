@@ -2,7 +2,7 @@ from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
 from app.audit_usage.models import UsageRecord
-from app.audit_usage.service import MONTHLY_LIMITS
+from app.audit_usage.service import monthly_limits
 from app.automations import executor
 from app.automations.executor import execute_run
 from app.automations.models import Automation, AutomationRun
@@ -260,7 +260,7 @@ def test_quota_exhausted_marks_run_and_warns_creator(corpus):  # noqa: F811
     now = datetime.now(UTC)
     with factory.begin() as session:
         session.add(UsageRecord(organization_id=org, period_start=date(now.year, now.month, 1), metric="questions",
-                                quantity=MONTHLY_LIMITS["questions"]))
+                                quantity=monthly_limits()["questions"]))
     client.post(f"/organizations/{org}/automations/{created['id']}/run")
     provider = ScriptedProvider(base)
     assert run_pending(factory, provider) == ["quota"]

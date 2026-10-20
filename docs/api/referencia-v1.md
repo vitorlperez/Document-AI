@@ -8,14 +8,17 @@ Envie `Authorization: Bearer $KEY` via HTTPS. Nunca grave o segredo em URLs ou l
 
 | Método/caminho | Escopo | Retorno |
 |---|---|---|
-| GET /v1/whoami | search:read | organização, escopos, raízes |
-| GET /v1/sources | search:read | contextos disponíveis no escopo |
-| POST /v1/search | search:read | results: id, title, url, snippet, page_number, source_provider |
+| GET /v1/whoami | search:read | organização, escopos, raízes e `spaces` (os Espaços do membro vinculado) |
+| GET /v1/sources | search:read | contextos disponíveis no escopo, cada um com `spaces` |
+| POST /v1/search | search:read | results: id, title, url, snippet, page_number, source_provider, `spaces` |
 | GET /v1/documents/{id} | documents:read | texto, metadados, content_trust; truncado em 100.000 caracteres |
 | POST /v1/ask | ask:run | resposta e citações sanitizadas; exige PUBLIC_API_ASK_ENABLED=true |
 | GET /v1/openapi.json | público | contrato OpenAPI 3.1 |
 
-search aceita `{ "query": "Aurora", "limit": 10, "node_ids": [] }`. query: 1–500 caracteres; limit: 1–20; node_ids: até 20 IDs internos de arquivos/pastas. ask aceita question (1–1000 caracteres) e node_ids. Seleções só podem estreitar as raízes da chave; não escolhem organização ou usuário. Não há paginação v1. A busca lexical usa OR sobre termos relevantes. Documentos fora do escopo ou inexistentes devolvem o mesmo 404.
+search aceita `{ "query": "Aurora", "limit": 10, "node_ids": [] }`. query: 1–500 caracteres; limit: 1–20; node_ids: até 20 IDs internos de arquivos/pastas. ask aceita question (1–1000 caracteres) e node_ids. Seleções só podem estreitar as raízes da chave; não escolhem organização ou usuário. 
+**Espaços.** O alcance de uma chave é a interseção entre o que o membro que a criou lê hoje, pelos Espaços dos quais participa, e os `node_ids` da chave. Ser Owner/Admin da organização não dá leitura de um Espaço em que o membro não está: é preciso entrar nele. Se o membro sair de um Espaço, o alcance da chave diminui na requisição seguinte, sem trocar o segredo. `space_ids` (opcional em `/v1/search` e `/v1/ask`, até 50 IDs) só estreita a interseção; um Espaço que não é do membro responde 404 `space not found`, igual a um que não existe. `spaces` lista `{id, name}` apenas dos Espaços do próprio membro. Na criação, a chave devolve `reach` com os Espaços e o número de arquivos que ela alcança naquele momento. No MCP, `search` aceita `space_ids` com a mesma regra e devolve `spaces` por resultado; `list_sources` devolve `spaces` por fonte.
+
+Não há paginação v1. A busca lexical usa OR sobre termos relevantes. Documentos fora do escopo ou inexistentes devolvem o mesmo 404.
 
 ```sh
 curl -H "Authorization: Bearer $KEY" "$API/v1/whoami"

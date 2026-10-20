@@ -16,6 +16,13 @@ Banco → serviços: queries filtradas pela organização. Serviços → OpenAI:
 | I-5 | Chamadas autenticadas auditadas sem conteúdo. | `backend/tests/unit/test_access_audit.py::test_records_hash_and_length_but_never_the_query_text` |
 | I-6 | Revogação, expiração e desativação do membro falham fechadas. | `backend/tests/unit/test_principal.py::test_every_failure_is_the_same_invalid_credential` |
 
+## Espaços (ADR-0021)
+| ID | Ameaça | Mitigação e teste |
+|---|---|---|
+| T-ESP-1 | Elevação: chave de Owner/Admin que não está no Espaço lê o conteúdo dele. | O alcance é sempre `U(membro vinculado) ∩ node_ids`; admin não é leitor (`backend/tests/api/test_public_v1_spaces.py`, `test_mcp_server_spaces.py`) |
+| T-ESP-2 | Persistência: acesso que sobrevive à saída do Espaço (token ou chave já emitidos). | Resolução a cada requisição, sem cache; sair do Espaço reduz a chave e a conexão MCP na chamada seguinte (`test_public_v1_spaces.py::test_removing_the_person_from_a_space_narrows_the_key_on_the_next_request`) |
+| T-ESP-3 | Divulgação: `space_ids` ou `node_ids` usados para sondar a existência de Espaços ou nós alheios. | `space_ids` só estreita; Espaço alheio, nó oculto e inexistente têm a mesma resposta 404; a auditoria não grava nomes de Espaço (`test_public_v1_spaces_reporting.py`) |
+
 ## STRIDE por canal
 | Canal | Ameaça | Mitigação e teste |
 |---|---|---|

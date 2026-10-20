@@ -22,6 +22,7 @@ from app.knowledge.models import Document, DocumentChunk  # noqa: F401
 from app.library.models import LibraryNode  # noqa: F401
 from app.notifications.models import Notification, NotificationPreference  # noqa: F401
 from app.organizations.models import Membership, Organization  # noqa: F401
+from app.spaces.models import Space, SpaceFolderGrant, SpaceMember  # noqa: F401
 from app.workspaces.models import WorkspaceFolder  # noqa: F401
 
 config = context.config

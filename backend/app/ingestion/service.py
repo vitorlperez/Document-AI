@@ -11,8 +11,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog, SavedQuery
-from app.audit_usage.service import UsageLimitExceeded, UsageService
+from app.audit_usage.service import UsageLimitExceeded, UsageService, active_document_limit
+from app.core.access_errors import SyncAccessDenied
 from app.core.scoping import OrganizationScope
+from app.core.sqlids import ids_clause
 from app.ingestion.blocks import ExtractedBlock
 from app.ingestion.extraction import (
     ELIGIBLE_MIME_TYPES,  # noqa: F401 -- compatibility re-export
@@ -28,10 +30,6 @@ from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 PROCESSING_VERSION = "v2"
 JOB_LEASE = timedelta(minutes=20)
 
-
-
-class SyncAccessDenied(PermissionError):
-    pass
 
 
 class ManagedDocumentNotFound(ValueError):
@@ -260,6 +258,19 @@ class IngestionService:
                 .order_by(Document.name, Document.id)
             )
         )
+
+    def document_counts(
+        self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_id: UUID
+    ) -> dict[str, int]:
+        """Operational counts per index status; no file names (admin view of a folder they cannot read)."""
+        self.require_admin(scope=scope, user_id=user_id)
+        self.require_folder(scope=scope, workspace_folder_id=workspace_folder_id)
+        rows = self.session.execute(
+            select(Document.index_status, func.count())
+            .where(Document.organization_id == scope.organization_id, Document.workspace_folder_id == workspace_folder_id)
+            .group_by(Document.index_status)
+        )
+        return {status: count for status, count in rows}
 
     def remove_indexed_document(
         self,
@@ -556,7 +567,7 @@ class IngestionService:
                     select(Document).where(
                         Document.organization_id == job.organization_id,
                         Document.workspace_folder_id == job.workspace_folder_id,
-                        Document.external_file_id.in_(tombstones),
+                        ids_clause(self.session, Document.external_file_id, tombstones),
                     )
                 )
                 for document in removed_documents:
@@ -1006,7 +1017,7 @@ class IngestionService:
             .select_from(Document)
             .where(Document.organization_id == organization_id, Document.index_status == "indexed")
         )
-        if active_count is not None and active_count >= (self.settings.active_document_limit if self.settings else 500):
+        if active_count is not None and active_count >= active_document_limit(self.settings):
             raise UsageLimitExceeded("organization active document limit reached")
 
 

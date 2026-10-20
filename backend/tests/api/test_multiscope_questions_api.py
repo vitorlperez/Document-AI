@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import select
 
 from app.audit_usage.models import UsageRecord
-from app.audit_usage.service import MONTHLY_LIMITS
+from app.audit_usage.service import monthly_limits
 from app.identity.models import User
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
@@ -242,7 +242,7 @@ def test_broad_scope_quota_blocks_model_and_preserves_counter(corpus):
                 organization_id=organization_id,
                 period_start=date(now.year, now.month, 1),
                 metric="questions",
-                quantity=MONTHLY_LIMITS["questions"],
+                quantity=monthly_limits()["questions"],
             )
         )
     response = ask(client, organization_id, scope="organization")
@@ -251,7 +251,7 @@ def test_broad_scope_quota_blocks_model_and_preserves_counter(corpus):
     with factory() as session:
         assert (
             session.query(UsageRecord).filter_by(metric="questions").one().quantity
-            == MONTHLY_LIMITS["questions"]
+            == monthly_limits()["questions"]
         )
 
 

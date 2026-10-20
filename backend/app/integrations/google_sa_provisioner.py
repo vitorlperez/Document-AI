@@ -261,7 +261,7 @@ class RobotProvisioner:
     def _commit_or_revoke(self, key):
         try:
             self.session.commit()
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.session.rollback()
             try:
                 self.iam.delete_key(key["client_email"], key["private_key_id"])
@@ -298,7 +298,7 @@ class RobotProvisioner:
         account_id = robot_account_id(
             self.settings.google_sa_key_encryption_key.get_secret_value(), source.organization_id
         )
-        project, identity, key = self._create_robot(account_id, display_name(source.organization_id))
+        _project, identity, key = self._create_robot(account_id, display_name(source.organization_id))
         identity.status = "assigned"
         identity.organization_id = source.organization_id
         identity.assigned_at = self.now()
@@ -347,7 +347,7 @@ class RobotProvisioner:
         created = 0
         for _ in range(max(size - free, 0)):
             try:
-                project, identity, key = self._create_robot("arq-" + secrets.token_hex(6), display_name(None))
+                _project, identity, key = self._create_robot("arq-" + secrets.token_hex(6), display_name(None))
             except ProvisionerRetry:
                 self.session.rollback()
                 break

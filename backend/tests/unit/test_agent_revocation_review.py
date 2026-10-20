@@ -12,6 +12,7 @@ for approved policy versus existing coverage/authorization requirements.
 import json
 import re
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 import httpx
 import pytest
@@ -27,6 +28,8 @@ from app.knowledge.questions import GeneratedAnswer
 from app.library.models import LibraryNode
 from app.library.service import LibraryService
 from app.organizations.models import Membership
+from app.spaces.access import SpaceAccessResolver
+from app.spaces.models import Space, SpaceFolderGrant, SpaceMember
 from tests.unit.test_document_agent import Classifies
 from tests.unit.test_semantic_questions import chunk, context
 from tests.unit.test_semantic_questions import session as semantic_session  # noqa: F401
@@ -168,6 +171,19 @@ def revoke(case, mode):
         ))
         member.is_active = False
         case.allowed_ids.clear()
+    elif mode == "space_member_removed":  # T-G2: enforce on; the person was in the Space that granted the folder
+        case.org.spaces_resolver_mode = "enforce"
+        space = Space(organization_id=case.org.id, name="RH", name_key="rh")
+        case.session.add(space)
+        case.session.flush()
+        case.session.add_all([
+            SpaceFolderGrant(organization_id=case.org.id, space_id=space.id, workspace_folder_id=case.workspace.id,
+                             disclosure={}),
+            SpaceMember(organization_id=case.org.id, space_id=space.id, user_id=case.user.id, role="member",
+                        removed_at=datetime.now(UTC))])
+        case.allowed_ids.clear()
+        case.session.flush()
+        assert not SpaceAccessResolver(case.session).resolve(scope=case.scope, user_id=case.user.id).folder_ids
     else:
         raise AssertionError(f"Unknown fixture mode: {mode}")
     case.session.commit()
@@ -187,7 +203,7 @@ def persisted_snapshot(case):
 
 
 REVOKED = ["node_removed_partial", "node_removed_total", "document_deindexed", "scope_restricted",
-           "folder_denied", "provider_excluded", "membership_inactive"]
+           "folder_denied", "provider_excluded", "membership_inactive", "space_member_removed"]
 ANSWERABLE = REVOKED[:4]
 
 
@@ -205,9 +221,9 @@ def test_policy_classifier_never_receives_entire_contaminated_answer(semantic_se
     try:
         follow(case, provider)
     except DENIALS:
-        assert mode in {"folder_denied", "provider_excluded", "membership_inactive"}
+        assert mode in {"folder_denied", "provider_excluded", "membership_inactive", "space_member_removed"}
     except ValueError as error:
-        assert mode in {"folder_denied", "provider_excluded"}
+        assert mode in {"folder_denied", "provider_excluded", "space_member_removed"}
         assert str(error) == "mention is unavailable"
     payload = json.dumps(provider.classifier_inputs, ensure_ascii=False)
     # Even the portion derived from a still-authorized source must disappear:

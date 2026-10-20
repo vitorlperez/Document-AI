@@ -1,7 +1,7 @@
 /** Chamadas do modo "e-mail-robô". Único ponto a ajustar se o contrato (specs/google/drive-sa-api-contract.md) mudar.
  * Todas as rotas levam `organization_id` na query; erros chegam como `{detail:{code}}` e viram códigos da UI (drive-share-logic). */
-import { API_BASE, ApiError } from "./types-and-api";
-import { verifyCodeFor, type BatchRow, type DetectedFolder, type FolderLink, type VerifyResult } from "./drive-share-logic";
+import { API_BASE, ApiError, api } from "./types-and-api";
+import { verifyCodeFor, type LinkSpaceOption, type BatchRow, type DetectedFolder, type FolderLink, type VerifyResult } from "./drive-share-logic";
 
 /** `status`: "provisioning" enquanto o worker cria o robô exclusivo da organização (poll em `status`); "ready" já traz o e-mail. */
 export type ProvisionStatus = "provisioning" | "ready" | "failed";
@@ -20,9 +20,12 @@ export type DriveShareApi = {
   provisioning(sourceId: string): Promise<DriveShareEnable>;
   inbox(sourceId: string): Promise<InboxFolder[]>;
   verify(sourceId: string, urlOrId: string): Promise<VerifyResult>;
-  link(sourceId: string, folderId: string): Promise<LinkResult>;
+  /** `spaceIds`: Espaços que passarão a ver a pasta (T-F6b no backend). Omitido ⇒ o servidor usa o Espaço padrão. */
+  link(sourceId: string, folderId: string, spaceIds?: string[]): Promise<LinkResult>;
   /** Verifica e conecta várias pastas de uma vez; uma linha por pasta, falha em uma não aborta as demais. */
-  linkBatch(sourceId: string, folderIds: string[]): Promise<BatchRow[]>;
+  linkBatch(sourceId: string, folderIds: string[], spaceIds?: string[]): Promise<BatchRow[]>;
+  /** Espaços que a pessoa pode escolher ao ligar uma pasta. Opcional: indisponível ⇒ o passo "Quem poderá ver" é omitido. */
+  listSpaces?(organizationId: string): Promise<LinkSpaceOption[]>;
   unlink(sourceId: string, linkId: string, purge?: boolean): Promise<void>;
   recheck(sourceId: string): Promise<void>;
   /** Primeira sincronização da pasta recém-vinculada (rota atual da Biblioteca); falha aqui não desfaz o vínculo. */
@@ -64,10 +67,11 @@ export const driveShareApi: DriveShareApi = {
       throw asApiError(error);
     }
   },
-  link: async (sourceId, folderId) => { try { return await call<LinkResult>(`${base(sourceId)}/folders`, post({ folder_id: folderId })); } catch (e) { throw asApiError(e); } },
-  linkBatch: async (sourceId, folderIds) => { try { return (await call<{ results: BatchRow[] }>(`${base(sourceId)}/folders/batch`, post({ folder_ids: folderIds }))).results; } catch (e) { throw asApiError(e); } },
+  link: async (sourceId, folderId, spaceIds) => { try { return await call<LinkResult>(`${base(sourceId)}/folders`, post({ folder_id: folderId, ...(spaceIds?.length ? { space_ids: spaceIds } : {}) })); } catch (e) { throw asApiError(e); } },
+  linkBatch: async (sourceId, folderIds, spaceIds) => { try { return (await call<{ results: BatchRow[] }>(`${base(sourceId)}/folders/batch`, post({ folder_ids: folderIds, ...(spaceIds?.length ? { space_ids: spaceIds } : {}) }))).results; } catch (e) { throw asApiError(e); } },
   unlink: async (sourceId, linkId, purge = false) => { try { await call<unknown>(`${base(sourceId)}/folders/${encodeURIComponent(linkId)}?purge=${purge ? "true" : "false"}`, { method: "DELETE" }); } catch (e) { throw asApiError(e); } },
   recheck: async (sourceId) => { try { await call<unknown>(`${base(sourceId)}/recheck`, post()); } catch (e) { throw asApiError(e); } },
+  listSpaces: async (organizationId) => { try { return await api<LinkSpaceOption[]>(`/organizations/${encodeURIComponent(organizationId)}/spaces`); } catch (e) { throw asApiError(e); } },
   startSync: async (workspaceFolderId) => { try { await call<unknown>(`/library/workspaces/${encodeURIComponent(workspaceFolderId)}/reprocess`, post()); } catch (e) { throw asApiError(e); } },
   state: async (sourceId, status = "connected") => {
     // `GET .../status` devolve o e-mail do robô sem criar nada (não chama enable); `GET .../folders` lista os vínculos (inclui suspect/access_lost/removed).
