@@ -9,10 +9,11 @@ import { Spinner, btn } from "../ui";
 import { driveShareApi, type DriveShareApi, type InboxFolder, type DriveShareState, type ProvisionStatus } from "./drive-share-api";
 import {
   ROLE_HINT, SAMPLE_FOLDER_LINK, WORKSPACE_BLOCK_MESSAGE, POLL_INTERVAL_MS, batchRowView, batchSummary, connectLabel, formatCount, foundFoldersLabel, initialPollState, isSelected, itRequestText,
-  knownAncestors, nestedWarning, nestedWarningText, parseDriveFolderLink, pollTick, relativeSync, resumePoll, retryableIds, selectedIds, syncTargets, toggleAll, unlinkConfirmCopy, unlinkedFolders, verifyErrorMessage,
-  type BatchRow, type FolderLink, type SelectionChoices,
+  canLink, defaultSpaceSelection, knownAncestors, nestedSeparationHint, nestedWarning, nestedWarningText, toggleSpace, parseDriveFolderLink, pollTick, relativeSync, resumePoll, retryableIds, selectedIds, syncTargets, toggleAll, unlinkConfirmCopy, unlinkedFolders, verifyErrorMessage,
+  type BatchRow, type FolderLink, type LinkSpaceOption, type SelectionChoices,
 } from "./drive-share-logic";
 import { ApiError, messageFor, type Folder, type Source } from "./types-and-api";
+import { DISCLOSURE_TEXT } from "./spaces-api";
 import { driveCardActions, driveCardStatus, driveConnectionIssue, filterDriveFolders, summarizeDriveFolders, unifiedDriveFolders, type DriveMethodKey, type UnifiedFolder } from "./drive-unified-logic";
 import "./drive-share-flow.css";
 
@@ -94,6 +95,9 @@ export function DriveShareFlow({ organizationId, organizationName, existingSourc
   const [paste, setPaste] = useState(""); const [pasteError, setPasteError] = useState<string | null>(null); const [pasteChecking, setPasteChecking] = useState(false);
   const [batch, setBatch] = useState<BatchState | null>(preview?.batch ?? null);
   const [syncNote, setSyncNote] = useState("");
+  // Espaços que verão as pastas ligadas. `null` = lista indisponível (o passo é omitido e o servidor usa o Espaço padrão).
+  const [spaces, setSpaces] = useState<LinkSpaceOption[] | null>(null);
+  const [spaceIds, setSpaceIds] = useState<string[]>([]);
   const [announce, setAnnounce] = useState("");
 
   const [pendingSource, setPendingSource] = useState<string | null>(null);
@@ -124,6 +128,13 @@ export function DriveShareFlow({ organizationId, organizationName, existingSourc
     }, PROVISION_POLL_MS);
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [pendingSource, client, settle, preview]);
+
+  useEffect(() => {
+    if (preview || !client.listSpaces) return;
+    let alive = true;
+    void client.listSpaces(organizationId).then((items) => { if (!alive || items.length === 0) return; setSpaces(items); setSpaceIds((current) => current.length ? current : defaultSpaceSelection(items)); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [client, organizationId, preview]);
 
   // Todas as pastas conhecidas (inbox + coladas por link); só as não vinculadas podem ser conectadas.
   const all = useMemo(() => [...inbox, ...extras.filter((e) => !inbox.some((f) => f.id === e.id))], [inbox, extras]);
@@ -190,7 +201,7 @@ export function DriveShareFlow({ organizationId, organizationName, existingSourc
     setStep(3); setSyncNote("");
     setBatch({ phase: "running", ids: [...new Set([...previous.map((r) => r.folder_id), ...ids])], rows: previous, failure: null });
     try {
-      const fresh = await client.linkBatch(robot.sourceId, ids);
+      const fresh = await client.linkBatch(robot.sourceId, ids, spaces ? spaceIds : undefined);
       const rows = [...previous.filter((r) => !ids.includes(r.folder_id)), ...fresh];
       setBatch((b) => ({ phase: "done", ids: b?.ids ?? ids, rows, failure: null }));
       const targets = syncTargets(fresh);
@@ -218,7 +229,7 @@ export function DriveShareFlow({ organizationId, organizationName, existingSourc
       {enableError && <div className="drive-alert" data-tone="error" role="alert"><CircleAlert size={18} aria-hidden="true" /><div><p className="font-semibold">Não foi possível preparar o acesso.</p><p>{enableError}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={btn("secondary", "sm")} onClick={enable}><RefreshCw size={14} aria-hidden="true" />Tentar de novo</button><button type="button" className={btn("ghost", "sm")} onClick={onUseOAuth}>Usar “Entrar com a conta Google”</button></div></div></div>}
 
       {robot && step === 1 && <StepOne robot={robot.email} folders={folders} poll={poll} checking={checking} noneFound={noneFound} hasExisting={Boolean(existingSource)} onResume={() => setPoll(resumePoll)} onContinue={() => void continueFromStepOne()} onSkipToPick={() => setStep(2)} onPaste={() => setStep(2)} onUseOAuth={onUseOAuth} organizationName={organizationName} />}
-      {robot && step === 2 && <StepTwo robot={robot.email} folders={folders} all={all} choices={choices} setChoices={setChoices} picked={picked.length} poll={poll} onResume={() => setPoll(resumePoll)} paste={paste} setPaste={(v) => { setPaste(v); setPasteError(null); }} pasteError={pasteError} pasteChecking={pasteChecking} onAddPasted={() => void addPasted()} onConnect={() => void connectSelected(picked)} onBack={() => setStep(1)} />}
+      {robot && step === 2 && <StepTwo robot={robot.email} folders={folders} all={all} choices={choices} setChoices={setChoices} picked={picked.length} poll={poll} onResume={() => setPoll(resumePoll)} paste={paste} setPaste={(v) => { setPaste(v); setPasteError(null); }} pasteError={pasteError} pasteChecking={pasteChecking} onAddPasted={() => void addPasted()} spaces={spaces} spaceIds={spaceIds} setSpaceIds={setSpaceIds} onConnect={() => void connectSelected(picked)} onBack={() => setStep(1)} />}
       {robot && step === 3 && batch && <StepThree robot={robot.email} all={all} batch={batch} syncNote={syncNote} onRetryFailed={() => void connectSelected(retryableIds(batch.rows), batch.rows)} onRetryAll={() => void connectSelected(batch.ids)} onBack={() => { setStep(2); setBatch(null); }} onChooseScope={() => onChooseScope(robot.sourceId)} onOpenLibrary={onOpenLibrary} onDone={onClose} />}
     </section>
   </ModalOverlay>;
@@ -264,7 +275,7 @@ function StepOne({ robot, folders, poll, checking, noneFound, hasExisting, onRes
   </div>;
 }
 
-function StepTwo({ robot, folders, all, choices, setChoices, picked, poll, onResume, paste, setPaste, pasteError, pasteChecking, onAddPasted, onConnect, onBack }: { robot: string; folders: InboxFolder[]; all: InboxFolder[]; choices: SelectionChoices; setChoices: (updater: (c: SelectionChoices) => SelectionChoices) => void; picked: number; poll: ReturnType<typeof initialPollState>; onResume: () => void; paste: string; setPaste: (v: string) => void; pasteError: string | null; pasteChecking: boolean; onAddPasted: () => void; onConnect: () => void; onBack: () => void }) {
+function StepTwo({ robot, folders, all, choices, setChoices, picked, poll, onResume, paste, setPaste, pasteError, pasteChecking, onAddPasted, spaces, spaceIds, setSpaceIds, onConnect, onBack }: { spaces: LinkSpaceOption[] | null; spaceIds: string[]; setSpaceIds: (updater: (current: string[]) => string[]) => void; robot: string; folders: InboxFolder[]; all: InboxFolder[]; choices: SelectionChoices; setChoices: (updater: (c: SelectionChoices) => SelectionChoices) => void; picked: number; poll: ReturnType<typeof initialPollState>; onResume: () => void; paste: string; setPaste: (v: string) => void; pasteError: string | null; pasteChecking: boolean; onAddPasted: () => void; onConnect: () => void; onBack: () => void }) {
   const now = Date.now();
   const allOn = folders.length > 0 && picked === folders.length;
   return <div className="drive-step">
@@ -275,17 +286,23 @@ function StepTwo({ robot, folders, all, choices, setChoices, picked, poll, onRes
         const hintId = `drive-pick-${f.id}-hint`;
         return <li key={f.id} data-checked={checked || undefined} data-nested={parent ? "" : undefined}>
           <label className="drive-check drive-pick-row"><input type="checkbox" checked={checked} aria-describedby={parent ? hintId : undefined} onChange={() => setChoices((c) => ({ ...c, [f.id]: !checked }))} /><FolderClosed size={20} aria-hidden="true" /><span className="min-w-0 flex-1"><b className="drive-folder-name">{f.name}</b><span className="drive-folder-meta">{f.via === "link" ? "adicionada por link" : f.shared_by_email ? `compartilhada por ${f.shared_by_email}` : "compartilhada com o ArquivIO"}{f.shared_at ? ` · ${relativeSync(f.shared_at, now).replace("sync ", "")}` : ""}</span></span></label>
-          {parent && <p id={hintId} className="drive-nested-hint" data-active={warn ? "" : undefined}><CircleAlert size={14} aria-hidden="true" />{nestedWarningText(parent.name)}</p>}
+          {parent && <p id={hintId} className="drive-nested-hint" data-active={warn ? "" : undefined}><CircleAlert size={14} aria-hidden="true" />{nestedWarningText(parent.name)}{spaces && spaces.length > 1 ? ` ${nestedSeparationHint}` : ""}</p>}
         </li>; })}</ul>
       {poll.phase === "paused" ? <WaitingLine poll={poll} onResume={onResume} /> : <p className="drive-note drive-live-note"><Spinner size={12} />Novas pastas compartilhadas aparecem aqui sozinhas.</p>}
     </> : <><p className="drive-lead">Ainda não apareceu nenhuma pasta compartilhada com <span className="drive-mono">{robot}</span>.</p><WaitingLine poll={poll} onResume={onResume} /></>}
+    {spaces && <fieldset className="drive-spaces" aria-describedby="drive-spaces-disclosure">
+      <legend className="drive-lead">Quem poderá ver {picked === 1 ? "esta pasta" : "estas pastas"}?</legend>
+      <ul className="drive-spaces-list">{spaces.map((space) => <li key={space.id}><label className="drive-check"><input type="checkbox" checked={spaceIds.includes(space.id)} onChange={() => setSpaceIds((current) => toggleSpace(current, space.id))} /><span>{space.name}{space.is_default ? " (padrão)" : ""}</span></label></li>)}</ul>
+      <p id="drive-spaces-disclosure" className="drive-note">{DISCLOSURE_TEXT}</p>
+      {!canLink({ spaceIds }) && <p className="drive-field-error" role="alert"><CircleAlert size={14} aria-hidden="true" />Escolha pelo menos um Espaço para conectar.</p>}
+    </fieldset>}
     <form className="drive-paste" noValidate onSubmit={(e) => { e.preventDefault(); onAddPasted(); }}>
       <label htmlFor="drive-link" className="drive-lead">{folders.length > 0 ? "Não apareceu? Cole o link da pasta:" : "Ou cole o link da pasta:"}</label>
       <div className="drive-paste-row"><input id="drive-link" type="url" inputMode="url" autoComplete="off" spellCheck={false} placeholder={SAMPLE_FOLDER_LINK} value={paste} onChange={(e) => setPaste(e.target.value)} aria-invalid={Boolean(pasteError)} aria-describedby={pasteError ? "drive-link-error" : "drive-link-hint"} /><button type="submit" className={btn("secondary")} disabled={!paste.trim() || pasteChecking} aria-busy={pasteChecking || undefined}>{pasteChecking ? "Verificando…" : "Adicionar à lista"}</button></div>
       <p id="drive-link-hint" className="drive-note">Pode ser o link de uma subpasta de uma pasta já compartilhada. Links de “qualquer pessoa com o link” não são aceitos.</p>
       {pasteError && <p id="drive-link-error" className="drive-field-error" role="alert"><CircleAlert size={14} aria-hidden="true" />{pasteError} <span className="drive-mono">Exemplo: {SAMPLE_FOLDER_LINK}</span></p>}
     </form>
-    <div className="drive-actions-end drive-actions-split"><button type="button" className={btn("ghost")} onClick={onBack}><ArrowLeft size={14} aria-hidden="true" />Voltar ao passo 1</button><button type="button" className={btn("primary")} onClick={onConnect} disabled={picked === 0}>{connectLabel(picked)}</button></div>
+    <div className="drive-actions-end drive-actions-split"><button type="button" className={btn("ghost")} onClick={onBack}><ArrowLeft size={14} aria-hidden="true" />Voltar ao passo 1</button><button type="button" className={btn("primary")} onClick={onConnect} disabled={picked === 0 || !canLink({ spaceIds, spacesKnown: spaces !== null })}>{connectLabel(picked)}</button></div>
   </div>;
 }
 
