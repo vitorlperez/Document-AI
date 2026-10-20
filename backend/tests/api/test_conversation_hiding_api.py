@@ -121,5 +121,5 @@ def test_history_costs_a_constant_number_of_queries(world_api):
         ask_as(client, gateway, world, "carla", conversation_id=conversation_id)
     as_user(client, gateway, "carla")
     statements.clear()
-    assert len(history(client, world, conversation_id)["messages"]) == 16
+    assert len(history(client, world, conversation_id)["messages"]) == 12
     assert len(statements) <= first + 2
