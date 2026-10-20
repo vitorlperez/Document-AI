@@ -20,7 +20,7 @@ export function useChatSpaces(companyId: string) {
   return { spaces, selected, setSelected };
 }
 
-/** Faixa fixa sob o composer: “Procurando em: todos os meus Espaços (3)”. O clique abre o seletor (multi-seleção; vazio = todos). */
+/** Botão compacto “Espaços” ao lado de Ferramentas no composer. O clique abre o seletor (multi-seleção; vazio = todos). Com 1 Espaço só mostra o nome, sem seletor. */
 export function SpaceScopeBar({ spaces, selected, onChange, disabled }: { spaces: SpaceRef[] | null; selected: string[]; onChange: (ids: string[]) => void; disabled: boolean }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -33,11 +33,13 @@ export function SpaceScopeBar({ spaces, selected, onChange, disabled }: { spaces
   }, [open]);
   if (!spaces || spaces.length === 0) return null;
   const label = lookingInLabel(selected, spaces);
+  const chosen = selected.filter((id) => spaces.some((space) => space.id === id)).length;
+  const summary = chosen === 0 || chosen >= spaces.length ? "Todos os Espaços" : chosen === 1 ? spaces.find((space) => space.id === selected[0])?.name ?? "1 Espaço" : `${chosen} Espaços`;
   const toggle = (id: string) => onChange(selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id]);
-  if (spaces.length === 1) return <p className="space-scope-bar" role="status"><Layers size={13} aria-hidden="true" />Procurando em: <b>{label}</b></p>;
-  return <div ref={root} className="question-scope space-scope-bar">
-    <button type="button" className="space-scope-trigger" aria-expanded={open} aria-controls="space-scope-menu" disabled={disabled} onClick={() => setOpen((value) => !value)}>
-      <Layers size={13} aria-hidden="true" /><span>Procurando em: <b>{label}</b></span><ChevronDown size={14} aria-hidden="true" />
+  if (spaces.length === 1) return <p className="space-scope-chip" role="status" title={`Procurando em: ${label}`}><Layers size={14} aria-hidden="true" /><span className="space-scope-label">{label}</span></p>;
+  return <div ref={root} className="question-scope space-scope">
+    <button type="button" className="question-scope-trigger" aria-label={`Espaços: ${summary}`} aria-expanded={open} aria-controls="space-scope-menu" disabled={disabled} onClick={() => setOpen((value) => !value)}>
+      <Layers size={14} aria-hidden="true" /><span className="question-scope-summary space-scope-label">{summary}</span><ChevronDown size={15} aria-hidden="true" />
     </button>
     {open && <div id="space-scope-menu" className="question-scope-menu" role="group" aria-label="Escolher Espaços da pergunta">
       <button type="button" className="question-scope-option" aria-pressed={selected.length === 0} onClick={() => onChange([])}><span className="question-scope-check">{selected.length === 0 && <Check size={15} />}</span>Todos os meus Espaços ({spaces.length})</button>

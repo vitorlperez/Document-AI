@@ -302,11 +302,10 @@ function ConversationLibraryWorkspace({ company, onConnect, onShowTour, setError
           <div className="rounded-lg border border-line bg-panel p-2 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-sage-selected">
             <MentionComposer organizationId={company.id} value={question} onChange={setQuestion} mentions={mentions} onMentionsChange={setMentions} all={allTools} providers={queryProviders} disabled={asking || restoringConversation} textareaRef={composerRef} onSubmit={() => composerRef.current?.form?.requestSubmit()} />
             <div className="composer-toolbar flex items-center justify-between gap-2 border-t border-line-soft px-2 pt-2">
-              <div data-tour="tools"><QuestionScopePicker syncInProgress={syncInProgress || syncStatus.anySyncing} all={allTools} providers={queryProviders} contexts={scopedContexts} loading={contextLoading} disabled={asking} error={contextError} onRetry={loadOperations} onChange={(all, providers) => { setAllTools(all); setQueryProviders(providers); }} /></div>
+              <div className="composer-scopes" data-tour="tools"><QuestionScopePicker syncInProgress={syncInProgress || syncStatus.anySyncing} all={allTools} providers={queryProviders} contexts={scopedContexts} loading={contextLoading} disabled={asking} error={contextError} onRetry={loadOperations} onChange={(all, providers) => { setAllTools(all); setQueryProviders(providers); }} /><SpaceScopeBar spaces={chatSpaces.spaces} selected={chatSpaces.selected} onChange={chatSpaces.setSelected} disabled={asking} /></div>
               <div className="flex shrink-0 items-center gap-2"><span className="text-xs text-muted-foreground">{question.length}/1000</span><button disabled={!canAsk || !question.trim() || asking} aria-label={asking ? "Aguardando resposta" : "Enviar"} aria-busy={asking} className={btn("primary", "md", "composer-send")}><Send size={15} aria-hidden="true" /><span className="composer-send-label">{asking ? "Aguarde" : "Enviar"}</span></button></div>
             </div>
           </div>
-          <SpaceScopeBar spaces={chatSpaces.spaces} selected={chatSpaces.selected} onChange={chatSpaces.setSelected} disabled={asking} />
           {mentionsOutsideSelection.length > 0 && <p role="alert" className="mt-2 text-xs text-amber-800">Marque {mentionsOutsideSelection.map((item) => toolLabel(item.source_provider)).join(", ")} ou remova a menção antes de enviar.</p>}
           <p className="mt-2 text-xs text-muted-foreground">@ menciona arquivos e pastas · / abre comandos.</p>
         </form>

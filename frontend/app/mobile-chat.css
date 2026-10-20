@@ -101,6 +101,9 @@
   .product-app .chat-workspace .composer-toolbar { flex-wrap: nowrap; align-items: center; gap: 4px; padding: 0; border-top: 0; }
   .product-app .composer-toolbar > [data-tour="tools"] { flex: 1; min-width: 0; }
   .product-app .conversation-composer .question-scope { gap: 0; }
+  .product-app .conversation-composer .composer-scopes { flex-wrap: nowrap; }
+  .product-app .conversation-composer .space-scope-label { max-width: 96px; }
+  .product-app .conversation-composer .composer-scopes .question-scope-trigger { padding-inline: 6px; }
   .product-app .conversation-composer .question-scope-trigger { max-width: 100%; padding-inline: 8px; }
   /* Counts stay available to assistive technology without taking another row. */
   .product-app .conversation-composer .question-scope-count,
