@@ -1282,6 +1282,52 @@ class LibraryService:
             found.append(MentionCandidate(node, providers[node.source_id], path, query_status))
         return sorted(found, key=lambda item: (item.path.casefold(), str(item.node.id)))[:limit]
 
+    def locate(
+        self, *, scope: OrganizationScope, user_id: UUID, node_id: UUID | None = None,
+        document_id: UUID | None = None, access: SpaceAccess | None = None,
+    ) -> tuple[MentionCandidate, list[LibraryNode]]:
+        """Resolve a library node (or the node of an indexed document) to what the UI needs to jump to it: the
+        mention candidate and the chain of ancestors (source first). Anything the person may not see answers like
+        a node that does not exist (``SyncAccessDenied``)."""
+        if (node_id is None) == (document_id is None):
+            raise ValueError("exactly one of node_id and document_id is required")
+        access = access or self.access_for(scope=scope, user_id=user_id)
+        org = scope.organization_id
+        if document_id is not None:
+            row = self.session.execute(
+                select(Document.external_file_id, WorkspaceFolder.source_id).join(
+                    WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id).where(
+                    Document.id == document_id, Document.organization_id == org,
+                    WorkspaceFolder.organization_id == org)).first()
+            if row is None:
+                raise SyncAccessDenied("company library node unavailable")
+            found = self.session.scalar(select(LibraryNode.id).where(
+                LibraryNode.organization_id == org, LibraryNode.source_id == row.source_id,
+                LibraryNode.external_id == row.external_file_id, LibraryNode.kind == "file"))
+            if found is None:
+                raise SyncAccessDenied("company library node unavailable")
+            node_id = found
+        nodes = self._selection_nodes(scope=scope, access=access)  # only what the person may see, ancestors included
+        node = nodes.get(node_id)
+        path = self._node_path(node, nodes) if node is not None else None
+        if node is None or path is None or node.kind not in ("file", "folder"):
+            raise SyncAccessDenied("company library node unavailable")
+        chain: list[LibraryNode] = []
+        current = node
+        while current.parent_id is not None:
+            current = nodes[current.parent_id]
+            chain.append(current)
+        chain.reverse()
+        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
+        provider = next((item.source_provider for item in contexts if item.source_id == node.source_id), None)
+        if provider is None:
+            raise SyncAccessDenied("company library node unavailable")
+        statuses = {item.query_status for item in contexts if item.source_id == node.source_id}
+        query_status = (
+            "ready" if "ready" in statuses else
+            "no_compatible_embeddings" if "no_compatible_embeddings" in statuses else "no_indexed_content")
+        return MentionCandidate(node, provider, path, query_status), chain
+
     def _ancestor_map(self, scope: OrganizationScope, nodes: Collection[LibraryNode]) -> dict[UUID, LibraryNode]:
         """The given nodes and every ancestor, enough to build their paths (one recursive CTE)."""
         if not nodes:

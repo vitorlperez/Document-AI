@@ -206,6 +206,48 @@ def library_mention_candidates(
     } for item in items]}
 
 
+@router.get("/library/locate")
+def library_locate(
+    organization_id: UUID,
+    node_id: UUID | None = None,
+    document_id: UUID | None = None,
+    space_ids: list[UUID] | None = Query(default=None, max_length=50),
+    user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> dict[str, object]:
+    """Where a file or folder (by library node or by cited document) lives, for "ask about this" / "open in library".
+    Not visible to the caller => the same 404 as a node that does not exist."""
+    if (node_id is None) == (document_id is None):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="node_id or document_id")
+    try:
+        scope = OrganizationScope(organization_id)
+        service = LibraryService(session)
+        space_access = _caller_access(service, scope, user.id, space_ids)
+        candidate, chain = service.locate(
+            scope=scope, user_id=user.id, node_id=node_id, document_id=document_id, access=space_access)
+        badges = service.spaces_for_nodes(scope=scope, nodes=[candidate.node], access=space_access)
+    except SyncAccessDenied as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="library node not found") from error
+    except SpaceNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="space not found") from error
+    node = candidate.node
+    return {
+        "mention": {
+            "node_id": str(node.id), "kind": node.kind, "name": node.name, "source_id": str(node.source_id),
+            "source_provider": candidate.source_provider, "path": candidate.path,
+            "query_status": candidate.query_status, "spaces": _spaces(badges.get(node.id, ())),
+        },
+        "parent_id": str(node.parent_id) if node.parent_id else None,
+        "ancestors": [
+            {"id": str(item.id), "parent_id": str(item.parent_id) if item.parent_id else None,
+             "source_id": str(item.source_id), "kind": item.kind, "external_id": item.external_id,
+             "name": display_node_name(item.kind, item.name), "mime_type": item.mime_type,
+             "source_url": item.source_url}
+            for item in chain
+        ],
+    }
+
+
 @router.get("/library/sync-status")
 def library_sync_status(
     organization_id: UUID,
