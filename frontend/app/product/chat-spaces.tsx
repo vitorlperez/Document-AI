@@ -3,6 +3,7 @@
 import { Check, ChevronDown, Layers } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { lookingInLabel } from "../question-spaces";
+import { parseSpaceFilter } from "../spaces-model";
 import type { SpaceRef } from "../spaces-model";
 import { memberSpaces } from "./spaces-api";
 import { spacesApi } from "./spaces-client";
@@ -14,7 +15,7 @@ export function useChatSpaces(companyId: string) {
   const [selected, setSelected] = useState<string[]>([]);
   useEffect(() => {
     let alive = true;
-    spacesApi.listSpaces(companyId).then((list) => { if (alive) setSpaces(memberSpaces(list)); }).catch(() => { if (alive) setSpaces(null); });
+    spacesApi.listSpaces(companyId).then((list) => { if (!alive) return; const mine = memberSpaces(list); setSpaces(mine); const fromBridge = parseSpaceFilter(window.location.search, mine); if (fromBridge.length) setSelected(fromBridge); }).catch(() => { if (alive) setSpaces(null); });
     return () => { alive = false; setSelected([]); };
   }, [companyId]);
   return { spaces, selected, setSelected };

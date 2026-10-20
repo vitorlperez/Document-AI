@@ -170,3 +170,10 @@
   .chat-topbar-history, .chat-topbar-new { display: none; }
 }
 @media (max-width: 767px) { .chat-topbar-new { display: none; } }
+
+/* Pontes Conversa ↔ Biblioteca nas fontes da resposta. */
+.source-bridge-actions { display: flex; flex-wrap: wrap; gap: 0.25rem; flex: 0 0 auto; }
+.source-bridge-actions button { display: inline-flex; align-items: center; gap: 0.25rem; min-height: 1.75rem; padding: 0.125rem 0.5rem; border-radius: 0.375rem; color: var(--color-primary); font-size: 0.6875rem; font-weight: 600; cursor: pointer; }
+.source-bridge-actions button:hover { background: var(--color-sage); }
+.source-bridge-actions button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+@media (max-width: 767px) { .source-row { flex-wrap: wrap; } .source-bridge-actions { flex-basis: 100%; padding-left: 1.5rem; } .source-bridge-actions button { min-height: 2.75rem; } }
