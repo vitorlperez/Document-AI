@@ -7,8 +7,6 @@ fora dos pacotes donos do acesso (`app/spaces`, `app/workspaces`, `app/library/s
 indiretamente via `LibraryService`/`WorkspaceService`) e registre a revisão na linha. Nunca passe `access=None`
 (visão de sistema) em código voltado a membros: o teste também proíbe isso.
 
-| Arquivo | Como chega ao conteúdo | Cobertura |
-|---|---|---|
 - `app/api/access_admin.py` — prévia de alcance da chave (`reach`) usa o resolvedor do criador — T-I2
 - `app/api/automations.py` — destinatários e escopo; visibilidade por proveniência — T-H2
 - `app/api/evidence.py` — `scoped_document`: citação em outro Espaço ⇒ 404 uniforme — T-B3/T-G1
