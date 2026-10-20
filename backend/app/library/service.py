@@ -823,10 +823,17 @@ class LibraryService:
         return snapshots
 
     def sync_status(self, *, scope: OrganizationScope, user_id: UUID) -> list[dict]:
-        """Folder sync progress, with isolated file failures reported as partial."""
-        contexts = self.question_contexts(scope=scope, user_id=user_id)
+        """Folder sync progress, with isolated file failures reported as partial.
+
+        Members see the scopes they can read; owners/admins see the operational state of every scope (never names
+        of files), so a failing Space they are not in is still theirs to fix."""
+        access = self.access_for(scope=scope, user_id=user_id)
+        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
+        operational = access.unrestricted or access.org_admin
         folders = list(self.session.scalars(select(WorkspaceFolder).where(
-            WorkspaceFolder.organization_id == scope.organization_id)))
+            WorkspaceFolder.organization_id == scope.organization_id,
+            *(() if operational else (ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),)))))
+        listed_folder_ids = {folder.id for folder in folders}
         active_first = case((ProcessingJob.status.in_([
             ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING,
         ]), 0), else_=1)
@@ -839,6 +846,7 @@ class LibraryService:
 
         def newest_jobs(is_file_scope):
             conditions = (ProcessingJob.organization_id == scope.organization_id,
+                          ids_clause(self.session, ProcessingJob.workspace_folder_id, listed_folder_ids),
                           file_scope if is_file_scope else ~file_scope)
             # File retries cannot replace a completed/active folder-wide sync.
             job_order = ordering if not is_file_scope else (
@@ -918,6 +926,8 @@ class LibraryService:
             DataSource.organization_id == scope.organization_id,
         ).order_by(DataSource.provider, DataSource.id)):
             spaces = [folder for folder in folders if folder.source_id == source.id]
+            if not spaces and not operational:
+                continue  # a tool with no scope the person can read does not exist for them
             source_jobs = [latest[folder.id] for folder in spaces if folder.id in latest]
             tasks = [progress.get(str(job.id), {}) for job in source_jobs]
             states = [job.status.value for job in source_jobs]
@@ -1274,13 +1284,15 @@ class LibraryService:
         return mentions
 
     def recent_syncs(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibrarySync]:
-        self.require_member(scope=scope, user_id=user_id)
+        access = self.access_for(scope=scope, user_id=user_id)
+        operational = access.unrestricted or access.org_admin
         rows = self.session.execute(
             select(ProcessingJob, WorkspaceFolder)
             .join(WorkspaceFolder, WorkspaceFolder.id == ProcessingJob.workspace_folder_id)
             .where(
                 ProcessingJob.organization_id == scope.organization_id,
                 WorkspaceFolder.organization_id == scope.organization_id,
+                *(() if operational else (ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),)),
             )
             .order_by(
                 case(

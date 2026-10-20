@@ -16,6 +16,7 @@ from app.ingestion.service import (
     SyncAccessDenied,
     SyncAlreadyActive,
 )
+from app.core.sqlids import ids_clause
 from app.library.manual_sync import SyncCooldown, request_run, serialize_run
 from app.library.models import LibraryNode, ManualSyncRun
 from app.library.service import (
@@ -349,19 +350,21 @@ def synchronization_history(
 ) -> dict[str, object]:
     """Combine durable manual runs and ordinary jobs without duplicate workspace tasks."""
     try:
-        LibraryService(session).require_member(scope=OrganizationScope(organization_id), user_id=user.id)
+        space_access = LibraryService(session).access_for(scope=OrganizationScope(organization_id), user_id=user.id)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=403, detail="not allowed") from error
+    operational = space_access.unrestricted or space_access.org_admin
     runs = session.scalars(select(ManualSyncRun).where(
         ManualSyncRun.organization_id == organization_id,
     ).order_by(ManualSyncRun.created_at.desc(), ManualSyncRun.id.desc()).limit(100))
-    items = [serialize_run(run) for run in runs]
+    items = [item for item in (serialize_run(run, space_access) for run in runs) if item is not None]
     jobs = session.execute(select(ProcessingJob, WorkspaceFolder).join(
         WorkspaceFolder, WorkspaceFolder.id == ProcessingJob.workspace_folder_id,
     ).where(
         ProcessingJob.organization_id == organization_id,
         WorkspaceFolder.organization_id == organization_id,
         ProcessingJob.manual_run_id.is_(None),
+        *(() if operational else (ids_clause(session, WorkspaceFolder.id, space_access.folder_ids),)),
         ~exists(select(ManualSyncRun.id).where(
             ManualSyncRun.organization_id == organization_id,
             ManualSyncRun.scope_kind == "sync",
@@ -392,13 +395,13 @@ def manual_sync_history(organization_id: UUID, user: User = Depends(current_user
                         session: Session = Depends(database_session)):
     scope = OrganizationScope(organization_id)
     try:
-        LibraryService(session).require_member(scope=scope, user_id=user.id)
+        space_access = LibraryService(session).access_for(scope=scope, user_id=user.id)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=403, detail="not allowed") from error
     runs = session.scalars(select(ManualSyncRun).where(ManualSyncRun.organization_id == organization_id,
                                                      ManualSyncRun.scope_kind != "sync")
                           .order_by(ManualSyncRun.created_at.desc(), ManualSyncRun.id.desc()).limit(100))
-    return {"items": [serialize_run(run) for run in runs]}
+    return {"items": [item for item in (serialize_run(run, space_access) for run in runs) if item is not None]}
 
 
 @router.post("/library/workspaces/{workspace_id}/reprocess", status_code=202)
