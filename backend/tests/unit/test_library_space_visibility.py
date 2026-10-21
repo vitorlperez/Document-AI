@@ -76,15 +76,6 @@ def test_a_source_without_visible_children_is_not_a_root(session):
     assert roots == [] and kids.items == []
 
 
-def test_off_and_shadow_keep_the_whole_tree(session):
-    world = seed_world(session)
-    for mode in ("off", "shadow"):
-        session.get(Organization, world.organization_id).spaces_resolver_mode = mode
-        session.flush()
-        _, kids = tree(session, world, "bruno")
-        assert names(kids.items) == files("politicas", "rh", "diretoria")
-
-
 def test_uncatalogued_nodes_are_for_admins_only(session):
     world = seed_world(session)
     session.add(LibraryNode(organization_id=world.organization_id, source_id=world.nodes and

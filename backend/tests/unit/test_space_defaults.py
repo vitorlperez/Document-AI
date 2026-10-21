@@ -15,6 +15,8 @@ from app.spaces.models import Space, SpaceFolderGrant, SpaceMember
 from app.spaces.service import SpaceService
 from app.workspaces.service import WorkspaceScope, WorkspaceService
 
+pytestmark = pytest.mark.no_auto_spaces
+
 
 @pytest.fixture()
 def session() -> Session:
@@ -56,20 +58,12 @@ def _grants(session):
     return session.scalar(select(func.count()).select_from(SpaceFolderGrant))
 
 
-def test_new_org_gets_geral_with_owner_manager_and_configured_mode(session, monkeypatch):
-    monkeypatch.setenv("SPACES_NEW_ORG_MODE", "enforce")
+def test_new_org_gets_geral_with_owner_manager(session):
     _, _, org, owner = _org(session)
     space = session.scalar(select(Space).where(Space.organization_id == org.id))
     assert (space.name, space.is_default) == ("Geral", True)
     [member] = _active_members(session, space.id)
     assert (member.user_id, member.role) == (owner.id, "manager")
-    assert session.get(Organization, org.id).spaces_resolver_mode == "enforce"
-
-
-def test_new_org_defaults_to_shadow_mode(session, monkeypatch):
-    monkeypatch.delenv("SPACES_NEW_ORG_MODE", raising=False)
-    _, _, org, _ = _org(session)
-    assert session.get(Organization, org.id).spaces_resolver_mode == "shadow"
 
 
 def test_add_membership_joins_default_space(session):

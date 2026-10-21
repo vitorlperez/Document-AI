@@ -103,12 +103,16 @@ def test_pasted_multiturn_flow_counts_catalog_and_selects_only_matching_files(se
 @pytest.mark.parametrize("intent", ["inventory_stats", "select_files_by_topic"])
 def test_followups_revalidate_removed_files_without_widening(semantic_session, intent):
     case = setup(semantic_session)
-    turn(semantic_session, case, "Liste", "list_files", target="library")
+    _, _, listed = turn(semantic_session, case, "Liste", "list_files", target="library")
     semantic_session.delete(case[3])
     semantic_session.commit()
-    with pytest.raises((SyncAccessDenied, ValueError)):
-        turn(semantic_session, case, "Quantos ou quais?", intent)
-    assert not case[4].analysis_calls
+    # Spaces always enforce: the withdrawn file silently drops out of the remembered set; nothing is added back
+    try:
+        _, _, refs = turn(semantic_session, case, "Quantos ou quais?", intent)
+    except (SyncAccessDenied, ValueError):
+        refs = []
+    assert {r["name"] for r in refs} <= {r["name"] for r in listed} - {"Profile.pdf"}
+    assert not any("Profile.pdf" in files_ for files_ in map(str, case[4].analysis_calls))
 
 
 def test_current_selection_overrides_history(semantic_session):

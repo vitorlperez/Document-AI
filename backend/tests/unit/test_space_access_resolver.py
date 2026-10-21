@@ -117,33 +117,6 @@ def test_constant_number_of_statements_regardless_of_folder_count(session):
     assert len(seen) <= 4, seen
 
 
-def test_off_mode_returns_every_folder_and_shadow_serves_legacy(session):
-    world = seed_world(session)
-    for mode in ("off", "shadow"):
-        session.get(Organization, world.organization_id).spaces_resolver_mode = mode
-        session.flush()
-        assert resolve(session, world, "daniel").folder_ids == set(world.folders.values())
-    session.get(Organization, world.organization_id).spaces_resolver_mode = "enforce"
-    session.flush()
-    assert resolve(session, world, "daniel").folder_ids == {world.folders["politicas"], world.folders["diretoria"]}
-
-
-def test_shadow_logs_divergence_counts_only(session, caplog):
-    world = seed_world(session)
-    session.get(Organization, world.organization_id).spaces_resolver_mode = "shadow"
-    session.flush()
-    with caplog.at_level("WARNING", logger="app.spaces.access"):
-        resolve(session, world, "daniel")  # legacy = 3 folders, spaces = 2 -> only_legacy == 1
-    record = next(r for r in caplog.records if r.getMessage() == "spaces.shadow_divergence")
-    assert (record.only_legacy, record.only_spaces) == (1, 0)
-    assert "Diretoria" not in caplog.text  # only counts are logged, never names
-
-
-def test_unknown_mode_fails_closed_to_spaces(session):
-    world = seed_world(session, mode="bogus")
-    assert resolve(session, world, "daniel").folder_ids == {world.folders["politicas"], world.folders["diretoria"]}
-
-
 def test_require_folders_is_one_batch_and_denies_any_outsider(session):
     world = seed_world(session)
     resolver = SpaceAccessResolver(session)
@@ -154,35 +127,6 @@ def test_require_folders_is_one_batch_and_denies_any_outsider(session):
     with pytest.raises(SyncAccessDenied):
         resolver.require_folders(scope=scope, user_id=user,
                                  workspace_folder_ids=[world.folders["rh"], world.folders["diretoria"]])
-
-
-def _set_mode(session, world, mode):
-    session.get(Organization, world.organization_id).spaces_resolver_mode = mode
-    session.flush()
-
-
-def test_shadow_never_breaks_the_legacy_answer(session, monkeypatch):
-    """B1: an unknown space_id or a failure of the Space query must not turn into 404/500 while in shadow."""
-    world = seed_world(session)
-    _set_mode(session, world, "shadow")
-    from uuid import uuid4
-    legacy = resolve(session, world, "daniel", space_ids=[uuid4()], strict=True)  # no SpaceNotFound
-    assert legacy.folder_ids == frozenset()  # B2: the filter narrows the legacy answer too
-
-    def boom(self, *args, **kwargs):
-        raise RuntimeError("spaces query down")
-
-    monkeypatch.setattr(SpaceAccessResolver, "_granted", boom)
-    assert resolve(session, world, "daniel").folder_ids == set(world.folders.values())  # legacy served
-
-
-def test_space_filter_narrows_in_off_and_shadow_too(session):
-    """B2: space_ids intersects the legacy answer instead of being a no-op."""
-    world = seed_world(session)
-    for mode in ("off", "shadow"):
-        _set_mode(session, world, mode)
-        assert resolve(session, world, "daniel", space_ids=[world.spaces["rh"]]).folder_ids == {world.folders["rh"]}
-        assert resolve(session, world, "daniel").folder_ids == set(world.folders.values())
 
 
 def test_nested_space_filters_intersect(session):
@@ -197,9 +141,23 @@ def test_nested_space_filters_intersect(session):
         assert resolve(session, world, "carla").folder_ids == {world.folders["rh"], world.folders["politicas"]}
 
 
-def test_empty_or_unknown_mode_is_enforced_never_off(session):
-    """C5: only the three known modes are honoured; everything else is the strict one."""
+
+
+def test_owner_admin_sees_only_their_spaces_plus_operational_flag(session):
+    """D: owners/admins are NOT promoted to "everything"; they read their Spaces and get ``org_admin``."""
     world = seed_world(session)
-    for mode in ("", "OFF ", "bogus"):
-        _set_mode(session, world, mode)
-        assert resolve(session, world, "daniel").folder_ids == {world.folders["politicas"], world.folders["diretoria"]}
+    eva = resolve(session, world, "eva")  # owner, member of Geral only
+    assert eva.org_admin and eva.folder_ids == {world.folders["politicas"]}
+    assert not resolve(session, world, "bruno").org_admin
+
+
+def test_strict_unknown_space_is_not_found_and_filter_narrows(session):
+    from uuid import uuid4
+
+    from app.spaces.service import SpaceNotFound
+    world = seed_world(session)
+    with pytest.raises(SpaceNotFound):
+        resolve(session, world, "daniel", space_ids=[uuid4()], strict=True)
+    assert resolve(session, world, "daniel", space_ids=[uuid4()]).folder_ids == frozenset()
+    assert resolve(session, world, "daniel", space_ids=[world.spaces["diretoria"]]).folder_ids == {
+        world.folders["diretoria"]}

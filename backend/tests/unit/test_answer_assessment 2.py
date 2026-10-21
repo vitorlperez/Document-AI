@@ -1,5 +1,6 @@
 import math
 from dataclasses import replace
+from dataclasses import replace
 from uuid import uuid4
 
 import pytest
@@ -93,7 +94,8 @@ def test_stage_runs_after_cite_on_authorized_sources(semantic_session):  # noqa:
     result, _, _ = agent.ask(scope=scope, user_id=user.id, question='Liste e resuma arquivos',
                             providers=['google_drive'], mentions=[('folder', folder.id)], history=[])
     assert len(captured) == 1
-    assert captured[0]['result'].citations == result.citations
+    assert [replace(item, spaces=()) for item in captured[0]['result'].citations] == [
+        replace(item, spaces=()) for item in result.citations]  # badges are added after assessment
 
 
 def test_assessment_deadline_is_bounded_by_request(monkeypatch):

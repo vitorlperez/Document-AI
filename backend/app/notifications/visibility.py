@@ -46,8 +46,6 @@ def notifications_visibility(session: Session, organization_id: UUID, user_id: U
     access = SpaceAccessResolver(session).resolve(scope=OrganizationScope(organization_id), user_id=user_id)
     provenance = {item.id: notification_provenance(item) for item in items}
     index = build_index(session, access, provenance.values())
-    if not index.enforcing:
-        return {item_id: True for item_id in provenance}
     lost = None
     result: dict[UUID, bool] = {}
     for item in items:

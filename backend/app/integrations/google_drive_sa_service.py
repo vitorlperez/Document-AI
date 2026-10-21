@@ -333,7 +333,7 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
 
     def check_spaces(self, scope, space_ids):
         """Refuse before touching Drive: every Space must be a live Space of this organization."""
-        if space_ids is None:
+        if not space_ids:  # none or empty: the default Space (a folder is never left outside every Space)
             return None
         ids = list(dict.fromkeys(space_ids))
         if len(enrollment.valid_space_ids(self.session, scope.organization_id, ids)) != len(ids):

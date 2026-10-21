@@ -126,7 +126,8 @@ def test_supported_answer_has_only_scoped_citations_and_never_logs_question_or_c
     assert len(result.citations) == 1
     citation = result.citations[0]
     assert (citation.document_id, citation.excerpt, citation.page_number, citation.source_url) == (evidence_chunk.document_id, evidence_text, 2, "https://drive.example.test/Briefing.pdf")
-    assert provider.answer_calls[0][1] == result.citations
+    from dataclasses import replace  # the answer's citations also carry the Space badges the model never sees
+    assert provider.answer_calls[0][1] == [replace(item, spaces=()) for item in result.citations]
     assert provider.embed_calls == [["When is launch?"]]
     assert secret not in caplog.text and "When is launch?" not in caplog.text and evidence_text not in caplog.text
 

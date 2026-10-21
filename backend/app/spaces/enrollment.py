@@ -1,10 +1,9 @@
 """Default Space enrolment hooks used by organization and workspace flows (ADR-0021 D9).
 
-Organizations that predate the backfill have no default Space: every hook is then a no-op, so legacy
-behaviour is untouched until the migration/rollout has run.
+Every organization has a default Space ("Geral"): created with the organization and guaranteed for older ones
+by migration 0038. Without it (should not happen) a hook is a no-op and the person/folder stays outside every Space.
 """
 
-import os
 from collections.abc import Collection
 from datetime import UTC, datetime
 from uuid import UUID
@@ -14,14 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.spaces.models import SPACE_ROLE_MEMBER, Space, SpaceFolderGrant, SpaceMember
 
-MODES = ("off", "shadow", "enforce")
 DISCLOSURE_TEXT_VERSION = "v1"
-
-
-def new_org_mode() -> str:
-    """Resolver mode for organizations created after the deploy (SPACES_NEW_ORG_MODE, default shadow)."""
-    mode = os.environ.get("SPACES_NEW_ORG_MODE", "shadow").strip().lower()
-    return mode if mode in MODES else "shadow"
 
 
 def default_space_id(session: Session, organization_id: UUID) -> UUID | None:
@@ -79,7 +71,7 @@ def grant_scope(
     if space_ids is None:
         default = default_space_id(session, organization_id)
         targets = [default] if default is not None else []
-    else:
+    else:  # an explicit (possibly empty) list is the caller's decision, e.g. the Drive robot grants its own
         targets = list(dict.fromkeys(space_ids))
     granted = []
     for space_id in targets:

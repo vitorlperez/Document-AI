@@ -28,11 +28,11 @@ def session() -> Session:
     engine.dispose()
 
 
-def seed_company(session: Session, *, email: str = "member@example.test") -> tuple[Organization, User, DataSource]:
+def seed_company(session: Session, *, email: str = "member@example.test", role: MembershipRole = MembershipRole.ADMIN) -> tuple[Organization, User, DataSource]:
     user, organization = User(email=email), Organization(name="Acme")
     session.add_all([user, organization])
     session.flush()
-    session.add(Membership(organization_id=organization.id, user_id=user.id, role=MembershipRole.MEMBER, is_active=True))
+    session.add(Membership(organization_id=organization.id, user_id=user.id, role=role, is_active=True))
     source = DataSource(
         organization_id=organization.id,
         provider="google_drive",
@@ -263,10 +263,8 @@ def test_projection_refreshes_remote_folder_names_and_parents(session: Session) 
         page=1,
         page_size=100,
     ).items
-    assert [(node.kind, node.name) for node in top_level] == [
-        ("folder", "Campaign archive"),
-        ("folder", "Client"),
-    ]
+    # "Client" lost its only descendant: Spaces enforce hides folders with nothing readable inside
+    assert [(node.kind, node.name) for node in top_level] == [("folder", "Campaign archive")]
     assert top_level[0].parent_id == root.id
 
 
@@ -378,8 +376,10 @@ def test_library_metadata_search_and_sync_statuses_are_member_scoped(session: Se
     folder = LibraryNode(organization_id=organization.id, source_id=source.id, parent_id=root.id, external_id="campaigns", kind="folder", name="Campaigns", mime_type=None, source_url=None)
     session.add(folder)
     session.flush()
+    session.add(LibraryNode(organization_id=organization.id, source_id=source.id, parent_id=folder.id, external_id="brief", kind="file", name="Campaign Brief.pdf", mime_type="application/pdf", source_url=None))
+    session.flush()
     result = service.search_names(scope=OrganizationScope(organization.id), user_id=user.id, query=" campaign ")
-    assert [(item.kind, item.name) for item in result] == [("folder", "Campaigns")]
+    assert [(item.kind, item.name) for item in result] == [("folder", "Campaigns"), ("file", "Campaign Brief.pdf")]
     with pytest.raises(ValueError):
         service.search_names(scope=OrganizationScope(organization.id), user_id=user.id, query="   ")
 

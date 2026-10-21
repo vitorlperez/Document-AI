@@ -42,8 +42,9 @@ class World:
     nodes: dict[str, UUID]  # "source" root plus one file node per folder key
 
 
-def seed_world(session: Session, *, mode: str = "enforce", name: str = "Acme") -> World:
-    org = Organization(name=name, spaces_resolver_mode=mode)
+def seed_world(session: Session, *, name: str = "Acme") -> World:
+    session.info["no_auto_spaces"] = True  # this world declares its own Spaces
+    org = Organization(name=name)
     session.add(org)
     session.flush()
     users: dict[str, UUID] = {}

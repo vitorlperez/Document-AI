@@ -54,16 +54,11 @@ def _folder_readable(session: Session, organization_id: UUID, user_id: UUID, wor
 
 
 def _folder_denied(session: Session, organization_id: UUID, user_id: UUID) -> HTTPException:
-    """People outside the organization stay 403; members who cannot reach the folder get a uniform 404 (I7).
-
-    The 404 contract starts with Spaces (shadow/enforce). An organization still on ``off`` keeps the legacy 403
-    (B3), so nothing a client sees changes until the rollout reaches it."""
-    row = session.execute(
-        select(Membership.id, Organization.spaces_resolver_mode)
-        .join(Organization, Organization.id == Membership.organization_id)
-        .where(Membership.organization_id == organization_id, Membership.user_id == user_id,
-               Membership.is_active.is_(True))).first()
-    if row is None or row[1] == "off":
+    """People outside the organization stay 403; members who cannot reach the folder get a uniform 404 (I7)."""
+    member = session.scalar(select(Membership.id).where(
+        Membership.organization_id == organization_id, Membership.user_id == user_id,
+        Membership.is_active.is_(True)))
+    if member is None:
         return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not allowed")
     return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workspace not found")
 

@@ -22,10 +22,6 @@ class Organization(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         String(24), nullable=False, default="welcome", server_default="welcome"
     )
     onboarding_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    # ADR-0021 rollout switch: off (legacy) -> shadow (serve legacy, log divergence) -> enforce.
-    spaces_resolver_mode: Mapped[str] = mapped_column(
-        String(8), nullable=False, default="off", server_default="off"
-    )
 
 
 class Membership(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):

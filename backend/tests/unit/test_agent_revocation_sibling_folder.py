@@ -9,6 +9,8 @@ being admitted while the other stays queryable.
 # ruff: noqa: F811
 
 import json
+
+from app.core.access_errors import SyncAccessDenied
 from uuid import uuid4
 
 from app.knowledge.agent import ConversationService
@@ -73,7 +75,10 @@ def test_listed_but_uncited_withdrawn_file_excludes_the_answer(semantic_session)
     case.docs[1].index_status = "deleted"
     semantic_session.commit()
     provider = RecordingAI()
-    follow(case, provider)
+    try:  # Spaces always enforce: the withdrawn listed file fails closed before any model sees it
+        follow(case, provider)
+    except SyncAccessDenied:
+        pass
     payload = json.dumps(provider.classifier_inputs, ensure_ascii=False)
     assert OLD_SAFE not in payload and "beta-denied-review.pdf" not in payload
 

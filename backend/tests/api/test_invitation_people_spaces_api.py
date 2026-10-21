@@ -3,6 +3,7 @@
 
 from uuid import UUID
 
+import pytest
 from sqlalchemy import select
 
 from app.identity.models import User
@@ -14,6 +15,8 @@ from tests.api.test_auth_and_invitations import (  # noqa: F401
     invitation_token,
     make_membership,
 )
+
+pytestmark = pytest.mark.no_auto_spaces
 
 
 def setup_org(auth_api):

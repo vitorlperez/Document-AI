@@ -13,5 +13,5 @@ def test_offline_sql_creates_space_tables_and_skips_backfill() -> None:
     assert result.returncode == 0, result.stderr
     for table in ("spaces", "space_members", "space_folder_grants"):
         assert f"CREATE TABLE {table}" in result.stdout
-    assert "spaces_resolver_mode" in result.stdout
+    assert "DROP COLUMN spaces_resolver_mode" in result.stdout
     assert "space_ids" in result.stdout

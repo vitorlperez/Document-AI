@@ -115,8 +115,9 @@ def test_children_of_the_drive_root_list_folders_of_both_connections_without_lea
         page = LibraryService(session).children(scope=_scope(session, a), user_id=a.user_id,
                                                 parent_id=oauth_root.id, page=1, page_size=50)
     names = {item.name for item in page.items}
-    assert "Contratos" in names and "A plano.pdf" in names
-    assert "Segredo-B" not in names and page.total == 2
+    # Spaces always enforce: the service-account root has no readable file yet, so its folder stays hidden
+    assert "A plano.pdf" in names and "Contratos" not in names
+    assert "Segredo-B" not in names and page.total == 1
 
 
 def test_legacy_root_name_never_leaks_in_mention_paths(factory):

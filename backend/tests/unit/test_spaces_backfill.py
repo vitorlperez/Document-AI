@@ -9,6 +9,9 @@ from app.organizations.models import Membership, MembershipRole, Organization
 from app.spaces.backfill import backfill_default_spaces
 from app.spaces.models import Space, SpaceFolderGrant, SpaceMember
 from app.workspaces.models import WorkspaceFolder
+import pytest
+
+pytestmark = pytest.mark.no_auto_spaces
 
 
 def _engine():
@@ -49,7 +52,6 @@ def test_backfill_creates_geral_with_everyone_and_every_folder():
         members = s.execute(select(SpaceMember.role).where(SpaceMember.space_id == space.id)).scalars().all()
         assert sorted(members) == ["manager", "member"]  # owner -> manager; inactive membership skipped
         assert len(s.scalars(select(SpaceFolderGrant).where(SpaceFolderGrant.space_id == space.id)).all()) == 2
-        assert s.get(Organization, org_id).spaces_resolver_mode == "shadow"
 
 
 def test_backfill_is_idempotent():
@@ -62,13 +64,6 @@ def test_backfill_is_idempotent():
     with sessionmaker(bind=engine)() as s:
         assert len(s.scalars(select(Space)).all()) == 1
         assert len(s.scalars(select(SpaceMember)).all()) == 2
-
-
-def test_new_organizations_default_to_off_mode():
-    engine = _engine()
-    org_id = _legacy_org(engine)
-    with sessionmaker(bind=engine)() as s:
-        assert s.get(Organization, org_id).spaces_resolver_mode == "off"
 
 
 def test_reupgrade_after_downgrade_restores_geral_grants_and_missing_members():
@@ -90,14 +85,12 @@ def test_reupgrade_after_downgrade_restores_geral_grants_and_missing_members():
         s.flush()
         newcomer_id = newcomer.id
         s.add(Membership(organization_id=org_id, user_id=newcomer.id, role=MembershipRole.MEMBER, is_active=True))
-        s.execute(update(Organization).where(Organization.id == org_id).values(spaces_resolver_mode="enforce"))
     with engine.begin() as connection:
         assert backfill_default_spaces(connection) == 1
     with sessionmaker(bind=engine)() as s:
         assert len(s.scalars(select(SpaceFolderGrant).where(SpaceFolderGrant.space_id == geral_id)).all()) == 2
         active = s.scalars(select(SpaceMember).where(SpaceMember.removed_at.is_(None))).all()
         assert len(active) == 2 and any(m.user_id == newcomer_id for m in active)
-        assert s.get(Organization, org_id).spaces_resolver_mode == "enforce"  # completing never changes the mode
     with engine.begin() as connection:
         assert backfill_default_spaces(connection) == 0
 
@@ -147,3 +140,45 @@ def test_backfill_uses_one_statement_per_table_not_one_per_row():
         backfill_default_spaces(connection)
     inserts = [st for st, many in seen if st.lstrip().upper().startswith("INSERT")]
     assert len(inserts) <= 3  # spaces, members, grants (executemany batches)
+
+
+def test_coverage_migration_covers_people_and_folders_in_no_space_and_is_idempotent():
+    from app.spaces.backfill import ensure_default_space_coverage
+
+    engine = _engine()
+    org_id = _legacy_org(engine)
+    with engine.begin() as connection:
+        assert ensure_default_space_coverage(connection) == 1  # creates Geral with everyone and both folders
+    with sessionmaker(bind=engine).begin() as s:
+        rh = Space(organization_id=org_id, name="RH", name_key="rh")
+        s.add(rh)
+        s.flush()
+        newcomer = User(email="late@example.test")
+        s.add(newcomer)
+        s.flush()
+        s.add(Membership(organization_id=org_id, user_id=newcomer.id, role=MembershipRole.MEMBER, is_active=True))
+        s.add(WorkspaceFolder(organization_id=org_id, source_id=s.scalars(select(WorkspaceFolder.source_id)).first(),
+                              external_folder_id="c", name="c", uniform_access_confirmed=True, status="ready"))
+    with engine.begin() as connection:
+        assert ensure_default_space_coverage(connection) == 1
+    with engine.begin() as connection:
+        assert ensure_default_space_coverage(connection) == 0
+    with sessionmaker(bind=engine)() as s:
+        geral = s.scalar(select(Space).where(Space.is_default.is_(True)))
+        assert len(s.scalars(select(SpaceFolderGrant).where(SpaceFolderGrant.space_id == geral.id)).all()) == 3
+        assert len(s.scalars(select(SpaceMember).where(SpaceMember.space_id == geral.id)).all()) == 3
+
+
+def test_coverage_migration_promotes_an_existing_geral_without_default_flag():
+    from app.spaces.backfill import ensure_default_space_coverage
+
+    engine = _engine()
+    org_id = _legacy_org(engine)
+    with sessionmaker(bind=engine).begin() as s:
+        s.add(Space(organization_id=org_id, name="Geral", name_key="geral", is_default=False))
+    with engine.begin() as connection:
+        assert ensure_default_space_coverage(connection) == 1
+    with sessionmaker(bind=engine)() as s:
+        spaces = s.scalars(select(Space)).all()
+        assert [(x.name, x.is_default) for x in spaces] == [("Geral", True)]
+        assert len(s.scalars(select(SpaceMember)).all()) == 2

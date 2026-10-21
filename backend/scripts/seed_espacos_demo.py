@@ -1,4 +1,4 @@
-"""Seed the local dev database with the Spaces demo (Acme in ``shadow``, Beta in ``enforce``).
+"""Seed the local dev database with the Spaces demo (Acme and Beta; Spaces always enforce).
 
 Run from backend against the dev database (never production):
   DATABASE_URL=postgresql+psycopg://...@localhost:5432/... .venv/bin/python -m scripts.seed_espacos_demo [--out sessions.json]
@@ -23,10 +23,9 @@ from app.core.vector import EMBEDDING_DIMENSIONS
 from app.identity.auth import IdentityService
 from app.knowledge.models import DocumentChunk
 from app.organizations.models import Membership, Organization
-from app.spaces import rollout
 from tests.spaces_helpers import seed_world
 
-DEMOS = (("Acme", "shadow"), ("Beta", "off"))
+DEMOS = ("Acme", "Beta")
 
 
 def widen_demo_embeddings(session: Session, organization_id: UUID) -> None:
@@ -47,23 +46,18 @@ def main() -> None:
     settings = get_settings()
     sessions: dict[str, dict] = {}
     with build_session_factory(build_engine(settings))() as session:
-        for name, mode in DEMOS:
+        for name in DEMOS:
             if session.scalar(select(Organization).where(Organization.name == name)):
                 raise SystemExit(f"organização {name} já existe; resete o banco antes de semear de novo")
-            world = seed_world(session, mode=mode, name=name)
+            world = seed_world(session, name=name)
             widen_demo_embeddings(session, world.organization_id)
             org = session.get(Organization, world.organization_id)
             org.onboarding_step, org.onboarding_completed_at = "complete", datetime.now(UTC)
             for membership in session.scalars(select(Membership).where(Membership.organization_id == org.id)):
                 membership.tour_completed_at = datetime.now(UTC)  # demo people skip the product tour
-            if name == "Beta":
-                session.flush()
-                if rollout.run(["enforce", "--organization", str(world.organization_id)], session) != 0:
-                    raise SystemExit("rollout recusou enforce em Beta")
             for who, user_id in world.users.items():
                 _, raw = IdentityService(session).create_session(user_id=user_id, ttl_hours=24 * 30)
-                sessions[f"{who}@{name.lower()}.test"] = {
-                    "organization": name, "mode": "enforce" if name == "Beta" else mode, "cookie": raw}
+                sessions[f"{who}@{name.lower()}.test"] = {"organization": name, "cookie": raw}
         session.commit()
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps({"cookie_name": settings.auth_session_cookie_name, "users": sessions}, indent=2))

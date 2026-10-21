@@ -111,15 +111,6 @@ def test_ask_for_a_folder_outside_the_spaces_is_denied(session):
             workspace_folder_ids=[world.folders["diretoria"]], question="reajuste?")
 
 
-def test_off_mode_matches_legacy_behaviour(session):
-    world = seed_world(session, mode="off")
-    session.get(Organization, world.organization_id)
-    for who in world.users:
-        assert {c.id for c in contexts(session, world, who)} == set(world.folders.values())
-        assert all(c.spaces == () for c in contexts(session, world, who))
-    assert set(FOLDERS) == set(world.folders)
-
-
 def test_request_filter_narrows_every_resolution_inside_it_and_never_widens(session):
     from app.spaces.filter import narrowed_to_spaces
 

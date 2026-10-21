@@ -17,6 +17,15 @@ from tests.unit.test_semantic_questions import FakeProvider, chunk, context
 from tests.unit.test_semantic_questions import session as semantic_session  # noqa: F401
 
 
+def _as_org_admin(session: Session, organization, user) -> None:
+    """These catalogue-only fixtures index no document: owners/admins are the people who see such nodes."""
+    from app.organizations.models import Membership, MembershipRole
+
+    session.execute(Membership.__table__.update().where(
+        Membership.organization_id == organization.id, Membership.user_id == user.id).values(role=MembershipRole.ADMIN))
+    session.flush()
+
+
 class Classifies(FakeProvider):
     """Mocked intent classifier with a fixed decision; no synthesis model."""
 
@@ -206,6 +215,7 @@ def test_direct_children_tool_is_paged_local_catalog_snapshot(
 ) -> None:
     session = semantic_session
     organization, user, workspace = context(session)
+    _as_org_admin(session, organization, user)
     parent = LibraryNode(
         organization_id=organization.id, source_id=workspace.source_id, parent_id=None,
         external_id="folder", kind="folder", name="Briefs",
@@ -474,6 +484,7 @@ def test_inventory_paginates_more_than_fifty_and_keeps_all_references(
 ) -> None:
     session = semantic_session
     organization, user, workspace = context(session)
+    _as_org_admin(session, organization, user)
     root = LibraryNode(
         organization_id=organization.id, source_id=workspace.source_id, parent_id=None,
         external_id="source-root", kind="source", name="Google Drive",

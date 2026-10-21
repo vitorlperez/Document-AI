@@ -103,17 +103,11 @@ def test_unknown_or_foreign_folder_is_404_not_403(world_api):
                        json={"query": "x"}).status_code == 404
 
 
-def test_b3_unknown_folder_keeps_403_while_spaces_are_off_and_is_404_once_they_run(world_api):
-    """B3: the uniform 404 starts with shadow/enforce; organizations still on `off` keep the legacy 403."""
+def test_unknown_folder_is_a_uniform_404_for_members_and_403_for_outsiders(world_api):
+    """B3 (decision 2026-10-20): Spaces always enforce, so the uniform 404 has no `off` exception any more."""
     from uuid import uuid4
-
-    from app.organizations.models import Organization
 
     client, factory, gateway, world, _ = world_api
     ghost = f"/workspace-folders/{uuid4()}/search?organization_id={world.organization_id}"
     as_user(client, gateway, "bruno")
-    assert client.post(ghost, json={"query": "x"}).status_code == 404  # enforce (seed default)
-    for mode, expected in (("shadow", 404), ("off", 403)):
-        with factory.begin() as session:
-            session.get(Organization, world.organization_id).spaces_resolver_mode = mode
-        assert client.post(ghost, json={"query": "x"}).status_code == expected, mode
+    assert client.post(ghost, json={"query": "x"}).status_code == 404

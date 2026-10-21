@@ -5,7 +5,7 @@ Everything gravado (answers in history, notifications, automation results, follo
 access on every read; nothing here writes. A derivative is visible only if EVERY source is still readable:
 a mixed answer cannot be partially rewritten without inventing text, so the whole item is hidden.
 
-Only the ``enforce`` rollout mode hides. ``off``/``shadow`` keep today's behaviour (the legacy answer is "everything").
+Spaces always enforce (decision 2026-10-20), so hiding always applies.
 """
 
 from collections.abc import Collection, Iterable
@@ -18,13 +18,11 @@ from sqlalchemy.orm import Session
 from app.core.sqlids import ids_clause
 from app.knowledge.models import Document
 from app.library.models import LibraryNode
-from app.organizations.models import Organization
 from app.spaces.access import SpaceAccess
 from app.workspaces.models import WorkspaceFolder
 
 HIDDEN_NOTICE = "Conteúdo ocultado por mudança de acesso."
 HIDDEN_REASON = "access_changed"
-_LEGACY_MODES = {"off", "shadow"}
 
 
 @dataclass(frozen=True)
@@ -84,22 +82,16 @@ def provenance_of_documents(session: Session, organization_id: UUID, document_id
     return Provenance(document_ids=ids, folder_ids=frozenset(folders))
 
 
-def is_enforcing(session: Session, organization_id: UUID) -> bool:
-    mode = session.scalar(select(Organization.spaces_resolver_mode).where(Organization.id == organization_id))
-    return (mode or "off") not in _LEGACY_MODES
-
-
 @dataclass
 class VisibilityIndex:
     """Answers ``visible(provenance)`` for many items from a handful of queries (never one per item)."""
 
-    enforcing: bool
     access: SpaceAccess
     documents: frozenset[UUID] = frozenset()
     nodes: frozenset[UUID] = frozenset()
 
     def visible(self, provenance: Provenance) -> bool:
-        if not self.enforcing or not provenance:
+        if not provenance:
             return True
         return (provenance.document_ids <= self.documents
                 and provenance.folder_ids <= self.access.folder_ids
@@ -108,12 +100,10 @@ class VisibilityIndex:
 
 def build_index(session: Session, access: SpaceAccess, provenances: Iterable[Provenance]) -> VisibilityIndex:
     items = list(provenances)
-    if not is_enforcing(session, access.organization_id):
-        return VisibilityIndex(False, access)
     documents = frozenset().union(*(item.document_ids for item in items)) if items else frozenset()
     nodes = frozenset().union(*(item.node_ids for item in items)) if items else frozenset()
     return VisibilityIndex(
-        True, access,
+        access,
         documents=_readable_documents(session, access, documents),
         nodes=_readable_nodes(session, access, nodes),
     )

@@ -364,7 +364,7 @@ class LibraryService:
     ) -> list[UUID]:
         """Return only sync-scope UUIDs that currently index this file (and the person may read).
 
-        ``access=None`` is the system view (unrestricted); member-facing callers always pass theirs.
+        ``access=None`` is the system view (no filter); member-facing callers always pass theirs.
         The tree itself is provider-centric; this metadata makes an overlap
         auditable without turning each synchronization back into a visual silo.
         """
@@ -387,8 +387,8 @@ class LibraryService:
         )
 
     def _readable_folders(self, access: SpaceAccess | None, column) -> tuple:
-        """Predicate keeping only scopes the person can read; none for the system view or the legacy answer."""
-        if access is None or access.unrestricted:
+        """Predicate keeping only scopes the person can read; none for the system view."""
+        if access is None:
             return ()
         return (ids_clause(self.session, column, access.folder_ids),)
 
@@ -904,7 +904,7 @@ class LibraryService:
         of files), so a failing Space they are not in is still theirs to fix."""
         access = self.access_for(scope=scope, user_id=user_id)
         contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
-        operational = access.unrestricted or access.org_admin
+        operational = access.org_admin
         folders = list(self.session.scalars(select(WorkspaceFolder).where(
             WorkspaceFolder.organization_id == scope.organization_id,
             *(() if operational else (ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),)))))
@@ -1406,7 +1406,7 @@ class LibraryService:
 
     def recent_syncs(self, *, scope: OrganizationScope, user_id: UUID) -> list[LibrarySync]:
         access = self.access_for(scope=scope, user_id=user_id)
-        operational = access.unrestricted or access.org_admin
+        operational = access.org_admin
         rows = self.session.execute(
             select(ProcessingJob, WorkspaceFolder)
             .join(WorkspaceFolder, WorkspaceFolder.id == ProcessingJob.workspace_folder_id)

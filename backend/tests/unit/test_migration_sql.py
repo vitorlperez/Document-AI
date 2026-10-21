@@ -59,7 +59,7 @@ def test_integration_migration_chain_preserves_main_revision():
     config = Config(str(BACKEND_DIR / "alembic.ini"))
     config.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261020_0037"]
+    assert len(scripts.get_heads()) == 1  # later revisions may extend the chain; the checks below pin the history
     expected = [
         ("20260930_0019", "library_exclusions"),
         ("20260930_0020", "pgvector_expand"),
@@ -80,6 +80,7 @@ def test_integration_migration_chain_preserves_main_revision():
         ("20261019_0035", "spaces"),
         ("20261019_0036", "spaces_backfill"),
         ("20261020_0037", "library_scale_indexes"),
+        ("20261020_0038", "spaces_always_enforce"),
     ]
     previous = "20260929_0018"
     for revision, slug in expected:

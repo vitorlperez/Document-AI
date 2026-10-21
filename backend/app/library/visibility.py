@@ -2,8 +2,8 @@
 
 A file is visible when some document of it lives in a scope the person can read; a folder (or a source root)
 is visible when it has a visible descendant file. Owners/admins additionally see files no scope indexes at
-all (catalogued, never synchronized into any scope): operational metadata, not content. The rollout modes
-``off``/``shadow`` answer ``unrestricted`` and nothing is filtered.
+all (catalogued, never synchronized into any scope): operational metadata, not content.
+Spaces always enforce (decision 2026-10-20): there is no unfiltered answer.
 
 v1 resolves ancestors with a recursive CTE over ``library_nodes``; a projection table can replace it behind
 the same two functions if the scale benchmark ever asks for it (plan T-D6).
@@ -34,9 +34,7 @@ def _document_of_node(organization_id: UUID):
 
 
 def visible_file_clause(session: Session, access: SpaceAccess, organization_id: UUID) -> ColumnElement[bool]:
-    """Correlated predicate on ``LibraryNode`` rows of kind file; ``true`` for the legacy (unrestricted) answer."""
-    if access.unrestricted:
-        return LibraryNode.id.is_not(None)
+    """Correlated predicate on ``LibraryNode`` rows of kind file."""
     readable = exists(
         select(Document.id).select_from(Document).join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
         .where(*_document_of_node(organization_id), Document.index_status.not_in(GONE_STATUSES),
@@ -49,10 +47,8 @@ def visible_file_clause(session: Session, access: SpaceAccess, organization_id: 
     return readable | uncatalogued
 
 
-def visible_node_ids(session: Session, access: SpaceAccess, organization_id: UUID) -> Select | None:
-    """``select(id)`` of every visible node (files and their ancestors), or ``None`` when nothing is filtered."""
-    if access.unrestricted:
-        return None
+def visible_node_ids(session: Session, access: SpaceAccess, organization_id: UUID) -> Select:
+    """``select(id)`` of every visible node (files and their ancestors)."""
     files = select(LibraryNode.id, LibraryNode.parent_id).where(
         LibraryNode.organization_id == organization_id, LibraryNode.kind == "file",
         visible_file_clause(session, access, organization_id)).cte("visible_nodes", recursive=True)
@@ -64,5 +60,4 @@ def visible_node_ids(session: Session, access: SpaceAccess, organization_id: UUI
 
 def restrict_to_visible(session: Session, access: SpaceAccess, organization_id: UUID, statement: Select) -> Select:
     """Add the visibility filter to a ``select(LibraryNode)`` statement."""
-    visible = visible_node_ids(session, access, organization_id)
-    return statement if visible is None else statement.where(LibraryNode.id.in_(visible))
+    return statement.where(LibraryNode.id.in_(visible_node_ids(session, access, organization_id)))

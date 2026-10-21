@@ -430,7 +430,7 @@ def synchronization_history(
         space_access = LibraryService(session).access_for(scope=OrganizationScope(organization_id), user_id=user.id)
     except SyncAccessDenied as error:
         raise HTTPException(status_code=403, detail="not allowed") from error
-    operational = space_access.unrestricted or space_access.org_admin
+    operational = space_access.org_admin
     runs = session.scalars(select(ManualSyncRun).where(
         ManualSyncRun.organization_id == organization_id,
     ).order_by(ManualSyncRun.created_at.desc(), ManualSyncRun.id.desc()).limit(100))

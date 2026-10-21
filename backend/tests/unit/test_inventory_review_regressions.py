@@ -3,6 +3,8 @@
 import unicodedata
 
 import pytest
+
+from app.core.access_errors import SyncAccessDenied
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 
@@ -165,8 +167,12 @@ def test_folder_scope_survives_multiple_or_empty_folder_count(semantic_session, 
     semantic_session.add(folder)
     semantic_session.commit()
     mentions = [("folder", folder.id)]
-    if not empty:
-        mentions.append(("folder", case[2].id))
+    if empty:
+        # Spaces always enforce: a folder with nothing readable inside is not a reference the person can use
+        with pytest.raises(SyncAccessDenied):
+            turn(semantic_session, case, "Quantos?", "inventory_stats", mentions=mentions)
+        return
+    mentions = [("folder", case[2].id)]
     first, _, refs = turn(semantic_session, case, "Quantos?", "inventory_stats", mentions=mentions)
     assert len(refs) == (0 if empty else 3)
     assert "não inclui subpastas" in first.answer

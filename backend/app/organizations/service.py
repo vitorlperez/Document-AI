@@ -51,19 +51,19 @@ class OrganizationService:
             self.session.add(user)
             self.session.flush()
 
-        organization = Organization(name=name, spaces_resolver_mode=enrollment.new_org_mode())
+        organization = Organization(name=name)
         self.session.add(organization)
-        self.session.flush()
-        membership = Membership(
-            organization_id=organization.id, user_id=user.id, role=MembershipRole.OWNER, is_active=True
-        )
-        self.session.add(membership)
         self.session.flush()
         geral = Space(
             organization_id=organization.id, name="Geral", name_key="geral", is_default=True,
             description="Espaço inicial — todos os membros e todas as pastas", created_by_user_id=user.id,
         )
         self.session.add(geral)
+        self.session.flush()
+        membership = Membership(
+            organization_id=organization.id, user_id=user.id, role=MembershipRole.OWNER, is_active=True
+        )
+        self.session.add(membership)
         self.session.flush()
         self.session.add(SpaceMember(
             organization_id=organization.id, space_id=geral.id, user_id=user.id, role=SPACE_ROLE_MANAGER,

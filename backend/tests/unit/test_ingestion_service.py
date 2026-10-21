@@ -710,7 +710,7 @@ def test_document_listing_rejects_cross_organization_scope(session: Session) -> 
             session=session,
         )
 
-    assert error.value.status_code == 403  # B3: organizations still on Spaces `off` keep the legacy 403
+    assert error.value.status_code == 404  # uniform 404: Spaces always enforce
     assert member.id != outsider.id
     assert UUID(str(folder.organization_id)) == organization.id
 

@@ -171,8 +171,8 @@ def revoke(case, mode):
         ))
         member.is_active = False
         case.allowed_ids.clear()
-    elif mode == "space_member_removed":  # T-G2: enforce on; the person was in the Space that granted the folder
-        case.org.spaces_resolver_mode = "enforce"
+    elif mode == "space_member_removed":  # T-G2: the person was in the Space that granted the folder
+        case.session.query(SpaceFolderGrant).filter_by(workspace_folder_id=case.workspace.id).delete()  # default-Space grant
         space = Space(organization_id=case.org.id, name="RH", name_key="rh")
         case.session.add(space)
         case.session.flush()
@@ -204,7 +204,8 @@ def persisted_snapshot(case):
 
 REVOKED = ["node_removed_partial", "node_removed_total", "document_deindexed", "scope_restricted",
            "folder_denied", "provider_excluded", "membership_inactive", "space_member_removed"]
-ANSWERABLE = REVOKED[:4]
+# Spaces always enforce: a withdrawn listed file fails closed (SyncAccessDenied) instead of being answered around
+ANSWERABLE = [mode for mode in REVOKED[:4] if mode != "document_deindexed"]
 
 
 def make_policy_case(session, mode):
@@ -221,7 +222,7 @@ def test_policy_classifier_never_receives_entire_contaminated_answer(semantic_se
     try:
         follow(case, provider)
     except DENIALS:
-        assert mode in {"folder_denied", "provider_excluded", "membership_inactive", "space_member_removed"}
+        assert mode in {"document_deindexed", "folder_denied", "provider_excluded", "membership_inactive", "space_member_removed"}
     except ValueError as error:
         assert mode in {"folder_denied", "provider_excluded", "space_member_removed"}
         assert str(error) == "mention is unavailable"
@@ -284,7 +285,7 @@ def test_policy_answer_rebuilt_from_current_sources_or_honest_insufficiency(sema
         assert re.search(r"evidência|indexad", result.answer or "", re.IGNORECASE)
 
 
-@pytest.mark.parametrize("mode", ["node_removed_partial", "node_removed_total", "document_deindexed"])
+@pytest.mark.parametrize("mode", ["node_removed_partial", "node_removed_total"])
 def test_history_is_preserved_after_context_exclusion(semantic_session, mode):
     case = make_policy_case(semantic_session, mode)
     before = persisted_snapshot(case)
@@ -378,3 +379,15 @@ def test_unavailable_listed_name_not_disclosed_to_ai_or_error(semantic_session):
         follow(case, provider)
     assert "beta-denied-review.pdf" not in str(error.value)
     assert "beta-denied-review.pdf" not in json.dumps(provider.classifier_inputs), "F-A/B: unauthorized name in AI payload"
+
+
+def test_withdrawn_listed_file_fails_closed_and_keeps_history(semantic_session):
+    case = make_policy_case(semantic_session, "document_deindexed")
+    count = len(case.history)
+    revoke(case, "document_deindexed")
+    with pytest.raises(SyncAccessDenied):
+        follow(case, RecordingAI())
+    semantic_session.rollback()
+    _, fresh = ConversationService(semantic_session).history(
+        scope=case.scope, user_id=case.user.id, conversation_id=case.conversation.id)
+    assert len(fresh) == count and fresh[-1].content == PREVIOUS

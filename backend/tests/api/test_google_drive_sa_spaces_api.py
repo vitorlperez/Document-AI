@@ -1,10 +1,12 @@
 """F-GAP-2: robot Drive folders are granted to the chosen Spaces (default Space when none)."""
 # ruff: noqa: F811
 
+import pytest
 from sqlalchemy import select
 
 from app.spaces.models import Space, SpaceFolderGrant
 from tests.api.test_google_drive_sa_api import batch_setup, google_api  # noqa: F401
+pytestmark = pytest.mark.no_auto_spaces
 
 TREE = {"contracts_0001": ("Contratos", []), "finance_00001": ("Financeiro", [])}
 ZERO = "00000000-0000-0000-0000-000000000000"

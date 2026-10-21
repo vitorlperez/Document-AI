@@ -407,7 +407,7 @@ def scoped_progress(run: ManualSyncRun, access: SpaceAccess | None) -> dict | No
 
     Members keep the tasks of scopes they can read. Owners/admins keep every task but the file names of the
     scopes they cannot read are blanked: operational metadata, never content. ``access=None`` is the system view."""
-    if access is None or access.unrestricted:
+    if access is None:
         return run.progress
     kept: dict = {}
     for key, task in run.progress.items():

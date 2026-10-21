@@ -13,6 +13,8 @@ from app.spaces.models import SpaceFolderGrant, SpaceMember
 from app.spaces.service import SpaceConflict, SpaceService
 from tests.unit.test_space_service import _org
 
+pytestmark = pytest.mark.no_auto_spaces
+
 
 @pytest.fixture()
 def session() -> Session:

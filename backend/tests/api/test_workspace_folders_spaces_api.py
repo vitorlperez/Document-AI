@@ -10,6 +10,8 @@ from tests.api.test_text_search_api import (  # noqa: F401 -- reuse the isolated
 )
 from tests.spaces_helpers import bind_login_identities, seed_world
 
+pytestmark = pytest.mark.no_auto_spaces
+
 
 @pytest.fixture()
 def world_api(search_api):  # noqa: F811
@@ -65,12 +67,3 @@ def test_admin_badges_include_every_space_granting_the_folder(world_api):
     assert [s["name"] for s in admin_view["rh"]["spaces"]] == ["Diretoria", "RH"]
     _, bruno_view = listing(client, gateway, world, "bruno")
     assert [s["name"] for s in bruno_view["rh"]["spaces"]] == ["RH"]  # Diretoria is not his to know
-
-
-def test_organization_without_spaces_keeps_the_legacy_listing(search_api):  # noqa: F811
-    client, factory, gateway = search_api
-    with factory.begin() as session:
-        world = seed_world(session, mode="off")
-        bind_login_identities(session, world)
-    _, folders = listing(client, gateway, world, "daniel")
-    assert set(folders) == {"politicas", "rh", "diretoria"}
