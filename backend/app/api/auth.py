@@ -187,7 +187,7 @@ def _custom_auth_result(request: Request, session: Session, result, return_to: s
     user = service.establish_identity(result)
     _, raw_session = service.create_session(user_id=user.id, ttl_hours=settings.auth_session_ttl_hours, provider_session_id=result.provider_session_id)
     safe_return = _safe_invitation_return_to(return_to)
-    destination = f"{settings.public_app_url.rstrip('/')}{safe_return}" if safe_return else settings.public_app_url
+    destination = f"{settings.public_app_url.rstrip('/')}{safe_return}" if safe_return else f"{settings.public_app_url.rstrip('/')}/login"
     response = JSONResponse({"status": "authenticated", "redirect_url": destination})
     response.set_cookie(settings.auth_session_cookie_name, raw_session, httponly=True, secure=settings.environment != "development", samesite="lax", max_age=settings.auth_session_ttl_hours * 3600)
     for cookie in (PENDING_VERIFICATION_COOKIE, CONTEXT_COOKIE, settings.auth_login_state_cookie_name, "document_intelligence_return_to", "document_intelligence_force_reauthentication"):
@@ -348,7 +348,7 @@ def callback(
         provider_session_id=identity.provider_session_id,
     )
     return_to = _safe_invitation_return_to(request.cookies.get("document_intelligence_return_to"))
-    destination = f"{settings.public_app_url.rstrip('/')}{return_to}" if return_to else settings.public_app_url
+    destination = f"{settings.public_app_url.rstrip('/')}{return_to}" if return_to else f"{settings.public_app_url.rstrip('/')}/login"
     response = RedirectResponse(destination, status_code=status.HTTP_302_FOUND)
     response.set_cookie(
         settings.auth_session_cookie_name,

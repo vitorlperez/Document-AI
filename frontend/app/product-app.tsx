@@ -9,12 +9,13 @@ import { DeveloperScreen } from "./product/developer-screen";
 import { ProfileScreen } from "./product/profile-screen";
 import { AdminScreen } from "./product/admin-screen";
 import { LandingPage } from "./landing-page";
+import { landingOrganizationName, shouldAutoEnterOrganization } from "./landing-session.mjs";
 import { Brand } from "./brand";
 import { hostedLoginQuery, safeInvitationReturnTo } from "./product/auth-navigation.mjs";
 import { oauthErrorMessage } from "./provider-labels";
 import { API_BASE, SESSION_PATH, type Screen, type Company, type User, ApiError, api, isUuid, isInvitationToken, messageFor, companyPath } from "./product/types-and-api";
 import { OrganizationPicker } from "./product/org-picker";
-import { writeActiveOrganizationId } from "./product/active-organization";
+import { readActiveOrganizationId, writeActiveOrganizationId } from "./product/active-organization";
 import { Loading, SignIn, InvitationAcceptance, Onboarding, InvalidCompany } from "./product/auth-screens";
 import { NotificationToast, Shell, type ToastAction } from "./product/shell";
 import { CompanyDashboard } from "./product/chat-workspace";
@@ -60,11 +61,11 @@ export function ProductApp({ screen }: { screen: Screen }) {
         if (controller.signal.aborted) return;
         setOnboarding({ ...progress, organizationId: params.companyId });
       }
-      if (screen === "home" && memberships.length === 1 && !resetToken) router.replace(companyPath(memberships[0].id));
+      if (shouldAutoEnterOrganization({ screen, pathname, membershipCount: memberships.length, hasResetToken: Boolean(resetToken) })) router.replace(companyPath(memberships[0].id));
     } catch (caught) {
       if (!controller.signal.aborted && !(caught instanceof ApiError && caught.status === 401) && !background) setError(messageFor(caught));
     } finally { if (!controller.signal.aborted && !background) setLoading(false); }
-  }, [router, screen, params.companyId, resetToken]);
+  }, [router, screen, pathname, params.companyId, resetToken]);
   useEffect(() => {
     let mounted = true;
     void Promise.resolve().then(() => { if (mounted) void loadSession(); });
@@ -103,9 +104,11 @@ export function ProductApp({ screen }: { screen: Screen }) {
   const logout = async () => { try { const { redirect_url } = await api<{ redirect_url: string }>("/auth/logout", { method: "POST" }); setUser(null); setCompanies([]); window.location.replace(redirect_url); } catch (caught) { setError(messageFor(caught)); } };
   // Persist the active organization whenever one is resolved (deep link, picker or switcher).
   useEffect(() => { if (company) writeActiveOrganizationId(company.id); }, [company]);
-  if (loading && screen === "home" && pathname === "/") return <LandingPage onLogin={() => router.push("/login")} onSignUp={() => router.push("/login?mode=sign-up")} />;
+  const landingActions = { onLogin: () => router.push("/login"), onSignUp: () => router.push("/login?mode=sign-up"), onOpenApp: () => router.push("/login"), onLogout: () => { void logout(); } };
+  if (loading && screen === "home" && pathname === "/") return <LandingPage {...landingActions} session={{ status: "loading" }} />;
   if (loading) return <Loading />;
-  if (!user || (pathname === "/login" && Boolean(resetToken))) return <>{screen === "home" && pathname === "/" ? <LandingPage onLogin={() => router.push("/login")} onSignUp={() => router.push("/login?mode=sign-up")} /> : <SignIn onLogin={() => beginLogin("sign-in")} passwordReset={searchParams.get("password_reset") === "1"} initialMode={searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in"} resetToken={resetToken} returnTo={loginReturnTo} />}{error && <div role="alert" className="session-error"><CircleAlert size={20} /><div><p>{error}</p><button onClick={() => { void loadSession(); }}>Tentar novamente</button></div></div>}</>;
+  if (!user || (pathname === "/login" && Boolean(resetToken))) return <>{screen === "home" && pathname === "/" ? <LandingPage {...landingActions} session={{ status: "anonymous" }} /> : <SignIn onLogin={() => beginLogin("sign-in")} passwordReset={searchParams.get("password_reset") === "1"} initialMode={searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in"} resetToken={resetToken} returnTo={loginReturnTo} />}{error && <div role="alert" className="session-error"><CircleAlert size={20} /><div><p>{error}</p><button onClick={() => { void loadSession(); }}>Tentar novamente</button></div></div>}</>;
+  if (screen === "home" && pathname === "/") return <LandingPage {...landingActions} session={{ status: "authenticated", email: user.email, organizationName: landingOrganizationName(companies, readActiveOrganizationId()) }} />;
   if (screen === "invitation") return <InvitationAcceptance token={params.token} onAccepted={(organizationId) => router.replace(companyPath(organizationId))} />;
   if (screen === "home" && companies.length === 1) return <Loading />;
   if (screen === "home" && companies.length > 1) return <OrganizationPicker user={user} companies={companies} onChoose={goCompany} onLogout={() => { void logout(); }} />;

@@ -131,7 +131,7 @@ def test_login_rejects_forged_return_paths(auth_api, return_to: str) -> None:
     completed = client.get(f"/auth/callback?code=login&state={state}", follow_redirects=False)
 
     assert completed.status_code == 302
-    assert completed.headers["location"] == "http://app.example.test"
+    assert completed.headers["location"] == "http://app.example.test/login"
 
 
 def invitation_token(delivery: FakeInvitationDelivery) -> str:
@@ -491,7 +491,7 @@ def test_custom_login_rejects_external_return_url(auth_api, monkeypatch):
     client, _, gateway, _ = auth_api
     password_gateway(monkeypatch, gateway, VerifiedIdentity(provider="workos", subject="user_safe", email="safe@example.com"))
     response = client.post("/auth/password", json={"email": "safe@example.com", "password": "long-password", "return_to": "https://attacker.test"})
-    assert response.json()["redirect_url"] == "http://app.example.test"
+    assert response.json()["redirect_url"] == "http://app.example.test/login"
 
 
 def test_password_reset_revokes_all_local_sessions_without_provider_retry_or_login_block(auth_api, monkeypatch):

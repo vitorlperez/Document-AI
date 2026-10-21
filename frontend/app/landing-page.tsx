@@ -8,9 +8,12 @@ import {
 import "./landing.css";
 import { Brand } from "./brand";
 import { ThemeToggle } from "./theme-toggle";
+import { avatarInitial, displayNameFromEmail } from "./product/account-helpers";
+import { landingCtaMode } from "./landing-session.mjs";
 import { ProviderLogo, type ProviderLogoName } from "./provider-logo";
 
-type LandingPageProps = { onLogin: () => void; onSignUp: () => void };
+export type LandingSession = { status: "loading" } | { status: "anonymous" } | { status: "authenticated"; email: string; organizationName?: string | null };
+type LandingPageProps = { onLogin: () => void; onSignUp: () => void; onOpenApp?: () => void; onLogout?: () => void; session?: LandingSession };
 
 /** Optional decorative art for the Rotina section, delivered separately; the layout never depends on it. */
 const STORY_ART_SRC = "/landing/document-context.webp";
@@ -362,7 +365,29 @@ function useOptionalImage(src: string) {
   return ready;
 }
 
-export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
+/** Account chip for the signed-in header: initial + name/e-mail (+ organization), with a two-item menu. */
+function LandingAccount({ session, onOpenApp, onLogout }: { session: Extract<LandingSession, { status: "authenticated" }>; onOpenApp: () => void; onLogout: () => void }) {
+  const name = displayNameFromEmail(session.email) || session.email;
+  const close = (event: { currentTarget: HTMLElement }) => event.currentTarget.closest("details")?.removeAttribute("open");
+  return (
+    <details className="landing-account">
+      <summary aria-label={`Conta de ${session.email}`}>
+        <span className="landing-account-avatar" aria-hidden="true">{avatarInitial(name, session.email)}</span>
+        <span className="landing-account-text"><strong>{name}</strong><small>{session.organizationName ?? session.email}</small></span>
+        <ChevronDown size={16} aria-hidden="true" />
+      </summary>
+      <div className="landing-account-menu" role="group" aria-label="Conta">
+        <p title={session.email}>{session.email}</p>
+        <button onClick={(event) => { close(event); onOpenApp(); }}>Ir para o app</button>
+        <button onClick={(event) => { close(event); onLogout(); }}>Sair</button>
+      </div>
+    </details>
+  );
+}
+
+export function LandingPage({ onLogin, onSignUp, onOpenApp = onLogin, onLogout = () => undefined, session = { status: "anonymous" } }: LandingPageProps) {
+  const mode = landingCtaMode(session);
+  const signedIn = session.status === "authenticated" ? session : null;
   const pageRef = useRef<HTMLDivElement>(null);
   const storyArt = useOptionalImage(STORY_ART_SRC);
   useSectionReveal(pageRef);
@@ -372,8 +397,8 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
       <header className="landing-header landing-container">
         <a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, início"><Brand /></a>
         <nav className="landing-desktop-nav" aria-label="Navegação principal"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a></nav>
-        <div className="landing-header-actions"><ThemeToggle /><button className="landing-login" onClick={onLogin}>Entrar</button><button className="landing-button landing-button-small" onClick={onSignUp}>Criar conta <ArrowUpRight size={16} /></button></div>
-        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={23} /></summary><nav aria-label="Navegação móvel"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a><div className="landing-mobile-theme"><span>Aparência</span><ThemeToggle /></div><button onClick={onLogin}>Entrar</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></nav></details>
+        <div className="landing-header-actions" data-session={mode}><ThemeToggle />{mode === "anonymous" && <><button className="landing-login" onClick={onLogin}>Entrar</button><button className="landing-button landing-button-small" onClick={onSignUp}>Criar conta <ArrowUpRight size={16} /></button></>}{mode === "loading" && <span className="landing-session-placeholder" aria-hidden="true" />}{signedIn && <><button className="landing-button landing-button-small" onClick={onOpenApp}>Ir para o app <ArrowUpRight size={16} /></button><LandingAccount session={signedIn} onOpenApp={onOpenApp} onLogout={onLogout} /></>}</div>
+        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={23} /></summary><nav aria-label="Navegação móvel"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a><div className="landing-mobile-theme"><span>Aparência</span><ThemeToggle /></div>{mode === "anonymous" && <><button onClick={onLogin}>Entrar</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></>}{signedIn && <><p className="landing-mobile-account" title={signedIn.email}><span className="landing-account-avatar" aria-hidden="true">{avatarInitial(displayNameFromEmail(signedIn.email), signedIn.email)}</span><span><strong>{displayNameFromEmail(signedIn.email) || signedIn.email}</strong><small>{signedIn.organizationName ?? signedIn.email}</small></span></p><button className="landing-mobile-signup" onClick={onOpenApp}>Ir para o app</button><button onClick={onLogout}>Sair</button></>}</nav></details>
       </header>
 
       <main id="landing-main">
@@ -382,7 +407,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
             <p className="landing-eyebrow"><span className="landing-status-dot" /> SEU CONHECIMENTO, COM CONTEXTO</p>
             <h1 id="landing-hero-title">A resposta está nos arquivos.<br /><em>Agora você sabe onde.</em></h1>
             <p className="landing-hero-description">Pergunte ao Arquivio. Receba uma resposta direta e os documentos que a sustentam.</p>
-            <div className="landing-hero-actions"><button className="landing-button" onClick={onSignUp}>Começar com o Arquivio <ArrowRight size={18} /></button><button className="landing-login" onClick={onLogin}>Já tenho uma conta</button></div>
+            <div className="landing-hero-actions" data-session={mode}>{mode === "anonymous" && <><button className="landing-button" onClick={onSignUp}>Começar com o Arquivio <ArrowRight size={18} /></button><button className="landing-login" onClick={onLogin}>Já tenho uma conta</button></>}{mode === "loading" && <span className="landing-session-placeholder landing-session-placeholder-hero" aria-hidden="true" />}{signedIn && <button className="landing-button" onClick={onOpenApp}>Ir para o app <ArrowRight size={18} /></button>}</div>
             <p className="landing-hero-note"><Check size={14} /> Conexões de leitura · originais preservados</p>
           </section>
 
@@ -434,7 +459,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
         <section className="landing-closing landing-container" aria-labelledby="landing-closing-title" data-reveal>
           <p className="landing-eyebrow">COMECE PELOS SEUS DOCUMENTOS</p>
           <h2 id="landing-closing-title">Menos procura.<br /><em>Mais contexto.</em></h2>
-          <button className="landing-button" onClick={onSignUp}>Criar minha conta <ArrowRight size={18} /></button>
+          {mode === "anonymous" && <button className="landing-button" onClick={onSignUp}>Criar minha conta <ArrowRight size={18} /></button>}{mode === "loading" && <span className="landing-session-placeholder landing-session-placeholder-hero" aria-hidden="true" />}{signedIn && <button className="landing-button" onClick={onOpenApp}>Ir para o app <ArrowRight size={18} /></button>}
         </section>
       </main>
 

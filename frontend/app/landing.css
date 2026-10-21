@@ -71,6 +71,25 @@
 .landing-button:hover svg { transform: translateX(2px); }
 .landing-button:active { background: var(--lp-accent-hover); }
 .landing-login:active { color: var(--lp-accent-hover); }
+.landing-session-placeholder { display: block; width: 168px; height: 44px; border-radius: var(--lp-radius-sm); background: var(--lp-surface-muted); }
+.landing-session-placeholder-hero { width: 232px; height: 52px; }
+.landing-account { position: relative; }
+.landing-account summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; min-height: 44px; max-width: 240px; padding: 4px 10px 4px 4px; border: 1px solid var(--lp-border); border-radius: 999px; color: var(--lp-fg); }
+.landing-account summary::-webkit-details-marker { display: none; }
+.landing-account summary:hover, .landing-account[open] summary { background: var(--lp-surface-muted); }
+.landing-account-avatar { flex: none; display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: var(--lp-accent-solid); color: #fff; font-size: 14px; font-weight: 700; }
+.landing-account-text { display: grid; min-width: 0; line-height: 1.2; text-align: left; }
+.landing-account-text strong, .landing-account-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.landing-account-text strong { font-size: 13px; font-weight: 600; }
+.landing-account-text small { color: var(--lp-fg-muted); font-size: 12px; }
+.landing-account-menu { position: absolute; top: 52px; right: 0; z-index: 20; display: grid; gap: 2px; width: 240px; padding: 8px; border: 1px solid var(--lp-border); border-radius: var(--lp-radius-md); background: var(--lp-surface); box-shadow: var(--lp-shadow-shell); }
+.landing-account-menu p { margin: 0; padding: 6px 12px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--lp-fg-muted); font-size: 12px; }
+.landing-account-menu button { min-height: 40px; padding: 8px 12px; border: 0; border-radius: var(--lp-radius-sm); background: transparent; color: var(--lp-fg); text-align: left; font-size: 14px; font-weight: 500; }
+.landing-account-menu button:hover { background: var(--lp-surface-muted); }
+.landing-mobile-account { display: flex; align-items: center; gap: 10px; margin: 0; padding: 6px 12px; min-width: 0; }
+.landing-mobile-account > span:last-child { display: grid; min-width: 0; }
+.landing-mobile-account strong, .landing-mobile-account small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.landing-mobile-account small { color: var(--lp-fg-muted); font-size: 12px; }
 .landing-button-small { min-height: 44px; padding: 10px 16px; font-size: 14px; }
 .landing-mobile-menu { display: none; }
 

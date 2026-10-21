@@ -51,8 +51,8 @@ test("landing keeps every approved literal and accessible name", () => {
 });
 
 test("landing keeps the onLogin/onSignUp contract and every destination", () => {
-  assert.match(source, /export function LandingPage\(\{ onLogin, onSignUp \}: LandingPageProps\)/);
-  assert.match(source, /type LandingPageProps = \{ onLogin: \(\) => void; onSignUp: \(\) => void \};/);
+  assert.match(source, /export function LandingPage\(\{ onLogin, onSignUp, onOpenApp = onLogin, onLogout = \(\) => undefined, session = \{ status: "anonymous" \} \}: LandingPageProps\)/);
+  assert.match(source, /type LandingPageProps = \{ onLogin: \(\) => void; onSignUp: \(\) => void; onOpenApp\?: \(\) => void; onLogout\?: \(\) => void; session\?: LandingSession \};/);
   assert.equal((source.match(/onClick=\{onLogin\}/g) ?? []).length, 3, "Entrar (header + menu) and Já tenho uma conta");
   assert.equal((source.match(/onClick=\{onSignUp\}/g) ?? []).length, 4, "Criar conta (header + menu), hero and closing CTAs");
   for (const href of ["#landing-main", "#produto", "#integracoes", "#como-funciona", "#perguntas", "/privacidade", "/termos", "/docs/api"]) assert.ok(source.includes(`href="${href}"`), `missing href ${href}`);
