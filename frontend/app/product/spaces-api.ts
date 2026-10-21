@@ -62,7 +62,7 @@ export function createSpacesApi(transport: Transport) {
     grant: (org: string, id: string, folderId: string, disclosure: Record<string, unknown> = { text_version: DISCLOSURE_VERSION }) => call<{ space_id: string; workspace_folder_id: string }>(`${root(org)}/${id}/folders/${folderId}`, json("POST", { disclosure })),
     revoke: (org: string, id: string, folderId: string) => call<void>(`${root(org)}/${id}/folders/${folderId}`, json("DELETE")),
     enter: (org: string, id: string) => call<{ space_id: string; role: SpaceRole }>(`${root(org)}/${id}/enter`, json("POST")),
-    folders: (org: string) => call<SpaceFolder[]>(`/organizations/${org}/workspace-folders`),
+    folders: (org: string) => call<SpaceFolder[]>(`/workspace-folders?organization_id=${org}`),
     orgPeople: async (org: string): Promise<OrgPerson[]> => {
       const rows = await call<{ user_id?: string | null; email: string }[]>(`/organizations/${org}/people`);
       return rows.map((row) => ({ user_id: row.user_id ?? null, email: row.email }));

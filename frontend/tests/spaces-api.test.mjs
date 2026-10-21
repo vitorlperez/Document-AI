@@ -33,6 +33,13 @@ test("each call builds the exact method, path and body", async () => {
   assert.ok(calls[9].body.disclosure.text_version);
 });
 
+test("folders lists the organization's folders through the real route GET /workspace-folders?organization_id=", async () => {
+  // Regressão: a aba "Pastas" chamava /organizations/{id}/workspace-folders, rota que não existe (404 em prd e local).
+  const { api, calls } = recorder([]);
+  await api.folders("o-1");
+  assert.deepEqual(calls.map((c) => `${c.method} ${c.path}`), ["GET /workspace-folders?organization_id=o-1"]);
+});
+
 test("404/403/409/422 become typed errors", async () => {
   for (const [status, code] of [[404, "not_found"], [403, "forbidden"], [409, "conflict"], [422, "invalid"], [500, "unknown"]]) {
     const { api } = recorder(Object.assign(new Error("x"), { status }));
