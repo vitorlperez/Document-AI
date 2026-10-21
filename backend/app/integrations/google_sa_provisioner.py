@@ -48,9 +48,13 @@ class ProvisionerFatal(RuntimeError):
         self.code = code
 
 
-def robot_account_id(secret: str, organization_id: UUID) -> str:
-    """Deterministic (retries find the same account) but not guessable without the secret."""
-    digest = hmac.new(secret.encode(), f"drive-sa:{organization_id}".encode(), hashlib.sha256)
+def robot_account_id(secret: str, organization_id: UUID, generation: int = 0) -> str:
+    """Deterministic per (org, generation): retries find the same account, a re-enabled org gets a new one.
+
+    Generation 0 keeps the original derivation so existing robots stay addressable; it is the number of
+    robots the org already had, so a retry of the same attempt reuses the same account."""
+    label = f"drive-sa:{organization_id}" if generation == 0 else f"drive-sa:{organization_id}:{generation}"
+    digest = hmac.new(secret.encode(), label.encode(), hashlib.sha256)
     return "arq-" + digest.hexdigest()[:12]
 
 
@@ -295,8 +299,13 @@ class RobotProvisioner:
             self._attach(source, existing, "drive_sa.robot_assigned")
             self.session.commit()
             return "ready"
+        generation = self.session.scalar(
+            select(func.count())
+            .select_from(GoogleSaIdentity)
+            .where(GoogleSaIdentity.organization_id == source.organization_id)
+        )
         account_id = robot_account_id(
-            self.settings.google_sa_key_encryption_key.get_secret_value(), source.organization_id
+            self.settings.google_sa_key_encryption_key.get_secret_value(), source.organization_id, generation
         )
         _project, identity, key = self._create_robot(account_id, display_name(source.organization_id))
         identity.status = "assigned"

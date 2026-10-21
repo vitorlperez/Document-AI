@@ -126,30 +126,12 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
         )
         if source:
             if source.status == "disconnected":
-                raise SaRequestError("robot_retired", 409)
+                return self._reenable(source, scope, user_id)
             if source.status == PROVISIONING_FAILED:
                 source.status = PROVISIONING  # explicit user retry
                 self.needs_provisioning = True
             return source
-        identity = self.session.scalar(
-            select(GoogleSaIdentity)
-            .where(
-                GoogleSaIdentity.status == "free",
-                GoogleSaIdentity.organization_id.is_(None),
-                GoogleSaIdentity.assigned_at.is_(None),
-                GoogleSaIdentity.encrypted_key.is_not(None),
-            )
-            .order_by(GoogleSaIdentity.created_at, GoogleSaIdentity.id)
-            .with_for_update(skip_locked=True)
-            .limit(1)
-        )
-        if not identity and not self.settings.google_sa_pool_project_list:
-            raise SaRequestError("pool_empty", 503)
-        if identity:
-            identity.organization_id = scope.organization_id
-            identity.status = "assigned"
-            identity.assigned_at = datetime.now(UTC)
-            self.needs_labeling = identity.id
+        identity = self._claim_free_robot(scope.organization_id)
         source = DataSource(
             organization_id=scope.organization_id,
             provider=self.provider,
@@ -172,6 +154,58 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
                 logger.warning(
                     "robot pool low", extra={"event": "drive_sa.pool_low", "free_count": free}
                 )
+        return source
+
+    def _claim_free_robot(self, organization_id):
+        """Assign a free pool robot to the org (SKIP LOCKED); `None` means provisioning is needed."""
+        identity = self.session.scalar(
+            select(GoogleSaIdentity)
+            .where(
+                GoogleSaIdentity.status == "free",
+                GoogleSaIdentity.organization_id.is_(None),
+                GoogleSaIdentity.assigned_at.is_(None),
+                GoogleSaIdentity.encrypted_key.is_not(None),
+            )
+            .order_by(GoogleSaIdentity.created_at, GoogleSaIdentity.id)
+            .with_for_update(skip_locked=True)
+            .limit(1)
+        )
+        if not identity and not self.settings.google_sa_pool_project_list:
+            raise SaRequestError("pool_empty", 503)
+        if identity:
+            identity.organization_id = organization_id
+            identity.status = "assigned"
+            identity.assigned_at = datetime.now(UTC)
+            self.needs_labeling = identity.id
+        return identity
+
+    def _reenable(self, source, scope, user_id):
+        """Reconnect after disconnect: a NEW robot for the same source. The retired one is never touched again;
+        old folder links stay unlinked, so the customer shares the folders again with the new robot."""
+        previous = source.sa_identity_id
+        identity = self._claim_free_robot(scope.organization_id)
+        source.sa_identity_id = identity.id if identity else None
+        source.account_email = identity.sa_email if identity else None
+        source.status = "awaiting_share" if identity else PROVISIONING
+        source.connected_by_user_id = user_id
+        source.encrypted_credentials = None
+        self.needs_provisioning = identity is None
+        self.session.flush()
+        for action, target in (
+            ("drive_sa.reenabled" if identity else "drive_sa.reenable_requested", identity.id if identity else source.id),
+            ("drive_sa.robot_replaced", previous),
+        ):
+            if target is None:
+                continue
+            self.session.add(
+                AuditLog(
+                    organization_id=source.organization_id,
+                    actor_user_id=user_id,
+                    action=action,
+                    target_type="google_sa_identity" if target != source.id else "data_source",
+                    target_id=target,
+                )
+            )
         return source
 
     def enable_status(self, source):

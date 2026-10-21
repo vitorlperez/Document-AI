@@ -9,11 +9,13 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     Uuid,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -39,13 +41,21 @@ class GoogleSaIdentity(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     status: Mapped[str] = mapped_column(String(16), default="free")
     # RESTRICT preserves assignment history even when an organization is deleted.
     organization_id: Mapped[UUID | None] = mapped_column(
-        Uuid, ForeignKey("organizations.id", ondelete="RESTRICT"), unique=True
+        Uuid, ForeignKey("organizations.id", ondelete="RESTRICT")
     )
     group_email: Mapped[str | None] = mapped_column(String(320))
     assigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     rotated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     __table_args__ = (
+        # One active robot per organization; retired ones accumulate as permanent history.
+        Index(
+            "uq_google_sa_identities_org_assigned",
+            "organization_id",
+            unique=True,
+            postgresql_where=text("status = 'assigned'"),
+            sqlite_where=text("status = 'assigned'"),
+        ),
         CheckConstraint(
             "status IN ('free','assigned','retired','compromised')",
             name="ck_google_sa_identity_status",

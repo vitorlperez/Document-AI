@@ -105,7 +105,8 @@ def test_two_tenants_pool_assignment_and_inaccessible_folder(setup):
     assert session.scalar(select(DriveFolderLink)) is None
     service.disconnect(scope=OrganizationScope(orgs[0].id), user_id=user.id, source_id=a.id)
     assert session.get(GoogleSaIdentity, a.sa_identity_id).status == "retired"
-    with pytest.raises(SaRequestError):
+    # Pool exhausted (both robots taken) and no on-demand projects: reconnecting reports pool_empty, not robot_retired.
+    with pytest.raises(SaRequestError, match="pool_empty"):
         enable(service, user, orgs[0])
 
 
@@ -455,3 +456,62 @@ def test_inbox_lists_unlinked_folder_again_so_it_can_be_relinked(setup):
     )
     assert relinked.id == link.id and relinked.status == "verified"
     assert service.inbox(source)[0]["linked"] is True
+
+
+def add_free_robots(session, count, prefix="spare"):
+    project = session.scalar(select(GoogleSaProject))
+    for n in range(count):
+        session.add(
+            GoogleSaIdentity(project_id=project.id, sa_email=f"{prefix}{n}@example.test", encrypted_key="encrypted")
+        )
+    session.flush()
+
+
+def test_reenable_after_disconnect_gets_a_new_robot_and_keeps_the_old_retired(setup):
+    from app.audit_usage.models import AuditLog
+
+    service, session, user, orgs, _ = setup
+    first = enable(service, user, orgs[0])
+    old_id, source_id = first.sa_identity_id, first.id
+    link = service.link(scope=OrganizationScope(orgs[0].id), user_id=user.id, source_id=first.id, folder_id="folder_123456")
+    service.disconnect(scope=OrganizationScope(orgs[0].id), user_id=user.id, source_id=first.id)
+    add_free_robots(session, 1)
+    again = enable(service, user, orgs[0])
+    assert again.id == source_id and again.status == "awaiting_share"
+    assert again.sa_identity_id not in (None, old_id)
+    new = session.get(GoogleSaIdentity, again.sa_identity_id)
+    assert (new.status, new.organization_id) == ("assigned", orgs[0].id)
+    assert again.account_email == new.sa_email
+    assert service.needs_provisioning is False and service.needs_labeling == new.id
+    old = session.get(GoogleSaIdentity, old_id)
+    assert (old.status, old.encrypted_key, old.organization_id) == ("retired", None, orgs[0].id)
+    assert session.get(DriveFolderLink, link.id).status in ("purge_scheduled", "removed")
+    assert enable(service, user, orgs[0]).sa_identity_id == new.id  # idempotent
+    actions = set(session.scalars(select(AuditLog.action).where(AuditLog.organization_id == orgs[0].id)))
+    assert {"drive_sa.retired", "drive_sa.reenabled", "drive_sa.robot_replaced"} <= actions
+
+
+def test_reenabled_robot_is_never_shared_between_orgs_and_retired_never_returns_to_pool(setup):
+    service, session, user, orgs, _ = setup
+    a = enable(service, user, orgs[0])
+    old_id = a.sa_identity_id
+    service.disconnect(scope=OrganizationScope(orgs[0].id), user_id=user.id, source_id=a.id)
+    b = enable(service, user, orgs[1])
+    add_free_robots(session, 2)
+    again = enable(service, user, orgs[0])
+    assert len({old_id, b.sa_identity_id, again.sa_identity_id}) == 3
+    assert session.get(GoogleSaIdentity, old_id).status == "retired"
+    free = list(session.scalars(select(GoogleSaIdentity.id).where(GoogleSaIdentity.status == "free")))
+    assert old_id not in free and len(free) == 1
+
+
+def test_reenable_with_empty_pool_goes_to_provisioning(setup):
+    service, _session, user, orgs, _ = setup
+    service.settings = service.settings.model_copy(update={"google_sa_pool_projects": "pool-a"})
+    a = enable(service, user, orgs[0])
+    enable(service, user, orgs[1])
+    service.disconnect(scope=OrganizationScope(orgs[0].id), user_id=user.id, source_id=a.id)
+    again = enable(service, user, orgs[0])
+    assert (again.status, again.sa_identity_id, again.account_email) == ("provisioning", None, None)
+    assert service.needs_provisioning is True
+    assert service.enable_status(again) == {"status": "provisioning", "robot_email": None}

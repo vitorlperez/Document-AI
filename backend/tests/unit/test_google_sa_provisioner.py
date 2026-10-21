@@ -87,6 +87,32 @@ def test_account_id_deterministic_and_not_guessable():
     assert len(robot_account_id("k1", org)) <= 30 and robot_account_id("k1", org).startswith("arq-")
 
 
+def test_account_id_generation_is_new_but_generation_zero_is_compatible():
+    import re
+
+    org = uuid4()
+    ids = {robot_account_id("k1", org, n) for n in range(5)}
+    assert len(ids) == 5 and robot_account_id("k1", org) == robot_account_id("k1", org, 0)
+    assert all(re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", x) and 6 <= len(x) <= 30 for x in ids)
+
+
+def test_provision_after_retirement_creates_a_different_account(env):
+    session, _, _ = env
+    source = make_source(session)
+    iam = FakeIam()
+    worker = provisioner(env, iam)
+    worker.provision_source(source.id)
+    first = session.get(GoogleSaIdentity, source.sa_identity_id)
+    first.status, first.encrypted_key = "retired", None
+    source.status, source.sa_identity_id, source.account_email = "provisioning", None, None
+    session.commit()
+    session.get(GoogleSaProject, session.scalar(select(GoogleSaProject.id))).last_iam_create_at = None
+    assert worker.provision_source(source.id) == "ready"
+    assert len({a[1] for a in iam.accounts}) == 2
+    session.refresh(source)
+    assert source.sa_identity_id != first.id and first.status == "retired"
+
+
 def test_provision_creates_dedicated_robot_encrypted_with_audit(env):
     session, _, key = env
     source = make_source(session)

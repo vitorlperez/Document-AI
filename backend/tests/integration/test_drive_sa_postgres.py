@@ -240,3 +240,137 @@ def test_on_demand_concurrency_one_robot_per_org(test_database_url):
     with Session(engine) as session:
         emails = set(session.scalars(select(GoogleSaIdentity.sa_email).where(GoogleSaIdentity.organization_id.in_(org_ids))))
         assert len(emails) == 3
+
+
+def _purge_robots(engine):
+    """Leave no multi-robot organizations behind: the 0039 downgrade refuses them by design."""
+    with engine.begin() as connection:
+        connection.execute(text("DELETE FROM drive_folder_links"))
+        connection.execute(text("DELETE FROM data_sources WHERE provider='google_drive_sa'"))
+        connection.execute(text("DELETE FROM google_sa_identities"))
+
+
+def _seed_org(engine, user_email_prefix, robots, project_name):
+    with Session(engine) as session:
+        user = User(email=f"{user_email_prefix}-{uuid4()}@example.test")
+        org = Organization(name=user_email_prefix)
+        session.add_all([user, org])
+        session.flush()
+        session.add(
+            Membership(organization_id=org.id, user_id=user.id, role=MembershipRole.OWNER, is_active=True)
+        )
+        project = GoogleSaProject(gcp_project_id=f"{project_name}-{uuid4().hex[:6]}")
+        session.add(project)
+        session.flush()
+        for n in range(robots):
+            session.add(
+                GoogleSaIdentity(
+                    project_id=project.id, sa_email=f"{user_email_prefix}-{uuid4().hex[:8]}@example.test", encrypted_key="encrypted"
+                )
+            )
+        session.commit()
+        return user.id, org.id, project.id
+
+
+def test_reenable_after_retirement_new_robot_concurrency_and_trigger(test_database_url):
+    from sqlalchemy import func, select
+
+    alembic(test_database_url, "downgrade", "base")
+    alembic(test_database_url, "upgrade", "head")
+    engine = create_engine(test_database_url)
+    settings = Settings(
+        database_url=test_database_url,
+        google_drive_sa_enabled=True,
+        google_sa_key_encryption_key=Fernet.generate_key().decode(),
+        _env_file=None,
+    )
+    user_id, org_id, _project_id = _seed_org(engine, "m58-re", 4, "m58-re")
+    scope = OrganizationScope(org_id)
+    with Session(engine) as session:
+        service = DriveSaConnectionService(session, settings)
+        source = service.enable(scope=scope, user_id=user_id)
+        source_id, old_id = source.id, source.sa_identity_id
+        session.commit()
+        service.disconnect(scope=scope, user_id=user_id, source_id=source_id)
+        session.commit()
+    barrier = Barrier(2)
+
+    def enable():
+        with Session(engine) as session:
+            barrier.wait(timeout=10)
+            source = DriveSaConnectionService(session, settings).enable(scope=scope, user_id=user_id)
+            result = source.id, source.sa_identity_id
+            session.commit()
+            return result
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(lambda _: enable(), range(2)))
+    assert results[0] == results[1] and results[0][0] == source_id and results[0][1] != old_id
+    new_id = results[0][1]
+    with Session(engine) as session:
+        statuses = dict(
+            session.execute(
+                select(GoogleSaIdentity.id, GoogleSaIdentity.status).where(GoogleSaIdentity.organization_id == org_id)
+            ).all()
+        )
+        assert statuses == {old_id: "retired", new_id: "assigned"}
+        assert session.scalar(select(func.count()).select_from(GoogleSaIdentity).where(GoogleSaIdentity.status == "free")) == 2
+        spare = session.scalar(select(GoogleSaIdentity.id).where(GoogleSaIdentity.status == "free").limit(1))
+        _other_user, other_org, _p = _seed_org(engine, "m58-other", 0, "m58-other")
+
+    def forbidden(sql, **params):
+        with Session(engine) as session:
+            with pytest.raises(DBAPIError):
+                session.execute(text(sql), params)
+            session.rollback()
+
+    # (c) a second assigned robot in the same org
+    forbidden("UPDATE google_sa_identities SET organization_id=:o,status='assigned',assigned_at=now() WHERE id=:id", o=org_id, id=spare)
+    # (a) leaving retired, (b) reassigning an assigned/retired robot, and returning to the pool
+    forbidden("UPDATE google_sa_identities SET status='assigned' WHERE id=:id", id=old_id)
+    forbidden("UPDATE google_sa_identities SET organization_id=:o WHERE id=:id", o=other_org, id=new_id)
+    forbidden("UPDATE google_sa_identities SET organization_id=:o WHERE id=:id", o=other_org, id=old_id)
+    forbidden("UPDATE google_sa_identities SET status='free',organization_id=NULL,assigned_at=NULL WHERE id=:id", id=new_id)
+    # a free robot may be assigned to an org that only has retired history
+    with Session(engine) as session:
+        session.execute(
+            text("UPDATE google_sa_identities SET organization_id=:o,status='assigned',assigned_at=now() WHERE id=:id"),
+            {"o": other_org, "id": spare},
+        )
+        session.commit()
+    _purge_robots(engine)
+    engine.dispose()
+
+
+def test_migration_0039_downgrade_guard_and_roundtrip(test_database_url):
+    alembic(test_database_url, "downgrade", "base")
+    alembic(test_database_url, "upgrade", "head")
+    engine = create_engine(test_database_url)
+    _user, org_id, project_id = _seed_org(engine, "m58-dg", 0, "m58-dg")
+    with Session(engine) as session:
+        for status in ("retired", "assigned"):
+            session.add(
+                GoogleSaIdentity(
+                    project_id=project_id,
+                    sa_email=f"dg-{uuid4().hex[:8]}@example.test",
+                    status=status,
+                    organization_id=org_id,
+                )
+            )
+        session.commit()
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "downgrade", "20261020_0038"],
+        cwd=BACKEND,
+        env=os.environ | {"DATABASE_URL": test_database_url},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0 and "more than one robot identity" in result.stderr
+    with Session(engine) as session:
+        session.execute(text("DELETE FROM google_sa_identities WHERE organization_id=:o AND status='retired'"), {"o": org_id})
+        session.commit()
+    alembic(test_database_url, "downgrade", "20261020_0038")
+    alembic(test_database_url, "upgrade", "head")
+    _purge_robots(engine)
+    engine.dispose()
