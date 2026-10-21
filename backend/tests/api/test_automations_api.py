@@ -423,6 +423,7 @@ def test_recipients_read_run_and_pdf_read_only_with_live_folder_access(corpus, m
     denied = add_member(client, factory, gateway, org, "denied@example.test")
     add_member(client, factory, gateway, org, "stranger@example.test")
     relogin_owner(client, gateway)
+    client.app.state.automation_send_task = Sent()  # no broker in CI: never rely on the real Celery send_task
     created = create(client, org, folder, output_formats=["email", "pdf"], recipient_user_ids=[recipient, denied])
     run_id = client.post(f"/organizations/{org}/automations/{created['id']}/run").json()["id"]
     assert run_pending(factory, ScriptedProvider(base), FakeEmail()) == ["ok"]
