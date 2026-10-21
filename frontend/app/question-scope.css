@@ -1,6 +1,13 @@
 .question-scope { position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 2px 8px; min-width: 0; }
-.question-scope-trigger { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; max-width: min(100%, 300px); padding: 0 10px; border-radius: 6px; color: var(--primary); font-size: 12px; font-weight: 600; cursor: pointer; }
-.question-scope-trigger:hover, .question-scope-trigger[aria-expanded="true"] { background: var(--sage); }
+.question-scope-trigger { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; max-width: min(100%, 260px); padding: 0 8px; border-radius: 6px; color: var(--muted-foreground); font-size: 12px; font-weight: 400; cursor: pointer; }
+.question-scope-trigger[data-active="true"] { color: var(--primary); font-weight: 600; background: var(--sage); }
+.question-scope-kind { flex: none; }
+.question-scope-value { color: var(--ink); opacity: .8; }
+.question-scope-trigger[data-active="true"] .question-scope-value { color: inherit; opacity: 1; }
+.question-scope-kind + .question-scope-value::before { content: "·"; margin-right: 5px; color: var(--muted-foreground); }
+.question-scope-chevron { flex: none; opacity: .7; }
+.question-scope-trigger:hover, .question-scope-trigger[aria-expanded="true"] { background: var(--sage); color: var(--ink); }
+.question-scope-trigger[data-active="true"]:hover, .question-scope-trigger[data-active="true"][aria-expanded="true"] { color: var(--primary); }
 .question-scope-trigger:focus-visible, .question-scope-option:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .question-scope-trigger:disabled { opacity: .5; cursor: not-allowed; }
 .question-scope-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -8,14 +15,27 @@
 .question-scope-option { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 44px; padding: 8px 10px; border-radius: 5px; color: var(--ink); text-align: left; font-size: 13px; cursor: pointer; }
 .question-scope-option:hover { background: var(--sage); }
 .question-scope-check { display: grid; place-items: center; flex: none; width: 18px; height: 18px; border: 1px solid currentColor; border-radius: 4px; color: var(--primary); }
-.question-scope-count { color: var(--muted-foreground); font-size: 11px; white-space: nowrap; }
-@media (max-width: 639px) { .question-scope-count { display: none; } }
-.question-scope-warning, .question-scope-empty { width: 100%; color: var(--warn-fg); font-size: 11px; line-height: 1.5; }
-.question-scope-warning button { margin-left: 5px; text-decoration: underline; }
+.question-scope-count { margin: 2px 0 0; padding: 6px 10px 3px; border-top: 1px solid var(--card-edge); color: var(--muted-foreground); font-size: 11px; }
+.question-scope-empty { padding: 8px 10px; color: var(--muted-foreground); font-size: 12px; line-height: 1.5; }
+/* Aviso de seleção: ícone pequeno com dica (hover/foco), nunca uma linha de texto no rodapé. */
+.question-scope-flag { position: relative; display: inline-flex; align-items: center; gap: 4px; flex: none; min-height: 28px; padding: 0 4px; border-radius: 6px; color: var(--warn-fg); font-size: 11px; cursor: help; }
+.question-scope-flag:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.question-scope-flag::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 31; width: max-content; max-width: min(260px, calc(100vw - 32px)); padding: 6px 9px; border: 1px solid var(--card-edge); border-radius: 6px; background: var(--surface-overlay, var(--surface-raised)); color: var(--ink); font-size: 12px; line-height: 1.4; box-shadow: 0 8px 20px var(--shadow-ink); opacity: 0; transform: translateY(2px); pointer-events: none; transition: opacity .12s; }
+.question-scope-flag:hover::after, .question-scope-flag:focus-visible::after { opacity: 1; transform: none; }
+.question-scope-retry { color: inherit; text-decoration: underline; cursor: pointer; }
 
 /* Botão "Espaços" no composer, ao lado de Ferramentas (mesmo trigger/menu; o menu abre para cima) */
 .space-scope { flex-wrap: nowrap; }
-.space-scope-label { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.space-scope-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 10px; color: var(--muted-foreground); font-size: 12px; font-weight: 600; min-width: 0; }
-.composer-scopes { display: flex; align-items: center; flex-wrap: wrap; gap: 0 4px; min-width: 0; }
-@media (max-width: 639px) { .space-scope .question-scope-menu { left: auto; right: 0; width: min(280px, calc(100vw - 32px)); } }
+.space-scope-label { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.space-scope-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 8px; color: var(--muted-foreground); font-size: 12px; font-weight: 400; min-width: 0; }
+/* Rodapé do composer: uma linha só; os menus ancoram na linha (abrem para cima, sem estourar). */
+.composer-scopes { position: relative; display: flex; align-items: center; flex-wrap: nowrap; gap: 2px; min-width: 0; }
+.composer-scopes .question-scope { position: static; flex-wrap: nowrap; gap: 0; }
+.composer-scopes .question-scope-menu { left: 0; }
+.composer-counter { font-variant-numeric: tabular-nums; }
+@media (max-width: 639px) {
+  .question-scope-kind { display: none; }
+  .question-scope-kind + .question-scope-value::before { content: none; }
+  .question-scope-trigger, .space-scope-chip { min-height: 40px; max-width: 120px; padding: 0 7px; }
+  .space-scope-label { max-width: 72px; }
+}

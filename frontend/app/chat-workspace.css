@@ -27,7 +27,7 @@
 @media (max-width: 639px) {
   .library-space-actions { grid-template-columns: minmax(0, 1fr); }
   .chat-workspace .conversation-composer { padding: 10px 14px; }
-  .chat-workspace .composer-toolbar { align-items: flex-start; flex-wrap: wrap; }
+  .chat-workspace .composer-toolbar { align-items: center; flex-wrap: nowrap; }
   .chat-workspace .composer-toolbar > div:last-child { margin-left: auto; }
 }
 

@@ -25,10 +25,11 @@ export function useChatSpaces(companyId: string) {
 export function SpaceScopeBar({ spaces, selected, onChange, disabled }: { spaces: SpaceRef[] | null; selected: string[]; onChange: (ids: string[]) => void; disabled: boolean }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!open) return;
     const close = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
-    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { setOpen(false); trigger.current?.focus(); } };
     document.addEventListener("pointerdown", close); document.addEventListener("keydown", escape);
     return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
   }, [open]);
@@ -36,11 +37,12 @@ export function SpaceScopeBar({ spaces, selected, onChange, disabled }: { spaces
   const label = lookingInLabel(selected, spaces);
   const chosen = selected.filter((id) => spaces.some((space) => space.id === id)).length;
   const summary = chosen === 0 || chosen >= spaces.length ? "Todos os Espaços" : chosen === 1 ? spaces.find((space) => space.id === selected[0])?.name ?? "1 Espaço" : `${chosen} Espaços`;
+  const shortValue = chosen === 0 || chosen >= spaces.length ? "Todos" : chosen === 1 ? summary : `${chosen} selecionados`;
   const toggle = (id: string) => onChange(selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id]);
-  if (spaces.length === 1) return <p className="space-scope-chip" role="status" title={`Procurando em: ${label}`}><Layers size={14} aria-hidden="true" /><span className="space-scope-label">{label}</span></p>;
+  if (spaces.length === 1) return <p className="space-scope-chip" role="status" title={`Procurando em: ${label}`}><Layers size={13} aria-hidden="true" /><span className="space-scope-label">{label}</span></p>;
   return <div ref={root} className="question-scope space-scope">
-    <button type="button" className="question-scope-trigger" aria-label={`Espaços: ${summary}`} aria-expanded={open} aria-controls="space-scope-menu" disabled={disabled} onClick={() => setOpen((value) => !value)}>
-      <Layers size={14} aria-hidden="true" /><span className="question-scope-summary space-scope-label">{summary}</span><ChevronDown size={15} aria-hidden="true" />
+    <button ref={trigger} type="button" className="question-scope-trigger" data-active={chosen > 0 && chosen < spaces.length ? "true" : undefined} aria-label={`Espaços: ${summary}`} title={summary} aria-expanded={open} aria-controls="space-scope-menu" disabled={disabled} onClick={() => setOpen((value) => !value)}>
+      <Layers size={13} aria-hidden="true" /><span className="question-scope-kind" aria-hidden="true">Espaços</span><span className="question-scope-summary question-scope-value space-scope-label">{shortValue}</span><ChevronDown size={12} aria-hidden="true" className="question-scope-chevron" />
     </button>
     {open && <div id="space-scope-menu" className="question-scope-menu" role="group" aria-label="Escolher Espaços da pergunta">
       <button type="button" className="question-scope-option" aria-pressed={selected.length === 0} onClick={() => onChange([])}><span className="question-scope-check">{selected.length === 0 && <Check size={15} />}</span>Todos os meus Espaços ({spaces.length})</button>
