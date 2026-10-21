@@ -206,7 +206,7 @@ def test_questions_api_returns_cited_answer_and_denies_cross_tenant(search_api) 
             "excerpt": "The campaign launches in September.",
             "page_number": None,
             "source_url": "https://drive.example.test/briefing",
-            "spaces": [],
+            "spaces": [{"id": supported.json()["citations"][0]["spaces"][0]["id"], "name": "Geral"}],
         }
     ]
 

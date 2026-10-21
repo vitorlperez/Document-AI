@@ -107,7 +107,7 @@ def test_unknown_folder_is_a_uniform_404_for_members_and_403_for_outsiders(world
     """B3 (decision 2026-10-20): Spaces always enforce, so the uniform 404 has no `off` exception any more."""
     from uuid import uuid4
 
-    client, factory, gateway, world, _ = world_api
+    client, _factory, gateway, world, _ = world_api
     ghost = f"/workspace-folders/{uuid4()}/search?organization_id={world.organization_id}"
     as_user(client, gateway, "bruno")
     assert client.post(ghost, json={"query": "x"}).status_code == 404

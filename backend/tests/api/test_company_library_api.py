@@ -42,10 +42,10 @@ def test_library_search_progressive_pages_include_results_beyond_old_limit(api):
     batches = [client.get(
         f"/library/search?organization_id={organization}&query=progressive&page={page}&page_size=50"
     ).json() for page in range(1, 5)]
-    assert [len(batch["items"]) for batch in batches] == [50, 50, 5, 0]
-    assert all(batch["total"] == 105 and batch["pages"] == 3 for batch in batches)
-    assert len({item["id"] for batch in batches for item in batch["items"]}) == 105
-    assert [item["kind"] for item in batches[0]["items"][:3]] == ["folder"] * 3
+    # the 3 folders hold no readable file (Spaces always enforce), so only the 102 files are listed
+    assert [len(batch["items"]) for batch in batches] == [50, 50, 2, 0]
+    assert all(batch["total"] == 102 and batch["pages"] == 3 for batch in batches)
+    assert len({item["id"] for batch in batches for item in batch["items"]}) == 102
     assert client.get(f"/library/search?organization_id={organization}&query=progressive&page=0").status_code == 422
 
 
@@ -122,9 +122,10 @@ def test_company_library_is_member_scoped_and_nodes_use_uuids(api: tuple[TestCli
             "workspace_folder_ids": children.json()["items"][0]["workspace_folder_ids"],
             "workspace_documents": children.json()["items"][0]["workspace_documents"],
             "indexing": children.json()["items"][0]["indexing"],
-            "spaces": [],  # an organization without Spaces has no badges
+            "spaces": children.json()["items"][0]["spaces"],
         }
     ]
+    assert [badge["name"] for badge in children.json()["items"][0]["spaces"]] == ["Geral"]
     assert children.json()["items"][0]["indexing"]["state"] == "indexed"
     assert len(children.json()["items"][0]["workspace_folder_ids"]) == 1
     assert len(children.json()["items"][0]["workspace_documents"]) == 1
@@ -174,7 +175,8 @@ def test_library_children_loads_document_provenance_in_one_query(
     provenance_queries: list[str] = []
 
     def count_provenance(_connection, _cursor, statement, _parameters, _context, _executemany):
-        if "FROM documents" in statement and "JOIN workspace_folders" in statement:
+        if "FROM documents" in statement and "JOIN workspace_folders" in statement \
+                and not statement.startswith("WITH RECURSIVE"):  # the Space visibility filter is not provenance
             provenance_queries.append(statement)
 
     engine = factory.kw["bind"]
@@ -186,7 +188,7 @@ def test_library_children_loads_document_provenance_in_one_query(
     assert response.status_code == 200
     assert len(response.json()["items"]) == 13
     assert all(len(item["workspace_documents"]) == 1 for item in response.json()["items"])
-    assert len(provenance_queries) == 1
+    assert len(provenance_queries) <= 2  # provenance + Space badges: constant, never one per item
 
 
 def test_member_can_search_library_names_and_see_own_sync_phases(api: tuple[TestClient, sessionmaker[Session]]) -> None:
@@ -383,6 +385,10 @@ def test_remove_folder_removes_local_subtree_and_preserves_siblings(api, indexed
         root = session.query(LibraryNode).filter_by(kind="source").one()
         session.add(LibraryNode(organization_id=root.organization_id, source_id=root.source_id,
                                 parent_id=root.id, external_id="sibling", kind="folder", name="Sibling"))
+        session.flush()
+        sibling = session.query(LibraryNode).filter_by(external_id="sibling").one()
+        session.add(LibraryNode(organization_id=root.organization_id, source_id=root.source_id,
+                                parent_id=sibling.id, external_id="sibling-file", kind="file", name="sibling.pdf"))
         if not indexed:
             session.query(Document).delete()
     removed = client.delete(f"/library/nodes/{outer}/index?organization_id={organization}")

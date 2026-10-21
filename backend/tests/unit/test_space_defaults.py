@@ -159,3 +159,36 @@ def test_org_without_spaces_keeps_legacy_flows_working(session):
     source = _source(session, org, owner)
     folder = _select(session, OrganizationScope(org.id), owner, source, "a")
     assert folder.id is not None and _grants(session) == 0
+
+
+def test_accept_invitation_with_empty_space_ids_joins_default_space(session):
+    """Invariant (b): spaces always enforce, so a person is never left in zero Spaces."""
+    service, scope, org, owner = _org(session)
+    _, token = service.create_invitation(scope=scope, actor_user_id=owner.id, email="n@example.test",
+                                         role=MembershipRole.MEMBER, space_ids=[])
+    user = User(email="n@example.test")
+    session.add(user)
+    session.flush()
+    service.accept_invitation(raw_token=token, user=user)
+    geral = SpaceService.default_space_id(session, org.id)
+    assert user.id in {m.user_id for m in _active_members(session, geral)}
+
+
+def test_every_new_member_and_folder_lands_in_a_space(session):
+    """Invariants (a)-(c) end to end: owner + new person + new folder are all inside the default Space."""
+    service, scope, org, owner = _org(session)
+    newcomer = User(email="n@example.test")
+    session.add(newcomer)
+    session.flush()
+    service.add_membership(scope=scope, user_id=newcomer.id, role=MembershipRole.ADMIN, actor_user_id=owner.id)
+    folder = _select(session, scope, owner, _source(session, org, owner), "a")
+    from app.spaces.access import SpaceAccessResolver
+    resolver = SpaceAccessResolver(session)
+    for user in (owner, newcomer):
+        access = resolver.resolve(scope=scope, user_id=user.id)
+        assert access.allows(folder.id) and access.org_admin
+
+
+def test_drive_robot_space_check_treats_empty_as_default():
+    from app.integrations.google_drive_sa_service import DriveSaConnectionService
+    assert DriveSaConnectionService.check_spaces(object.__new__(DriveSaConnectionService), None, []) is None

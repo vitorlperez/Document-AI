@@ -60,9 +60,8 @@ def test_every_file_reports_state_and_reason(api):
         "failed.pdf": ("failed", "text_extraction_failed"),
         "video.mp4": ("ignored", "unsupported_file_type"),
         "empty.pdf": ("skipped", "empty_content"),
-        "gone.pdf": ("not_found_in_source", None),
     }
-    assert "indexing" not in items["Pasta"]
+    assert "Pasta" not in items  # an empty folder is hidden: Spaces always enforce
     assert indexing["Brief.pdf"]["document_id"] and indexing["Brief.pdf"]["workspace_folder_id"]
     assert indexing["pending.pdf"]["document_id"] is None
     assert set(indexing["Brief.pdf"]) == {"state", "error_code", "document_id", "workspace_folder_id", "indexed_at"}
@@ -123,11 +122,19 @@ def test_folder_nodes_report_robot_drive_access_state(api):
         ):
             session.add(LibraryNode(organization_id=UUID(organization), source_id=UUID(source),
                                     parent_id=UUID(root), external_id=external, kind="folder", name=external))
+            session.flush()
+            session.add(LibraryNode(organization_id=UUID(organization), source_id=UUID(source),  # folders need a readable child
+                                    parent_id=session.query(LibraryNode).filter_by(external_id=external).one().id,
+                                    external_id=external + "-file", kind="file", name=external + ".pdf"))
             session.add(DriveFolderLink(
                 organization_id=UUID(organization), data_source_id=UUID(source), external_folder_id=external,
                 folder_name=external, status=status, purge_after=after, created_by_user_id=user.id))
         session.add(LibraryNode(organization_id=UUID(organization), source_id=UUID(source),
                                 parent_id=UUID(root), external_id="plain", kind="folder", name="plain"))
+        session.flush()
+        session.add(LibraryNode(organization_id=UUID(organization), source_id=UUID(source),
+                                parent_id=session.query(LibraryNode).filter_by(external_id="plain").one().id,
+                                external_id="plain-file", kind="file", name="plain.pdf"))
         session.commit()
 
     items = children(client, organization, root)

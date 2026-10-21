@@ -66,6 +66,10 @@ def test_review_3_empty_root_does_not_hide_indexed_roots(api):
                             parent_id=indexed.parent_id, external_id='empty', kind='folder', name='Empty')
         session.add(empty)
         session.flush()
+        # Spaces always enforce: a folder is a usable root only with something readable inside
+        session.add(LibraryNode(organization_id=tenant.organization_id, source_id=indexed.source_id,
+                                parent_id=empty.id, external_id='empty-child', kind='file', name='child.pdf'))
+        session.flush()
         roots = [indexed.id, empty.id]
     key = mint_key(factory, tenant, node_ids=roots)
     response = client.post('/v1/search', headers=bearer(key), json={'query': 'Aurora'})

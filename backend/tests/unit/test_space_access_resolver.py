@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 from app.core.models import Base
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
-from app.organizations.models import Membership, Organization
+from app.organizations.models import Membership
 from app.spaces.access import SpaceAccessResolver
 from app.spaces.models import SpaceFolderGrant, SpaceMember
 from app.spaces.service import SpaceNotFound

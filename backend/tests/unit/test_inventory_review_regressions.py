@@ -3,11 +3,10 @@
 import unicodedata
 
 import pytest
-
-from app.core.access_errors import SyncAccessDenied
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 
+from app.core.access_errors import SyncAccessDenied
 from app.knowledge.models import Document, DocumentChunk
 from app.library.models import LibraryNode
 from app.library.service import SNAPSHOT_MAX_CHUNK_CHARS, SNAPSHOT_MAX_CHUNKS, LibraryService

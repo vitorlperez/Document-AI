@@ -39,7 +39,7 @@ from app.knowledge.questions import AIProviderUnavailable, QuestionService
 from app.knowledge.search import SearchUnavailable, TextSearchService
 from app.library.service import LibraryService
 from app.library.tool_groups import tool_group
-from app.organizations.models import Membership, Organization
+from app.organizations.models import Membership
 from app.spaces.access import SpaceAccessResolver
 from app.spaces.service import SpaceNotFound
 

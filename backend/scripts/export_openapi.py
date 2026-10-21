@@ -14,7 +14,7 @@ TARGET = Path(__file__).resolve().parents[2] / "docs/api/openapi-v1.json"
 
 
 def schema():
-    return get_openapi(title="Arquivio Public API", version="1.0.0", routes=router.routes,
+    return get_openapi(title="Arquivio Public API", version="1.1.0", routes=router.routes,
                        description="Read-only organization library. Bearer API keys.")
 
 

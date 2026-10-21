@@ -11,7 +11,6 @@ from app.core.scoping import OrganizationScope
 from app.knowledge.models import Document
 from app.library.models import LibraryNode
 from app.library.service import LibraryService
-from app.organizations.models import Organization
 from app.spaces.access import SpaceAccessResolver
 from tests.spaces_helpers import seed_world
 

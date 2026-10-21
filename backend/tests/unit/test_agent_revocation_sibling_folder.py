@@ -9,10 +9,9 @@ being admitted while the other stays queryable.
 # ruff: noqa: F811
 
 import json
-
-from app.core.access_errors import SyncAccessDenied
 from uuid import uuid4
 
+from app.core.access_errors import SyncAccessDenied
 from app.knowledge.agent import ConversationService
 from app.workspaces.models import WorkspaceFolder
 from tests.unit.test_agent_revocation_review import (

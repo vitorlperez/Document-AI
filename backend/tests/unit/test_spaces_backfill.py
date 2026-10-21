@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -9,7 +10,6 @@ from app.organizations.models import Membership, MembershipRole, Organization
 from app.spaces.backfill import backfill_default_spaces
 from app.spaces.models import Space, SpaceFolderGrant, SpaceMember
 from app.workspaces.models import WorkspaceFolder
-import pytest
 
 pytestmark = pytest.mark.no_auto_spaces
 

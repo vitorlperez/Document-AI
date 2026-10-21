@@ -73,7 +73,7 @@ export function SpaceChips({ spaces, selected, onChange }: { spaces: SpaceRef[];
   </div>;
 }
 
-/** Selo(s) de Espaço com texto (nunca só cor); mais de `max` colapsam em “+N”. Sem Espaços (modo off/shadow ou backend antigo): nada. */
+/** Selo(s) de Espaço com texto (nunca só cor); mais de `max` colapsam em “+N”. Sem Espaços (backend antigo): nada. */
 export function SpaceBadges({ spaces, max = 2 }: { spaces?: SpaceRef[]; max?: number }) {
   if (!spaces?.length) return null;
   const { visible, hiddenCount } = spaceBadges(spaces, max);

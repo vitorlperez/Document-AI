@@ -60,7 +60,7 @@ export type SpaceListEntry<T> = { type: "heading"; key: string; label: string; c
 export const NO_SPACE_LABEL = "Sem Espaço informado";
 /**
  * "Agrupar por Espaço": a mesma página de itens, com um cabeçalho por Espaço. Um item em dois Espaços aparece nos dois grupos.
- * Sem nenhum selo nos itens (organização em modo off/shadow ou backend sem selos), devolve a lista plana.
+ * Sem nenhum selo nos itens (backend sem selos), devolve a lista plana.
  */
 export function withSpaceHeadings<T extends { id: string; spaces?: SpaceTag[] }>(items: T[], groupBySpace: boolean): SpaceListEntry<T>[] {
   const flat = (): SpaceListEntry<T>[] => items.map((item) => ({ type: "item", key: item.id, item }));

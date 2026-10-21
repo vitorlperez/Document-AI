@@ -1,6 +1,6 @@
 # ADR-0021: Espaços — acesso a conteúdo por pessoa, com visão unificada
 
-- **Status:** Aprovado e implementado (branch `feat/espacos`; rollout por organização com `python -m app.spaces.rollout`)
+- **Status:** Aprovado e implementado (branch `feat/espacos`; rollout por organização com `python -m app.spaces.rollout`; **desde 2026-10-20 sempre em enforce, sem modos**)
 - **Data:** 2026-10-19
 - **Decisor:** produto (usuário). Decisões do dono já dadas em 2026-10-19: (P-1) o Drive em produção segue **por enquanto** com o robô (conta de serviço com quem o cliente compartilha pastas) — CASA/OAuth `drive.readonly` fora deste plano; (P-2) integrações de comunicação (WhatsApp, Slack, Teams) ficam para depois; (P-3) quem tem acesso a vários Espaços **não pode ficar trocando de Espaço** para achar as coisas.
 - **Relaciona-se com:** `specs/research/comunicacao-espacos-viabilidade-2026-10-15.md` (D-0…D-7; este ADR assume D-2, D-3, D-4, D-7 e deixa D-0/D-1/D-5/D-6 — chat — fora de escopo), `specs/plans/integracoes/03-api-mcp-e-canais.md` (D1: credencial ⊆ usuário), ADR-0006 (projeção da biblioteca), ADR-0007 (escopos de pergunta indexados), ADR-0013 (chave por provider), ADR-0015 (cerca anti-injeção), ADR-0020 (ação humana aprovada), `specs/espacos/plano-implementacao.md` (plano de execução).
@@ -87,6 +87,17 @@ Fatos que moldam a decisão (todos verificados em código em 2026-10-19):
 - Escala (T-D0, `spikes/library-scale/results/api_10k_spaces.json`, `api_50k_spaces.json`): CTE recursiva dentro do orçamento até 50k arquivos; `library_node_folders` (T-D6) **não** foi liberada.
 - Rollout: `python -m app.spaces.rollout` (`status`, `report`, `off|shadow|enforce`, `enforce --all-clean`); `enforce` recusa organização com pasta/pessoa sem Espaço.
 - Fora do entregue: coluna "Espaços" por pasta em Integrações.
+
+## Decisão de 2026-10-20 — Espaços sempre em enforce
+
+Decisão do dono (literal): *"vamos deixar o enforce por padrão para todas as empresas. Esse será o único modo padrão e que deve existir."* Os modos `off` e `shadow` deixam de existir: a coluna `organizations.spaces_resolver_mode` foi removida (migração `20261020_0038_spaces_always_enforce`, que antes garante o Espaço padrão "Geral" com todas as pessoas ativas e todas as pastas sem Espaço — idempotente; o `downgrade` recria a coluna com `enforce`), `SpaceAccessResolver` só tem o comportamento estrito (fail-closed), o caminho legado e o log de divergência saíram, e pasta inalcançável é **sempre** `404` uniforme (pessoa de fora da organização continua `403`). `SPACES_NEW_ORG_MODE` não existe mais.
+
+Regras que o `enforce` permanente depende (cobertas por teste):
+- organização nova nasce com "Geral" e o criador como `manager`;
+- pessoa nova (convite aceito, inclusive sem `space_ids`, com `space_ids` vazio ou todos inválidos) entra no Espaço padrão;
+- pasta nova (qualquer conector: robô do Drive, OAuth, OneDrive/SharePoint, Notion…) sem `space_ids` vai para o Espaço padrão; lista vazia do robô conta como "sem lista";
+- **owner/admin da organização não veem "tudo"**: leem só as pastas dos Espaços de que fazem parte (como qualquer pessoa); a diferença é `org_admin` — veem, em metadados operacionais, nós do catálogo que nenhum escopo indexa e o histórico de sincronizações, sem nomes de arquivos de escopos que não leem.
+- O CLI `python -m app.spaces.rollout` ficou só com `report` (pastas/pessoas sem Espaço; saída `2` se houver).
 
 ## Pontos em aberto
 

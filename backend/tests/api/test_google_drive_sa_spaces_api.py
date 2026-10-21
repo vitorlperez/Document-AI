@@ -6,6 +6,7 @@ from sqlalchemy import select
 
 from app.spaces.models import Space, SpaceFolderGrant
 from tests.api.test_google_drive_sa_api import batch_setup, google_api  # noqa: F401
+
 pytestmark = pytest.mark.no_auto_spaces
 
 TREE = {"contracts_0001": ("Contratos", []), "finance_00001": ("Financeiro", [])}

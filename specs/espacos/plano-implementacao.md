@@ -1,6 +1,8 @@
 # Espaços com acesso por pessoa + visão unificada — Plano de Implementação
 
 > **STATUS (2026-10-19): implementado na branch `feat/espacos`; integrado e verificado.** O texto abaixo é o plano original; o que a implementação mudou está em **"Estado da implementação"**, logo após o índice. `enforce` só deve ser ligado por organização, com `python -m app.spaces.rollout` (T-J1), depois de uma janela `shadow` sem divergência.
+>
+> **ATUALIZAÇÃO (2026-10-20): não existem mais os modos `off`/`shadow`.** Decisão do dono: Espaços sempre em `enforce` (ver ADR-0021, “Decisão de 2026-10-20”). Tudo neste plano sobre `spaces_resolver_mode`, rollout por modo, `shadow`/divergência, `403` legado em `off` e `SPACES_NEW_ORG_MODE` é histórico: a coluna foi removida pela migração 0038 (que também garante “Geral” com todas as pessoas e pastas sem Espaço) e o CLI `python -m app.spaces.rollout` agora só tem `report`.
 
 **Goal:** o admin da empresa (ou o responsável pelo Espaço) habilita/desabilita pessoas em Espaços específicos, e quem tem acesso a vários Espaços enxerga **uma visão única** — biblioteca, busca e chat/agente sobre a **união** dos seus Espaços — com filtro opcional por Espaço e selo de Espaço em cada documento/citação.
 

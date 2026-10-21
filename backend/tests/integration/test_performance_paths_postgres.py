@@ -128,7 +128,7 @@ def test_postgres_children_and_workspace_listing_use_one_batch_each(postgres_api
     assert children.status_code == 200
     assert len(children.json()["items"]) == 12
     assert all(len(item["workspace_documents"]) == 3 for item in children.json()["items"])
-    assert len([query for query in child_queries if "from documents" in query and "join workspace_folders" in query]) == 1
+    assert len([query for query in child_queries if "from documents" in query and "join workspace_folders" in query]) <= 2  # provenance + Space badges
     assert folders.status_code == 200
     assert len(folders.json()) == 3
     assert [row["selection_folder_ids"] for row in folders.json()] == [

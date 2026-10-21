@@ -8,9 +8,8 @@ from app.core.scoping import OrganizationScope
 from app.integrations.google_drive import GoogleAccessDenied
 from app.knowledge.questions import Evidence, GeneratedAnswer, QuestionService
 from app.library.service import LibraryService
-from app.organizations.models import Organization
 from app.workspaces.service import WorkspaceService
-from tests.spaces_helpers import FOLDERS, seed_world
+from tests.spaces_helpers import seed_world
 
 
 class FakeProvider:
