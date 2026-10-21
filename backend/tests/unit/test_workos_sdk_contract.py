@@ -1,5 +1,6 @@
 """Use the installed SDK with intercepted HTTP; never call a real provider."""
 
+import inspect
 import json
 
 import httpx
@@ -33,10 +34,17 @@ RESET = {
 def sdk_gateway(monkeypatch):
     clients = []
     def make(handler):
-        client = WorkOSClient(api_key="test-key", client_id="client_test", max_retries=0)
-        client._client.close()
-        client._client = httpx.Client(transport=httpx.MockTransport(handler))
-        clients.append(client._client)
+        mock_http = httpx.Client(transport=httpx.MockTransport(handler))
+        if "http_client" in inspect.signature(WorkOSClient.__init__).parameters:
+            # workos >= 10.4 accepts the HTTP client; the private attribute is gone.
+            client = WorkOSClient(
+                api_key="test-key", client_id="client_test", max_retries=0, http_client=mock_http
+            )
+        else:
+            client = WorkOSClient(api_key="test-key", client_id="client_test", max_retries=0)
+            client._client.close()
+            client._client = mock_http
+        clients.append(mock_http)
         gateway = WorkOSAuthKitGateway(api_key="test-key", client_id="client_test", redirect_uri="https://app.example.test/callback")
         monkeypatch.setattr(gateway, "_client", lambda: client)
         return gateway
