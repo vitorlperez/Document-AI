@@ -15,6 +15,8 @@
 .product-app .page-surface {
   padding: var(--page-panel-space);
   border-radius: 10px;
+  /* clip, not hidden: still cuts the content at the radius, but is not a scroll container, so `position: sticky` inside (the Espaço folders save bar) sticks to the viewport. */
+  overflow: clip;
 }
 .product-page-heading {
   padding: 10px var(--page-panel-space);
