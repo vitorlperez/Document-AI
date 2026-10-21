@@ -5,11 +5,12 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { type Company } from "./types-and-api";
 import { EmptyState, Enter, ErrorState, LoadingBlock, SkeletonList, btn } from "../ui";
 import { canManageMembers, impactSentence } from "../spaces-model";
-import { DISCLOSURE_TEXT, addableCandidates, canEnterSpace, spaceRoleLabel, toSpacesError, type OrgPerson, type SpaceFolder, type SpaceImpact, type SpaceMemberRow, type SpaceRole, type SpaceSummary } from "./spaces-api";
+import { DISCLOSURE_TEXT, addableCandidates, canEnterSpace, spaceRoleLabel, toSpacesError, type NodeGrant, type OrgPerson, type SpaceFolder, type SpaceImpact, type SpaceMemberRow, type SpaceRole, type SpaceSummary, type TreeFolder } from "./spaces-api";
 import { spacesApi } from "./spaces-client";
 import { SpaceConfirmDialog } from "./space-dialogs";
 import { SpaceFolderTree } from "./space-folder-tree";
-import { folderDiff, groupFoldersByTool } from "./spaces-folder-tree";
+import { groupFoldersByTool } from "./spaces-folder-tree";
+import { chainsFromGrants, coveredByAncestor, diffSize, emptySelection, selectionDiff, toggleNode, type NodeContext, type Selection } from "./spaces-node-selection";
 import { toolGroup, toolLabel } from "../tool-groups";
 
 type Tab = "people" | "folders";
@@ -190,43 +191,77 @@ function PeopleTab({ company, space, canEdit, visible, setError, setNotice, onCh
 
 function FoldersTab({ company, space, canEdit, setError, setNotice, onChanged }: { company: Company; space: SpaceSummary; canEdit: boolean; setError: (value: string | null) => void; setNotice: (value: string | null) => void; onChanged: () => Promise<void> }) {
   const [folders, setFolders] = useState<SpaceFolder[]>([]); const [loading, setLoading] = useState(true); const [loadError, setLoadError] = useState<string | null>(null);
-  const [initial, setInitial] = useState<Set<string>>(new Set()); const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [initial, setInitial] = useState<Selection>(emptySelection()); const [selected, setSelected] = useState<Selection>(emptySelection());
+  const [grants, setGrants] = useState<NodeGrant[]>([]); const [chains, setChains] = useState<Map<string, readonly string[]>>(new Map());
+  const [roots, setRoots] = useState<Record<string, TreeFolder[]>>({}); const [children, setChildren] = useState<Record<string, TreeFolder[] | "error">>({});
+  const [names, setNames] = useState<Map<string, string>>(new Map()); const [converted, setConverted] = useState(false);
   const [busy, setBusy] = useState(false); const [confirming, setConfirming] = useState(false); const [dialogError, setDialogError] = useState<string | null>(null);
   const reload = useCallback(async () => {
     setLoading(true); setLoadError(null);
     try {
-      const rows = await spacesApi.folders(company.id);
-      const granted = new Set(rows.filter((folder) => folder.spaces.some((item) => item.id === space.id)).map((folder) => folder.id));
-      setFolders(rows); setInitial(granted); setSelected(new Set(granted));
+      const [rows, nodeGrants, treeRoots] = await Promise.all([
+        spacesApi.folders(company.id),
+        spacesApi.nodeGrants(company.id, space.id).catch(() => [] as NodeGrant[]),
+        canEdit ? spacesApi.folderRoots(company.id).catch(() => ({} as Record<string, TreeFolder[]>)) : Promise.resolve({} as Record<string, TreeFolder[]>),
+      ]);
+      const scopes = new Set(rows.filter((folder) => folder.spaces.some((item) => item.id === space.id)).map((folder) => folder.id));
+      const nodes = new Set(nodeGrants.flatMap((grant) => grant.node_id ? [grant.node_id] : []));
+      const known = new Map<string, string>(nodeGrants.flatMap((grant) => grant.node_id ? [[grant.node_id, grant.path ?? grant.name] as [string, string]] : []));
+      for (const list of Object.values(treeRoots)) for (const root of list) known.set(root.id, root.name);
+      setFolders(rows); setGrants(nodeGrants); setRoots(treeRoots); setChildren({}); setNames(known); setConverted(false);
+      setChains(chainsFromGrants(nodeGrants));
+      setInitial({ scopes, nodes }); setSelected({ scopes: new Set(scopes), nodes: new Set(nodes) });
     } catch (caught) { setLoadError(toSpacesError(caught).message); } finally { setLoading(false); }
-  }, [company.id, space.id]);
+  }, [company.id, space.id, canEdit]);
   useEffect(() => { void Promise.resolve().then(reload); }, [reload]);
-  const diff = useMemo(() => folderDiff(initial, selected), [initial, selected]);
-  const dirty = diff.grant.length + diff.revoke.length > 0;
+  const diff = useMemo(() => selectionDiff(initial, selected), [initial, selected]);
+  const dirty = diffSize(diff) > 0;
   // Quem só lê vê apenas as pastas do Espaço; quem edita vê todas as pastas conectadas da organização.
-  const groups = useMemo(() => groupFoldersByTool(canEdit ? folders : folders.filter((folder) => initial.has(folder.id)), { group: toolGroup, label: toolLabel }), [folders, canEdit, initial]);
+  const groups = useMemo(() => groupFoldersByTool(canEdit ? folders : folders.filter((folder) => initial.scopes.has(folder.id)), { group: toolGroup, label: toolLabel }), [folders, canEdit, initial]);
+  const loadChildren = useCallback((nodeId: string) => {
+    void spacesApi.folderChildren(company.id, nodeId).then((items) => {
+      setChildren((current) => ({ ...current, [nodeId]: items }));
+      setNames((current) => { const next = new Map(current); for (const item of items) next.set(item.id, item.name); return next; });
+    }).catch(() => setChildren((current) => ({ ...current, [nodeId]: "error" })));
+  }, [company.id]);
+  const levels = useCallback((parentId: string | null, scopeId?: string) => {
+    if (parentId === null) return scopeId ? roots[scopeId] : undefined;
+    const found = children[parentId];
+    return found === "error" ? undefined : found;
+  }, [roots, children]);
+  const toggle = useCallback((ctx: NodeContext) => {
+    const wasCovered = coveredByAncestor(ctx, selected);
+    const out = toggleNode(ctx, selected, chains, (parentId) => levels(parentId, ctx.scopeId));
+    if (!out) { setError("Abra a pasta antes de desmarcar uma subpasta dela."); return; }
+    setSelected(out.selection); setChains(out.chains);
+    if (wasCovered) setConverted(true);
+  }, [selected, chains, levels, setError]);
   async function save() {
     setBusy(true); setDialogError(null);
     try {
-      await spacesApi.changeFolders(company.id, space.id, diff);
-      const parts = [diff.grant.length ? `${plural(diff.grant.length, "pasta adicionada", "pastas adicionadas")}` : "", diff.revoke.length ? `${plural(diff.revoke.length, "pasta removida", "pastas removidas")}` : ""].filter(Boolean);
+      await spacesApi.changeFolders(company.id, space.id, { grant: diff.grant, revoke: diff.revoke, grant_nodes: diff.grantNodes, revoke_nodes: diff.revokeNodes });
+      const added = diff.grant.length + diff.grantNodes.length; const removed = diff.revoke.length + diff.revokeNodes.length;
+      const parts = [added ? `${plural(added, "pasta adicionada", "pastas adicionadas")}` : "", removed ? `${plural(removed, "pasta removida", "pastas removidas")}` : ""].filter(Boolean);
       setNotice(`${space.name}: ${parts.join(" e ")}.`); setConfirming(false);
       await reload(); await onChanged();
     } catch (caught) { const message = toSpacesError(caught).message; if (confirming) setDialogError(message); else setError(message); } finally { setBusy(false); }
   }
+  const discard = () => { setSelected({ scopes: new Set(initial.scopes), nodes: new Set(initial.nodes) }); setChains(chainsFromGrants(grants)); setConverted(false); };
   if (loading) return <LoadingBlock label="Carregando pastas…" className="min-h-32"><SkeletonList rows={3} /></LoadingBlock>;
   if (loadError) return <ErrorState icon={<CircleAlert size={22} />} title="Não foi possível carregar as pastas" description={loadError} actions={<button className={btn("secondary")} onClick={() => void reload()}>Tentar novamente</button>} />;
-  if (groups.length === 0) return <EmptyState icon={<FolderOpen size={22} />} title={canEdit ? "Nenhuma pasta conectada" : "Nenhuma pasta neste Espaço"} description={canEdit ? "Conecte uma pasta em Integrações para poder compartilhá-la com um Espaço." : "Este Espaço ainda não recebeu pastas."} />;
+  if (groups.length === 0 && grants.length === 0) return <EmptyState icon={<FolderOpen size={22} />} title={canEdit ? "Nenhuma pasta conectada" : "Nenhuma pasta neste Espaço"} description={canEdit ? "Conecte uma pasta em Integrações para poder compartilhá-la com um Espaço." : "Este Espaço ainda não recebeu pastas."} />;
+  const removedNames = [...diff.revoke.map((id) => folders.find((folder) => folder.id === id)?.name ?? "pasta"), ...diff.revokeNodes.map((id) => names.get(id) ?? "pasta")];
+  const summary = [diff.grant.length + diff.grantNodes.length ? `+${diff.grant.length + diff.grantNodes.length} para compartilhar` : "", diff.revoke.length + diff.revokeNodes.length ? `−${diff.revoke.length + diff.revokeNodes.length} para remover` : ""].filter(Boolean).join(" · ");
   return <div>
-    <p className="mb-3 text-sm text-muted-foreground">{canEdit ? <>Marque as pastas que <strong>{space.name}</strong> pode ler. Marcar uma ferramenta marca todas as pastas dela.</> : <>Pastas que <strong>{space.name}</strong> pode ler. Só administradores da organização alteram esta lista.</>}</p>
-    <SpaceFolderTree groups={groups} selected={selected} onChange={canEdit ? setSelected : undefined} spaceId={space.id} spaceName={space.name} />
+    <p className="mb-3 text-sm text-muted-foreground">{canEdit ? <>Marque as pastas que <strong>{space.name}</strong> pode ler. Marcar uma pasta marca tudo o que há dentro; abra uma pasta para escolher só algumas subpastas.</> : <>Pastas que <strong>{space.name}</strong> pode ler. Só administradores da organização alteram esta lista.</>}</p>
+    <SpaceFolderTree groups={groups} selection={selected} onChange={canEdit ? setSelected : undefined} nodes={canEdit ? { roots, children, chains, load: loadChildren, toggle } : undefined} grants={grants} spaceId={space.id} spaceName={space.name} />
     {canEdit && dirty && <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line-soft bg-panel px-4 py-3 md:bottom-0" data-testid="folders-save-bar">
-      <p className="min-w-0 text-sm" role="status">{[diff.grant.length ? `+${diff.grant.length} para compartilhar` : "", diff.revoke.length ? `−${diff.revoke.length} para remover` : ""].filter(Boolean).join(" · ")}{diff.grant.length > 0 && <span className="block text-xs text-muted-foreground">{DISCLOSURE_TEXT}</span>}</p>
-      <div className="flex gap-2"><button type="button" className={btn("ghost")} disabled={busy} onClick={() => setSelected(new Set(initial))}>Descartar</button>
-        <button type="button" className={btn("primary")} disabled={busy} aria-busy={busy} onClick={() => diff.revoke.length ? (setDialogError(null), setConfirming(true)) : void save()}>{busy && !confirming ? "Salvando…" : "Salvar alterações"}</button></div>
+      <p className="min-w-0 text-sm" role="status">{summary}{diff.grant.length + diff.grantNodes.length > 0 && <span className="block text-xs text-muted-foreground">{DISCLOSURE_TEXT}</span>}{converted && <span className="block text-xs text-muted-foreground">Ao tirar uma subpasta de uma pasta marcada, ficam só as pastas irmãs; arquivos soltos diretamente nas pastas acima dela não entram.</span>}</p>
+      <div className="flex gap-2"><button type="button" className={btn("ghost")} disabled={busy} onClick={discard}>Descartar</button>
+        <button type="button" className={btn("primary")} disabled={busy} aria-busy={busy} onClick={() => diff.revoke.length + diff.revokeNodes.length ? (setDialogError(null), setConfirming(true)) : void save()}>{busy && !confirming ? "Salvando…" : "Salvar alterações"}</button></div>
     </div>}
-    {confirming && <SpaceConfirmDialog title={`Remover ${plural(diff.revoke.length, "pasta", "pastas")} de ${space.name}?`} confirmLabel="Salvar e remover" busyLabel="Salvando…" busy={busy} error={dialogError} onConfirm={() => void save()} onCancel={() => setConfirming(false)}>
-      <p>As pessoas de <strong>{space.name}</strong> deixam de ver, por este Espaço, o conteúdo de: {diff.revoke.map((id) => folders.find((folder) => folder.id === id)?.name ?? "pasta").join(", ")}. Conversas e automações que dependiam dessas pastas podem ser pausadas.</p>
+    {confirming && <SpaceConfirmDialog title={`Remover ${plural(diff.revoke.length + diff.revokeNodes.length, "pasta", "pastas")} de ${space.name}?`} confirmLabel="Salvar e remover" busyLabel="Salvando…" busy={busy} error={dialogError} onConfirm={() => void save()} onCancel={() => setConfirming(false)}>
+      <p>As pessoas de <strong>{space.name}</strong> deixam de ver, por este Espaço, o conteúdo de: {removedNames.join(", ")}. Conversas e automações que dependiam dessas pastas podem ser pausadas.</p>
       <p className="text-muted-foreground">O que as pessoas veem por outros Espaços não muda.</p></SpaceConfirmDialog>}
   </div>;
 }

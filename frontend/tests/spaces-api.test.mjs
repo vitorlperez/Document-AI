@@ -88,3 +88,23 @@ test("changeFolders sends one PUT with the diff and the disclosure only when gra
   assert.ok(calls[0].body.disclosure.text_version);
   assert.equal(calls[1].body.disclosure, undefined);
 });
+
+test("changeFolders also carries library folders and asks for the disclosure when only a folder is granted", async () => {
+  const { api, calls } = recorder({ granted: [], revoked: [], granted_nodes: [], revoked_nodes: [] });
+  await api.changeFolders("o", "s", { grant: [], revoke: [], grant_nodes: ["n1"], revoke_nodes: ["n2"] });
+  await api.changeFolders("o", "s", { grant: [], revoke: [], revoke_nodes: ["n2"] });
+  assert.deepEqual([calls[0].body.grant_nodes, calls[0].body.revoke_nodes], [["n1"], ["n2"]]);
+  assert.ok(calls[0].body.disclosure.text_version);
+  assert.equal(calls[1].body.disclosure, undefined);
+});
+
+test("the folder tree reads the roots of each synchronization, subfolders on demand and the Space's granted folders", async () => {
+  const { api, calls } = recorder({ items: [{ id: "n", name: "2026", has_children: false, source_id: "src" }] });
+  const children = await api.folderChildren("o", "n0");
+  await api.folderRoots("o");
+  await api.nodeGrants("o", "s");
+  assert.deepEqual(calls.map((c) => `${c.method} ${c.path}`), [
+    "GET /organizations/o/spaces/folder-tree/nodes/n0/children", "GET /organizations/o/spaces/folder-tree/roots", "GET /organizations/o/spaces/s/node-grants",
+  ]);
+  assert.equal(children[0].name, "2026");
+});

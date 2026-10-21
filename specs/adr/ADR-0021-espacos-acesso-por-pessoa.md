@@ -99,6 +99,18 @@ Regras que o `enforce` permanente depende (cobertas por teste):
 - **owner/admin da organização não veem "tudo"**: leem só as pastas dos Espaços de que fazem parte (como qualquer pessoa); a diferença é `org_admin` — veem, em metadados operacionais, nós do catálogo que nenhum escopo indexa e o histórico de sincronizações, sem nomes de arquivos de escopos que não leem.
 - O CLI `python -m app.spaces.rollout` ficou só com `report` (pastas/pessoas sem Espaço; saída `2` se houver).
 
+## Decisão de 2026-10-21 — Espaços no nível das pastas (grant por pasta da biblioteca)
+
+Pedido do dono: além de marcar uma pasta raiz inteira, entrar nela e escolher **subpastas** para o Espaço. Uma `WorkspaceFolder` é uma *sincronização* (um pacote de pastas do Drive escolhidas na conexão), não uma pasta do Drive; os documentos pertencem a ela. Por isso a subpasta não cabia no grant atual.
+
+Desenho (migração `20261021_0040_space_node_grants`, encadeada na 0039):
+- Tabela `space_node_grants` ao lado de `space_folder_grants`: a pasta é nomeada por `source_id` + `external_id` (id estável do provedor, não a linha do catálogo — poda e recriação de pasta vazia não derrubam nem movem o grant; pasta ausente do catálogo concede nada). Revogação lógica, auditoria `space.node_granted|node_revoked`. Os grants de `WorkspaceFolder` continuam valendo sem mudança.
+- Herança é de **leitura**, sobre `library_nodes` (CTE recursiva), nunca cópia: um documento é legível se o escopo dele foi concedido inteiro **ou** é cópia de um arquivo (mesma fonte, mesmo `external_id`) abaixo de uma pasta concedida. Esse predicado é um só (`app/spaces/readable.py`).
+- `SpaceAccess.folder_ids` continua significando "escopos inteiros". O novo `SpaceAccess.node_grants` é separado: consumidor que não o conhece enxerga **menos**, nunca mais (fail-closed). Escopos lidos só em parte (`partial_folder_ids`) entram na pergunta somente por quem limita cada documento com o predicado (`ask*`, retrieval, catálogo do agente, perguntas por escopo/automação); `QuestionSelection.folder_ids` ficou só com escopos inteiros.
+- Aplicado em: raízes/filhos/busca/menções/`locate` da biblioteca e selos de Espaço, `catalog_file_snapshots`, `retrieval.search/fetch`, `QuestionService.ask`, evidência e visualização de documento, selos de citação, visibilidade de derivados (um escopo parcial nunca "abona" uma resposta sozinho), alcance de chave de API e MCP. Fica de fora (e portanto negado): listagens por escopo (`/workspace-folders/{id}/…`), sync-status/histórico de sincronização dos escopos parciais, overview de pasta e `/sources` do MCP/API.
+- Administração: `PUT /spaces/{id}/folders` aceita `grant_nodes`/`revoke_nodes`; `GET /spaces/{id}/node-grants` (membros e admins); `GET /spaces/folder-tree/roots` e `/folder-tree/nodes/{id}/children` (só owner/admin, só nomes de pasta). Revogar recheca automações e consultas seguidas dos membros.
+- Limite conhecido: o grant é "pasta + tudo abaixo". Desmarcar uma subpasta de uma pasta marcada converte o pai em grants das pastas irmãs de cada nível; arquivos soltos diretamente nos níveis acima dela deixam de entrar (a interface avisa). Um grant "só os arquivos diretos desta pasta" fica como evolução.
+
 ## Pontos em aberto
 
 - Q-2 (D-2 na operação): admin vê nomes de arquivo só após "Entrar" — confirmar com o dono.
