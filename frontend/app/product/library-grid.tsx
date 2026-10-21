@@ -105,7 +105,10 @@ export function LibraryGrid({ items, groupBySpace = false, size, loading, canMan
       const isFolder = item.kind !== "file";
       const indexed = !isFolder && (item.workspace_documents?.length ?? 0) > 0;
       const kind = fileKind(item.name, item.mime_type); const Icon = KIND_ICON[kind];
+      const canAsk = !!onAsk && item.kind !== "source" && (isFolder || indexed);
+      const askLabel = isFolder ? "Perguntar sobre esta pasta" : "Perguntar sobre este arquivo";
       const actions: MenuAction[] = [];
+      if (canAsk) actions.push({ key: "ask", label: askLabel, icon: <MessageSquare size={15} aria-hidden="true" />, run: () => onAsk(item) });
       if (!isFolder && item.source_url) actions.push({ key: "open", label: "Abrir no provedor", icon: <ExternalLink size={15} aria-hidden="true" />, run: () => onOpen(item) });
       if (canManage && !isFolder && indexed) {
         actions.push({ key: "reprocess", label: "Reprocessar arquivo", icon: <RefreshCw size={15} aria-hidden="true" />, disabled: busyFileId !== null, run: () => onReprocessFile(item) });
@@ -124,7 +127,7 @@ export function LibraryGrid({ items, groupBySpace = false, size, loading, canMan
         </button>
         {!isFolder && <div className="library-card-indexing"><LibraryIndexingBadge item={item} /></div>}
         {item.access_state && <div className="library-card-indexing"><LibraryAccessBadge item={item} /></div>}
-        {onAsk && item.kind !== "source" && (isFolder || indexed) && <button type="button" className="library-card-ask" onClick={() => onAsk(item)} aria-label={isFolder ? `Perguntar sobre a pasta ${item.name}` : `Perguntar sobre ${item.name}`}><MessageSquare size={13} aria-hidden="true" /><span>{isFolder ? "Perguntar sobre esta pasta" : "Perguntar"}</span></button>}
+        {canAsk && <button type="button" className="library-card-ask" onClick={() => onAsk(item)} title={askLabel} aria-label={`${askLabel}: ${item.name}`}><MessageSquare size={16} aria-hidden="true" /></button>}
         <CardMenu name={item.name} actions={actions} />
       </li>;
     })}
