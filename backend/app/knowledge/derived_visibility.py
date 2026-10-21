@@ -19,7 +19,7 @@ from app.core.sqlids import ids_clause
 from app.knowledge.models import Document
 from app.library.models import LibraryNode
 from app.spaces.access import SpaceAccess
-from app.spaces.readable import ancestor_chains, documents_under_nodes, partial_folder_ids
+from app.spaces.readable import ancestor_chains, documents_in_grants, partial_folder_ids
 from app.workspaces.models import WorkspaceFolder
 
 HIDDEN_NOTICE = "Conteúdo ocultado por mudança de acesso."
@@ -154,7 +154,7 @@ def _readable_documents(session: Session, access: SpaceAccess, document_ids: Col
         readable |= set(session.scalars(select(Document.id).where(
             Document.organization_id == access.organization_id, Document.index_status != "removed",
             ids_clause(session, Document.id, [row.id for row in own if row.id not in readable]),
-            documents_under_nodes(session, access.organization_id, access.node_ids))))
+            documents_in_grants(session, access))))
     return frozenset(readable)
 
 

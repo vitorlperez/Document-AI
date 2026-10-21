@@ -6,10 +6,10 @@ queries add; ``access.folder_ids`` alone means "whole scopes only" and never inc
 anything that has not adopted this module fails closed.
 """
 
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, Select, exists, false, or_, select
+from sqlalchemy import ColumnElement, Select, and_, exists, false, or_, select
 from sqlalchemy.orm import Session, aliased
 
 from app.core.sqlids import ids_clause
@@ -46,24 +46,84 @@ def documents_under_nodes(
                scope.id == document.workspace_folder_id, scope.organization_id == organization_id))
 
 
+# Above this many granted files the ids are no longer inlined in the statement (see ``granted_files``).
+MAX_INLINE_FILES = 20_000
+
+
+def granted_files(session: Session, access: SpaceAccess) -> Mapping[UUID, frozenset[str]]:
+    """source id -> external ids of the files below the granted folders: ONE recursive query per request (memoized).
+
+    Content queries filter ``documents`` with these ids (``uq_documents_folder_external`` is then an index lookup)
+    instead of re-running the recursive subtree and a join for every statement."""
+    found = access.memo.get("granted_files")
+    if found is None:
+        files: dict[UUID, set[str]] = {}
+        if access.node_grants:
+            file_node = aliased(LibraryNode)
+            for source_id, external_id in session.execute(
+                select(file_node.source_id, file_node.external_id).where(
+                    file_node.id.in_(granted_subtree(session, access.organization_id, access.node_ids)),
+                    file_node.kind == "file", file_node.organization_id == access.organization_id)):
+                files.setdefault(source_id, set()).add(external_id)
+        found = {source_id: frozenset(ids) for source_id, ids in files.items()}
+        access.memo["granted_files"] = found
+    return found
+
+
+def _source_scopes(session: Session, access: SpaceAccess, source_ids: Collection[UUID]) -> Mapping[UUID, frozenset[UUID]]:
+    found = access.memo.get("source_scopes")
+    if found is None:
+        scopes: dict[UUID, set[UUID]] = {}
+        for scope_id, source_id in session.execute(select(WorkspaceFolder.id, WorkspaceFolder.source_id).where(
+                WorkspaceFolder.organization_id == access.organization_id, ids_clause(session, WorkspaceFolder.source_id, source_ids))):
+            scopes.setdefault(source_id, set()).add(scope_id)
+        found = {source_id: frozenset(ids) for source_id, ids in scopes.items()}
+        access.memo["source_scopes"] = found
+    return found
+
+
+def documents_in_grants(session: Session, access: SpaceAccess, document=Document) -> ColumnElement[bool]:
+    """Predicate on ``document``: a copy of a file below one of the person's granted folders (same source).
+
+    Inlines the materialized ids (``granted_files``) so PostgreSQL walks ``uq_documents_folder_external`` rather than
+    scanning every document of the organization; past ``MAX_INLINE_FILES`` it keeps the correlated subquery."""
+    if not access.node_grants:
+        return false()
+    files = granted_files(session, access)
+    if sum(len(ids) for ids in files.values()) > MAX_INLINE_FILES:
+        return documents_under_nodes(session, access.organization_id, access.node_ids, document)
+    scopes = _source_scopes(session, access, files)
+    parts = [and_(ids_clause(session, document.workspace_folder_id, scopes[source_id]),
+                  ids_clause(session, document.external_file_id, ids))
+             for source_id, ids in files.items() if ids and scopes.get(source_id)]
+    return or_(*parts) if parts else false()
+
+
 def readable_document_clause(session: Session, access: SpaceAccess, document=Document) -> ColumnElement[bool]:
     """Predicate on ``document`` rows the person may read (whole scopes or files below a granted folder)."""
     whole = ids_clause(session, document.workspace_folder_id, access.folder_ids)
     if not access.node_grants:
         return whole
-    return or_(whole, documents_under_nodes(session, access.organization_id, access.node_ids, document))
+    if not access.folder_ids:  # only folder grants: no empty ``= ANY('{}')`` branch to keep the planner off the index
+        return documents_in_grants(session, access, document)
+    return or_(whole, documents_in_grants(session, access, document))
 
 
 def partial_folder_ids(session: Session, access: SpaceAccess) -> frozenset[UUID]:
-    """Scopes the person reads only in part: not granted whole, but holding documents below a granted folder."""
+    """Scopes the person reads only in part: not granted whole, but holding documents below a granted folder
+    (memoized per request: several consumers ask for it)."""
     if not access.node_grants:
         return frozenset()
-    found = set(session.scalars(
-        select(Document.workspace_folder_id).where(
-            Document.organization_id == access.organization_id,
-            Document.index_status.not_in(("removed", "deleted")),
-            documents_under_nodes(session, access.organization_id, access.node_ids)).distinct()))
-    return frozenset(found - access.folder_ids)
+    found = access.memo.get("partial_folder_ids")
+    if found is None:
+        scopes = set(session.scalars(
+            select(Document.workspace_folder_id).where(
+                Document.organization_id == access.organization_id,
+                Document.index_status.not_in(("removed", "deleted")),
+                documents_in_grants(session, access)).distinct()))
+        found = frozenset(scopes - access.folder_ids)
+        access.memo["partial_folder_ids"] = found
+    return found
 
 
 def node_spaces_of_files(

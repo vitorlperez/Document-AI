@@ -44,6 +44,9 @@ class SpaceAccess:
     # content through ``app.spaces.readable``: ``folder_ids`` stays "whole scopes only", so a consumer that does
     # not know about node grants simply sees less (fail-closed), never more.
     node_grants: Mapping[UUID, frozenset[UUID]] = field(default_factory=dict)
+    # Per-request memo for values derived from the grants (files below them, partially read scopes); filled by
+    # ``app.spaces.readable``. Never shared between requests: the access itself is rebuilt for each one.
+    memo: dict[str, object] = field(default_factory=dict, compare=False, repr=False)
 
     @property
     def folder_ids(self) -> frozenset[UUID]:

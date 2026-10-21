@@ -264,3 +264,97 @@ def test_orphan_grant_is_listed_with_its_id_and_revoked_by_it_without_the_catalo
     assert service.revoke_node_grants(scope, admin, rh, [view.grant_id]) == []  # idempotent
     assert session.scalar(select(SpaceNodeGrant.revoked_by_user_id).where(SpaceNodeGrant.id == view.grant_id)) == admin
     assert [v.name for v in service.node_grants(scope, admin, geral)] == ["2026"]  # the other Space is untouched
+
+
+def test_readable_predicate_inlines_materialized_ids_and_is_computed_once_per_request(session):
+    from sqlalchemy import event
+
+    from app.spaces import readable
+    from app.spaces.readable import readable_document_clause
+    tree = Tree(session)
+    tree.grant(session, "rh", tree.y2026)
+    access = tree.access(session, "bruno")
+    statements: list[str] = []
+    event.listen(session.get_bind(), "before_cursor_execute", lambda *args: statements.append(args[2]))
+    first = partial_folder_ids(session, access)
+    again = partial_folder_ids(session, access)
+    clause = readable_document_clause(session, access)
+    readable_document_clause(session, access)
+    recursive = [sql for sql in statements if "WITH RECURSIVE" in sql.upper()]
+    assert first == again == frozenset({tree.shared})
+    assert len(recursive) == 1  # one subtree walk for the whole request, however many predicates it builds
+    sql = str(clause.compile(compile_kwargs={"literal_binds": True}))
+    assert "library_nodes" not in sql and "file-c2026" in sql  # ids inlined, no per-statement subquery
+    assert set(session.scalars(select(Document.id).where(clause, Document.workspace_folder_id == tree.shared))) == {
+        tree.doc["c2026"]}
+    assert readable.MAX_INLINE_FILES >= 1000
+
+
+def test_readable_predicate_past_the_inline_cap_keeps_the_same_rows_through_the_subquery(session, monkeypatch):
+    from app.spaces import readable
+    from app.spaces.readable import readable_document_clause
+    tree = Tree(session)
+    tree.grant(session, "rh", tree.contratos)
+    def shared_rows(clause):
+        return set(session.scalars(select(Document.id).where(clause, Document.workspace_folder_id == tree.shared)))
+
+    inlined = shared_rows(readable_document_clause(session, tree.access(session, "bruno")))
+    monkeypatch.setattr(readable, "MAX_INLINE_FILES", 1)
+    access = tree.access(session, "bruno")
+    clause = readable_document_clause(session, access)
+    assert "library_nodes" in str(clause.compile())
+    assert shared_rows(clause) == inlined == {tree.doc["solto"], tree.doc["c2026"]}
+
+
+def _shared_context(session, tree, who):
+    contexts = LibraryService(session).question_contexts(
+        scope=tree.scope, user_id=tree.world.users[who], include_partial=True)
+    return next(context for context in contexts if context.id == tree.shared)
+
+
+def test_partial_scope_state_comes_from_the_readable_documents_not_the_siblings(session):
+    from app.ingestion.models import ProcessingJob, ProcessingJobStatus
+    tree = Tree(session)
+    tree.grant(session, "rh", tree.y2026)
+    session.get(Document, tree.doc["c2026"]).index_status = "failed"  # the one file bruno reads is not indexed
+    session.add(ProcessingJob(organization_id=tree.world.organization_id, workspace_folder_id=tree.shared,
+                              status=ProcessingJobStatus.SYNCING, idempotency_key="sync-1"))
+    session.flush()
+    context = _shared_context(session, tree, "bruno")
+    assert context.partial and context.query_status == "no_indexed_content"  # siblings are indexed; bruno's file is not
+    assert context.status == "partial_failure" and context.sync_in_progress is False  # the scope's job is not his
+
+
+def test_partial_scope_reads_ready_when_only_siblings_are_unindexed(session):
+    tree = Tree(session)
+    tree.grant(session, "rh", tree.y2026)
+    for key in ("solto", "balanco"):
+        session.get(Document, tree.doc[key]).index_status = "failed"
+    session.flush()
+    context = _shared_context(session, tree, "bruno")
+    assert context.partial and context.query_status == "ready" and context.status == "ready"
+
+
+def test_member_impact_counts_what_a_folder_grant_gives_and_other_spaces_do_not_cover(session):
+    from app.automations.models import Automation
+    from app.knowledge.models import Conversation, ConversationMessage
+    tree = Tree(session)
+    tree.grant(session, "diretoria", tree.y2026)
+    org, daniel = tree.world.organization_id, tree.world.users["daniel"]
+    conversation = Conversation(organization_id=org, user_id=daniel, title="c")
+    session.add(conversation)
+    session.flush()
+    session.add(ConversationMessage(conversation_id=conversation.id, position=1, role="assistant", content="r", context={},
+                                    response={"answer": "r", "citations": [{"document_id": str(tree.doc["c2026"])}]}))
+    session.add(Automation(
+        organization_id=org, created_by_user_id=daniel, name="a", enabled=True, trigger_kind="schedule",
+        trigger_config={"frequency": "weekly", "weekday": 0, "hour": 8, "timezone": "America/Sao_Paulo"},
+        scope={"node_ids": [str(tree.y2026)]}, prompt="x", template="table", output_formats=[], recipients=[]))
+    session.flush()
+    service, diretoria = SpaceService(session), tree.world.spaces["diretoria"]
+    impact = service.member_impact(tree.scope, tree.world.users["eva"], diretoria, daniel)
+    # the Diretoria scope document plus the file below the granted folder; the answer and the automation depend on it
+    assert impact == {"documents_lost": 2, "conversations_hidden": 1, "automations_paused": 1, "followed_queries_cleared": 0}
+    tree.grant(session, "geral", tree.y2026)  # daniel keeps the same folder through Geral
+    covered = service.member_impact(tree.scope, tree.world.users["eva"], diretoria, daniel)
+    assert covered == {"documents_lost": 1, "conversations_hidden": 0, "automations_paused": 0, "followed_queries_cleared": 0}

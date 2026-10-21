@@ -1083,6 +1083,9 @@ class LibraryService:
         callers that bound documents by ``readable_document_clause`` may ask for them."""
         access = access or SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id, space_ids=space_ids)
         partial_ids = partial_folder_ids(self.session, access) if include_partial else frozenset()
+        # In a scope read only in part, what the person is told (content, embeddings, failures) comes from the
+        # documents they may read, never from the siblings they may not.
+        bound = (readable_document_clause(self.session, access),) if partial_ids else ()
         indexed_chunks = exists(
             select(DocumentChunk.id)
             .join(Document, Document.id == DocumentChunk.document_id)
@@ -1092,6 +1095,7 @@ class LibraryService:
                 Document.index_status == "indexed",
                 DocumentChunk.organization_id == scope.organization_id,
                 DocumentChunk.workspace_folder_id == WorkspaceFolder.id,
+                *bound,
             )
         )
         compatible_embeddings = exists(
@@ -1105,39 +1109,60 @@ class LibraryService:
                 DocumentChunk.workspace_folder_id == WorkspaceFolder.id,
                 DocumentChunk.embedding.is_not(None),
                 DocumentChunk.embedding_model == EMBEDDING_MODEL,
+                *bound,
             )
         )
-        return [
-            LibraryContext(
+        failed_readable = exists(
+            select(Document.id).where(
+                Document.organization_id == scope.organization_id,
+                Document.workspace_folder_id == WorkspaceFolder.id,
+                Document.index_status == "failed",
+                *bound,
+            )
+        ) if partial_ids else literal(False)
+
+        def partial_view(folder: WorkspaceFolder, has_failed: bool) -> tuple[str, bool]:
+            """(status, queryable) of a scope read in part: the scope's own sync state says nothing about the
+            person's files, so it is reduced to ready / partial failure over the readable ones."""
+            if folder.status not in {"ready", "partial_failure", "syncing"}:
+                return folder.status, False
+            return ("partial_failure" if has_failed else "ready"), True
+
+        contexts: list[LibraryContext] = []
+        for folder, source, has_content, has_embeddings, has_active_job, has_failed in self.session.execute(
+            select(WorkspaceFolder, DataSource, indexed_chunks.label("has_content"), compatible_embeddings.label("has_embeddings"),
+                   exists(select(ProcessingJob.id).where(
+                       ProcessingJob.workspace_folder_id == WorkspaceFolder.id,
+                       ProcessingJob.organization_id == scope.organization_id,
+                       ProcessingJob.status.in_([ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING]),
+                   )).label("has_active_job"),
+                   failed_readable.label("has_failed"))
+            .join(DataSource, DataSource.id == WorkspaceFolder.source_id)
+            .where(
+                WorkspaceFolder.organization_id == scope.organization_id,
+                DataSource.organization_id == scope.organization_id,
+                ids_clause(self.session, WorkspaceFolder.id, access.folder_ids | partial_ids),
+            )
+            .order_by(WorkspaceFolder.name, WorkspaceFolder.id)
+        ).all():
+            partial = folder.id in partial_ids
+            status, queryable = partial_view(folder, bool(has_failed)) if partial else (
+                folder.status, folder_is_queryable(folder, self.session, has_embeddings=has_embeddings))
+            contexts.append(LibraryContext(
                 id=folder.id,
                 name=folder.name,
-                status=folder.status,
+                status=status,
                 source_id=folder.source_id,
                 source_provider=source.provider,
                 source_status=source.status,
                 spaces=access.spaces_of(folder.id),
-                partial=folder.id in partial_ids,
-                sync_in_progress=has_active_job,
-                query_status=("not_ready" if not folder_is_queryable(folder, self.session, has_embeddings=has_embeddings)
+                partial=partial,
+                sync_in_progress=False if partial else has_active_job,
+                query_status=("not_ready" if not queryable
                               else "ready" if has_embeddings else "no_indexed_content" if not has_content
                               else "no_compatible_embeddings"),
-            )
-            for folder, source, has_content, has_embeddings, has_active_job in self.session.execute(
-                select(WorkspaceFolder, DataSource, indexed_chunks.label("has_content"), compatible_embeddings.label("has_embeddings"),
-                       exists(select(ProcessingJob.id).where(
-                           ProcessingJob.workspace_folder_id == WorkspaceFolder.id,
-                           ProcessingJob.organization_id == scope.organization_id,
-                           ProcessingJob.status.in_([ProcessingJobStatus.QUEUED, ProcessingJobStatus.SYNCING]),
-                       )).label("has_active_job"))
-                .join(DataSource, DataSource.id == WorkspaceFolder.source_id)
-                .where(
-                    WorkspaceFolder.organization_id == scope.organization_id,
-                    DataSource.organization_id == scope.organization_id,
-                    ids_clause(self.session, WorkspaceFolder.id, access.folder_ids | partial_ids),
-                )
-                .order_by(WorkspaceFolder.name, WorkspaceFolder.id)
-            ).all()
-        ]
+            ))
+        return contexts
 
     def _indexed_selection_documents(
         self, *, scope: OrganizationScope, folder_ids: list[UUID], access: SpaceAccess

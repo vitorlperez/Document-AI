@@ -540,10 +540,27 @@ class SpaceService:
                             Document.workspace_folder_id.in_(list(lost)), Document.index_status == "indexed")
                      .distinct().subquery())
             documents_lost = self.session.scalar(select(func.count()).select_from(files)) or 0
-        from app.knowledge.derived import derived_impact
+        from app.knowledge.derived import derived_impact, lost_node_ids
+        from app.spaces.access import SpaceAccess, SpaceAccessResolver
+        from app.spaces.readable import documents_in_grants, readable_document_clause
 
+        access = SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id)
+        nodes = lost_node_ids(access, space.id)
+        if nodes:  # files the person reads only through a library folder this Space grants
+            only_here = SpaceAccess(access.organization_id, user_id, {}, {}, node_grants={
+                node: spaces for node, spaces in access.node_grants.items() if node in nodes})
+            kept = SpaceAccess(access.organization_id, user_id, {}, {folder: frozenset() for folder in access.folder_ids - lost},
+                               node_grants={node: spaces for node, spaces in access.node_grants.items() if node not in nodes})
+            below = (select(WorkspaceFolder.source_id, Document.external_file_id)
+                     .join(Document, Document.workspace_folder_id == WorkspaceFolder.id)
+                     .where(Document.organization_id == scope.organization_id, Document.index_status == "indexed",
+                            documents_in_grants(self.session, only_here), ~readable_document_clause(self.session, kept),
+                            *(() if not lost else (Document.workspace_folder_id.not_in(list(lost)),)))
+                     .distinct().subquery())
+            documents_lost += self.session.scalar(select(func.count()).select_from(below)) or 0
         return {"documents_lost": documents_lost,
-                **derived_impact(self.session, scope.organization_id, user_id, lost_folder_ids=lost)}
+                **derived_impact(self.session, scope.organization_id, user_id, lost_folder_ids=lost,
+                                 lost_space_id=space.id)}
 
     def _folder_ids(self, space_ids: set[UUID]) -> set[UUID]:
         if not space_ids:
