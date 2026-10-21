@@ -92,16 +92,16 @@ function McpSettings({ organizationId }: { organizationId: string }) {
         <button type="button" disabled={busy || (!connection.active && (!enabled || !info.configured))} onClick={() => void bind()} className="mo-interactive inline-flex min-h-9 items-center gap-2 rounded-lg border border-line px-3.5 text-[13px] font-semibold disabled:opacity-50">{busy && <Spinner size={16} />}{connection.active ? "Desvincular minha conta" : "Vincular minha conta"}</button>
       </div>
       <p className="mt-2 text-sm text-muted-foreground">{connection.active ? `Sua conta está vinculada${connection.node_ids?.length ? " às pastas e arquivos selecionados" : " a toda esta organização"}.${!enabled ? " O acesso está suspenso enquanto o MCP estiver desabilitado." : ""}` : "Para autenticar por OAuth, habilite o MCP e vincule sua conta. Cada conta pode ter uma organização vinculada por vez."}</p>
-      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+      <div className="mt-5 grid gap-5">
         <div><h3 className="text-sm font-semibold">Autenticação</h3><p className="mt-2 text-sm text-muted-foreground">O cliente abre o login (OAuth) do Arquivio: entre com a sua conta. O servidor confere o token, a organização vinculada e se a sua participação continua ativa.</p>{info.static_key_enabled && <p className="mt-2 text-sm text-muted-foreground">Alternativa: use uma chave de API, enviada no cabeçalho <code>Authorization: Bearer</code>. Exige a API pública e o MCP habilitados e a chave com os escopos search:read e documents:read.</p>}{info.issuer_url && <p className="mt-3 break-all text-sm"><span className="font-semibold">Servidor de autorização (OAuth): </span><code>{info.issuer_url}</code></p>}</div>
         <div><h3 className="text-sm font-semibold">Ferramentas do servidor</h3><ul className="mt-2 space-y-3">{info.tools.map((tool, index) => <StaggerItem as="li" index={index} key={tool} className="text-sm"><code className="font-semibold text-primary">{tool}</code><p className="mt-1 text-muted-foreground">{toolDescriptions[tool] ?? "Ferramenta disponibilizada pelo servidor."}</p></StaggerItem>)}</ul></div>
       </div>
       {examples && <div className="mt-5 border-t border-line-soft pt-5">
         <h3 className="text-sm font-semibold">Conectar um cliente</h3><p className="mt-2 text-sm">URL do servidor MCP</p><CodeBlock code={info.resource_url ?? ""} label="URL do servidor MCP" wrap />
-        <div className="mt-5 grid min-w-0 gap-5 lg:grid-cols-2">
+        <div className="mt-5 grid min-w-0 gap-5">
           <div className="min-w-0"><h4 className="text-[13px] font-semibold">Claude Code</h4><CodeBlock code={examples.claudeCode} label="Comando do Claude Code" wrap /><p className="mt-2 text-sm text-muted-foreground">Depois, abra /mcp no Claude Code para autenticar.</p>{info.static_key_enabled && <><p className="mt-3 text-sm text-muted-foreground">Ou, com uma chave de API (guarde-a na variável ARQUIVIO_API_KEY):</p><CodeBlock code={examples.claudeCodeKey} label="Comando do Claude Code com chave de API" wrap /></>}<a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noreferrer" className={linkClass}>Documentação do Claude Code<ExternalLink size={14} aria-hidden="true" /></a></div>
           <div className="min-w-0"><h4 className="text-[13px] font-semibold">Cursor</h4><p className="mt-2 text-sm text-muted-foreground">Adicione ao arquivo .cursor/mcp.json do projeto e conclua a autenticação OAuth no Cursor.</p><CodeBlock code={examples.cursor} label="Configuração do Cursor" /><a href="https://cursor.com/docs/mcp" target="_blank" rel="noreferrer" className={linkClass}>Documentação do Cursor<ExternalLink size={14} aria-hidden="true" /></a></div>
-          <div className="lg:col-span-2"><h4 className="text-[13px] font-semibold">Claude Desktop</h4><p className="mt-2 text-sm text-muted-foreground">Em Personalizar → Conectores, adicione um conector personalizado chamado Arquivio com a URL do servidor acima, conecte e autorize sua conta. Esse cliente precisa alcançar o servidor pela internet.</p><a href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp" target="_blank" rel="noreferrer" className={linkClass}>Documentação de conectores do Claude<ExternalLink size={14} aria-hidden="true" /></a></div>
+          <div><h4 className="text-[13px] font-semibold">Claude Desktop</h4><p className="mt-2 text-sm text-muted-foreground">Em Personalizar → Conectores, adicione um conector personalizado chamado Arquivio com a URL do servidor acima, conecte e autorize sua conta. Esse cliente precisa alcançar o servidor pela internet.</p><a href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp" target="_blank" rel="noreferrer" className={linkClass}>Documentação de conectores do Claude<ExternalLink size={14} aria-hidden="true" /></a></div>
         </div>
       </div>}
     </>}
@@ -122,7 +122,9 @@ export function DeveloperScreen({ company }: { company: Company }) {
   return <Enter variant="fade">
     <div className="flex items-center gap-3"><Code2 size={20} className="text-primary" aria-hidden="true" /><div><h1 className="developer-title text-xl font-semibold text-ink">Desenvolvedor</h1><p className="mt-1 text-sm text-muted-foreground">Chaves de API e conexão de clientes de IA para a organização {company.name}.</p></div></div>
     <ApiDocsCard />
-    <AccessSettings organizationId={company.id} api={api} orgRole={company.role} />
-    <McpSettings organizationId={company.id} />
+    <div data-testid="developer-panels" className="developer-panels mt-5 grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2 [&>section]:mt-0 [&>section]:min-w-0">
+      <AccessSettings organizationId={company.id} api={api} orgRole={company.role} />
+      <McpSettings organizationId={company.id} />
+    </div>
   </Enter>;
 }
