@@ -72,7 +72,7 @@ export function ToolStatusDot({ tool }: { tool: ToolSyncState }) {
   if (active) return <span className="sync-dot-pct" title={label} role="img" aria-label={label}>{shortLabel(tool)}</span>;
   // Shape + colour: check (ready), minus (ready without chat content), triangle (partial), cross (failed).
   const kind = tool.state === "ready" && !tool.queryable ? "empty" : tool.state;
-  const glyph = kind === "failed" ? <X size={10} strokeWidth={3} aria-hidden="true" /> : kind === "partial_failure" ? <AlertTriangle size={10} strokeWidth={2.5} aria-hidden="true" /> : kind === "empty" ? <Minus size={10} strokeWidth={3} aria-hidden="true" /> : <Check size={10} strokeWidth={3} aria-hidden="true" />;
+  const glyph = kind === "failed" ? <X size={10} aria-hidden="true" /> : kind === "partial_failure" ? <AlertTriangle size={10} aria-hidden="true" /> : kind === "empty" ? <Minus size={10} aria-hidden="true" /> : <Check size={10} aria-hidden="true" />;
   return <span className={`sync-dot sync-dot-${kind}`} title={label} role="img" aria-label={label}>{glyph}</span>;
 }
 
@@ -80,7 +80,7 @@ export function ToolStatusDot({ tool }: { tool: ToolSyncState }) {
 export function ToolLogoSpinner() {
   return <span className="ts-spinner" aria-hidden="true">
     <svg viewBox="0 0 40 40"><circle className="ts-spinner-track" cx="20" cy="20" r="18" /><circle className="ts-spinner-arc" cx="20" cy="20" r="18" /></svg>
-    <RefreshCw className="ts-spinner-static" size={11} />
+    <RefreshCw className="ts-spinner-static" size={12} />
   </span>;
 }
 

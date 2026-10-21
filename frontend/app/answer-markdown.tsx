@@ -23,7 +23,7 @@ function renderInline(text: string, context: InlineContext, keyPrefix: string, c
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) return <strong key={key}>{renderInline(part.slice(2, -2), context, key, chips)}</strong>;
     if (part.startsWith("`") && part.endsWith("`") && part.length > 2) return <code key={key} className="answer-code">{part.slice(1, -1)}</code>;
     if (new RegExp(`^${CITATION_MARKER.source}$`, "i").test(part)) return <CitationMarks key={key} marker={part} context={context} keyPrefix={key} />;
-    if (chips && context.fileNames.includes(part)) return <span key={key} className="answer-file-chip"><FileText size={13} aria-hidden="true" />{part}</span>;
+    if (chips && context.fileNames.includes(part)) return <span key={key} className="answer-file-chip"><FileText size={14} aria-hidden="true" />{part}</span>;
     return <Fragment key={key}>{part.replace(/\*\*/g, "")}</Fragment>;
   });
 }
@@ -84,7 +84,7 @@ function BlockView({ block, context, blockKey, lead, chips = true, defaultOpen =
             <tbody>{block.rows.map((row, r) => <tr key={r}>{row.map((cell, c) => <td key={c}>{inline(cell, `-${r}-${c}`)}</td>)}</tr>)}</tbody>
           </table>
         </div>
-        <button type="button" className="answer-table-csv" onClick={() => downloadCsv(block.header, block.rows)}><Download size={13} aria-hidden="true" />Baixar CSV</button>
+        <button type="button" className="answer-table-csv" onClick={() => downloadCsv(block.header, block.rows)}><Download size={14} aria-hidden="true" />Baixar CSV</button>
       </>;
     case "highlight":
       return <div className="answer-highlight">{block.children.map((child, i) => <BlockView key={i} block={child} context={context} blockKey={`${blockKey}-${i}`} chips={chips} />)}</div>;
@@ -107,10 +107,10 @@ function FileCard({ block, context, blockKey, defaultOpen }: { block: Extract<Bl
   const collapsible = details.length > 0;
   return <section className="answer-file-card" aria-label={`Arquivo ${block.name}`}>
     <h4 className="answer-file-card-header">
-      <span className="answer-file-name"><FileText size={13} aria-hidden="true" />{block.name}</span>
+      <span className="answer-file-name"><FileText size={14} aria-hidden="true" />{block.name}</span>
       {block.marker && <CitationMarks marker={block.marker} context={context} keyPrefix={`${blockKey}-m`} />}
       {collapsible && <button type="button" className="answer-file-toggle" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen((value) => !value)}>
-        {open ? "Ver menos" : "Ver mais"}<ChevronDown size={13} aria-hidden="true" />
+        {open ? "Ver menos" : "Ver mais"}<ChevronDown size={14} aria-hidden="true" />
       </button>}
     </h4>
     {summary && <p className="answer-file-summary">{renderInline(summary.text, context, `${blockKey}-s`, false)}</p>}

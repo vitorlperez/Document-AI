@@ -1,0 +1,38 @@
+/*
+ * Ícones (lucide-react): configuração central de traço e tamanho.
+ *
+ * O lucide desenha num viewBox 24x24 com stroke-width 2, e o traço escala junto com o ícone:
+ * 13px => 1.08px, 14px => 1.17px, 15px => 1.25px, 18px => 1.5px. Esses traços fracionários caem
+ * entre pixels do dispositivo (3.5px de traço a 2x, por exemplo) e saem borrados/irregulares,
+ * além de variar de um ícone para outro. Aqui o traço vira largura de tela constante
+ * (vector-effect: non-scaling-stroke), em valores inteiros de pixel do dispositivo a 2x:
+ *   --icon-stroke     1.5px (3 px físicos a 2x)  ícones até 18px, o padrão
+ *   --icon-stroke-lg  2px   (4 px físicos a 2x)  ícones grandes (20px+ declarados por size={…})
+ * Tamanhos: sempre inteiros e pares (12/14/16/18/20/22/24/28), para o ícone centrar sem meio pixel.
+ * O contrato está em tests/icon-rendering-contract.test.mjs.
+ */
+:root {
+  --icon-stroke: 1.5px;
+  --icon-stroke-lg: 2px;
+}
+
+/* Telas 1x: 1.5px vira 1 + 2 meios pixels (cinza); 1.25px mantém o peso visual com menos ruído. */
+@media (max-resolution: 1.49dppx) {
+  :root { --icon-stroke: 1.25px; }
+}
+
+svg.lucide {
+  stroke-width: var(--icon-stroke);
+  /* ícone nunca encolhe no flex (evitava 15.5x20 no mobile) */
+  flex-shrink: 0;
+}
+
+svg.lucide :is(path, line, polyline, polygon, circle, rect, ellipse) {
+  vector-effect: non-scaling-stroke;
+}
+
+/* size={20|22|26|28|34}: ícones de destaque ficam um degrau mais firmes. */
+svg.lucide:is([width="20"], [width="22"], [width="26"], [width="28"], [width="34"]),
+svg.lucide[data-icon-stroke="lg"] {
+  stroke-width: var(--icon-stroke-lg);
+}

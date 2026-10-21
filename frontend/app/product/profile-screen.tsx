@@ -49,7 +49,7 @@ function EmailNotificationPreference({ company, setError }: { company: Company; 
   if (loadError) return <ErrorState title="Não foi possível carregar as preferências" description={loadError} actions={<button type="button" className="mo-interactive min-h-11 underline" onClick={() => void load()}>Tentar novamente</button>} />;
   return <label aria-busy={saving} className="flex min-h-11 items-start gap-3 text-sm">
     <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[var(--color-primary)]" checked={enabled ?? false} disabled={enabled === null || saving} onChange={() => void toggle()} />
-    <span><span className="flex items-center gap-1.5 font-medium text-ink"><Bell size={15} aria-hidden="true" />Notificações por e-mail</span><span className="mt-0.5 block text-muted-foreground">Receba também por e-mail os avisos de perguntas seguidas e o resumo semanal desta organização.</span></span>
+    <span><span className="flex items-center gap-1.5 font-medium text-ink"><Bell size={16} aria-hidden="true" />Notificações por e-mail</span><span className="mt-0.5 block text-muted-foreground">Receba também por e-mail os avisos de perguntas seguidas e o resumo semanal desta organização.</span></span>
   </label>;
 }
 

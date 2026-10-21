@@ -47,17 +47,17 @@ export function QuestionScopePicker({ syncInProgress = false, all, providers, co
   const warning = !loading && !error && (ready === 0 || pending > 0) && !syncInProgress ? (ready === 0 ? "Ainda não há conteúdo pronto nesta seleção." : `${pending} ${pending === 1 ? "pasta indisponível" : "pastas indisponíveis"} nesta seleção.`) : null;
   return <div ref={root} className="question-scope">
     <button ref={trigger} type="button" className="question-scope-trigger" data-active={!all && providers.length > 0 ? "true" : undefined} aria-label={`Ferramentas: ${summary}`} title={`${summary} · ${countText}`} aria-expanded={open} aria-controls="question-scope-menu" disabled={disabled || loading || Boolean(error)} onClick={() => setOpen((value) => !value)}>
-      <Wrench size={13} aria-hidden="true" />
+      <Wrench size={14} aria-hidden="true" />
       {loading ? <span className="question-scope-summary">Carregando…</span> : <><span className="question-scope-kind" aria-hidden="true">Ferramentas</span><span className="question-scope-summary question-scope-value">{shortValue}</span></>}
       <ChevronDown size={12} aria-hidden="true" className="question-scope-chevron" />
     </button>
     {open && <div id="question-scope-menu" className="question-scope-menu" role="group" aria-label="Selecionar ferramentas">
-      <button type="button" className="question-scope-option" aria-pressed={all} onClick={() => onChange(true, [])}><span className="question-scope-check">{all && <Check size={15} />}</span>Todas as ferramentas</button>
-      {available.map((item) => <button type="button" key={item} className="question-scope-option" aria-pressed={!all && providers.includes(item)} onClick={() => onChange(false, all ? [item] : providers.includes(item) ? providers.filter((value) => value !== item) : [...providers, item])}><span className="question-scope-check">{!all && providers.includes(item) && <Check size={15} />}</span>{toolLabel(item)}</button>)}
+      <button type="button" className="question-scope-option" aria-pressed={all} onClick={() => onChange(true, [])}><span className="question-scope-check">{all && <Check size={16} />}</span>Todas as ferramentas</button>
+      {available.map((item) => <button type="button" key={item} className="question-scope-option" aria-pressed={!all && providers.includes(item)} onClick={() => onChange(false, all ? [item] : providers.includes(item) ? providers.filter((value) => value !== item) : [...providers, item])}><span className="question-scope-check">{!all && providers.includes(item) && <Check size={16} />}</span>{toolLabel(item)}</button>)}
       {available.length === 0 && <p className="question-scope-empty">Nenhuma ferramenta com conteúdo indexado.</p>}
       <p className="question-scope-count" aria-live="polite">{countText}</p>
     </div>}
-    {error && <span role="alert" className="question-scope-flag" tabIndex={0} data-tip={error} aria-label={error}><AlertTriangle size={13} aria-hidden="true" /><button type="button" className="question-scope-retry" onClick={onRetry}>Tentar de novo</button></span>}
-    {warning && <span role="status" className="question-scope-flag" tabIndex={0} data-tip={warning} aria-label={warning}><AlertTriangle size={13} aria-hidden="true" /></span>}
+    {error && <span role="alert" className="question-scope-flag" tabIndex={0} data-tip={error} aria-label={error}><AlertTriangle size={14} aria-hidden="true" /><button type="button" className="question-scope-retry" onClick={onRetry}>Tentar de novo</button></span>}
+    {warning && <span role="status" className="question-scope-flag" tabIndex={0} data-tip={warning} aria-label={warning}><AlertTriangle size={14} aria-hidden="true" /></span>}
   </div>;
 }

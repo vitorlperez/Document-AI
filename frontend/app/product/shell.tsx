@@ -89,11 +89,11 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
         <OrgMenu company={company} companies={companies} onCompanyChange={onCompanyChange} onNavigate={onNavigate} />
         </div>
         <nav ref={navRef} data-tour="navigation" aria-label="Navegação principal" className="primary-tabs">
-          {tabs.map((tab) => { const Icon = tab.icon; const isActive = tab.key === active; return <a key={tab.key} href={companyPath(company.id, tab.suffix)} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return; event.preventDefault(); go(tab.suffix); }} aria-current={isActive ? "page" : undefined} aria-label={tab.label} title={tab.label} data-tab={tab.key} className="primary-tab mo-interactive"><Icon size={17} aria-hidden="true" /><span className="primary-tab-label">{tab.label}</span></a>; })}
+          {tabs.map((tab) => { const Icon = tab.icon; const isActive = tab.key === active; return <a key={tab.key} href={companyPath(company.id, tab.suffix)} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return; event.preventDefault(); go(tab.suffix); }} aria-current={isActive ? "page" : undefined} aria-label={tab.label} title={tab.label} data-tab={tab.key} className="primary-tab mo-interactive"><Icon size={18} aria-hidden="true" /><span className="primary-tab-label">{tab.label}</span></a>; })}
           <span ref={indicatorRef} aria-hidden="true" className="primary-tab-indicator" data-ready="false" />
         </nav>
         <div className="product-header-end">
-          <button type="button" onClick={openPalette} data-tour="search" aria-label="Buscar (atalho: Ctrl K)" title="Buscar" className="shell-search-trigger mo-interactive"><Search size={15} aria-hidden="true" /><span>Buscar…</span><kbd>{isMac() ? "⌘K" : "Ctrl K"}</kbd></button>
+          <button type="button" onClick={openPalette} data-tour="search" aria-label="Buscar (atalho: Ctrl K)" title="Buscar" className="shell-search-trigger mo-interactive"><Search size={16} aria-hidden="true" /><span>Buscar…</span><kbd>{isMac() ? "⌘K" : "Ctrl K"}</kbd></button>
           <NotificationBell key={company.id} company={company} /><AccountMenu user={user} company={company} onNavigate={onNavigate} onLogout={onLogout} />
         </div>
       </div>

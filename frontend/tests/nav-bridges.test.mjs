@@ -64,7 +64,7 @@ test("Perguntar is a compact icon action (grid: icon beside ⋯ plus menu item; 
   assert.match(grid, /"Perguntar sobre esta pasta" : "Perguntar sobre este arquivo"/, "labels distinguish folder from file");
   assert.match(grid, /actions\.push\(\{ key: "ask"/, "grid menu carries the Perguntar item");
   assert.match(grid, /className="library-card-ask"[\s\S]{0,80}title=\{askLabel\} aria-label=\{`\$\{askLabel\}: \$\{item\.name\}`\}><MessageSquare size=\{16\} aria-hidden="true" \/><\/button>/, "grid icon button has tooltip + aria-label and no text");
-  assert.match(screen, /library-card-ask"\)[\s\S]{0,260}title=\{isFolder \? "Perguntar sobre esta pasta"[\s\S]{0,300}<MessageSquare size=\{15\} aria-hidden="true" \/><\/button>/, "list icon button has tooltip + aria-label and no text");
+  assert.match(screen, /library-card-ask"\)[\s\S]{0,260}title=\{isFolder \? "Perguntar sobre esta pasta"[\s\S]{0,300}<MessageSquare size=\{16\} aria-hidden="true" \/><\/button>/, "list icon button has tooltip + aria-label and no text");
   assert.match(css, /\.library-card \.library-card-ask \{ position: absolute;/, "grid action is absolutely placed, adding no height to the card");
   assert.doesNotMatch(css, /library-card-ask \{ display: inline-flex/, "the old pill style is gone");
 });

@@ -16,7 +16,7 @@ const safeHref = (url: string | null) => url && /^https?:\/\//i.test(url) ? url 
 
 function Sources({ citations }: { citations?: Citation[] }) {
   if (!citations?.length) return null;
-  return <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">{citations.slice(0, 4).map((item, index) => { const href = safeHref(item.source_url); return <li key={`${item.document_name}-${index}`}>{href ? <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary underline">{item.document_name}<ExternalLink size={11} aria-hidden="true" /></a> : item.document_name}</li>; })}</ul>;
+  return <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">{citations.slice(0, 4).map((item, index) => { const href = safeHref(item.source_url); return <li key={`${item.document_name}-${index}`}>{href ? <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary underline">{item.document_name}<ExternalLink size={12} aria-hidden="true" /></a> : item.document_name}</li>; })}</ul>;
 }
 
 export function NotificationBell({ company }: { company: Company }) {

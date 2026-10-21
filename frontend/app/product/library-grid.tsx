@@ -25,8 +25,8 @@ export function LibraryViewControls({ view, onChange }: { view: LibraryView; onC
   };
   return <div className="library-view-controls">
     <div role="radiogroup" aria-label="Modo de visualização" className="library-seg" onKeyDown={arrows}>
-      <button type="button" role="radio" aria-checked={view.mode === "list"} tabIndex={view.mode === "list" ? 0 : -1} aria-label="Lista" title="Lista" onClick={() => onChange({ ...view, mode: "list" })}><List size={15} aria-hidden="true" /><span>Lista</span></button>
-      <button type="button" role="radio" aria-checked={view.mode === "grid"} tabIndex={view.mode === "grid" ? 0 : -1} aria-label="Grade" title="Grade" onClick={() => onChange({ ...view, mode: "grid" })}><LayoutGrid size={15} aria-hidden="true" /><span>Grade</span></button>
+      <button type="button" role="radio" aria-checked={view.mode === "list"} tabIndex={view.mode === "list" ? 0 : -1} aria-label="Lista" title="Lista" onClick={() => onChange({ ...view, mode: "list" })}><List size={16} aria-hidden="true" /><span>Lista</span></button>
+      <button type="button" role="radio" aria-checked={view.mode === "grid"} tabIndex={view.mode === "grid" ? 0 : -1} aria-label="Grade" title="Grade" onClick={() => onChange({ ...view, mode: "grid" })}><LayoutGrid size={16} aria-hidden="true" /><span>Grade</span></button>
     </div>
     {view.mode === "grid" && <div role="radiogroup" aria-label="Tamanho dos itens da grade" className="library-seg library-seg-size" onKeyDown={arrows}>
       {SIZES.map((size) => <button key={size.value} type="button" role="radio" aria-checked={view.size === size.value} tabIndex={view.size === size.value ? 0 : -1} aria-label={`Tamanho ${size.name}`} title={`Tamanho ${size.name}`} onClick={() => onChange({ ...view, size: size.value })}>{size.label}</button>)}
@@ -108,14 +108,14 @@ export function LibraryGrid({ items, groupBySpace = false, size, loading, canMan
       const canAsk = !!onAsk && item.kind !== "source" && (isFolder || indexed);
       const askLabel = isFolder ? "Perguntar sobre esta pasta" : "Perguntar sobre este arquivo";
       const actions: MenuAction[] = [];
-      if (canAsk) actions.push({ key: "ask", label: askLabel, icon: <MessageSquare size={15} aria-hidden="true" />, run: () => onAsk(item) });
-      if (!isFolder && item.source_url) actions.push({ key: "open", label: "Abrir no provedor", icon: <ExternalLink size={15} aria-hidden="true" />, run: () => onOpen(item) });
+      if (canAsk) actions.push({ key: "ask", label: askLabel, icon: <MessageSquare size={16} aria-hidden="true" />, run: () => onAsk(item) });
+      if (!isFolder && item.source_url) actions.push({ key: "open", label: "Abrir no provedor", icon: <ExternalLink size={16} aria-hidden="true" />, run: () => onOpen(item) });
       if (canManage && !isFolder && indexed) {
-        actions.push({ key: "reprocess", label: "Reprocessar arquivo", icon: <RefreshCw size={15} aria-hidden="true" />, disabled: busyFileId !== null, run: () => onReprocessFile(item) });
-        actions.push({ key: "remove", label: "Remover do índice", icon: <Trash2 size={15} aria-hidden="true" />, danger: true, disabled: busyFileId !== null, run: () => onRemoveFile(item) });
+        actions.push({ key: "reprocess", label: "Reprocessar arquivo", icon: <RefreshCw size={16} aria-hidden="true" />, disabled: busyFileId !== null, run: () => onReprocessFile(item) });
+        actions.push({ key: "remove", label: "Remover do índice", icon: <Trash2 size={16} aria-hidden="true" />, danger: true, disabled: busyFileId !== null, run: () => onRemoveFile(item) });
       }
-      if (item.kind === "folder") actions.push({ key: "sync", label: "Sincronizar alterações", icon: <RefreshCw size={15} aria-hidden="true" />, disabled: busyNodeId !== null, run: () => onSyncFolder(item) });
-      if (item.kind === "folder" && canManage) actions.push({ key: "remove-folder", label: "Remover pasta", icon: <Trash2 size={15} aria-hidden="true" />, danger: true, disabled: busyNodeId !== null, run: () => onRemoveFolder(item) });
+      if (item.kind === "folder") actions.push({ key: "sync", label: "Sincronizar alterações", icon: <RefreshCw size={16} aria-hidden="true" />, disabled: busyNodeId !== null, run: () => onSyncFolder(item) });
+      if (item.kind === "folder" && canManage) actions.push({ key: "remove-folder", label: "Remover pasta", icon: <Trash2 size={16} aria-hidden="true" />, danger: true, disabled: busyNodeId !== null, run: () => onRemoveFolder(item) });
       const label = isFolder ? (item.kind === "source" ? "Integração" : "Pasta") : FILE_KIND_LABEL[kind];
       const working = busyNodeId === item.id || busyFileId === item.id;
       return <li key={entry.key} className="library-card mo-stagger-item" data-step={size === "s" ? undefined : "md"} style={staggerStyle(index) as CSSProperties} data-kind={isFolder ? "folder" : kind} data-busy={working || undefined} data-node-id={item.id} data-focus={focusId === item.id ? "true" : undefined}>

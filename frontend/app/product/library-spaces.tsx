@@ -79,7 +79,7 @@ export function SpaceBadges({ spaces, max = 2 }: { spaces?: SpaceRef[]; max?: nu
   const { visible, hiddenCount } = spaceBadges(spaces, max);
   const hidden = spaces.slice(max).map((space) => space.name).join(", ");
   return <span className="space-badges" aria-label={`Espaços: ${spaces.map((space) => space.name).join(", ")}`}>
-    <Layers size={11} aria-hidden="true" />
+    <Layers size={12} aria-hidden="true" />
     {visible.map((name) => <span key={name} className="space-badge" aria-hidden="true">{name}</span>)}
     {hiddenCount > 0 && <span className="space-badge" aria-hidden="true" title={hidden}>+{hiddenCount}</span>}
   </span>;

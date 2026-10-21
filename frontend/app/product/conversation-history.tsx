@@ -61,8 +61,8 @@ export function ConversationHistory({ docked = false, onNew, onCollapse, active 
           <button type="submit" aria-label="Salvar nome" className="grid min-h-9 min-w-9 place-items-center rounded text-primary hover:bg-sage"><Check size={14} aria-hidden="true" /></button>
         </form> : <>
           <button type="button" disabled={disabled} onClick={() => onOpen(item.id)} aria-current={item.id === activeId ? "true" : undefined} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 px-2 text-left text-xs text-ink disabled:opacity-50"><MessageSquare size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" /><span className="truncate">{item.title}</span></button>
-          <button type="button" onClick={() => { setEditing(item.id); setDraft(item.title); }} aria-label={`Renomear ${item.title}`} className="grid min-h-9 min-w-9 place-items-center rounded text-muted-foreground hover:bg-sage"><Pencil size={13} aria-hidden="true" /></button>
-          <button type="button" disabled={disabled} onClick={() => { void remove(item); }} aria-label={`Apagar ${item.title}`} className="grid min-h-9 min-w-9 place-items-center rounded text-muted-foreground hover:bg-sage disabled:opacity-40"><Trash2 size={13} aria-hidden="true" /></button>
+          <button type="button" onClick={() => { setEditing(item.id); setDraft(item.title); }} aria-label={`Renomear ${item.title}`} className="grid min-h-9 min-w-9 place-items-center rounded text-muted-foreground hover:bg-sage"><Pencil size={14} aria-hidden="true" /></button>
+          <button type="button" disabled={disabled} onClick={() => { void remove(item); }} aria-label={`Apagar ${item.title}`} className="grid min-h-9 min-w-9 place-items-center rounded text-muted-foreground hover:bg-sage disabled:opacity-40"><Trash2 size={14} aria-hidden="true" /></button>
         </>}
       </li>)}</ul>}
       {items.length < total && <button type="button" onClick={() => { void load(Math.floor(items.length / 30) + 1); }} className="mt-2 w-full rounded-md py-2 text-xs font-semibold text-primary hover:bg-sage">Ver mais</button>}

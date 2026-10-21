@@ -78,7 +78,7 @@ export function SpaceFolderTree({ groups, selection, onChange, nodes, grants = [
     <div className="flex flex-wrap items-center gap-3">
       <label className="relative min-w-0 flex-1 basis-56">
         <span className="sr-only">Buscar pasta ou ferramenta</span>
-        <Search aria-hidden="true" size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Search aria-hidden="true" size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input type="search" autoComplete="off" value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Buscar pasta, ferramenta ou conta" className="min-h-11 w-full rounded-lg border border-line bg-paper py-2 pl-9 pr-3 text-sm focus-visible:outline-2 focus-visible:outline-primary" />
       </label>
       <p role="status" aria-live="polite" className="text-sm font-semibold">{editable ? selectedFoldersLabel(selectionSize(selection)) : `${total} ${total === 1 ? "pasta" : "pastas"}`}</p>

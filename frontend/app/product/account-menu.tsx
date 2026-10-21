@@ -19,7 +19,7 @@ export function AvatarBadge({ user, size = 32 }: { user: User; size?: number }) 
 
 /** Avatar with a small gear badge (bottom-right) so the menu behind it reads as "account and settings". */
 export function AvatarWithGear({ user }: { user: User }) {
-  return <span className="relative inline-flex"><AvatarBadge user={user} /><span aria-hidden="true" data-testid="account-menu-gear" className="absolute -bottom-1 -right-1 grid size-4 place-items-center rounded-full border border-[var(--card-edge)] bg-[var(--surface-raised)] text-ink shadow-sm"><Settings size={10} strokeWidth={2.5} /></span></span>;
+  return <span className="relative inline-flex"><AvatarBadge user={user} /><span aria-hidden="true" data-testid="account-menu-gear" className="absolute -bottom-1 -right-1 grid size-4 place-items-center rounded-full border border-[var(--card-edge)] bg-[var(--surface-raised)] text-ink shadow-sm"><Settings size={10} /></span></span>;
 }
 
 export function AccountMenu({ user, company, onNavigate, onLogout }: { user: User; company: Company; onNavigate: (path: string) => void; onLogout: () => void }) {
@@ -59,13 +59,13 @@ export function AccountMenu({ user, company, onNavigate, onLogout }: { user: Use
     <Transition show={open} variant="scale" exitMs={120} className="shell-popover absolute right-0 top-full z-50 mt-2 w-[min(18rem,calc(100vw-2rem))]"><div ref={menu} id={menuId} role="menu" aria-label="Conta" className="max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-lg border border-[var(--card-edge)] bg-[var(--surface-raised)] p-1.5 shadow-xl">
       <div className="px-3 py-2.5"><p className="truncate text-sm font-semibold text-ink">{name}</p><p className="truncate text-xs text-muted-foreground" title={user.email}>{user.email}</p></div>
       <div role="separator" className="my-1 border-t border-[var(--card-edge)]" />
-      {items.map((item) => { const Icon = icons[item.key]; return <button key={item.key} type="button" role="menuitem" tabIndex={-1} onClick={choose(() => onNavigate(companyPath(company.id, item.suffix)))} className={itemClass}><Icon size={17} aria-hidden="true" />{item.label}</button>; })}
+      {items.map((item) => { const Icon = icons[item.key]; return <button key={item.key} type="button" role="menuitem" tabIndex={-1} onClick={choose(() => onNavigate(companyPath(company.id, item.suffix)))} className={itemClass}><Icon size={18} aria-hidden="true" />{item.label}</button>; })}
       <div className="px-3 py-1.5"><p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Tema</p><ThemeToggle className="menu-theme" showLabels /></div>
-      <button type="button" role="menuitem" tabIndex={-1} onClick={choose(() => requestTourReplay(pathname, company.id, onNavigate))} className={itemClass}><HelpCircle size={17} aria-hidden="true" />Conhecer o app</button>
-      <button type="button" role="menuitem" tabIndex={-1} onClick={choose(openShortcuts)} className={itemClass}><Keyboard size={17} aria-hidden="true" />Atalhos</button>
-      {user.is_platform_staff && <button type="button" role="menuitem" tabIndex={-1} onClick={choose(() => onNavigate("/staff"))} className={itemClass}><ShieldCheck size={17} aria-hidden="true" />Suporte</button>}
+      <button type="button" role="menuitem" tabIndex={-1} onClick={choose(() => requestTourReplay(pathname, company.id, onNavigate))} className={itemClass}><HelpCircle size={18} aria-hidden="true" />Conhecer o app</button>
+      <button type="button" role="menuitem" tabIndex={-1} onClick={choose(openShortcuts)} className={itemClass}><Keyboard size={18} aria-hidden="true" />Atalhos</button>
+      {user.is_platform_staff && <button type="button" role="menuitem" tabIndex={-1} onClick={choose(() => onNavigate("/staff"))} className={itemClass}><ShieldCheck size={18} aria-hidden="true" />Suporte</button>}
       <div role="separator" className="my-1 border-t border-[var(--card-edge)]" />
-      <button type="button" role="menuitem" tabIndex={-1} onClick={choose(onLogout)} className={itemClass}><LogOut size={17} aria-hidden="true" />Sair</button>
+      <button type="button" role="menuitem" tabIndex={-1} onClick={choose(onLogout)} className={itemClass}><LogOut size={18} aria-hidden="true" />Sair</button>
     </div></Transition>
   </div>;
 }

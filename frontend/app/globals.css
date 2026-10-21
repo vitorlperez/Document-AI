@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
 @import "./ui/motion-tokens.css";
+@import "./ui/icons.css";
 @import "./surfaces.css";
 @import "./buttons.css";
 

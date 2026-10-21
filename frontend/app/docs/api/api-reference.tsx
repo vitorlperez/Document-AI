@@ -69,7 +69,7 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
           {LANGUAGES.map((item) => <button key={item.id} type="button" role="tab" id={`${endpoint.id}-${item.id}`} aria-selected={language === item.id} aria-controls={`${endpoint.id}-panel`} tabIndex={language === item.id ? 0 : -1} onClick={() => setLanguage(item.id)}
             onKeyDown={(event) => { const i = LANGUAGES.findIndex((l) => l.id === language); const next = event.key === "ArrowRight" ? i + 1 : event.key === "ArrowLeft" ? i - 1 : null; if (next === null) return; event.preventDefault(); const target = LANGUAGES[(next + LANGUAGES.length) % LANGUAGES.length]; setLanguage(target.id); document.getElementById(`${endpoint.id}-${target.id}`)?.focus(); }}>{item.label}</button>)}
         </div>
-        <button type="button" className="apidoc-copy" onClick={() => void copy()}>{copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}{copied ? "Copiado" : "Copiar"}<span className="sr-only"> exemplo {endpoint.method} {endpoint.path}</span></button>
+        <button type="button" className="apidoc-copy" onClick={() => void copy()}>{copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}{copied ? "Copiado" : "Copiar"}<span className="sr-only"> exemplo {endpoint.method} {endpoint.path}</span></button>
       </div>
       <pre id={`${endpoint.id}-panel`} role="tabpanel" aria-labelledby={`${endpoint.id}-${language}`} tabIndex={0}><code>{sample}</code></pre>
       {copyError && <p role="alert" className="apidoc-copy-error">Não foi possível copiar; selecione o código manualmente.</p>}

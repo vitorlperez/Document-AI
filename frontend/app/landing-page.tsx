@@ -235,7 +235,7 @@ function ProductPreview() {
         <div ref={stageRef} className={`landing-demo-stage${fading ? " is-fading" : ""}`} aria-hidden="true">
           <div className={`landing-demo-content${resetting ? " is-resetting" : ""}`}>
             <section className={`landing-scene landing-scene-chat${scene === "chat" ? " is-on" : ""}`}>
-              <div className="landing-app-toolbar"><span><Plus size={13} />Nova conversa</span><PanelRightClose size={16} /></div>
+              <div className="landing-app-toolbar"><span><Plus size={14} />Nova conversa</span><PanelRightClose size={16} /></div>
               <div className="landing-thread-viewport" ref={viewportRef}>
                 <div className="landing-app-thread" ref={innerRef} style={{ transform: `translateY(${scrolled ? -scrollMax : 0}px)` }}>
                   {turns.map((turn, turnIndex) => {
@@ -250,7 +250,7 @@ function ProductPreview() {
                         <p>{turn.question}</p>
                       </div>
                       <article className="landing-answer">
-                        <div className={`landing-answer-author${sent ? "" : " landing-stage-pending"}`}><span><Sparkles size={15} /></span><div><strong>Arquivio</strong><small>{DEMO_SCOPE}</small></div></div>
+                        <div className={`landing-answer-author${sent ? "" : " landing-stage-pending"}`}><span><Sparkles size={16} /></span><div><strong>Arquivio</strong><small>{DEMO_SCOPE}</small></div></div>
                         <div className={`landing-search-status${sent ? "" : " landing-stage-pending"}${searching ? " is-searching" : ""}`}>
                           <span className="landing-search-logos">{turn.providers.map((provider, index) => <span key={provider} className={index === activeProvider ? "is-active" : undefined}><ProviderLogo provider={provider} size={16} /></span>)}</span>
                           <span>{searching ? "Buscando nas fontes…" : "Busca concluída"}</span>
@@ -272,7 +272,7 @@ function ProductPreview() {
                 </span>
                 <span className="landing-composer-actions">
                   <span className="landing-scope-trigger"><span>{DEMO_SCOPE}</span><ChevronDown size={12} /></span>
-                  <span className="landing-composer-send"><small>{typingTurn ? `${typedLength}/1000` : "0/1000"}</small><span className="landing-send"><Send size={13} />Enviar</span></span>
+                  <span className="landing-composer-send"><small>{typingTurn ? `${typedLength}/1000` : "0/1000"}</small><span className="landing-send"><Send size={14} />Enviar</span></span>
                 </span>
               </div>
               <p className="landing-composer-hint">Somente conteúdo já indexado. @ menciona arquivos e pastas; / abre comandos.</p>
@@ -398,7 +398,7 @@ export function LandingPage({ onLogin, onSignUp, onOpenApp = onLogin, onLogout =
         <a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, início"><Brand /></a>
         <nav className="landing-desktop-nav" aria-label="Navegação principal"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a></nav>
         <div className="landing-header-actions" data-session={mode}><ThemeToggle />{mode === "anonymous" && <><button className="landing-login" onClick={onLogin}>Entrar</button><button className="landing-button landing-button-small" onClick={onSignUp}>Criar conta <ArrowUpRight size={16} /></button></>}{mode === "loading" && <span className="landing-session-placeholder" aria-hidden="true" />}{signedIn && <><button className="landing-button landing-button-small" onClick={onOpenApp}>Ir para o app <ArrowUpRight size={16} /></button><LandingAccount session={signedIn} onOpenApp={onOpenApp} onLogout={onLogout} /></>}</div>
-        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={23} /></summary><nav aria-label="Navegação móvel"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a><div className="landing-mobile-theme"><span>Aparência</span><ThemeToggle /></div>{mode === "anonymous" && <><button onClick={onLogin}>Entrar</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></>}{signedIn && <><p className="landing-mobile-account" title={signedIn.email}><span className="landing-account-avatar" aria-hidden="true">{avatarInitial(displayNameFromEmail(signedIn.email), signedIn.email)}</span><span><strong>{displayNameFromEmail(signedIn.email) || signedIn.email}</strong><small>{signedIn.organizationName ?? signedIn.email}</small></span></p><button className="landing-mobile-signup" onClick={onOpenApp}>Ir para o app</button><button onClick={onLogout}>Sair</button></>}</nav></details>
+        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={24} /></summary><nav aria-label="Navegação móvel"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a><div className="landing-mobile-theme"><span>Aparência</span><ThemeToggle /></div>{mode === "anonymous" && <><button onClick={onLogin}>Entrar</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></>}{signedIn && <><p className="landing-mobile-account" title={signedIn.email}><span className="landing-account-avatar" aria-hidden="true">{avatarInitial(displayNameFromEmail(signedIn.email), signedIn.email)}</span><span><strong>{displayNameFromEmail(signedIn.email) || signedIn.email}</strong><small>{signedIn.organizationName ?? signedIn.email}</small></span></p><button className="landing-mobile-signup" onClick={onOpenApp}>Ir para o app</button><button onClick={onLogout}>Sair</button></>}</nav></details>
       </header>
 
       <main id="landing-main">
@@ -453,7 +453,7 @@ export function LandingPage({ onLogin, onSignUp, onOpenApp = onLogin, onLogout =
 
         <section className="landing-faq landing-container" id="perguntas" aria-labelledby="landing-faq-title" data-reveal>
           <div><p className="landing-eyebrow">ANTES DE COMEÇAR</p><h2 id="landing-faq-title">O que você<br /><em>precisa saber.</em></h2></div>
-          <div className="landing-faq-list">{questions.map(([question, answer]) => <details key={question}><summary>{question}<ChevronDown size={19} /></summary><p>{answer}</p></details>)}</div>
+          <div className="landing-faq-list">{questions.map(([question, answer]) => <details key={question}><summary>{question}<ChevronDown size={20} /></summary><p>{answer}</p></details>)}</div>
         </section>
 
         <section className="landing-closing landing-container" aria-labelledby="landing-closing-title" data-reveal>

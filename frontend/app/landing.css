@@ -297,7 +297,7 @@
 .arquivio-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-family: Arial, Helvetica, sans-serif; font-size: 29px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; white-space: nowrap; }
 .arquivio-brand > svg, .arquivio-brand-period { color: var(--brand); }
 .arquivio-brand-compact { font-size: 24px; letter-spacing: -1.2px; }
-.arquivio-brand-compact > svg { width: 21px; height: 21px; }
+.arquivio-brand-compact > svg { width: 20px; height: 20px; }
 .landing-page .landing-header .arquivio-brand { font-size: 26px; }
 .landing-page .landing-app-bar .arquivio-brand { font-size: 20px; }
 .landing-page .landing-app-bar .arquivio-brand > svg { width: 18px; height: 18px; }
