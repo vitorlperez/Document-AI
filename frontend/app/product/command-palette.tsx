@@ -98,7 +98,7 @@ function CommandPalette({ company, onClose, onNavigate }: { company: Company; on
 function ShortcutsDialog({ onClose }: { onClose: () => void }) {
   const modal = useModalDialog(onClose);
   const mod = isMac() ? "⌘" : "Ctrl";
-  const rows: [string, string][] = [[`${mod} K`, "Buscar arquivos ou ir para…"], [`${mod} 1`, "Conversa"], [`${mod} 2`, "Biblioteca"], [`${mod} ⇧ O`, "Nova conversa"], ["?", "Mostrar esta lista"]];
+  const rows: [string, string][] = [[`${mod} K`, "Buscar arquivos ou ir para…"], [`${mod} 1`, "Conversa"], [`${mod} 2`, "Biblioteca"], [`${mod} ⇧ O`, "Nova conversa"], [`${mod} \\`, "Recolher ou mostrar o histórico"], ["?", "Mostrar esta lista"]];
   return <dialog {...modal} aria-label="Atalhos de teclado" className="command-palette shortcuts-dialog">
     <div className="shortcuts-head"><h2>Atalhos de teclado</h2><button type="button" autoFocus onClick={onClose} className="mo-interactive">Fechar</button></div>
     <dl>{rows.map(([keys, label]) => <div key={keys}><dt><kbd>{keys}</kbd></dt><dd>{label}</dd></div>)}</dl>

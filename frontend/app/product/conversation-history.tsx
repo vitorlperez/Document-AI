@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, MessageSquare, Pencil, Trash2, X } from "lucide-react";
+import { Check, MessageSquare, PanelLeftClose, Pencil, Trash2, X } from "lucide-react";
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { api, messageFor } from "./types-and-api";
 import { EmptyState, LoadingBlock, SkeletonList, staggerStyle } from "../ui";
@@ -10,7 +10,7 @@ export type ConversationSummary = { id: string; title: string; last_message_at: 
 type ConversationPage = { items: ConversationSummary[]; page: number; page_size: number; total: number };
 
 /** The current user's past conversations: resume, rename and delete. `refreshKey` reloads the list after a new answer. */
-export function ConversationHistory({ docked = false, onNew, active = true, organizationId, activeId, refreshKey, disabled, onOpen, onDeleted, onClose }: { docked?: boolean; onNew?: () => void; active?: boolean; organizationId: string; activeId: string | null; refreshKey: string | null; disabled: boolean; onOpen: (id: string) => void; onDeleted: (id: string) => void; onClose: () => void }) {
+export function ConversationHistory({ docked = false, onNew, onCollapse, active = true, organizationId, activeId, refreshKey, disabled, onOpen, onDeleted, onClose }: { docked?: boolean; onNew?: () => void; onCollapse?: () => void; active?: boolean; organizationId: string; activeId: string | null; refreshKey: string | null; disabled: boolean; onOpen: (id: string) => void; onDeleted: (id: string) => void; onClose: () => void }) {
   const [items, setItems] = useState<ConversationSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -52,7 +52,7 @@ export function ConversationHistory({ docked = false, onNew, active = true, orga
     ? { className: "conversation-history conversation-history-docked flex min-h-0 flex-col bg-panel", "data-tour": "history", onKeyDown: undefined }
     : { className: "conversation-history absolute inset-y-0 left-0 z-20 flex w-72 max-w-[85%] flex-col border-r border-line bg-panel shadow-lg", "data-tour": undefined, onKeyDown: (event: React.KeyboardEvent) => { if (event.key === "Escape" && editing === null) onClose(); } };
   return <aside inert={!active} aria-hidden={!active} aria-label="Histórico de conversas" {...shell}>
-    {docked ? <div className="flex items-center justify-between gap-2 border-b border-line-soft px-3 py-2"><h2 className="text-sm font-semibold text-ink">Conversas</h2>{onNew && <NewConversationButton onClick={onNew} disabled={disabled} />}</div>
+    {docked ? <div className="flex items-center justify-between gap-2 border-b border-line-soft px-3 py-2"><h2 className="text-sm font-semibold text-ink">Conversas</h2><div className="flex shrink-0 items-center gap-0.5">{onNew && <NewConversationButton onClick={onNew} disabled={disabled} />}{onCollapse && <button type="button" onClick={onCollapse} aria-label="Recolher histórico" title="Recolher histórico (Ctrl/⌘ \)" className="history-collapse-btn mo-interactive grid place-items-center rounded-md text-muted-foreground hover:bg-sage"><PanelLeftClose size={16} aria-hidden="true" /></button>}</div></div>
       : <div className="flex items-center justify-between border-b border-line-soft px-3 py-2"><h2 className="text-sm font-semibold text-ink">Conversas</h2><button ref={closeRef} type="button" onClick={onClose} aria-label="Fechar histórico" className="grid min-h-11 min-w-11 place-items-center rounded-md text-muted-foreground hover:bg-sage"><X size={16} aria-hidden="true" /></button></div>}
     <div className="flex-1 overflow-y-auto p-2">
       {loading ? <LoadingBlock label="Carregando conversas…" className="p-3"><SkeletonList rows={4} /></LoadingBlock> : items.length === 0 && !error ? <EmptyState icon={<MessageSquare size={22} />} title="Sua próxima descoberta começa aqui" description="Suas conversas aparecerão aqui para você continuar de onde parou." className="p-3" /> : <ul className="space-y-0.5">{items.map((item, index) => <li key={item.id} style={staggerStyle(index) as CSSProperties} className={`mo-stagger-item group flex items-center gap-1 rounded-md ${item.id === activeId ? "bg-sage-selected" : "hover:bg-sage"}`}>

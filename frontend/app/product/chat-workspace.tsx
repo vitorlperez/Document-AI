@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, ExternalLink, FileText, History, Send, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ChevronRight, ExternalLink, FileText, History, PanelLeftOpen, Send, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
 import { type CSSProperties, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type OnboardingState } from "../organization-onboarding";
 import { ConversationTour } from "../conversation-tour";
@@ -27,6 +27,7 @@ import { SpaceScopeBar, useChatSpaces } from "./chat-spaces";
 import { SpaceBadges } from "./library-spaces";
 import { contextsInSpaces, payloadSpaceIds, sourcesFromLabel } from "../question-spaces";
 import { ConversationHistory } from "./conversation-history";
+import { historyCollapsedKey, parseHistoryCollapsed, isHistoryToggleKey } from "./history-collapse";
 import { Enter, LoadingBlock, SkeletonLine, SkeletonList, SkeletonText, StreamingText, TypingIndicator, Transition, btn, staggerStyle } from "../ui";
 
 type ConversationMessage = BaseConversationMessage & { feedback?: "up" | "down"; persisted?: boolean; fresh?: boolean };
@@ -99,6 +100,27 @@ function ConversationLibraryWorkspace({ company, setError, setNotice }: { compan
   const [asking, setAsking] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const historyTrigger = useRef<HTMLButtonElement>(null);
+  // Desktop-only: the docked history column can be collapsed; the choice is remembered per user (membership) in localStorage.
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
+  const collapseKey = historyCollapsedKey(company.membership_id);
+  useEffect(() => {
+    let stored: string | null = null;
+    try { stored = window.localStorage.getItem(collapseKey); } catch { /* storage unavailable */ }
+    void Promise.resolve().then(() => setHistoryCollapsed(parseHistoryCollapsed(stored)));
+  }, [collapseKey]);
+  const changeHistoryCollapsed = useCallback((next: boolean) => {
+    setHistoryCollapsed(next);
+    try { window.localStorage.setItem(collapseKey, next ? "1" : "0"); } catch { /* storage unavailable */ }
+  }, [collapseKey]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!isHistoryToggleKey(event) || !window.matchMedia("(min-width: 1024px)").matches) return;
+      event.preventDefault();
+      changeHistoryCollapsed(!historyCollapsed);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [historyCollapsed, changeHistoryCollapsed]);
   const closeHistory = () => { setHistoryOpen(false); historyTrigger.current?.focus(); };
   const [viewerTarget, setViewerTarget] = useState<ViewerTarget | null>(null);
   const viewerTrigger = useRef<HTMLElement | null>(null);
@@ -312,10 +334,10 @@ function ConversationLibraryWorkspace({ company, setError, setNotice }: { compan
     finally { setAsking(false); }
   }
   return <><div className="workspace-frame chat-workspace overflow-hidden border border-line bg-panel">
-    <div ref={panelsRef} className="grid workspace-panels history-docked">
-      <ConversationHistory docked organizationId={company.id} activeId={conversationId} refreshKey={conversationId} disabled={asking} onNew={startNewConversation} onOpen={openConversation} onDeleted={conversationDeleted} onClose={closeHistory} />
+    <div ref={panelsRef} className={`grid workspace-panels history-docked${historyCollapsed ? " history-collapsed" : ""}`}>
+      <ConversationHistory docked active={!historyCollapsed} onCollapse={() => changeHistoryCollapsed(true)} organizationId={company.id} activeId={conversationId} refreshKey={conversationId} disabled={asking} onNew={startNewConversation} onOpen={openConversation} onDeleted={conversationDeleted} onClose={closeHistory} />
       <main id="consultas" className="conversation-panel relative flex min-h-[560px] min-w-0 flex-col bg-panel">
-        <div className="chat-topbar flex shrink-0 items-center justify-end gap-1 border-b border-line-soft bg-panel px-3 py-1.5 sm:px-5"><button type="button" data-tour="history" onClick={() => setHistoryOpen((open) => !open)} ref={historyTrigger} aria-expanded={historyOpen} className="chat-topbar-history mr-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:bg-sage"><History size={16} aria-hidden="true" /><span className="hidden sm:inline">Conversas</span></button><SyncIndicator tools={syncStatus.tools} /><span className="chat-topbar-new"><NewConversationButton onClick={startNewConversation} disabled={asking} /></span></div>
+        <div className="chat-topbar flex shrink-0 items-center justify-end gap-1 border-b border-line-soft bg-panel px-3 py-1.5 sm:px-5">{historyCollapsed && <button type="button" onClick={() => changeHistoryCollapsed(false)} aria-label="Mostrar histórico" title="Mostrar histórico (Ctrl/⌘ \)" className="history-reopen-btn mo-interactive mr-auto grid min-h-9 min-w-9 place-items-center rounded-md text-muted-foreground hover:bg-sage"><PanelLeftOpen size={16} aria-hidden="true" /></button>}<button type="button" data-tour="history" onClick={() => setHistoryOpen((open) => !open)} ref={historyTrigger} aria-expanded={historyOpen} className="chat-topbar-history mr-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:bg-sage"><History size={16} aria-hidden="true" /><span className="hidden sm:inline">Conversas</span></button><SyncIndicator tools={syncStatus.tools} /><span className="chat-topbar-new"><NewConversationButton onClick={startNewConversation} disabled={asking} /></span></div>
         <Transition show={historyOpen} variant="slide-x" className="conversation-history-presence"><ConversationHistory active={historyOpen} organizationId={company.id} activeId={conversationId} refreshKey={conversationId} disabled={asking} onOpen={openConversation} onDeleted={conversationDeleted} onClose={closeHistory} /></Transition>
         <div ref={transcriptRef} onScroll={(event) => { const el = event.currentTarget; followTranscript.current = el.scrollHeight - el.scrollTop - el.clientHeight < 96; }} role="log" aria-label="Conversa com seus documentos" aria-live="polite" className="flex-1 overflow-y-auto px-5 py-6 sm:px-7">{restoringConversation ? <LoadingBlock label="Restaurando sua conversa…" className="mx-auto max-w-3xl space-y-6"><SkeletonText lines={2} /><SkeletonText lines={4} /><SkeletonList rows={2} /></LoadingBlock> : messages.length > 0 ? <div className="mx-auto max-w-3xl space-y-5">{messages.map((message) => message.role === "user" ? <Enter key={message.id} variant="pop" origin="user" className="ml-auto max-w-[85%]"><p className="mb-1 text-right text-xs font-medium text-muted-foreground">{message.contextName}</p><div className="conversation-question px-4 py-3 text-sm leading-6">{message.content}{Boolean(message.mentions?.length) && <span className="mt-2 block text-xs">{mentionSummary(message.mentions ?? [])}</span>}</div>{message.contextId && (savedByMessage[message.id] ? <div className="mt-1.5 flex items-center justify-end gap-2 text-xs text-muted-foreground">Pergunta salva<FollowToggle organizationId={company.id} savedQueryId={savedByMessage[message.id].id} followed={savedByMessage[message.id].followed ?? false} onError={setError} /></div> : <button disabled={saving} onClick={() => { void saveQuestion(message); }} className="mt-1.5 block ml-auto text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-40">Salvar pergunta</button>)}</Enter> : <Enter as="article" key={message.id} variant="slide" origin="assistant" className="conversation-answer"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-sage-selected text-primary"><Sparkles size={15} /></span><div><p className="text-sm font-semibold text-ink">Arquivio</p><p className="text-xs text-muted-foreground">{message.contextName}</p></div></div>{(message.pending || (!message.error && message.answer && (message.fresh || Boolean(message.providers?.length)))) && <SourceReadingStatus providers={message.providers} reading={Boolean(message.pending)} />}{message.pending ? <PendingAnswer providers={message.providers} /> : message.error ? <div className="mt-4 text-sm leading-6 text-rose-700"><p>Não foi possível concluir esta pergunta: {message.error}</p><button type="button" className="mt-2 min-h-11 underline" onClick={() => { setQuestion(message.content); setMentions(message.mentions ?? []); setAllTools(message.allTools ?? true); setQueryProviders(message.providers ?? []); composerRef.current?.focus(); }}>Repetir com este contexto</button></div> : message.answer ? <><AssistantAnswer onOpenFile={openFile} onOpenLibrary={openCitationInLibrary} onAskOnly={askOnlyAboutCitation} messageId={message.id} answer={message.answer} animate={Boolean(message.fresh)} onProgress={followReveal} onRevealed={() => revealFinished(message.id)} />
         {message.persisted && conversationId && message.answer?.answer && <AnswerActions organizationId={company.id} conversationId={conversationId} messageId={message.id} text={message.answer.answer} sources={message.answer.citations} clickUpEnabled={clickUpConnected(contexts)} />}

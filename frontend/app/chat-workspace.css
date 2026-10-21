@@ -168,7 +168,16 @@
   .conversation-history-docked { width: auto; overflow: hidden; border-right: 1px solid var(--color-line); visibility: visible; }
   .conversation-history-docked > div:last-child { overflow-y: auto; }
   .chat-topbar-history, .chat-topbar-new { display: none; }
+  /* Recolhido: a coluna colapsa a 0 (a trilha do grid anima) e a conversa ocupa a largura. */
+  .chat-workspace > .workspace-panels.history-docked.history-collapsed { --tools-sidebar-width: 0px; }
+  .history-collapsed .conversation-history-docked { border-right-color: transparent; visibility: hidden; transition: visibility 0s linear 200ms, border-color 200ms; }
+  .conversation-history-docked [data-tour="new-conversation"] { white-space: nowrap; padding-inline: 0.5rem; gap: 0.25rem; }
+  .conversation-history-docked .history-collapse-btn { min-height: 2rem; min-width: 2rem; flex: none; }
+  .history-reopen-btn { animation: history-reopen-in 200ms ease-out both; }
 }
+@media (max-width: 1023px) { .history-reopen-btn, .history-collapse-btn { display: none; } }
+@keyframes history-reopen-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .history-reopen-btn { animation: none; } .history-collapsed .conversation-history-docked { transition: none; } }
 @media (max-width: 767px) { .chat-topbar-new { display: none; } }
 
 /* Pontes Conversa ↔ Biblioteca nas fontes da resposta. */
