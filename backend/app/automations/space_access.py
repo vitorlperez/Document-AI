@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.automations.executor import accessible_folders
 from app.automations.models import Automation, AutomationRun
-from app.automations.scope import legacy_folder_ids, node_access, scope_node_ids
+from app.automations.scope import creator_documents, legacy_folder_ids, node_access, scope_node_ids
 from app.core.scoping import OrganizationScope
 from app.knowledge.derived_visibility import (
     HIDDEN_REASON,
@@ -71,7 +71,8 @@ def pause_automations_for_lost_access(
             continue
         nodes = scope_node_ids(automation.scope)
         if nodes:
-            ok = node_access(session, scope, user_id, nodes) == "ok"
+            ok = node_access(session, scope, user_id, nodes, must_read=creator_documents(
+                session, scope, automation.created_by_user_id, nodes)) == "ok"
         else:
             folders = set(legacy_folder_ids(automation.scope))
             ok = bool(folders) and allowed is not None and folders <= allowed

@@ -383,7 +383,7 @@ def test_recipient_access_is_checked_against_the_chosen_folder(corpus, monkeypat
     assert client.get(f"/organizations/{org}/automation-recipients", params={"node_ids": [str(org)]}).json()["detail"] == "scope_not_allowed"
     created = client.post(f"/organizations/{org}/automations", json=node_body(nodes["year"], recipient_user_ids=[member_id])).json()
     real = executor.node_access
-    monkeypatch.setattr(executor, "node_access", lambda session, scope, user_id, ids: "no_folder_access" if str(user_id) == member_id else real(session, scope, user_id, ids))
+    monkeypatch.setattr(executor, "node_access", lambda session, scope, user_id, ids, **kw: "no_folder_access" if str(user_id) == member_id else real(session, scope, user_id, ids, **kw))
     client.post(f"/organizations/{org}/automations/{created['id']}/run")
     assert run_pending(factory, ScriptedProvider(base)) == ["ok"]
     with factory() as session:

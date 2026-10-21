@@ -2,14 +2,17 @@
 
 Automations created before node scopes keep ``workspace_folder_ids`` (whole connected folders) and still run.
 """
+from collections.abc import Collection
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
 from app.ingestion.service import SyncAccessDenied
+from app.knowledge.derived_visibility import Provenance, build_index
 from app.library.service import LibraryService, QuestionSelection
 from app.library.tool_groups import tool_groups
+from app.spaces.access import SpaceAccessResolver
 
 MAX_SCOPE_NODES = 20
 
@@ -35,14 +38,33 @@ def resolve_nodes(session: Session, org: OrganizationScope, user_id: UUID, node_
         scope=org, user_id=user_id, providers=providers, mentions=[("folder", item) for item in node_ids])
 
 
-def node_access(session: Session, org: OrganizationScope, user_id: UUID, node_ids: list[UUID]) -> str:
-    """``ok``, ``not_member`` or ``no_folder_access`` for querying every folder as this user."""
+def creator_documents(session: Session, org: OrganizationScope, creator_id: UUID, node_ids: list[UUID]) -> frozenset[UUID] | None:
+    """Documents the creator's run reads under the folders; ``None`` when the creator cannot resolve them now."""
+    try:
+        selection = resolve_nodes(session, org, creator_id, node_ids)
+    except (SyncAccessDenied, ValueError):
+        return None
+    return frozenset(selection.document_ids or ())
+
+
+def node_access(session: Session, org: OrganizationScope, user_id: UUID, node_ids: list[UUID],
+                *, must_read: Collection[UUID] | None = None) -> str:
+    """``ok``, ``not_member`` or ``no_folder_access`` for querying every folder as this user.
+
+    A recipient is told what the run read as its creator (the whole mention). With ``must_read`` (the documents the
+    creator's run reads) the person must also read ALL of them: reading only a subfolder of a mention is enough to
+    ask about it, not to receive an answer built from the siblings (``no_folder_access``)."""
     try:
         resolve_nodes(session, org, user_id, node_ids)
     except SyncAccessDenied:
         return "not_member"
     except ValueError:
         return "no_folder_access"
+    if must_read:
+        access = SpaceAccessResolver(session).resolve(scope=org, user_id=user_id)
+        wanted = Provenance(document_ids=frozenset(must_read))
+        if not build_index(session, access, [wanted]).visible(wanted):
+            return "no_folder_access"
     return "ok"
 
 

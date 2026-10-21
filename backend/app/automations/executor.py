@@ -131,7 +131,7 @@ def execute_run(session: Session, run_id: UUID, *, provider: SemanticProvider | 
                 _finish(run, "error", error_code="internal_error")
             else:
                 _deliver(session, automation, run, result, scope=scope, allowed=allowed, folder_ids=folder_ids,
-                         email=email, app_url=app_url)
+                         read_documents=selection.document_ids if selection else None, email=email, app_url=app_url)
 
     if run.status == "quota":
         _notify_creator(session, automation, run, kind="automation_quota", title=f"“{automation.name}” não rodou: cota mensal esgotada",
@@ -147,7 +147,8 @@ def execute_run(session: Session, run_id: UUID, *, provider: SemanticProvider | 
 
 
 def _deliver(session: Session, automation: Automation, run: AutomationRun, result, *, scope: OrganizationScope,
-             allowed: set[UUID] | None, folder_ids: list[UUID], email: EmailDeliveryPort | None, app_url: str) -> None:
+             allowed: set[UUID] | None, folder_ids: list[UUID], read_documents: set[UUID] | None,
+             email: EmailDeliveryPort | None, app_url: str) -> None:
     automation.last_run_at = datetime.now(UTC)
     citations = citation_payload(result.citations)
     provenance = provenance_of_documents(
@@ -160,6 +161,8 @@ def _deliver(session: Session, automation: Automation, run: AutomationRun, resul
     node_ids = scope_node_ids(automation.scope)
     notified = 0
     wants = set(automation.output_formats or [])
+    # what the run read as its creator: a recipient gets the result only if they read every one of these documents
+    must_read = {*(read_documents or ()), *(item.document_id for item in result.citations)} if node_ids else None
     data: dict[str, object] = {"automation_id": str(automation.id), "run_id": str(run.id), "template": automation.template,
                                "citations": citations, "provenance": provenance}
     if "pdf" in wants:
@@ -182,7 +185,7 @@ def _deliver(session: Session, automation: Automation, run: AutomationRun, resul
     for raw in recipients:
         user_id = UUID(raw)
         if node_ids:
-            denied = node_access(session, scope, user_id, node_ids)
+            denied = node_access(session, scope, user_id, node_ids, must_read=must_read)
         else:
             folders = allowed if user_id == automation.created_by_user_id else accessible_folders(session, scope, user_id)
             denied = "not_member" if folders is None else "ok" if set(folder_ids) <= folders else "no_folder_access"

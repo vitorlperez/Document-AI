@@ -245,9 +245,10 @@ def list_recipients(organization_id: UUID, workspace_folder_ids: list[UUID] = Qu
     folders, nodes = set(workspace_folder_ids), list(dict.fromkeys(node_ids))
     if folders and nodes:
         raise HTTPException(422, "scope_not_allowed")
+    must_read: frozenset[UUID] | None = None
     if nodes:
         try:
-            resolve_nodes(session, OrganizationScope(organization_id), user.id, nodes)
+            must_read = frozenset(resolve_nodes(session, OrganizationScope(organization_id), user.id, nodes).document_ids or ())
         except (SyncAccessDenied, ValueError) as error:
             raise HTTPException(422, "scope_not_allowed") from error
     if folders:
@@ -262,7 +263,7 @@ def list_recipients(organization_id: UUID, workspace_folder_ids: list[UUID] = Qu
     for user_id, role, email in rows:
         has_access: bool | None = None
         if nodes:
-            has_access = node_access(session, scope, user_id, nodes) == "ok"
+            has_access = node_access(session, scope, user_id, nodes, must_read=must_read) == "ok"
         elif folders:
             allowed = accessible_folders(session, scope, user_id)
             has_access = allowed is not None and folders <= allowed
