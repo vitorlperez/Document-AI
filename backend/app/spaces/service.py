@@ -58,8 +58,10 @@ class SpaceView:
 
 @dataclass(frozen=True)
 class SpaceNodeGrantView:
-    """A library folder granted to a Space. ``node_id`` is None while the folder is absent from the catalog."""
+    """A library folder granted to a Space. ``node_id`` is None while the folder is absent from the catalog (an
+    orphan grant: it grants nothing now, comes back if the folder reappears, and is revoked by ``grant_id``)."""
 
+    grant_id: UUID
     node_id: UUID | None
     source_id: UUID
     name: str
@@ -399,14 +401,39 @@ class SpaceService:
         grant = self._active_node_grant(space.id, node.source_id, node.external_id)
         if grant is None:
             raise SpaceNotFound("grant not found")
+        self._revoke_node_grant(scope, actor_user_id, space, grant, node.id)
+        return grant
+
+    def _revoke_node_grant(
+        self, scope: OrganizationScope, actor_user_id: UUID, space: Space, grant: SpaceNodeGrant, node_id: UUID | None
+    ) -> None:
         grant.revoked_at = datetime.now(UTC)
         grant.revoked_by_user_id = actor_user_id
         self.session.flush()
         self._audit(scope, actor_user_id, "node_revoked", "space", space.id)
-        self._audit(scope, actor_user_id, "node_revoked", "library_node", node.id)
+        if node_id is not None:  # an orphan grant has no catalog node to name
+            self._audit(scope, actor_user_id, "node_revoked", "library_node", node_id)
         # A folder grant is not a scope id: recheck every automation/followed query of the members (lost=None).
         self._apply_lost_access(scope.organization_id, list(self.session.scalars(select(SpaceMember.user_id).where(
             SpaceMember.space_id == space.id, SpaceMember.removed_at.is_(None)))), None)
+
+    def revoke_node_grant(
+        self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID, grant_id: UUID
+    ) -> SpaceNodeGrant:
+        """Revoke a folder grant by its own id: the only way to undo an orphan (its folder left the catalog)."""
+        self._require_admin(scope, actor_user_id)
+        space, _, _ = self._space(scope, actor_user_id, space_id)
+        grant = self.session.scalar(select(SpaceNodeGrant).where(
+            SpaceNodeGrant.id == grant_id, SpaceNodeGrant.space_id == space.id,
+            SpaceNodeGrant.organization_id == scope.organization_id))
+        if grant is None:
+            raise SpaceDenied("grant does not belong to this space")
+        if grant.revoked_at is not None:
+            raise SpaceNotFound("grant not found")
+        node_id = self.session.scalar(select(LibraryNode.id).where(
+            LibraryNode.organization_id == scope.organization_id, LibraryNode.source_id == grant.source_id,
+            LibraryNode.external_id == grant.external_id, LibraryNode.kind == "folder"))
+        self._revoke_node_grant(scope, actor_user_id, space, grant, node_id)
         return grant
 
     def apply_node_changes(
@@ -435,6 +462,19 @@ class SpaceService:
                 continue
         return granted, revoked
 
+    def revoke_node_grants(
+        self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID, grant_ids: Sequence[UUID]
+    ) -> list[UUID]:
+        """Revoke folder grants by id in the caller's transaction (orphans included); already revoked ones are skipped."""
+        revoked: list[UUID] = []
+        for grant_id in dict.fromkeys(grant_ids):
+            try:
+                self.revoke_node_grant(scope, actor_user_id, space_id, grant_id)
+                revoked.append(grant_id)
+            except SpaceNotFound:
+                continue
+        return revoked
+
     def node_grants(self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID) -> list[SpaceNodeGrantView]:
         """The library folders granted to the Space with their current catalog path (members and admins)."""
         space, _, _ = self._space(scope, actor_user_id, space_id)
@@ -457,7 +497,7 @@ class SpaceService:
         for grant in grants:
             node = nodes.get((grant.source_id, grant.external_id))
             views.append(SpaceNodeGrantView(
-                node.id if node else None, grant.source_id, node.name if node else grant.name,
+                grant.id, node.id if node else None, grant.source_id, node.name if node else grant.name,
                 paths.get(node.id) if node else None, chains.get(node.id, ())[1:] if node else ()))
         return views
 

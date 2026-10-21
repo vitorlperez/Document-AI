@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { chainsFromGrants, coveredByAncestor, diffSize, emptySelection, nodeState, scopeState, selectionDiff, toggleNode, toggleScope } from "../app/product/spaces-node-selection.ts";
+import { chainsFromGrants, coveredByAncestor, diffSize, emptySelection, nodeState, ORPHAN_LABEL, orphanGrants, scopeState, selectionDiff, toggleNode, toggleScope } from "../app/product/spaces-node-selection.ts";
 
 // sincronização S: raízes R1 (Contratos) e R2 (Financeiro); Contratos → 2025, 2026; 2026 → T1, T2
 const tree = { null: [{ id: "R1" }, { id: "R2" }], R1: [{ id: "A25" }, { id: "A26" }], A26: [{ id: "T1" }, { id: "T2" }] };
@@ -76,4 +76,11 @@ test("estado inicial vem das pastas concedidas (cadeia do servidor) e o diff sep
   assert.deepEqual(diff, { grant: [], revoke: ["W"], grantNodes: ["R2"], revokeNodes: [] });
   assert.equal(diffSize(diff), 2);
   assert.equal(diffSize(selectionDiff(initial, initial)), 0);
+});
+
+test("grants órfãos (pasta fora do catálogo) são separados e rotulados para remoção pelo id do grant", () => {
+  const grants = [{ grant_id: "g1", node_id: "T2", name: "2026" }, { grant_id: "g2", node_id: null, name: "Antiga" }];
+  assert.deepEqual(orphanGrants(grants).map((grant) => grant.grant_id), ["g2"]);
+  assert.equal(ORPHAN_LABEL, "Pasta não encontrada");
+  assert.deepEqual(orphanGrants([]), []);
 });

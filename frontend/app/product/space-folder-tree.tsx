@@ -5,7 +5,7 @@ import { ChevronRight, Folder as FolderIcon, Search } from "lucide-react";
 import { AutomationSourceIcon } from "./automation-folder-picker";
 import type { NodeGrant, TreeFolder } from "./spaces-api";
 import { filterGroups, groupState, type CheckState, type FolderGroup } from "./spaces-folder-tree";
-import { nodeState, scopeState, selectedFoldersLabel, selectionSize, toggleScope, type Chains, type NodeContext, type Selection } from "./spaces-node-selection";
+import { ORPHAN_LABEL, nodeState, orphanGrants, scopeState, selectedFoldersLabel, selectionSize, toggleScope, type Chains, type NodeContext, type Selection } from "./spaces-node-selection";
 import { LoadingBlock, SkeletonText } from "../ui";
 
 function TriCheckbox({ state, label, disabled, onChange }: { state: CheckState; label: string; disabled?: boolean; onChange: () => void }) {
@@ -55,12 +55,13 @@ function FolderNode({ folder, ctx, depth, selection, nodes, spaceName }: { folde
  * concede ela inteira; entrar nela e marcar uma subpasta concede só aquela pasta com tudo abaixo (indeterminado nos ancestrais).
  * Sem `onChange` é somente leitura: lista as sincronizações recebidas e as pastas já concedidas.
  */
-export function SpaceFolderTree({ groups, selection, onChange, nodes, grants = [], spaceId, spaceName }: { groups: FolderGroup[]; selection: Selection; onChange?: (next: Selection) => void; nodes?: FolderTreeNodes; grants?: NodeGrant[]; spaceId: string; spaceName: string }) {
+export function SpaceFolderTree({ groups, selection, onChange, nodes, grants = [], onRemoveOrphan, spaceId, spaceName }: { groups: FolderGroup[]; selection: Selection; onChange?: (next: Selection) => void; nodes?: FolderTreeNodes; grants?: NodeGrant[]; onRemoveOrphan?: (grant: NodeGrant) => void; spaceId: string; spaceName: string }) {
   const [term, setTerm] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [openScopes, setOpenScopes] = useState<Set<string>>(new Set());
   const visible = filterGroups(groups, term);
   const editable = Boolean(onChange);
+  const orphans = orphanGrants(grants);
   const total = groups.reduce((sum, group) => sum + group.folders.length, 0) + grants.length;
   const rootIds = (scopeId: string) => (nodes?.roots[scopeId] ?? []).map((root) => root.id);
   const groupChecked = (group: FolderGroup): CheckState => {
@@ -124,9 +125,16 @@ export function SpaceFolderTree({ groups, selection, onChange, nodes, grants = [
           })}</ul>}
         </li>;
       })}</ul>}
-    {!editable && grants.length > 0 && <div className="mt-4">
+    {orphans.length > 0 && <div className="mt-4">
+      <p className="text-sm font-semibold">Pastas não encontradas</p>
+      <p className="mt-1 text-xs text-muted-foreground">Estas pastas saíram da biblioteca e hoje não dão acesso a nada, mas o compartilhamento continua registrado e volta a valer se a pasta reaparecer.</p>
+      <ul aria-label="Pastas não encontradas" className="mt-2 divide-y divide-line-soft rounded-lg border border-line-soft bg-panel">{orphans.map((grant) => <li key={grant.grant_id} className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1">
+        <FolderIcon aria-hidden="true" size={16} className="shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1 break-words text-sm">{grant.name} <span className="text-muted-foreground">— {ORPHAN_LABEL}</span></span>
+        {onRemoveOrphan && <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-medium text-rose-700 focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Remover ${grant.name} — ${ORPHAN_LABEL}`} onClick={() => onRemoveOrphan(grant)}>Remover</button>}</li>)}</ul>
+    </div>}
+    {!editable && grants.length > orphans.length && <div className="mt-4">
       <p className="text-sm font-semibold">Subpastas compartilhadas</p>
-      <ul aria-label="Subpastas compartilhadas" className="mt-2 divide-y divide-line-soft rounded-lg border border-line-soft bg-panel">{grants.map((grant) => <li key={`${grant.source_id}:${grant.node_id ?? grant.name}`} className="flex min-h-11 items-center gap-3 px-3 py-1">
+      <ul aria-label="Subpastas compartilhadas" className="mt-2 divide-y divide-line-soft rounded-lg border border-line-soft bg-panel">{grants.filter((grant) => grant.node_id !== null).map((grant) => <li key={`${grant.source_id}:${grant.node_id}`} className="flex min-h-11 items-center gap-3 px-3 py-1">
         <FolderIcon aria-hidden="true" size={16} className="shrink-0 text-muted-foreground" /><span className="min-w-0 break-words text-sm">{grant.path ?? grant.name}</span></li>)}</ul>
     </div>}
   </div>;

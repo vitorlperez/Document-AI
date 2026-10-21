@@ -167,3 +167,21 @@ def test_admin_folder_tree_lists_names_only_and_members_cannot(world_api):
     as_user(client, gateway, "bruno")
     assert client.get(f"{base}/roots").status_code == 403
     assert client.get(f"{base}/nodes/{nodes['contratos']}/children").status_code == 403
+
+
+def test_orphan_grant_is_listed_and_revoked_by_grant_id_over_http(world_api):
+    client, factory, gateway, world, nodes, _documents, _shared = world_api
+    grant(client, gateway, world, nodes)
+    with factory.begin() as session:  # the folder leaves the catalog while the grant stays
+        from app.library.models import LibraryNode
+        session.query(LibraryNode).filter(LibraryNode.id.in_([nodes["file_c2026"], nodes["y2026"]])).delete()
+    base = f"/organizations/{world.organization_id}/spaces/{world.spaces['rh']}"
+    listed = client.get(f"{base}/node-grants").json()
+    assert [(item["node_id"], item["orphan"], item["name"]) for item in listed] == [(None, True, "2026")]
+    stuck = put(client, world, {"revoke_nodes": [str(nodes["y2026"])]})
+    assert stuck.status_code == 403  # an unknown node id still fails the whole batch
+    done = put(client, world, {"revoke_node_grants": [listed[0]["grant_id"]]})
+    assert done.status_code == 200 and done.json()["revoked_node_grants"] == [listed[0]["grant_id"]]
+    assert client.get(f"{base}/node-grants").json() == []
+    as_user(client, gateway, "bruno")
+    assert put(client, world, {"revoke_node_grants": [listed[0]["grant_id"]]}).status_code == 403

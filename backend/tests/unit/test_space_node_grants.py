@@ -240,3 +240,27 @@ def test_service_grants_only_catalog_folders_of_the_organization_and_only_by_adm
     assert [(view.name, view.path) for view in views] == [("Contratos", "Google Drive/Contratos")]
     with pytest.raises(SpaceNotFound):  # daniel is not in RH: uniform not found
         service.node_grants(scope, tree.world.users["daniel"], rh)
+
+
+def test_orphan_grant_is_listed_with_its_id_and_revoked_by_it_without_the_catalog_node(session):
+    tree = Tree(session)
+    service, scope = SpaceService(session), tree.scope
+    admin, rh, geral = tree.world.users["eva"], tree.world.spaces["rh"], tree.world.spaces["geral"]
+    service.grant_node(scope, admin, rh, tree.y2026, {"text_version": "v1"})
+    other = service.grant_node(scope, admin, geral, tree.y2026, {"text_version": "v1"})
+    session.query(LibraryNode).filter(LibraryNode.id == tree.node["c2026"]).delete()
+    session.query(LibraryNode).filter(LibraryNode.id == tree.y2026).delete()
+    session.flush()
+    with pytest.raises(SpaceDenied):  # a node id is checked against the catalog; the vanished one is unknown
+        service.apply_node_changes(scope, admin, rh, [], [tree.y2026], {})
+    [view] = service.node_grants(scope, admin, rh)
+    assert view.node_id is None and view.name == "2026" and view.path is None  # the orphan stays visible
+    with pytest.raises(SpaceDenied):  # another Space's grant id is not this Space's to revoke
+        service.revoke_node_grants(scope, admin, rh, [other.id])
+    with pytest.raises(SpaceDenied):  # a plain member cannot revoke
+        service.revoke_node_grants(scope, tree.world.users["bruno"], rh, [view.grant_id])
+    assert service.revoke_node_grants(scope, admin, rh, [view.grant_id]) == [view.grant_id]
+    assert service.node_grants(scope, admin, rh) == []
+    assert service.revoke_node_grants(scope, admin, rh, [view.grant_id]) == []  # idempotent
+    assert session.scalar(select(SpaceNodeGrant.revoked_by_user_id).where(SpaceNodeGrant.id == view.grant_id)) == admin
+    assert [v.name for v in service.node_grants(scope, admin, geral)] == ["2026"]  # the other Space is untouched

@@ -89,6 +89,13 @@ test("changeFolders sends one PUT with the diff and the disclosure only when gra
   assert.equal(calls[1].body.disclosure, undefined);
 });
 
+test("changeFolders removes an orphan folder grant by its own id without asking for the disclosure", async () => {
+  const { api, calls } = recorder({ granted: [], revoked: [], revoked_node_grants: ["g1"] });
+  await api.changeFolders("o", "s", { grant: [], revoke: [], revoke_node_grants: ["g1"] });
+  assert.deepEqual(calls[0].body.revoke_node_grants, ["g1"]);
+  assert.equal(calls[0].body.disclosure, undefined);
+});
+
 test("changeFolders also carries library folders and asks for the disclosure when only a folder is granted", async () => {
   const { api, calls } = recorder({ granted: [], revoked: [], granted_nodes: [], revoked_nodes: [] });
   await api.changeFolders("o", "s", { grant: [], revoke: [], grant_nodes: ["n1"], revoke_nodes: ["n2"] });

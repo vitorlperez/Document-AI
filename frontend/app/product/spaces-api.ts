@@ -13,8 +13,9 @@ export type SpaceSummary = { id: string; name: string; description: string | nul
 export type SpaceMemberRow = { user_id: string; email: string; role: SpaceRole };
 /** Pasta da biblioteca na árvore do editor de Espaço (só nome e estrutura; GET /spaces/folder-tree/…). */
 export type TreeFolder = { id: string; name: string; has_children: boolean; source_id: string };
-/** Pasta (qualquer profundidade) concedida ao Espaço. `ancestor_ids` = pai … raiz da conexão, para o estado indeterminado. */
-export type NodeGrant = { node_id: string | null; source_id: string; name: string; path: string | null; ancestor_ids: string[] };
+/** Pasta (qualquer profundidade) concedida ao Espaço. `ancestor_ids` = pai … raiz da conexão, para o estado indeterminado.
+ *  `node_id: null` = grant órfão (a pasta saiu do catálogo): não concede nada agora e só se desfaz pelo `grant_id`. */
+export type NodeGrant = { grant_id: string; orphan?: boolean; node_id: string | null; source_id: string; name: string; path: string | null; ancestor_ids: string[] };
 export type SpaceImpact = { documents_lost: number; conversations_hidden: number; automations_paused: number; followed_queries_cleared?: number };
 /** Pasta conectada como a organização a vê (GET /workspace-folders). Para admin, `readable:false` = só metadados operacionais. */
 export type SpaceFolder = { id: string; name: string; status: string; spaces: SpaceRef[]; readable?: boolean; source_id?: string; source_provider?: string | null; source_account?: string | null; selection_kind?: string };
@@ -66,7 +67,7 @@ export function createSpacesApi(transport: Transport) {
     grant: (org: string, id: string, folderId: string, disclosure: Record<string, unknown> = { text_version: DISCLOSURE_VERSION }) => call<{ space_id: string; workspace_folder_id: string }>(`${root(org)}/${id}/folders/${folderId}`, json("POST", { disclosure })),
     revoke: (org: string, id: string, folderId: string) => call<void>(`${root(org)}/${id}/folders/${folderId}`, json("DELETE")),
     /** Aplica o diff de pastas (sincronizações inteiras e pastas da biblioteca) numa transação só. Idempotente; só owner/admin da organização. */
-    changeFolders: (org: string, id: string, input: { grant: string[]; revoke: string[]; grant_nodes?: string[]; revoke_nodes?: string[] }) => call<{ granted: string[]; revoked: string[]; granted_nodes?: string[]; revoked_nodes?: string[] }>(`${root(org)}/${id}/folders`, json("PUT", { ...input, ...(input.grant.length || input.grant_nodes?.length ? { disclosure: { text_version: DISCLOSURE_VERSION } } : {}) })),
+    changeFolders: (org: string, id: string, input: { grant: string[]; revoke: string[]; grant_nodes?: string[]; revoke_nodes?: string[]; revoke_node_grants?: string[] }) => call<{ granted: string[]; revoked: string[]; granted_nodes?: string[]; revoked_nodes?: string[]; revoked_node_grants?: string[] }>(`${root(org)}/${id}/folders`, json("PUT", { ...input, ...(input.grant.length || input.grant_nodes?.length ? { disclosure: { text_version: DISCLOSURE_VERSION } } : {}) })),
     /** Pastas da biblioteca concedidas ao Espaço (membros e administradores). */
     nodeGrants: (org: string, id: string) => call<NodeGrant[]>(`${root(org)}/${id}/node-grants`),
     /** Administradores: as pastas de onde cada sincronização foi montada (por id da sincronização) e as subpastas de qualquer pasta. */

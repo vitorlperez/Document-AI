@@ -60,6 +60,8 @@ class FolderChangesInput(BaseModel):
     # Library folders (any depth) granted with everything below them, by catalog node id.
     grant_nodes: list[UUID] = Field(default_factory=list, max_length=500)
     revoke_nodes: list[UUID] = Field(default_factory=list, max_length=500)
+    # Folder grants to undo by their own id: the only way for a grant whose folder left the catalog (orphan).
+    revoke_node_grants: list[UUID] = Field(default_factory=list, max_length=500)
     disclosure: dict[str, object] | None = None
 
 
@@ -274,12 +276,14 @@ def change_folders(
             scope, user.id, space_id, payload.grant, payload.revoke, payload.disclosure or {})
         nodes_granted, nodes_revoked = service.apply_node_changes(
             scope, user.id, space_id, payload.grant_nodes, payload.revoke_nodes, payload.disclosure or {})
-        return granted, revoked, nodes_granted, nodes_revoked
+        grants_revoked = service.revoke_node_grants(scope, user.id, space_id, payload.revoke_node_grants)
+        return granted, revoked, nodes_granted, nodes_revoked, grants_revoked
 
-    granted, revoked, nodes_granted, nodes_revoked = _run(session, action)
+    granted, revoked, nodes_granted, nodes_revoked, grants_revoked = _run(session, action)
     return {
         "granted": [str(item) for item in granted], "revoked": [str(item) for item in revoked],
         "granted_nodes": [str(item) for item in nodes_granted], "revoked_nodes": [str(item) for item in nodes_revoked],
+        "revoked_node_grants": [str(item) for item in grants_revoked],
     }
 
 
@@ -291,7 +295,8 @@ def node_grants(
     """Library folders granted to the Space (members and admins; anyone else gets the uniform 404)."""
     service, scope = _context(session, organization_id, user)
     return _run(session, lambda: [
-        {"node_id": str(item.node_id) if item.node_id else None, "source_id": str(item.source_id),
+        {"grant_id": str(item.grant_id), "node_id": str(item.node_id) if item.node_id else None,
+         "orphan": item.node_id is None, "source_id": str(item.source_id),
          "name": item.name, "path": item.path, "ancestor_ids": [str(node) for node in item.ancestor_ids]}
         for item in service.node_grants(scope, user.id, space_id)])
 

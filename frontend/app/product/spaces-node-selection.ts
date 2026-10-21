@@ -90,6 +90,10 @@ export function chainsFromGrants(grants: readonly { node_id: string | null; ance
   return new Map(grants.flatMap((grant) => grant.node_id ? [[grant.node_id, [grant.node_id, ...grant.ancestor_ids]] as [string, string[]]] : []));
 }
 
+/** Grants órfãos: a pasta saiu do catálogo, então não há caixa para desmarcar; só se removem pelo id do grant. */
+export const orphanGrants = <T extends { node_id: string | null }>(grants: readonly T[]): T[] => grants.filter((grant) => grant.node_id === null);
+export const ORPHAN_LABEL = "Pasta não encontrada";
+
 /** A pasta aparece marcada por um ancestral (ou pela sincronização inteira): desmarcá-la converte o ancestral em pastas irmãs. */
 export const coveredByAncestor = (ctx: NodeContext, selection: Selection): boolean => coverers(ctx, selection).some((index) => index < ctx.path.length - 1);
 

@@ -53,7 +53,8 @@ def test_admin_applies_a_diff_and_it_is_idempotent(world_api):
     after = active_folders(factory, world)
     assert after == {world.folders["rh"], world.folders["politicas"]} and before == {world.folders["diretoria"]}
     again = client.put(url(world), json=body)
-    assert again.status_code == 200 and again.json() == {"granted": [], "revoked": [], "granted_nodes": [], "revoked_nodes": []}
+    assert again.status_code == 200 and again.json() == {"granted": [], "revoked": [], "granted_nodes": [], "revoked_nodes": [],
+                              "revoked_node_grants": []}
     assert active_folders(factory, world) == after
     with factory() as session:
         audited = session.scalar(select(func.count()).select_from(AuditLog).where(

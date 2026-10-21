@@ -269,6 +269,14 @@ function FoldersTab({ company, space, canEdit, setError, setNotice, onChanged }:
       await reload(); await onChanged();
     } catch (caught) { const message = toSpacesError(caught).message; if (confirming) setDialogError(message); else setError(message); } finally { setBusy(false); }
   }
+  async function removeOrphan(grant: NodeGrant) {
+    setBusy(true);
+    try {
+      await spacesApi.changeFolders(company.id, space.id, { grant: [], revoke: [], revoke_node_grants: [grant.grant_id] });
+      setNotice(`${space.name}: “${grant.name}” (pasta não encontrada) removida.`);
+      await reload(); await onChanged();
+    } catch (caught) { setError(toSpacesError(caught).message); } finally { setBusy(false); }
+  }
   const discard = () => { setSelected({ scopes: new Set(initial.scopes), nodes: new Set(initial.nodes) }); setChains(chainsFromGrants(grants)); setConverted(false); };
   if (loading) return <LoadingBlock label="Carregando pastas…" className="min-h-32"><SkeletonList rows={3} /></LoadingBlock>;
   if (loadError) return <ErrorState icon={<CircleAlert size={22} />} title="Não foi possível carregar as pastas" description={loadError} actions={<button className={btn("secondary")} onClick={() => void reload()}>Tentar novamente</button>} />;
@@ -277,7 +285,7 @@ function FoldersTab({ company, space, canEdit, setError, setNotice, onChanged }:
   const summary = [diff.grant.length + diff.grantNodes.length ? `+${diff.grant.length + diff.grantNodes.length} para compartilhar` : "", diff.revoke.length + diff.revokeNodes.length ? `−${diff.revoke.length + diff.revokeNodes.length} para remover` : ""].filter(Boolean).join(" · ");
   return <div>
     <p className="mb-3 text-sm text-muted-foreground">{canEdit ? <>Marque as pastas que <strong>{space.name}</strong> pode ler. Marcar uma pasta marca tudo o que há dentro; abra uma pasta para escolher só algumas subpastas.</> : <>Pastas que <strong>{space.name}</strong> pode ler. Só administradores da organização alteram esta lista.</>}</p>
-    <SpaceFolderTree groups={groups} selection={selected} onChange={canEdit ? setSelected : undefined} nodes={canEdit ? { roots, children, chains, load: loadChildren, toggle } : undefined} grants={grants} spaceId={space.id} spaceName={space.name} />
+    <SpaceFolderTree groups={groups} selection={selected} onChange={canEdit ? setSelected : undefined} nodes={canEdit ? { roots, children, chains, load: loadChildren, toggle } : undefined} grants={grants} onRemoveOrphan={canEdit && !busy ? (grant) => void removeOrphan(grant) : undefined} spaceId={space.id} spaceName={space.name} />
     {canEdit && dirty && <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line-soft bg-panel px-4 py-3 md:bottom-0" data-testid="folders-save-bar">
       <p className="min-w-0 text-sm" role="status">{summary}{diff.grant.length + diff.grantNodes.length > 0 && <span className="block text-xs text-muted-foreground">{DISCLOSURE_TEXT}</span>}{converted && <span className="block text-xs text-muted-foreground">Ao tirar uma subpasta de uma pasta marcada, ficam só as pastas irmãs; arquivos soltos diretamente nas pastas acima dela não entram.</span>}</p>
       <div className="flex gap-2"><button type="button" className={btn("ghost")} disabled={busy} onClick={discard}>Descartar</button>
