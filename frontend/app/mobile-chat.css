@@ -47,7 +47,7 @@
 .mobile-drawer-nav button[aria-current] { background: var(--color-sage-selected); box-shadow: inset 3px 0 0 var(--color-primary); }
 
 /* ---- Bottom tab bar: flex child of the shell (never over the composer); sticky on scrolling pages ---- */
-.mobile-tab-bar { position: sticky; bottom: 0; z-index: 20; flex-shrink: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 4px max(4px, env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left)); background: var(--color-paper); border-top: 1px solid var(--color-line); }
+.mobile-tab-bar { position: sticky; bottom: 0; margin-top: auto; z-index: 20; flex-shrink: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 4px max(4px, env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left)); background: var(--color-paper); border-top: 1px solid var(--color-line); }
 .mobile-tab-bar[hidden] { display: none; }
 .mobile-tab-bar button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; border: 0; border-radius: 10px; background: transparent; color: var(--color-muted-foreground); font-size: 11px; font-weight: 600; }
 .mobile-tab-bar button[aria-current="page"] { color: var(--color-primary); }
