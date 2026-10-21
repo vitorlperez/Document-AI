@@ -1,5 +1,5 @@
 .question-scope { position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 2px 8px; min-width: 0; }
-.question-scope-trigger { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; max-width: min(100%, 260px); padding: 0 8px; border-radius: 6px; color: var(--muted-foreground); font-size: 12px; font-weight: 400; cursor: pointer; }
+.question-scope .question-scope-trigger { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; max-width: min(100%, 260px); padding: 0 8px; border-radius: 6px; color: var(--muted-foreground); font-size: 12px; font-weight: 400; cursor: pointer; }
 .question-scope-trigger[data-active="true"] { color: var(--primary); font-weight: 600; background: var(--sage); }
 .question-scope-kind { flex: none; }
 .question-scope-value { color: var(--ink); opacity: .8; }
@@ -22,7 +22,7 @@
 .question-scope-flag:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 .question-scope-flag::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 31; width: max-content; max-width: min(260px, calc(100vw - 32px)); padding: 6px 9px; border: 1px solid var(--card-edge); border-radius: 6px; background: var(--surface-overlay, var(--surface-raised)); color: var(--ink); font-size: 12px; line-height: 1.4; box-shadow: 0 8px 20px var(--shadow-ink); opacity: 0; transform: translateY(2px); pointer-events: none; transition: opacity .12s; }
 .question-scope-flag:hover::after, .question-scope-flag:focus-visible::after { opacity: 1; transform: none; }
-.question-scope-retry { color: inherit; text-decoration: underline; cursor: pointer; }
+.question-scope-retry { min-height: 0; color: inherit; text-decoration: underline; cursor: pointer; }
 
 /* Botão "Espaços" no composer, ao lado de Ferramentas (mesmo trigger/menu; o menu abre para cima) */
 .space-scope { flex-wrap: nowrap; }
@@ -36,6 +36,6 @@
 @media (max-width: 639px) {
   .question-scope-kind { display: none; }
   .question-scope-kind + .question-scope-value::before { content: none; }
-  .question-scope-trigger, .space-scope-chip { min-height: 40px; max-width: 120px; padding: 0 7px; }
+  .question-scope .question-scope-trigger, .space-scope-chip { min-height: 40px; max-width: 120px; padding: 0 7px; }
   .space-scope-label { max-width: 72px; }
 }
