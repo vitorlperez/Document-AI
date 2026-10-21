@@ -107,6 +107,28 @@ export function addableCandidates(people: OrgPerson[], members: Pick<SpaceMember
   const needle = fold(term.trim());
   return people.filter((person) => person.user_id && !taken.has(person.user_id) && (!needle || fold(person.email).includes(needle)));
 }
+const foldText = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/**
+ * Lista única da aba Pessoas: quem está no Espaço (papel; responsáveis primeiro, depois por e-mail) e as demais pessoas da
+ * organização (convidados sem `user_id` por último). `term` só filtra (e-mail, sem acento/caixa); não decide quem entra.
+ */
+export function partitionPeople<M extends Pick<SpaceMemberRow, "user_id" | "email">>(people: OrgPerson[], members: M[], term: string): { inSpace: M[]; others: OrgPerson[]; totalInSpace: number; totalOthers: number } {
+  const taken = new Set(members.map((member) => member.user_id));
+  const needle = foldText(term.trim());
+  const match = (email: string) => !needle || foldText(email).includes(needle);
+  const byEmail = (a: { email: string }, b: { email: string }) => a.email.localeCompare(b.email, "pt-BR", { sensitivity: "base" });
+  const isManager = (member: M) => (member as unknown as { role?: SpaceRole }).role === "manager";
+  const sortedMembers = [...members].sort((a, b) => Number(isManager(b)) - Number(isManager(a)) || byEmail(a, b));
+  const rest = people.filter((person) => !person.user_id || !taken.has(person.user_id));
+  const sortedOthers = [...rest].sort((a, b) => Number(!a.user_id) - Number(!b.user_id) || byEmail(a, b));
+  return {
+    inSpace: sortedMembers.filter((member) => match(member.email)),
+    others: sortedOthers.filter((person) => match(person.email)),
+    totalInSpace: members.length,
+    totalOthers: rest.length,
+  };
+}
 export const spaceRoleLabel = (role: SpaceRole | null) => role === "manager" ? "Responsável" : role === "member" ? "Membro" : "Sem acesso";
 
 /** Espaços de que a pessoa participa — os únicos que podem filtrar leitura. Admin que não entrou num Espaço o gerencia, mas filtrar por ele daria 404. */

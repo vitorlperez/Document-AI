@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { type Company } from "./types-and-api";
 import { EmptyState, Enter, ErrorState, LoadingBlock, SkeletonList, btn } from "../ui";
 import { canManageMembers, impactSentence } from "../spaces-model";
-import { DISCLOSURE_TEXT, addableCandidates, canEnterSpace, spaceRoleLabel, toSpacesError, type NodeGrant, type OrgPerson, type SpaceFolder, type SpaceImpact, type SpaceMemberRow, type SpaceRole, type SpaceSummary, type TreeFolder } from "./spaces-api";
+import { DISCLOSURE_TEXT, canEnterSpace, partitionPeople, spaceRoleLabel, toSpacesError, type NodeGrant, type OrgPerson, type SpaceFolder, type SpaceImpact, type SpaceMemberRow, type SpaceRole, type SpaceSummary, type TreeFolder } from "./spaces-api";
 import { spacesApi } from "./spaces-client";
 import { SpaceConfirmDialog } from "./space-dialogs";
 import { SpaceFolderTree } from "./space-folder-tree";
@@ -139,11 +139,14 @@ function PeopleTab({ company, space, canEdit, visible, setError, setNotice, onCh
     return () => { alive = false; };
   }, [canEdit, company.id]);
 
-  const candidates = useMemo(() => people ? addableCandidates(people, members, term).slice(0, 8) : [], [people, members, term]);
+  const view = useMemo(() => partitionPeople(people ?? [], members, term), [people, members, term]);
+  const managerCount = members.filter((member) => member.role === "manager").length;
+  const [addingId, setAddingId] = useState<string | null>(null);
   async function add(person: OrgPerson) {
     if (!person.user_id) return;
-    try { await spacesApi.addMember(company.id, space.id, person.user_id); setNotice(`${person.email} agora está em ${space.name}.`); setTerm(""); await reload(); await onChanged(); }
-    catch (caught) { setError(toSpacesError(caught).message); }
+    setAddingId(person.user_id);
+    try { await spacesApi.addMember(company.id, space.id, person.user_id); setNotice(`${person.email} agora está em ${space.name}.`); await reload(); await onChanged(); }
+    catch (caught) { setError(toSpacesError(caught).message); } finally { setAddingId(null); }
   }
   async function changeRole(member: SpaceMemberRow, role: SpaceRole) {
     try { await spacesApi.setRole(company.id, space.id, member.user_id, role); setMembers((rows) => rows.map((row) => row.user_id === member.user_id ? { ...row, role } : row)); }
@@ -162,26 +165,46 @@ function PeopleTab({ company, space, canEdit, visible, setError, setNotice, onCh
   }
 
   if (!visible) return <EmptyState icon={<Users size={22} />} title="Lista de pessoas indisponível" description="Somente quem participa do Espaço ou administra a organização vê as pessoas." />;
+  const filtering = term.trim().length > 0;
+  const memberRow = (member: SpaceMemberRow) => {
+    const lastManager = member.role === "manager" && managerCount <= 1;
+    return <li key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 p-3">
+      <span className="min-w-0 break-all text-sm font-medium">{member.email}</span>
+      <span className="flex items-center gap-2">
+        {canEdit ? <><label className="sr-only" htmlFor={`role-${member.user_id}`}>Papel de {member.email}</label>
+          <select id={`role-${member.user_id}`} value={member.role} disabled={lastManager} title={lastManager ? "Todo Espaço precisa de ao menos um responsável." : undefined} onChange={(event) => void changeRole(member, event.target.value as SpaceRole)} className="rounded-md border border-line bg-paper px-2 py-1.5 text-sm disabled:opacity-60"><option value="member">Membro</option><option value="manager">Responsável</option></select>
+          <button type="button" className={btn("danger-ghost", "sm")} disabled={lastManager} title={lastManager ? "Todo Espaço precisa de ao menos um responsável." : undefined} aria-label={`Desabilitar ${member.email} em ${space.name}`} onClick={() => void askDisable(member)}>Desabilitar</button></>
+          : <span className="rounded-full bg-sage px-2 py-0.5 text-xs font-semibold text-muted-foreground">{spaceRoleLabel(member.role)}</span>}
+      </span></li>;
+  };
+  const showOthers = canEdit && people !== null && !peopleNote;
   return <div>
-    {canEdit && <div className="mb-4">
-      <label htmlFor="space-add-person" className="text-sm font-semibold">Habilitar uma pessoa</label>
-      <input id="space-add-person" value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Buscar por e-mail" autoComplete="off" className="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" />
+    <div className="mb-4">
+      <label htmlFor="space-filter-people" className="text-sm font-semibold">Filtrar pessoas</label>
+      <input id="space-filter-people" type="search" value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Nome ou e-mail" autoComplete="off" className="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" />
       {peopleNote && <p className="mt-2 text-xs text-muted-foreground">{peopleNote}</p>}
-      {term.trim() && people && !peopleNote && <ul className="mt-2 divide-y divide-line-soft rounded-md border border-line-soft" aria-label="Resultados da busca">
-        {candidates.length === 0 ? <li className="p-3 text-sm text-muted-foreground">Ninguém encontrado fora deste Espaço.</li> : candidates.map((person) => <li key={person.user_id ?? person.email} className="flex items-center justify-between gap-3 p-3 text-sm">
-          <span className="min-w-0 truncate">{person.email}</span><button type="button" className={btn("secondary", "sm")} onClick={() => void add(person)}>Habilitar</button></li>)}</ul>}
-    </div>}
+    </div>
     {loading ? <LoadingBlock label="Carregando pessoas…" className="min-h-32"><SkeletonList rows={3} /></LoadingBlock>
       : loadError ? <ErrorState icon={<CircleAlert size={22} />} title="Não foi possível carregar as pessoas" description={loadError} actions={<button className={btn("secondary")} onClick={() => void reload()}>Tentar novamente</button>} />
-      : members.length === 0 ? <EmptyState icon={<Users size={22} />} title="Nenhuma pessoa neste Espaço" description={canEdit ? "Busque acima para habilitar a primeira pessoa." : undefined} />
-      : <ul className="divide-y divide-line-soft rounded-md border border-line-soft" aria-label={`Pessoas em ${space.name}`}>{members.map((member) => <li key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-        <span className="min-w-0 break-all text-sm font-medium">{member.email}</span>
-        <span className="flex items-center gap-2">
-          {canEdit ? <><label className="sr-only" htmlFor={`role-${member.user_id}`}>Papel de {member.email}</label>
-            <select id={`role-${member.user_id}`} value={member.role} onChange={(event) => void changeRole(member, event.target.value as SpaceRole)} className="rounded-md border border-line bg-paper px-2 py-1.5 text-sm"><option value="member">Membro</option><option value="manager">Responsável</option></select>
-            <button type="button" className={btn("danger-ghost", "sm")} aria-label={`Desabilitar ${member.email} em ${space.name}`} onClick={() => void askDisable(member)}>Desabilitar</button></>
-            : <span className="rounded-full bg-sage px-2 py-0.5 text-xs font-semibold text-muted-foreground">{spaceRoleLabel(member.role)}</span>}
-        </span></li>)}</ul>}
+      : <div className="max-h-[32rem] space-y-5 overflow-y-auto pr-1">
+        <section aria-labelledby="people-in-space">
+          <h3 id="people-in-space" className="mb-2 text-sm font-semibold">No Espaço <span className="font-normal text-muted-foreground">({filtering ? `${view.inSpace.length} de ${view.totalInSpace}` : view.totalInSpace})</span></h3>
+          {view.inSpace.length === 0
+            ? <p className="rounded-md border border-line-soft p-3 text-sm text-muted-foreground">{filtering ? "Ninguém neste Espaço corresponde ao filtro." : canEdit ? "Nenhuma pessoa neste Espaço. Habilite alguém abaixo." : "Nenhuma pessoa neste Espaço."}</p>
+            : <ul className="divide-y divide-line-soft rounded-md border border-line-soft" aria-label={`Pessoas em ${space.name}`}>{view.inSpace.map(memberRow)}</ul>}
+        </section>
+        {showOthers && <section aria-labelledby="people-others">
+          <h3 id="people-others" className="mb-2 text-sm font-semibold">Outras pessoas da organização <span className="font-normal text-muted-foreground">({filtering ? `${view.others.length} de ${view.totalOthers}` : view.totalOthers})</span></h3>
+          {view.others.length === 0
+            ? <p className="rounded-md border border-line-soft p-3 text-sm text-muted-foreground">{filtering ? "Ninguém fora do Espaço corresponde ao filtro." : "Todas as pessoas da organização já estão neste Espaço."}</p>
+            : <ul className="divide-y divide-line-soft rounded-md border border-line-soft" aria-label="Outras pessoas da organização">{view.others.map((person) => <li key={person.user_id ?? person.email} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
+              <span className="min-w-0 break-all">{person.email}</span>
+              {person.user_id
+                ? <button type="button" className={btn("secondary", "sm")} disabled={addingId !== null} aria-label={`Habilitar ${person.email} em ${space.name}`} onClick={() => void add(person)}>{addingId === person.user_id ? "Habilitando…" : "Habilitar"}</button>
+                : <span className="rounded-full bg-sage px-2 py-0.5 text-xs font-semibold text-muted-foreground">Convite pendente</span>}
+            </li>)}</ul>}
+        </section>}
+      </div>}
     {pending && <SpaceConfirmDialog title={`Desabilitar ${pending.member.email} em ${space.name}?`} confirmLabel="Desabilitar" busyLabel="Desabilitando…" busy={busy} error={dialogError} onConfirm={() => void confirmDisable()} onCancel={() => setPending(null)}>
       {pending.impact ? <><p>{impactSentence(pending.member.email, pending.impact)}</p><p className="text-muted-foreground">O que a pessoa vê por outros Espaços continua visível.</p></>
         : dialogError ? null : <p aria-live="polite">Calculando o que muda…</p>}

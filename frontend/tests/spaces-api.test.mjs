@@ -108,3 +108,17 @@ test("the folder tree reads the roots of each synchronization, subfolders on dem
   ]);
   assert.equal(children[0].name, "2026");
 });
+
+test("partitionPeople: membros no topo (responsáveis primeiro), demais da org depois, convidados por último; filtro só afeta a visão", async () => {
+  const { partitionPeople } = await import("../app/product/spaces-api.ts");
+  const members = [{ user_id: "2", email: "zeca@x.com", role: "member" }, { user_id: "1", email: "Ana@x.com", role: "manager" }, { user_id: "3", email: "bia@x.com", role: "member" }];
+  const people = [{ user_id: null, email: "convidada@x.com" }, { user_id: "4", email: "João@x.com" }, { user_id: "1", email: "Ana@x.com" }, { user_id: "2", email: "zeca@x.com" }, { user_id: "5", email: "carla@x.com" }];
+  const all = partitionPeople(people, members, "");
+  assert.deepEqual(all.inSpace.map((m) => m.email), ["Ana@x.com", "bia@x.com", "zeca@x.com"]);
+  assert.deepEqual(all.others.map((p) => p.email), ["carla@x.com", "João@x.com", "convidada@x.com"]);
+  assert.equal(all.totalInSpace, 3); assert.equal(all.totalOthers, 3);
+  const f = partitionPeople(people, members, "  JOAO ");
+  assert.deepEqual(f.others.map((p) => p.email), ["João@x.com"]);
+  assert.equal(f.inSpace.length, 0); assert.equal(f.totalOthers, 3);
+  assert.equal(people.length, 5); assert.equal(members[0].email, "zeca@x.com");
+});
