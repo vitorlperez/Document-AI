@@ -52,6 +52,13 @@ class GrantInput(BaseModel):
     disclosure: dict[str, object]
 
 
+class FolderChangesInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    grant: list[UUID] = Field(default_factory=list, max_length=500)
+    revoke: list[UUID] = Field(default_factory=list, max_length=500)
+    disclosure: dict[str, object] | None = None
+
+
 def _context(session: Session, organization_id: UUID, user: User) -> tuple[SpaceService, OrganizationScope]:
     """People outside the organization see nothing at all: 404, never 403."""
     member = session.scalar(select(Membership.id).where(
@@ -210,6 +217,20 @@ def revoke_folder(
     service, scope = _context(session, organization_id, user)
     _run(session, lambda: service.revoke_folder(scope, user.id, space_id, workspace_folder_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.put("/{space_id}/folders")
+def change_folders(
+    organization_id: UUID, space_id: UUID, payload: FolderChangesInput, user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> dict[str, list[str]]:
+    """Apply a grant/revoke diff of workspace folders to the Space in one transaction (admin only)."""
+    service, scope = _context(session, organization_id, user)
+    if payload.grant and not payload.disclosure:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "disclosure with text_version is required")
+    granted, revoked = _run(session, lambda: service.apply_folder_changes(
+        scope, user.id, space_id, payload.grant, payload.revoke, payload.disclosure or {}))
+    return {"granted": [str(item) for item in granted], "revoked": [str(item) for item in revoked]}
 
 
 @router.post("/{space_id}/enter")

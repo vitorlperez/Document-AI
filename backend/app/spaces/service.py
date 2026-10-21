@@ -295,6 +295,39 @@ class SpaceService:
             SpaceMember.space_id == space.id, SpaceMember.removed_at.is_(None)))), {workspace_folder_id})
         return grant
 
+    def apply_folder_changes(
+        self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID,
+        grant_ids: Sequence[UUID], revoke_ids: Sequence[UUID], disclosure: dict[str, object],
+    ) -> tuple[list[UUID], list[UUID]]:
+        """Apply a folder diff in one transaction (the caller commits or rolls back everything).
+
+        Same rules as ``grant_folder``/``revoke_folder`` (org admin only, folders of this organization,
+        audited); both directions are idempotent: a folder already granted / already not granted is skipped.
+        Returns (granted, revoked) with the ids that actually changed."""
+        self._require_admin(scope, actor_user_id)
+        space, _, _ = self._space(scope, actor_user_id, space_id)
+        to_grant = list(dict.fromkeys(grant_ids))
+        to_revoke = [item for item in dict.fromkeys(revoke_ids) if item not in set(to_grant)]
+        if to_grant:  # validate everything before the first write: a foreign folder fails the whole batch
+            own = set(self.session.scalars(select(WorkspaceFolder.id).where(
+                WorkspaceFolder.organization_id == scope.organization_id, WorkspaceFolder.id.in_(to_grant))))
+            if own != set(to_grant):
+                raise SpaceDenied("folder does not belong to this organization")
+        granted: list[UUID] = []
+        for folder_id in to_grant:
+            before = self._folder_ids({space.id})
+            self.grant_folder(scope, actor_user_id, space.id, folder_id, disclosure)
+            if folder_id not in before:
+                granted.append(folder_id)
+        revoked: list[UUID] = []
+        for folder_id in to_revoke:
+            try:
+                self.revoke_folder(scope, actor_user_id, space.id, folder_id)
+                revoked.append(folder_id)
+            except SpaceNotFound:  # already not granted: nothing to undo
+                continue
+        return granted, revoked
+
     def enter_space(self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID) -> SpaceMember:
         """An org admin joins a Space to read it: explicit, audited, visible to the Space's members (D2)."""
         self._require_admin(scope, actor_user_id)

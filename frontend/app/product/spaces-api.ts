@@ -13,7 +13,7 @@ export type SpaceSummary = { id: string; name: string; description: string | nul
 export type SpaceMemberRow = { user_id: string; email: string; role: SpaceRole };
 export type SpaceImpact = { documents_lost: number; conversations_hidden: number; automations_paused: number; followed_queries_cleared?: number };
 /** Pasta conectada como a organização a vê (GET /workspace-folders). Para admin, `readable:false` = só metadados operacionais. */
-export type SpaceFolder = { id: string; name: string; status: string; spaces: SpaceRef[]; readable?: boolean };
+export type SpaceFolder = { id: string; name: string; status: string; spaces: SpaceRef[]; readable?: boolean; source_id?: string; source_provider?: string | null; source_account?: string | null; selection_kind?: string };
 /** Candidato a membro: usuário da organização (GET /organizations/{id}/people — só `user_id` e e-mail; owner, admin ou responsável de algum Espaço). */
 export type OrgPerson = { user_id: string | null; email: string };
 /** Alcance de uma chave de API para quem a cria (T-I2: `reach` em POST/GET /api-keys). */
@@ -61,6 +61,8 @@ export function createSpacesApi(transport: Transport) {
     impact: (org: string, id: string, userId: string) => call<SpaceImpact>(`${root(org)}/${id}/members/${userId}/impact`),
     grant: (org: string, id: string, folderId: string, disclosure: Record<string, unknown> = { text_version: DISCLOSURE_VERSION }) => call<{ space_id: string; workspace_folder_id: string }>(`${root(org)}/${id}/folders/${folderId}`, json("POST", { disclosure })),
     revoke: (org: string, id: string, folderId: string) => call<void>(`${root(org)}/${id}/folders/${folderId}`, json("DELETE")),
+    /** Aplica o diff de pastas (grant/revoke) numa transação só. Idempotente; só owner/admin da organização. */
+    changeFolders: (org: string, id: string, input: { grant: string[]; revoke: string[] }) => call<{ granted: string[]; revoked: string[] }>(`${root(org)}/${id}/folders`, json("PUT", { ...input, ...(input.grant.length ? { disclosure: { text_version: DISCLOSURE_VERSION } } : {}) })),
     enter: (org: string, id: string) => call<{ space_id: string; role: SpaceRole }>(`${root(org)}/${id}/enter`, json("POST")),
     folders: (org: string) => call<SpaceFolder[]>(`/workspace-folders?organization_id=${org}`),
     orgPeople: async (org: string): Promise<OrgPerson[]> => {

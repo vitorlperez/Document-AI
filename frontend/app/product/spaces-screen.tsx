@@ -5,9 +5,12 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { type Company } from "./types-and-api";
 import { EmptyState, Enter, ErrorState, LoadingBlock, SkeletonList, btn } from "../ui";
 import { canManageMembers, impactSentence } from "../spaces-model";
-import { addableCandidates, canEnterSpace, spaceRoleLabel, toSpacesError, type OrgPerson, type SpaceFolder, type SpaceImpact, type SpaceMemberRow, type SpaceRole, type SpaceSummary } from "./spaces-api";
+import { DISCLOSURE_TEXT, addableCandidates, canEnterSpace, spaceRoleLabel, toSpacesError, type OrgPerson, type SpaceFolder, type SpaceImpact, type SpaceMemberRow, type SpaceRole, type SpaceSummary } from "./spaces-api";
 import { spacesApi } from "./spaces-client";
 import { SpaceConfirmDialog } from "./space-dialogs";
+import { SpaceFolderTree } from "./space-folder-tree";
+import { folderDiff, groupFoldersByTool } from "./spaces-folder-tree";
+import { toolGroup, toolLabel } from "../tool-groups";
 
 type Tab = "people" | "folders";
 type Pending = { kind: "disable"; member: SpaceMemberRow; impact: SpaceImpact | null } | { kind: "archive" } | null;
@@ -103,14 +106,14 @@ function SpaceDetail({ company, space, onChanged, setError, setNotice }: { compa
     </div>
     {isAdmin && space.my_role === null && <p className="mt-3 rounded-lg border border-line-soft bg-sage p-3 text-sm">Como administrador, você gerencia este Espaço mas não lê o conteúdo dele. Para ler, use “Entrar neste Espaço” — os membros verão que você entrou.</p>}
     <div role="tablist" aria-label="Seções do Espaço" className="mt-5 flex gap-2 border-b border-line-soft">
-      {([["people", "Pessoas", Users], ...(isAdmin ? [["folders", "Pastas", FolderOpen]] : [])] as [Tab, string, typeof Users][]).map(([key, label, Icon]) =>
+      {([["people", "Pessoas", Users], ["folders", "Pastas", FolderOpen]] as [Tab, string, typeof Users][]).map(([key, label, Icon]) =>
         <button key={key} role="tab" id={`tab-${key}`} aria-selected={tab === key} aria-controls={`panel-${key}`} type="button" onClick={() => setTab(key)}
           className={`mo-interactive -mb-px border-b-2 px-3 py-2 text-sm font-semibold ${tab === key ? "border-primary text-ink" : "border-transparent text-muted-foreground"}`}><Icon size={14} className="mr-1 inline" aria-hidden="true" />{label}</button>)}
     </div>
     <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="mt-4">
       {tab === "people"
         ? <PeopleTab company={company} space={space} canEdit={canPeople} visible={canSeeMembers} setError={setError} setNotice={setNotice} onChanged={() => onChanged(space.id)} />
-        : <FoldersTab company={company} space={space} setError={setError} setNotice={setNotice} onChanged={() => onChanged(space.id)} />}
+        : <FoldersTab company={company} space={space} canEdit={isAdmin} setError={setError} setNotice={setNotice} onChanged={() => onChanged(space.id)} />}
     </div>
     {pending?.kind === "archive" && <SpaceConfirmDialog title="Arquivar este Espaço?" confirmLabel="Arquivar" busyLabel="Arquivando…" busy={busy} error={dialogError} onConfirm={() => void archive()} onCancel={() => setPending(null)}>
       <p>As pessoas deixam de ver, por <strong>{space.name}</strong>, as pastas concedidas a ele. O que continuarem vendo por outros Espaços não muda.</p></SpaceConfirmDialog>}
@@ -185,26 +188,45 @@ function PeopleTab({ company, space, canEdit, visible, setError, setNotice, onCh
   </div>;
 }
 
-function FoldersTab({ company, space, setError, setNotice, onChanged }: { company: Company; space: SpaceSummary; setError: (value: string | null) => void; setNotice: (value: string | null) => void; onChanged: () => Promise<void> }) {
-  const [folders, setFolders] = useState<SpaceFolder[]>([]); const [loading, setLoading] = useState(true); const [loadError, setLoadError] = useState<string | null>(null); const [busyId, setBusyId] = useState<string | null>(null);
-  const reload = useCallback(async () => { setLoading(true); setLoadError(null); try { setFolders(await spacesApi.folders(company.id)); } catch (caught) { setLoadError(toSpacesError(caught).message); } finally { setLoading(false); } }, [company.id]);
-  useEffect(() => { void Promise.resolve().then(reload); }, [reload]);
-  async function toggle(folder: SpaceFolder, granted: boolean) {
-    setBusyId(folder.id);
+function FoldersTab({ company, space, canEdit, setError, setNotice, onChanged }: { company: Company; space: SpaceSummary; canEdit: boolean; setError: (value: string | null) => void; setNotice: (value: string | null) => void; onChanged: () => Promise<void> }) {
+  const [folders, setFolders] = useState<SpaceFolder[]>([]); const [loading, setLoading] = useState(true); const [loadError, setLoadError] = useState<string | null>(null);
+  const [initial, setInitial] = useState<Set<string>>(new Set()); const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false); const [confirming, setConfirming] = useState(false); const [dialogError, setDialogError] = useState<string | null>(null);
+  const reload = useCallback(async () => {
+    setLoading(true); setLoadError(null);
     try {
-      if (granted) await spacesApi.revoke(company.id, space.id, folder.id); else await spacesApi.grant(company.id, space.id, folder.id);
-      setNotice(granted ? `“${folder.name}” não é mais compartilhada com ${space.name}.` : `“${folder.name}” agora é compartilhada com ${space.name}.`);
+      const rows = await spacesApi.folders(company.id);
+      const granted = new Set(rows.filter((folder) => folder.spaces.some((item) => item.id === space.id)).map((folder) => folder.id));
+      setFolders(rows); setInitial(granted); setSelected(new Set(granted));
+    } catch (caught) { setLoadError(toSpacesError(caught).message); } finally { setLoading(false); }
+  }, [company.id, space.id]);
+  useEffect(() => { void Promise.resolve().then(reload); }, [reload]);
+  const diff = useMemo(() => folderDiff(initial, selected), [initial, selected]);
+  const dirty = diff.grant.length + diff.revoke.length > 0;
+  // Quem só lê vê apenas as pastas do Espaço; quem edita vê todas as pastas conectadas da organização.
+  const groups = useMemo(() => groupFoldersByTool(canEdit ? folders : folders.filter((folder) => initial.has(folder.id)), { group: toolGroup, label: toolLabel }), [folders, canEdit, initial]);
+  async function save() {
+    setBusy(true); setDialogError(null);
+    try {
+      await spacesApi.changeFolders(company.id, space.id, diff);
+      const parts = [diff.grant.length ? `${plural(diff.grant.length, "pasta adicionada", "pastas adicionadas")}` : "", diff.revoke.length ? `${plural(diff.revoke.length, "pasta removida", "pastas removidas")}` : ""].filter(Boolean);
+      setNotice(`${space.name}: ${parts.join(" e ")}.`); setConfirming(false);
       await reload(); await onChanged();
-    } catch (caught) { setError(toSpacesError(caught).message); } finally { setBusyId(null); }
+    } catch (caught) { const message = toSpacesError(caught).message; if (confirming) setDialogError(message); else setError(message); } finally { setBusy(false); }
   }
   if (loading) return <LoadingBlock label="Carregando pastas…" className="min-h-32"><SkeletonList rows={3} /></LoadingBlock>;
   if (loadError) return <ErrorState icon={<CircleAlert size={22} />} title="Não foi possível carregar as pastas" description={loadError} actions={<button className={btn("secondary")} onClick={() => void reload()}>Tentar novamente</button>} />;
-  if (folders.length === 0) return <EmptyState icon={<FolderOpen size={22} />} title="Nenhuma pasta conectada" description="Conecte uma pasta em Integrações para poder compartilhá-la com um Espaço." />;
-  return <ul className="divide-y divide-line-soft rounded-md border border-line-soft" aria-label="Pastas conectadas">{folders.map((folder) => {
-    const granted = folder.spaces.some((item) => item.id === space.id); const others = folder.spaces.filter((item) => item.id !== space.id);
-    return <li key={folder.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-      <span className="min-w-0"><b className="block break-words text-sm">{folder.name}</b>
-        <span className="text-xs text-muted-foreground">{folder.spaces.length === 0 ? "Sem Espaço — ninguém lê esta pasta" : `Também em: ${others.map((item) => item.name).join(", ") || "nenhum outro Espaço"}`}</span></span>
-      <button type="button" disabled={busyId === folder.id} aria-busy={busyId === folder.id} aria-pressed={granted} className={btn(granted ? "secondary" : "primary", "sm")} onClick={() => void toggle(folder, granted)}>{granted ? `Remover de ${space.name}` : `Compartilhar com ${space.name}`}</button></li>;
-  })}</ul>;
+  if (groups.length === 0) return <EmptyState icon={<FolderOpen size={22} />} title={canEdit ? "Nenhuma pasta conectada" : "Nenhuma pasta neste Espaço"} description={canEdit ? "Conecte uma pasta em Integrações para poder compartilhá-la com um Espaço." : "Este Espaço ainda não recebeu pastas."} />;
+  return <div>
+    <p className="mb-3 text-sm text-muted-foreground">{canEdit ? <>Marque as pastas que <strong>{space.name}</strong> pode ler. Marcar uma ferramenta marca todas as pastas dela.</> : <>Pastas que <strong>{space.name}</strong> pode ler. Só administradores da organização alteram esta lista.</>}</p>
+    <SpaceFolderTree groups={groups} selected={selected} onChange={canEdit ? setSelected : undefined} spaceId={space.id} spaceName={space.name} />
+    {canEdit && dirty && <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 -mx-5 mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line-soft bg-panel px-5 py-3 sm:-mx-6 sm:px-6 md:bottom-0">
+      <p className="min-w-0 text-sm" role="status">{[diff.grant.length ? `+${diff.grant.length} para compartilhar` : "", diff.revoke.length ? `−${diff.revoke.length} para remover` : ""].filter(Boolean).join(" · ")}{diff.grant.length > 0 && <span className="block text-xs text-muted-foreground">{DISCLOSURE_TEXT}</span>}</p>
+      <div className="flex gap-2"><button type="button" className={btn("ghost")} disabled={busy} onClick={() => setSelected(new Set(initial))}>Descartar</button>
+        <button type="button" className={btn("primary")} disabled={busy} aria-busy={busy} onClick={() => diff.revoke.length ? (setDialogError(null), setConfirming(true)) : void save()}>{busy && !confirming ? "Salvando…" : "Salvar alterações"}</button></div>
+    </div>}
+    {confirming && <SpaceConfirmDialog title={`Remover ${plural(diff.revoke.length, "pasta", "pastas")} de ${space.name}?`} confirmLabel="Salvar e remover" busyLabel="Salvando…" busy={busy} error={dialogError} onConfirm={() => void save()} onCancel={() => setConfirming(false)}>
+      <p>As pessoas de <strong>{space.name}</strong> deixam de ver, por este Espaço, o conteúdo de: {diff.revoke.map((id) => folders.find((folder) => folder.id === id)?.name ?? "pasta").join(", ")}. Conversas e automações que dependiam dessas pastas podem ser pausadas.</p>
+      <p className="text-muted-foreground">O que as pessoas veem por outros Espaços não muda.</p></SpaceConfirmDialog>}
+  </div>;
 }

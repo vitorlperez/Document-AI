@@ -78,3 +78,13 @@ test("creator hint lists the creator's Spaces and is silent when there are none"
   assert.equal(creatorReachHint(["RH", "Geral"]), "Esta chave lerá apenas o que está nos seus Espaços: RH, Geral.");
   assert.equal(creatorReachHint([]), null);
 });
+
+test("changeFolders sends one PUT with the diff and the disclosure only when granting", async () => {
+  const { api, calls } = recorder({ granted: [], revoked: [] });
+  await api.changeFolders("o", "s", { grant: ["a"], revoke: ["b"] });
+  await api.changeFolders("o", "s", { grant: [], revoke: ["b"] });
+  assert.equal(`${calls[0].method} ${calls[0].path}`, "PUT /organizations/o/spaces/s/folders");
+  assert.deepEqual([calls[0].body.grant, calls[0].body.revoke], [["a"], ["b"]]);
+  assert.ok(calls[0].body.disclosure.text_version);
+  assert.equal(calls[1].body.disclosure, undefined);
+});

@@ -51,6 +51,7 @@ from app.integrations.sharepoint import (
     SharePointGraphClient,
     is_site_node,
 )
+from app.organizations.models import Membership, MembershipRole
 from app.workspaces.service import WorkspaceScope, WorkspaceService
 
 router = APIRouter(tags=["integrations"])
@@ -867,6 +868,14 @@ def workspace_folders(
         rows = [folder for folder, _spaces, _readable in entries]
         selections = workspace_service.selections_for_folders(scope=scope, folders=rows)
         space_info = {folder.id: (spaces, readable) for folder, spaces, readable in entries}
+        is_admin = session.scalar(sql_select(Membership.id).where(
+            Membership.organization_id == organization_id, Membership.user_id == user.id,
+            Membership.is_active.is_(True), Membership.role.in_([MembershipRole.OWNER, MembershipRole.ADMIN]))) is not None
+        source_info = {
+            source_id: (provider, email) for source_id, provider, email in session.execute(
+                sql_select(DataSource.id, DataSource.provider, DataSource.account_email).where(
+                    DataSource.organization_id == organization_id, DataSource.id.in_({folder.source_id for folder in rows})))
+        } if rows else {}
     except GoogleAccessDenied as error:
         raise HTTPException(status_code=403, detail="not allowed") from error
     return [
@@ -876,6 +885,8 @@ def workspace_folders(
             "status": folder.status,
             "last_synced_at": folder.last_synced_at.isoformat() if folder.last_synced_at else None,
             "source_id": str(folder.source_id),
+            "source_provider": source_info.get(folder.source_id, (None, None))[0],
+            "source_account": source_info.get(folder.source_id, (None, None))[1] if is_admin else None,
             "external_folder_id": folder.external_folder_id,
             "selection_kind": next(
                 (
