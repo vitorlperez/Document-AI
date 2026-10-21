@@ -18,8 +18,16 @@ from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.knowledge.models import Document
+from app.library.models import LibraryNode
 from app.organizations.models import Membership, MembershipRole
-from app.spaces.models import SPACE_ROLE_MANAGER, SPACE_ROLES, Space, SpaceFolderGrant, SpaceMember
+from app.spaces.models import (
+    SPACE_ROLE_MANAGER,
+    SPACE_ROLES,
+    Space,
+    SpaceFolderGrant,
+    SpaceMember,
+    SpaceNodeGrant,
+)
 from app.workspaces.models import WorkspaceFolder
 
 ADMIN_ROLES = (MembershipRole.OWNER, MembershipRole.ADMIN)
@@ -46,6 +54,17 @@ class SpaceView:
     member_count: int
     folder_count: int
     my_role: str | None
+
+
+@dataclass(frozen=True)
+class SpaceNodeGrantView:
+    """A library folder granted to a Space. ``node_id`` is None while the folder is absent from the catalog."""
+
+    node_id: UUID | None
+    source_id: UUID
+    name: str
+    path: str | None
+    ancestor_ids: tuple[UUID, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -328,6 +347,120 @@ class SpaceService:
                 continue
         return granted, revoked
 
+    # -- library folders (any depth) ---------------------------------------------------------------
+    def _active_node_grant(self, space_id: UUID, source_id: UUID, external_id: str) -> SpaceNodeGrant | None:
+        return self.session.scalar(select(SpaceNodeGrant).where(
+            SpaceNodeGrant.space_id == space_id, SpaceNodeGrant.source_id == source_id,
+            SpaceNodeGrant.external_id == external_id, SpaceNodeGrant.revoked_at.is_(None)))
+
+    def _grantable_nodes(self, scope: OrganizationScope, node_ids: Sequence[UUID]) -> dict[UUID, LibraryNode]:
+        """Folders of this organization's catalog (never a source root or a file) for ``node_ids``, or SpaceDenied."""
+        wanted = set(node_ids)
+        found = {node.id: node for node in self.session.scalars(select(LibraryNode).where(
+            LibraryNode.organization_id == scope.organization_id, LibraryNode.kind == "folder",
+            LibraryNode.id.in_(list(wanted))))} if wanted else {}
+        if set(found) != wanted:
+            raise SpaceDenied("folder does not belong to this organization")
+        return found
+
+    def grant_node(
+        self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID, node_id: UUID,
+        disclosure: dict[str, object],
+    ) -> SpaceNodeGrant:
+        """Grant a library folder (and everything below it) to a Space. Idempotent; org admin only."""
+        self._require_admin(scope, actor_user_id)
+        space, _, _ = self._space(scope, actor_user_id, space_id)
+        if not disclosure or not disclosure.get("text_version"):
+            raise ValueError("disclosure with text_version is required")
+        node = self._grantable_nodes(scope, [node_id])[node_id]
+        existing = self._active_node_grant(space.id, node.source_id, node.external_id)
+        if existing is not None:
+            return existing
+        grant = SpaceNodeGrant(
+            organization_id=scope.organization_id, space_id=space.id, source_id=node.source_id,
+            external_id=node.external_id, name=node.name, granted_by_user_id=actor_user_id,
+            disclosure=dict(disclosure))
+        try:
+            with self.session.begin_nested():
+                self.session.add(grant)
+                self.session.flush()
+        except IntegrityError:  # granted concurrently: idempotent, report the existing grant
+            return self._active_node_grant(space.id, node.source_id, node.external_id)
+        self._audit(scope, actor_user_id, "node_granted", "space", space.id)
+        self._audit(scope, actor_user_id, "node_granted", "library_node", node.id)
+        return grant
+
+    def revoke_node(
+        self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID, node_id: UUID
+    ) -> SpaceNodeGrant:
+        self._require_admin(scope, actor_user_id)
+        space, _, _ = self._space(scope, actor_user_id, space_id)
+        node = self._grantable_nodes(scope, [node_id])[node_id]
+        grant = self._active_node_grant(space.id, node.source_id, node.external_id)
+        if grant is None:
+            raise SpaceNotFound("grant not found")
+        grant.revoked_at = datetime.now(UTC)
+        grant.revoked_by_user_id = actor_user_id
+        self.session.flush()
+        self._audit(scope, actor_user_id, "node_revoked", "space", space.id)
+        self._audit(scope, actor_user_id, "node_revoked", "library_node", node.id)
+        # A folder grant is not a scope id: recheck every automation/followed query of the members (lost=None).
+        self._apply_lost_access(scope.organization_id, list(self.session.scalars(select(SpaceMember.user_id).where(
+            SpaceMember.space_id == space.id, SpaceMember.removed_at.is_(None)))), None)
+        return grant
+
+    def apply_node_changes(
+        self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID,
+        grant_ids: Sequence[UUID], revoke_ids: Sequence[UUID], disclosure: dict[str, object],
+    ) -> tuple[list[UUID], list[UUID]]:
+        """Library-folder diff in the caller's transaction: all-or-nothing validation, then idempotent writes."""
+        self._require_admin(scope, actor_user_id)
+        space, _, _ = self._space(scope, actor_user_id, space_id)
+        to_grant = list(dict.fromkeys(grant_ids))
+        to_revoke = [item for item in dict.fromkeys(revoke_ids) if item not in set(to_grant)]
+        self._grantable_nodes(scope, [*to_grant, *to_revoke])  # a foreign/unknown folder fails the whole batch
+        granted: list[UUID] = []
+        for node_id in to_grant:
+            node = self._grantable_nodes(scope, [node_id])[node_id]
+            fresh = self._active_node_grant(space.id, node.source_id, node.external_id) is None
+            self.grant_node(scope, actor_user_id, space.id, node_id, disclosure)
+            if fresh:
+                granted.append(node_id)
+        revoked: list[UUID] = []
+        for node_id in to_revoke:
+            try:
+                self.revoke_node(scope, actor_user_id, space.id, node_id)
+                revoked.append(node_id)
+            except SpaceNotFound:  # already not granted: nothing to undo
+                continue
+        return granted, revoked
+
+    def node_grants(self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID) -> list[SpaceNodeGrantView]:
+        """The library folders granted to the Space with their current catalog path (members and admins)."""
+        space, _, _ = self._space(scope, actor_user_id, space_id)
+        grants = list(self.session.scalars(select(SpaceNodeGrant).where(
+            SpaceNodeGrant.space_id == space.id, SpaceNodeGrant.revoked_at.is_(None))
+            .order_by(SpaceNodeGrant.name, SpaceNodeGrant.id)))
+        views: list[SpaceNodeGrantView] = []
+        if not grants:
+            return views
+        from app.library.service import LibraryService
+        from app.spaces.readable import ancestor_chains
+
+        nodes = {(node.source_id, node.external_id): node for node in self.session.scalars(select(LibraryNode).where(
+            LibraryNode.organization_id == scope.organization_id, LibraryNode.kind == "folder",
+            LibraryNode.source_id.in_({grant.source_id for grant in grants}),
+            LibraryNode.external_id.in_({grant.external_id for grant in grants})))}
+        paths = LibraryService(self.session).node_paths(
+            scope=scope, node_ids=[node.id for node in nodes.values()])
+        chains = ancestor_chains(self.session, scope.organization_id, [node.id for node in nodes.values()])
+        for grant in grants:
+            node = nodes.get((grant.source_id, grant.external_id))
+            views.append(SpaceNodeGrantView(
+                node.id if node else None, grant.source_id, node.name if node else grant.name,
+                paths.get(node.id) if node else None, chains.get(node.id, ())[1:] if node else ()))
+        return views
+
     def enter_space(self, scope: OrganizationScope, actor_user_id: UUID, space_id: UUID) -> SpaceMember:
         """An org admin joins a Space to read it: explicit, audited, visible to the Space's members (D2)."""
         self._require_admin(scope, actor_user_id)
@@ -396,6 +529,8 @@ class SpaceService:
         ids = [space.id for space in spaces]
         member_counts = self._counts(SpaceMember.space_id, SpaceMember.removed_at, ids)
         folder_counts = self._counts(SpaceFolderGrant.space_id, SpaceFolderGrant.revoked_at, ids)
+        for space_id, count in self._counts(SpaceNodeGrant.space_id, SpaceNodeGrant.revoked_at, ids).items():
+            folder_counts[space_id] = folder_counts.get(space_id, 0) + count
         return [
             SpaceView(
                 s.id, s.name, s.description, s.is_default, member_counts.get(s.id, 0),

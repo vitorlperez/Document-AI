@@ -19,6 +19,7 @@ from app.core.sqlids import ids_clause
 from app.knowledge.models import Document
 from app.library.models import LibraryNode
 from app.spaces.access import SpaceAccess
+from app.spaces.readable import ancestor_chains, documents_under_nodes, partial_folder_ids
 from app.workspaces.models import WorkspaceFolder
 
 HIDDEN_NOTICE = "Conteúdo ocultado por mudança de acesso."
@@ -89,12 +90,16 @@ class VisibilityIndex:
     access: SpaceAccess
     documents: frozenset[UUID] = frozenset()
     nodes: frozenset[UUID] = frozenset()
+    # Scopes read only below a granted library folder: they vouch for a derivative only through the individually
+    # checked documents it cites, never on their own.
+    partial_folders: frozenset[UUID] = frozenset()
 
     def visible(self, provenance: Provenance) -> bool:
         if not provenance:
             return True
+        partial_ok = self.partial_folders if provenance.document_ids else frozenset()
         return (provenance.document_ids <= self.documents
-                and provenance.folder_ids <= self.access.folder_ids
+                and provenance.folder_ids <= (self.access.folder_ids | partial_ok)
                 and provenance.node_ids <= self.nodes)
 
 
@@ -106,6 +111,7 @@ def build_index(session: Session, access: SpaceAccess, provenances: Iterable[Pro
         access,
         documents=_readable_documents(session, access, documents),
         nodes=_readable_nodes(session, access, nodes),
+        partial_folders=partial_folder_ids(session, access),
     )
 
 
@@ -144,6 +150,11 @@ def _readable_documents(session: Session, access: SpaceAccess, document_ids: Col
     for row in other:  # the same file reachable through another folder of the person is still readable
         if copies.get((row.source_id, row.external_file_id), set()) & access.folder_ids:
             readable.add(row.id)
+    if access.node_grants and len(readable) < len(own):  # files below a granted library folder
+        readable |= set(session.scalars(select(Document.id).where(
+            Document.organization_id == access.organization_id, Document.index_status != "removed",
+            ids_clause(session, Document.id, [row.id for row in own if row.id not in readable]),
+            documents_under_nodes(session, access.organization_id, access.node_ids))))
     return frozenset(readable)
 
 
@@ -158,10 +169,16 @@ def _readable_nodes(session: Session, access: SpaceAccess, node_ids: Collection[
     ).all()
     copies = _copies(session, access, {(row.source_id, row.external_id) for row in nodes})
     readable = set()
+    pending = []
     for row in nodes:
         folders = copies.get((row.source_id, row.external_id))
         if not folders or folders & access.folder_ids:
             readable.add(row.id)
+        else:
+            pending.append(row)
+    if access.node_grants and pending:  # a file node below a granted library folder
+        chains = ancestor_chains(session, access.organization_id, [row.id for row in pending])
+        readable |= {row.id for row in pending if access.node_ids & set(chains.get(row.id, ()))}
     return frozenset(readable)
 
 

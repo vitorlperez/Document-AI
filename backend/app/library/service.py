@@ -28,6 +28,7 @@ from app.library.tool_groups import (
 from app.library.visibility import restrict_to_visible
 from app.organizations.models import Membership
 from app.spaces.access import SpaceAccess, SpaceAccessResolver, SpaceRef
+from app.spaces.readable import NodeGrantBadges, partial_folder_ids, readable_document_clause
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 
 SOURCE_ROOT_EXTERNAL_ID = "__company_library_source_root__"
@@ -60,6 +61,8 @@ class LibraryContext:
     sync_in_progress: bool = False
     source_status: str = "connected"
     spaces: tuple[SpaceRef, ...] = ()
+    # Read only in part (some library folders of the scope are granted, not the scope as a whole).
+    partial: bool = False
 
 
 @dataclass(frozen=True)
@@ -143,10 +146,20 @@ class MentionCandidate:
 
 @dataclass(frozen=True)
 class QuestionSelection:
+    """``folder_ids`` are scopes read whole; ``partial_folder_ids`` scopes read only below granted library folders.
+
+    A consumer that searches content MUST bound documents with ``readable_document_clause`` (and use ``all_folder_ids``);
+    one that only knows ``folder_ids`` sees less, never more."""
+
     folder_ids: list[UUID]
     document_ids: set[UUID] | None
     coverage: dict[str, int | bool]
     accepted_node_ids: list[UUID]
+    partial_folder_ids: tuple[UUID, ...] = ()
+
+    @property
+    def all_folder_ids(self) -> list[UUID]:
+        return [*self.folder_ids, *self.partial_folder_ids]
 
 
 def question_coverage(contexts: list[LibraryContext]) -> dict[str, int | bool]:
@@ -379,18 +392,19 @@ class LibraryService:
                     WorkspaceFolder.source_id == node.source_id,
                     Document.external_file_id == node.external_id,
                     Document.index_status == "indexed",
-                    *self._readable_folders(access, Document.workspace_folder_id),
+                    *self._readable_documents(access),
                 )
                 .distinct()
                 .order_by(Document.workspace_folder_id)
             )
         )
 
-    def _readable_folders(self, access: SpaceAccess | None, column) -> tuple:
-        """Predicate keeping only scopes the person can read; none for the system view."""
+    def _readable_documents(self, access: SpaceAccess | None) -> tuple:
+        """Predicate keeping only documents the person can read (whole scopes or below a granted folder); none for
+        the system view."""
         if access is None:
             return ()
-        return (ids_clause(self.session, column, access.folder_ids),)
+        return (readable_document_clause(self.session, access),)
 
     def document_provenance(
         self, *, scope: OrganizationScope, node: LibraryNode, access: SpaceAccess | None
@@ -409,7 +423,7 @@ class LibraryService:
                     WorkspaceFolder.source_id == node.source_id,
                     Document.external_file_id == node.external_id,
                     Document.index_status == "indexed",
-                    *self._readable_folders(access, Document.workspace_folder_id),
+                    *self._readable_documents(access),
                 )
                 .order_by(Document.workspace_folder_id, Document.id)
             )
@@ -452,7 +466,7 @@ class LibraryService:
                 WorkspaceFolder.organization_id == scope.organization_id,
                 ids_clause(self.session, WorkspaceFolder.source_id, {node.source_id for node in files}),
                 ids_clause(self.session, Document.external_file_id, {node.external_id for node in files}),
-                *self._readable_folders(access, Document.workspace_folder_id),
+                *self._readable_documents(access),
             )
             .order_by(Document.workspace_folder_id, Document.id)
         ).all()
@@ -536,10 +550,23 @@ class LibraryService:
             for node in nodes:
                 if node.kind == "source":
                     folder_sets[node.id] = by_source.get(node.source_id, set())
+        merged_by_node: dict[UUID, dict[UUID, SpaceRef]] = {
+            node_id: {ref.id: ref for folder_id in folder_ids for ref in access.spaces_of(folder_id)}
+            for node_id, folder_ids in folder_sets.items()}
+        if access.node_grants:  # Spaces that read the node through a granted library folder
+            badges = NodeGrantBadges(self.session, access)
+            for node_id, space_ids in badges.for_nodes(files + folders).items():
+                merged_by_node.setdefault(node_id, {}).update(
+                    {space_id: access.spaces[space_id] for space_id in space_ids if space_id in access.spaces})
+            for node in nodes:
+                if node.kind == "source":
+                    merged_by_node.setdefault(node.id, {}).update({
+                        space_id: access.spaces[space_id] for space_id in badges.for_source(node.source_id)
+                        if space_id in access.spaces})
         result: dict[UUID, tuple[SpaceRef, ...]] = {}
-        for node_id, folder_ids in folder_sets.items():
-            merged = {ref.id: ref for folder_id in folder_ids for ref in access.spaces_of(folder_id)}
-            result[node_id] = tuple(sorted(merged.values(), key=lambda ref: (ref.name.casefold(), str(ref.id))))
+        for node_id, merged in merged_by_node.items():
+            if merged or node_id in folder_sets:
+                result[node_id] = tuple(sorted(merged.values(), key=lambda ref: (ref.name.casefold(), str(ref.id))))
         return result
 
     def remove_file_if_unindexed(
@@ -789,7 +816,7 @@ class LibraryService:
         admitted_folders = list(self.session.scalars(
             select(WorkspaceFolder.id).where(
                 WorkspaceFolder.organization_id == scope.organization_id,
-                ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),
+                ids_clause(self.session, WorkspaceFolder.id, access.folder_ids | partial_folder_ids(self.session, access)),
                 folder_is_queryable(),
             )
         ))
@@ -833,6 +860,7 @@ class LibraryService:
                 WorkspaceFolder.organization_id == scope.organization_id,
                 Document.index_status == "indexed",
                 ids_clause(self.session, Document.workspace_folder_id, admitted_folders),
+                readable_document_clause(self.session, access),
                 ids_clause(self.session, Document.external_file_id, {node.external_id for node in files}),
                 ids_clause(self.session, WorkspaceFolder.source_id, {node.source_id for node in files}),
             )
@@ -1046,12 +1074,15 @@ class LibraryService:
 
     def question_contexts(
         self, *, scope: OrganizationScope, user_id: UUID, space_ids: Collection[UUID] | None = None,
-        access: SpaceAccess | None = None,
+        access: SpaceAccess | None = None, include_partial: bool = False,
     ) -> list[LibraryContext]:
         """Scopes the person can ask about: the resolver's answer, never "every folder of the organization".
 
-        ``access`` lets a caller that already resolved this request's access avoid resolving twice."""
+        ``access`` lets a caller that already resolved this request's access avoid resolving twice.
+        ``include_partial`` adds the scopes read only below a granted library folder, flagged ``partial``: only
+        callers that bound documents by ``readable_document_clause`` may ask for them."""
         access = access or SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id, space_ids=space_ids)
+        partial_ids = partial_folder_ids(self.session, access) if include_partial else frozenset()
         indexed_chunks = exists(
             select(DocumentChunk.id)
             .join(Document, Document.id == DocumentChunk.document_id)
@@ -1085,6 +1116,7 @@ class LibraryService:
                 source_provider=source.provider,
                 source_status=source.status,
                 spaces=access.spaces_of(folder.id),
+                partial=folder.id in partial_ids,
                 sync_in_progress=has_active_job,
                 query_status=("not_ready" if not folder_is_queryable(folder, self.session, has_embeddings=has_embeddings)
                               else "ready" if has_embeddings else "no_indexed_content" if not has_content
@@ -1101,14 +1133,14 @@ class LibraryService:
                 .where(
                     WorkspaceFolder.organization_id == scope.organization_id,
                     DataSource.organization_id == scope.organization_id,
-                    ids_clause(self.session, WorkspaceFolder.id, access.folder_ids),
+                    ids_clause(self.session, WorkspaceFolder.id, access.folder_ids | partial_ids),
                 )
                 .order_by(WorkspaceFolder.name, WorkspaceFolder.id)
             ).all()
         ]
 
     def _indexed_selection_documents(
-        self, *, scope: OrganizationScope, folder_ids: list[UUID]
+        self, *, scope: OrganizationScope, folder_ids: list[UUID], access: SpaceAccess
     ) -> list[tuple[UUID, UUID, str]]:
         if not folder_ids:
             return []
@@ -1119,6 +1151,7 @@ class LibraryService:
             .where(
                 Document.organization_id == scope.organization_id,
                 ids_clause(self.session, Document.workspace_folder_id, folder_ids),
+                readable_document_clause(self.session, access),
                 Document.index_status == "indexed",
                 WorkspaceFolder.organization_id == scope.organization_id,
                 folder_is_queryable(),
@@ -1162,13 +1195,14 @@ class LibraryService:
         selection = self.resolve_question_selection(
             scope=scope, user_id=user_id, providers=providers, mentions=mentions, all_nodes=nodes, access=access,
         )
-        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
+        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access, include_partial=True)
         normalized_providers = tool_groups(providers)
+        admitted = set(selection.all_folder_ids)
         allowed_sources = {
             context.source_id
             for context in contexts
             if tool_group(context.source_provider) in normalized_providers
-            and context.id in selection.folder_ids
+            and context.id in admitted
         }
         root_ids = list(dict.fromkeys(selection.accepted_node_ids))
         under_roots = set(self.session.scalars(self._descendants_query(scope, root_ids))) if root_ids else None
@@ -1179,7 +1213,7 @@ class LibraryService:
             if under_roots is not None and node.id not in under_roots:
                 continue
             allowed[node.id] = node
-        return AuthorizedCatalog(allowed, frozenset(selection.folder_ids), nodes)
+        return AuthorizedCatalog(allowed, frozenset(admitted), nodes)
 
     @staticmethod
     def _node_path(node: LibraryNode, nodes: dict[UUID, LibraryNode]) -> str | None:
@@ -1231,7 +1265,7 @@ class LibraryService:
         normalized = query.strip().casefold()
         if len(normalized) > 500 or not 1 <= limit <= 50:
             raise ValueError("invalid mention search")
-        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
+        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access, include_partial=True)
         eligible = [item.id for item in contexts if folder_is_queryable(item, self.session)]
         if not eligible:
             return []
@@ -1248,6 +1282,7 @@ class LibraryService:
                 Document.organization_id == org, Document.external_file_id == LibraryNode.external_id,
                 WorkspaceFolder.source_id == LibraryNode.source_id, Document.index_status == "indexed",
                 ids_clause(self.session, Document.workspace_folder_id, eligible),
+                readable_document_clause(self.session, access),
                 WorkspaceFolder.organization_id == org, folder_is_queryable(), DataSource.organization_id == org))
         seeds = select(LibraryNode.id, LibraryNode.parent_id).where(
             LibraryNode.organization_id == org, LibraryNode.kind == "file", indexed_file,
@@ -1318,7 +1353,7 @@ class LibraryService:
             current = nodes[current.parent_id]
             chain.append(current)
         chain.reverse()
-        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
+        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access, include_partial=True)
         provider = next((item.source_provider for item in contexts if item.source_id == node.source_id), None)
         if provider is None:
             raise SyncAccessDenied("company library node unavailable")
@@ -1348,17 +1383,19 @@ class LibraryService:
         access: SpaceAccess | None = None,
     ) -> QuestionSelection:
         access = access or self.access_for(scope=scope, user_id=user_id)
-        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access)
+        contexts = self.question_contexts(scope=scope, user_id=user_id, access=access, include_partial=True)
         selected = [item for item in contexts if
                     tool_group(item.source_provider) in tool_groups(providers)]
         eligible = [item for item in selected if folder_is_queryable(item, self.session)]
         coverage = question_coverage(selected)
-        folder_ids = [item.id for item in eligible]
+        folder_ids = [item.id for item in eligible if not item.partial]
+        partial_ids = tuple(item.id for item in eligible if item.partial)
         if not mentions:
-            return QuestionSelection(folder_ids, None, coverage, [])
+            return QuestionSelection(folder_ids, None, coverage, [], partial_ids)
         nodes = all_nodes if all_nodes is not None else self._selection_nodes(scope=scope, access=access)
         source_providers = {item.source_id: item.source_provider for item in selected}
-        documents = self._indexed_selection_documents(scope=scope, folder_ids=folder_ids)
+        documents = self._indexed_selection_documents(
+            scope=scope, folder_ids=[*folder_ids, *partial_ids], access=access)
         document_ids: set[UUID] = set()
         for kind, node_id in mentions:
             node = nodes.get(node_id)
@@ -1375,7 +1412,8 @@ class LibraryService:
             if not matched:
                 raise ValueError("mention is unavailable")
             document_ids.update(matched)
-        return QuestionSelection(folder_ids, document_ids, coverage, [node_id for _, node_id in mentions])
+        return QuestionSelection(
+            folder_ids, document_ids, coverage, [node_id for _, node_id in mentions], partial_ids)
 
     def authorize_mentions(
         self, *, scope: OrganizationScope, user_id: UUID, root_ids: list[UUID] | None,

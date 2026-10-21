@@ -32,6 +32,7 @@ from app.knowledge.untrusted import UNTRUSTED_NOTICE, fence_sources, strip_invis
 from app.library.tool_groups import tool_group
 from app.spaces.access import SpaceAccessResolver
 from app.spaces.filter import narrowed_to_spaces
+from app.spaces.readable import readable_document_clause
 from app.workspaces.models import WorkspaceFolder
 
 EMBEDDING_MODEL = "text-embedding-3-small"
@@ -1022,11 +1023,12 @@ class QuestionService:
             )
         except SyncAccessDenied as error:
             raise GoogleAccessDenied("question scope access denied") from error
-        if selection.folder_ids:
+        if selection.all_folder_ids:
             result = self.ask(
                 scope=scope,
                 user_id=user_id,
-                workspace_folder_ids=selection.folder_ids,
+                workspace_folder_ids=selection.all_folder_ids,
+                allow_partial_scopes=bool(selection.partial_folder_ids),
                 document_ids=selection.document_ids,
                 question=question,
                 answer_mode=answer_mode,
@@ -1047,7 +1049,7 @@ class QuestionService:
             coverage=selection.coverage,
             resolved_context={
                 "providers": providers,
-                "folder_count": len(selection.folder_ids),
+                "folder_count": len(selection.all_folder_ids),
                 "document_count": len(selection.document_ids)
                 if selection.document_ids is not None
                 else None,
@@ -1097,7 +1099,8 @@ class QuestionService:
         if not normalized_question or len(normalized_question) > 1000:
             raise ValueError("question must contain between 1 and 1000 characters")
         try:
-            contexts = LibraryService(self.session).question_contexts(scope=scope, user_id=user_id)
+            contexts = LibraryService(self.session).question_contexts(
+                scope=scope, user_id=user_id, include_partial=True)
         except SyncAccessDenied as error:
             raise GoogleAccessDenied("question scope access denied") from error
         requested_provider = tool_group(provider)
@@ -1125,6 +1128,7 @@ class QuestionService:
                 scope=scope,
                 user_id=user_id,
                 workspace_folder_ids=[item.id for item in folders],
+                allow_partial_scopes=any(item.partial for item in folders),
                 question=normalized_question,
             )
         return replace(result, coverage=coverage)
@@ -1150,6 +1154,7 @@ class QuestionService:
         read_selected_documents: bool | None = None,
         retrieval_question: str | None = None,
         resolved_access: list | None = None,
+        allow_partial_scopes: bool = False,
     ) -> QuestionResult:
         """answer_mode "summary" or "relevance" is a decision already made by the
         agent's intent classifier; None keeps the keyword rules. "evidence" returns
@@ -1191,7 +1196,8 @@ class QuestionService:
             if resolved_access is not None:
                 resolved_access.append(access)
             authorized_folders = resolver.require_folders(
-                scope=scope, user_id=user_id, workspace_folder_ids=folder_ids, access=access
+                scope=scope, user_id=user_id, workspace_folder_ids=folder_ids, access=access,
+                allow_partial=allow_partial_scopes
             )
         except SyncAccessDenied as error:
             raise GoogleAccessDenied("workspace access denied") from error
@@ -1200,7 +1206,7 @@ class QuestionService:
                 raise ValueError("workspace folder is not ready")
         coverage = question_coverage([
             context for context in LibraryService(self.session).question_contexts(
-                scope=scope, user_id=user_id, access=access
+                scope=scope, user_id=user_id, access=access, include_partial=True
             )
             if context.id in folder_ids
         ])
@@ -1232,6 +1238,7 @@ class QuestionService:
                 .where(
                     Document.organization_id == scope.organization_id,
                     ids_clause(self.session, Document.workspace_folder_id, folder_ids),
+                    readable_document_clause(self.session, access),
                     Document.index_status == "indexed",
                     *([ids_clause(self.session, Document.id, document_ids)] if document_ids is not None else []),
                     DocumentChunk.organization_id == scope.organization_id,
@@ -1251,6 +1258,7 @@ class QuestionService:
         scoped_filters = [
             Document.organization_id == scope.organization_id,
             ids_clause(self.session, Document.workspace_folder_id, folder_ids),
+            readable_document_clause(self.session, access),
             Document.index_status == "indexed",
             *([ids_clause(self.session, Document.id, document_ids)] if document_ids is not None else []),
             DocumentChunk.organization_id == scope.organization_id,

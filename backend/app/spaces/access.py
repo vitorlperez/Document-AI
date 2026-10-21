@@ -6,7 +6,7 @@ Space-scoped answer as anyone else plus ``org_admin`` (catalog nodes no scope in
 """
 
 from collections.abc import Collection, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from uuid import UUID
 
 from sqlalchemy import select
@@ -14,9 +14,10 @@ from sqlalchemy.orm import Session
 
 from app.core.access_errors import SyncAccessDenied
 from app.core.scoping import OrganizationScope
+from app.library.models import LibraryNode
 from app.organizations.models import Membership, MembershipRole
 from app.spaces.filter import current_space_filter
-from app.spaces.models import Space, SpaceFolderGrant, SpaceMember
+from app.spaces.models import Space, SpaceFolderGrant, SpaceMember, SpaceNodeGrant
 from app.spaces.service import SpaceNotFound
 from app.workspaces.models import WorkspaceFolder
 
@@ -39,10 +40,18 @@ class SpaceAccess:
     folder_spaces: Mapping[UUID, frozenset[UUID]]
     # Owner/admin of the organization: sees catalog nodes no scope indexes (operational view, never content).
     org_admin: bool = False
+    # Library folders granted to the person's Spaces with everything below them (node -> granting Spaces). Read
+    # content through ``app.spaces.readable``: ``folder_ids`` stays "whole scopes only", so a consumer that does
+    # not know about node grants simply sees less (fail-closed), never more.
+    node_grants: Mapping[UUID, frozenset[UUID]] = field(default_factory=dict)
 
     @property
     def folder_ids(self) -> frozenset[UUID]:
         return frozenset(self.folder_spaces)
+
+    @property
+    def node_ids(self) -> frozenset[UUID]:
+        return frozenset(self.node_grants)
 
     def allows(self, folder_id: UUID) -> bool:
         return folder_id in self.folder_spaces
@@ -68,14 +77,21 @@ class SpaceAccessResolver:
 
     def require_folders(
         self, *, scope: OrganizationScope, user_id: UUID, workspace_folder_ids: Collection[UUID],
-        access: SpaceAccess | None = None,
+        access: SpaceAccess | None = None, allow_partial: bool = False,
     ) -> list[WorkspaceFolder]:
         """One access resolution + one folder query for any number of folders (replaces the per-folder loop).
 
-        Pass the ``access`` already resolved for this request to avoid resolving twice."""
+        Pass the ``access`` already resolved for this request to avoid resolving twice. ``allow_partial`` also admits
+        scopes read only below a granted library folder: ONLY for callers that then bound every document with
+        ``readable_document_clause`` (the question pipeline); listing a scope's documents must never pass it."""
         access = access or self.resolve(scope=scope, user_id=user_id)
         wanted = list(dict.fromkeys(workspace_folder_ids))
-        if any(folder_id not in access.folder_ids for folder_id in wanted):
+        allowed = access.folder_ids
+        if allow_partial and access.node_grants and any(folder_id not in allowed for folder_id in wanted):
+            from app.spaces.readable import partial_folder_ids
+
+            allowed = allowed | partial_folder_ids(self.session, access)
+        if any(folder_id not in allowed for folder_id in wanted):
             raise SyncAccessDenied("workspace access denied")
         if not wanted:
             return []
@@ -125,8 +141,19 @@ class SpaceAccessResolver:
                        SpaceFolderGrant.space_id.in_(list(spaces)), WorkspaceFolder.organization_id == org))
             for folder_id, space_id in rows:
                 folder_spaces.setdefault(folder_id, set()).add(space_id)
+        node_grants: dict[UUID, set[UUID]] = {}
+        if spaces:
+            node_rows = self.session.execute(
+                select(LibraryNode.id, SpaceNodeGrant.space_id)
+                .join(LibraryNode, (LibraryNode.source_id == SpaceNodeGrant.source_id)
+                      & (LibraryNode.external_id == SpaceNodeGrant.external_id))
+                .where(SpaceNodeGrant.organization_id == org, SpaceNodeGrant.revoked_at.is_(None),
+                       SpaceNodeGrant.space_id.in_(list(spaces)), LibraryNode.organization_id == org,
+                       LibraryNode.kind == "folder"))
+            for node_id, space_id in node_rows:
+                node_grants.setdefault(node_id, set()).add(space_id)
         return SpaceAccess(org, user_id, spaces, {k: frozenset(v) for k, v in folder_spaces.items()},
-                           org_admin=org_admin)
+                           org_admin=org_admin, node_grants={k: frozenset(v) for k, v in node_grants.items()})
 
 
 def _intersect(first: Collection[UUID] | None, second: Collection[UUID] | None) -> frozenset[UUID] | None:

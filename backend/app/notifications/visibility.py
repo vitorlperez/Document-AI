@@ -16,7 +16,7 @@ from app.knowledge.derived_visibility import (
 )
 from app.notifications.models import Notification
 from app.spaces.access import SpaceAccess, SpaceAccessResolver
-from app.spaces.models import SpaceFolderGrant, SpaceMember
+from app.spaces.models import SpaceFolderGrant, SpaceMember, SpaceNodeGrant
 
 CONTENT_KINDS = frozenset({"followed_query_changed", "automation_result"})
 # Plain references an item keeps even when its content is hidden (navigation only, no content).
@@ -36,9 +36,14 @@ def lost_any_access(session: Session, access: SpaceAccess) -> bool:
         SpaceMember.removed_at.is_not(None)).limit(1))
     if removed is not None:
         return True
-    return bool(access.spaces) and session.scalar(select(SpaceFolderGrant.id).where(
+    if not access.spaces:
+        return False
+    return session.scalar(select(SpaceFolderGrant.id).where(
         SpaceFolderGrant.organization_id == org, SpaceFolderGrant.space_id.in_(list(access.spaces)),
-        SpaceFolderGrant.revoked_at.is_not(None)).limit(1)) is not None
+        SpaceFolderGrant.revoked_at.is_not(None)).limit(1)) is not None or session.scalar(
+        select(SpaceNodeGrant.id).where(
+            SpaceNodeGrant.organization_id == org, SpaceNodeGrant.space_id.in_(list(access.spaces)),
+            SpaceNodeGrant.revoked_at.is_not(None)).limit(1)) is not None
 
 
 def notifications_visibility(session: Session, organization_id: UUID, user_id: UUID,

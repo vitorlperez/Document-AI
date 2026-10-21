@@ -57,7 +57,7 @@ class ScopedAccess:
                 )
             except ValueError:  # An authorized root has no indexed content yet.
                 continue
-            if selection.folder_ids:
+            if selection.all_folder_ids:
                 selections.append(selection)
         if not selections:
             return None
@@ -66,4 +66,5 @@ class ScopedAccess:
             None if not mentions else set().union(*(item.document_ids or set() for item in selections)),
             selections[0].coverage,
             [node for item in selections for node in item.accepted_node_ids],
+            tuple(dict.fromkeys(folder for item in selections for folder in item.partial_folder_ids)),
         )

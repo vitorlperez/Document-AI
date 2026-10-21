@@ -16,7 +16,8 @@ from app.knowledge.search import _excerpt
 from app.knowledge.space_seals import spaces_by_document
 from app.knowledge.untrusted import strip_invisible
 from app.library.service import LibraryService, QuestionSelection
-from app.spaces.access import SpaceAccessResolver, SpaceRef
+from app.spaces.access import SpaceAccess, SpaceAccessResolver, SpaceRef
+from app.spaces.readable import readable_document_clause
 from app.workspaces.models import WorkspaceFolder
 
 MAX_FETCH_CHARS = 100_000  # Claude tolerates ~150k characters per tool result
@@ -52,13 +53,14 @@ class RetrievalService:
     def __init__(self, session: Session):
         self.session = session
 
-    def _scoped(self, scope: OrganizationScope, selection: QuestionSelection):
+    def _scoped(self, scope: OrganizationScope, selection: QuestionSelection, access: SpaceAccess):
         filters = [
             Document.organization_id == scope.organization_id,
-            ids_clause(self.session, Document.workspace_folder_id, selection.folder_ids),
+            ids_clause(self.session, Document.workspace_folder_id, selection.all_folder_ids),
+            readable_document_clause(self.session, access),  # whole scopes AND files below granted folders
             Document.index_status == "indexed",
             DocumentChunk.organization_id == scope.organization_id,
-            ids_clause(self.session, DocumentChunk.workspace_folder_id, selection.folder_ids),
+            ids_clause(self.session, DocumentChunk.workspace_folder_id, selection.all_folder_ids),
             DocumentChunk.workspace_folder_id == Document.workspace_folder_id,
         ]
         if selection.document_ids is not None:
@@ -72,10 +74,10 @@ class RetrievalService:
         LibraryService(self.session).require_member(scope=scope, user_id=user_id)
         access = SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id)
         terms = sorted(query_terms(query))  # alphanumeric tokens only: safe to join into a tsquery
-        if not terms or selection is None or not selection.folder_ids:
+        if not terms or selection is None or not selection.all_folder_ids:
             return []
         limit = max(1, min(limit, MAX_SEARCH_LIMIT))
-        filters = self._scoped(scope, selection)
+        filters = self._scoped(scope, selection, access)
         if self.session.bind is not None and self.session.bind.dialect.name == "postgresql":
             tsquery = func.to_tsquery("simple", " | ".join(terms))
             vector = literal_column("document_chunks.search_vector")
@@ -115,13 +117,15 @@ class RetrievalService:
         LibraryService(self.session).require_member(scope=scope, user_id=user_id)
         if selection is None or (selection.document_ids is not None and document_id not in selection.document_ids):
             return None
+        access = SpaceAccessResolver(self.session).resolve(scope=scope, user_id=user_id)
         row = self.session.execute(
             select(Document, DataSource.provider)
             .join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
             .join(DataSource, DataSource.id == WorkspaceFolder.source_id)
             .where(
                 Document.id == document_id, Document.organization_id == scope.organization_id,
-                ids_clause(self.session, Document.workspace_folder_id, selection.folder_ids), Document.index_status == "indexed",
+                ids_clause(self.session, Document.workspace_folder_id, selection.all_folder_ids),
+                readable_document_clause(self.session, access), Document.index_status == "indexed",
                 DataSource.organization_id == scope.organization_id,
             )
         ).first()

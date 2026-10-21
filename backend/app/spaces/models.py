@@ -105,3 +105,43 @@ Index(
     "ix_space_grants_folder_active", SpaceFolderGrant.workspace_folder_id,
     postgresql_where=SpaceFolderGrant.revoked_at.is_(None), sqlite_where=SpaceFolderGrant.revoked_at.is_(None),
 )
+
+
+class SpaceNodeGrant(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
+    """A library folder (any depth, inside an admitted scope) belongs to a Space, with everything below it.
+
+    Complements ``SpaceFolderGrant`` (whole scope = the root of a tool): a node grant is read-time inheritance over
+    ``library_nodes``, never a copy. It names the folder by its stable provider id (``source_id`` +
+    ``external_id``), not by catalog row, so the catalog pruning and re-creating an emptied folder neither drops nor
+    moves the grant; a folder that is absent from the catalog simply grants nothing. Revocation is logical."""
+
+    __tablename__ = "space_node_grants"
+
+    organization_id: Mapped[UUID] = _org_fk()
+    space_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("spaces.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    source_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("data_sources.id", ondelete="CASCADE"), nullable=False
+    )
+    external_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(512), nullable=False)  # display snapshot, never authority
+    granted_by_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+    )
+    disclosure: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False, default=dict)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_by_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+    )
+
+
+Index(
+    "uq_space_node_grants_active", SpaceNodeGrant.space_id, SpaceNodeGrant.source_id, SpaceNodeGrant.external_id,
+    unique=True,
+    postgresql_where=SpaceNodeGrant.revoked_at.is_(None), sqlite_where=SpaceNodeGrant.revoked_at.is_(None),
+)
+Index(
+    "ix_space_node_grants_source_active", SpaceNodeGrant.source_id, SpaceNodeGrant.external_id,
+    postgresql_where=SpaceNodeGrant.revoked_at.is_(None), sqlite_where=SpaceNodeGrant.revoked_at.is_(None),
+)

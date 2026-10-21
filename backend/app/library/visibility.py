@@ -14,10 +14,10 @@ from uuid import UUID
 from sqlalchemy import ColumnElement, Select, exists, select
 from sqlalchemy.orm import Session, aliased
 
-from app.core.sqlids import ids_clause
 from app.knowledge.models import Document
 from app.library.models import LibraryNode
 from app.spaces.access import SpaceAccess
+from app.spaces.readable import readable_document_clause
 from app.workspaces.models import WorkspaceFolder
 
 GONE_STATUSES = ("removed", "deleted")
@@ -38,7 +38,7 @@ def visible_file_clause(session: Session, access: SpaceAccess, organization_id: 
     readable = exists(
         select(Document.id).select_from(Document).join(WorkspaceFolder, WorkspaceFolder.id == Document.workspace_folder_id)
         .where(*_document_of_node(organization_id), Document.index_status.not_in(GONE_STATUSES),
-               ids_clause(session, Document.workspace_folder_id, access.folder_ids)))
+               readable_document_clause(session, access)))
     if not access.org_admin:
         return readable
     uncatalogued = ~exists(

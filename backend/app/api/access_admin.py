@@ -12,7 +12,6 @@ from app.access.models import ALL_SCOPES, ApiKey, OrganizationAccessSettings
 from app.api.auth import current_user, database_session
 from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
-from app.core.sqlids import ids_clause
 from app.identity.models import User
 from app.ingestion.service import SyncAccessDenied
 from app.knowledge.models import Document
@@ -21,6 +20,7 @@ from app.library.service import LibraryService
 from app.library.tool_groups import tool_groups
 from app.organizations.models import Membership, MembershipRole
 from app.spaces.access import SpaceAccessResolver
+from app.spaces.readable import readable_document_clause
 from app.workspaces.models import WorkspaceFolder
 
 router = APIRouter(prefix="/organizations/{organization_id}", tags=["access-administration"])
@@ -123,7 +123,7 @@ def _reach(session: Session, organization_id: UUID, user_id: UUID, node_ids: lis
         files = (select(WorkspaceFolder.source_id, Document.external_file_id)
                  .join(Document, Document.workspace_folder_id == WorkspaceFolder.id)
                  .where(Document.organization_id == organization_id, Document.index_status == "indexed",
-                        ids_clause(session, Document.workspace_folder_id, access.folder_ids)).distinct().subquery())
+                        readable_document_clause(session, access)).distinct().subquery())
         documents = session.scalar(select(func.count()).select_from(files)) or 0
     return {"spaces": [{"id": str(ref.id), "name": ref.name} for ref in spaces], "documents": documents}
 

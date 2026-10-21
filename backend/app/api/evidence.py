@@ -12,6 +12,8 @@ from app.ingestion.service import SyncAccessDenied
 from app.integrations.models import DataSource
 from app.knowledge.models import Document, DocumentChunk
 from app.library.service import LibraryService
+from app.spaces.access import SpaceAccessResolver
+from app.spaces.readable import readable_document_clause
 from app.workspaces.models import WorkspaceFolder
 
 router = APIRouter(tags=['evidence'])
@@ -22,7 +24,9 @@ def scoped_document(session: Session, *, organization_id: UUID, document_id: UUI
     """The document only when the member may query its folder; 404 otherwise (never reveals existence)."""
     scope = OrganizationScope(organization_id)
     try:
-        contexts = LibraryService(session).question_contexts(scope=scope, user_id=user.id)
+        access = SpaceAccessResolver(session).resolve(scope=scope, user_id=user.id)
+        contexts = LibraryService(session).question_contexts(
+            scope=scope, user_id=user.id, access=access, include_partial=True)
     except SyncAccessDenied as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, 'evidence not found') from error
     document = session.scalar(select(Document)
@@ -31,6 +35,7 @@ def scoped_document(session: Session, *, organization_id: UUID, document_id: UUI
         or_(DataSource.provider != "google_drive_sa", WorkspaceFolder.status != "access_lost"),
         Document.id == document_id, Document.organization_id == organization_id,
         Document.workspace_folder_id.in_([item.id for item in contexts]),
+        readable_document_clause(session, access),  # a scope read in part: only files below a granted folder
     ))
     if document is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, 'evidence not found')

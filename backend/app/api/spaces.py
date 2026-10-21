@@ -11,6 +11,7 @@ from app.api.auth import current_user, database_session
 from app.core.scoping import OrganizationScope
 from app.identity.models import User
 from app.organizations.models import Membership
+from app.spaces.folder_tree import subfolders, sync_roots
 from app.spaces.models import SPACE_ROLES
 from app.spaces.service import (
     SpaceConflict,
@@ -56,6 +57,9 @@ class FolderChangesInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     grant: list[UUID] = Field(default_factory=list, max_length=500)
     revoke: list[UUID] = Field(default_factory=list, max_length=500)
+    # Library folders (any depth) granted with everything below them, by catalog node id.
+    grant_nodes: list[UUID] = Field(default_factory=list, max_length=500)
+    revoke_nodes: list[UUID] = Field(default_factory=list, max_length=500)
     disclosure: dict[str, object] | None = None
 
 
@@ -97,6 +101,42 @@ def _run(session: Session, action):
 
 def _one(service: SpaceService, scope: OrganizationScope, user: User, space_id: UUID) -> dict[str, object]:
     return _view(next(item for item in service.list_spaces_for_actor(scope, user.id) if item.id == space_id))
+
+
+def _require_admin(session: Session, organization_id: UUID, user: User) -> OrganizationScope:
+    service, scope = _context(session, organization_id, user)
+    try:
+        service._require_admin(scope, user.id)
+    except SpaceDenied as error:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "not allowed") from error
+    return scope
+
+
+@router.get("/folder-tree/roots")
+def folder_tree_roots(
+    organization_id: UUID, user: User = Depends(current_user), session: Session = Depends(database_session),
+) -> dict[str, list[dict[str, object]]]:
+    """Per synchronization, the library folders it was built from (names only, org admins)."""
+    scope = _require_admin(session, organization_id, user)
+    return {str(scope_id): [_tree_item(item) for item in items]
+            for scope_id, items in sync_roots(session, scope.organization_id).items()}
+
+
+@router.get("/folder-tree/nodes/{node_id}/children")
+def folder_tree_children(
+    organization_id: UUID, node_id: UUID, user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> dict[str, list[dict[str, object]]]:
+    """Direct subfolders of a library folder, to pick what a Space gets (names only, org admins)."""
+    scope = _require_admin(session, organization_id, user)
+    items = subfolders(session, scope.organization_id, node_id)
+    if items is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "folder not found")
+    return {"items": [_tree_item(item) for item in items]}
+
+
+def _tree_item(item) -> dict[str, object]:
+    return {"id": str(item.id), "name": item.name, "has_children": item.has_children, "source_id": str(item.source_id)}
 
 
 @router.get("")
@@ -224,13 +264,36 @@ def change_folders(
     organization_id: UUID, space_id: UUID, payload: FolderChangesInput, user: User = Depends(current_user),
     session: Session = Depends(database_session),
 ) -> dict[str, list[str]]:
-    """Apply a grant/revoke diff of workspace folders to the Space in one transaction (admin only)."""
+    """Apply a grant/revoke diff of workspace folders and library folders to the Space in one transaction (admin only)."""
     service, scope = _context(session, organization_id, user)
-    if payload.grant and not payload.disclosure:
+    if (payload.grant or payload.grant_nodes) and not payload.disclosure:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "disclosure with text_version is required")
-    granted, revoked = _run(session, lambda: service.apply_folder_changes(
-        scope, user.id, space_id, payload.grant, payload.revoke, payload.disclosure or {}))
-    return {"granted": [str(item) for item in granted], "revoked": [str(item) for item in revoked]}
+
+    def action():
+        granted, revoked = service.apply_folder_changes(
+            scope, user.id, space_id, payload.grant, payload.revoke, payload.disclosure or {})
+        nodes_granted, nodes_revoked = service.apply_node_changes(
+            scope, user.id, space_id, payload.grant_nodes, payload.revoke_nodes, payload.disclosure or {})
+        return granted, revoked, nodes_granted, nodes_revoked
+
+    granted, revoked, nodes_granted, nodes_revoked = _run(session, action)
+    return {
+        "granted": [str(item) for item in granted], "revoked": [str(item) for item in revoked],
+        "granted_nodes": [str(item) for item in nodes_granted], "revoked_nodes": [str(item) for item in nodes_revoked],
+    }
+
+
+@router.get("/{space_id}/node-grants")
+def node_grants(
+    organization_id: UUID, space_id: UUID, user: User = Depends(current_user),
+    session: Session = Depends(database_session),
+) -> list[dict[str, object]]:
+    """Library folders granted to the Space (members and admins; anyone else gets the uniform 404)."""
+    service, scope = _context(session, organization_id, user)
+    return _run(session, lambda: [
+        {"node_id": str(item.node_id) if item.node_id else None, "source_id": str(item.source_id),
+         "name": item.name, "path": item.path, "ancestor_ids": [str(node) for node in item.ancestor_ids]}
+        for item in service.node_grants(scope, user.id, space_id)])
 
 
 @router.post("/{space_id}/enter")

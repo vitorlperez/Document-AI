@@ -113,7 +113,8 @@ def execute_run(session: Session, run_id: UUID, *, provider: SemanticProvider | 
             try:
                 with session.begin_nested():
                     result = QuestionService(session, provider).ask(
-                        scope=scope, user_id=creator, workspace_folder_ids=selection.folder_ids if selection else folder_ids,
+                        scope=scope, user_id=creator, workspace_folder_ids=selection.all_folder_ids if selection else folder_ids,
+                        allow_partial_scopes=bool(selection and selection.partial_folder_ids),
                         document_ids=selection.document_ids if selection else None, question=build_question(automation),
                         answer_mode="summary" if automation.template == "summary" else None)
                 run.questions_used = 1

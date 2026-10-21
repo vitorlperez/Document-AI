@@ -15,6 +15,7 @@ from app.core.scoping import OrganizationScope
 from app.core.sqlids import ids_clause
 from app.knowledge.models import Document
 from app.spaces.access import SpaceAccess, SpaceAccessResolver, SpaceRef
+from app.spaces.readable import node_spaces_of_files
 from app.workspaces.models import WorkspaceFolder
 
 
@@ -47,12 +48,16 @@ def spaces_by_document(
         ).all()
         for folder_id, external_id, source_id in rows:
             siblings.setdefault((source_id, external_id), set()).add(folder_id)
+    through_nodes = node_spaces_of_files(session, access, files)  # Spaces granting the file via a library folder
     sealed: dict[UUID, tuple[SpaceRef, ...]] = {}
     for document_id, external_id, source_id in own:
         refs: dict[UUID, SpaceRef] = {}
         for folder_id in siblings.get((source_id, external_id), ()):
             for ref in access.spaces_of(folder_id):
                 refs[ref.id] = ref
+        for space_id in through_nodes.get((source_id, external_id), ()):
+            if space_id in access.spaces:
+                refs[space_id] = access.spaces[space_id]
         sealed[document_id] = tuple(sorted(refs.values(), key=lambda ref: (ref.name.casefold(), str(ref.id))))
     return {document_id: sealed.get(document_id, ()) for document_id in ids}
 
