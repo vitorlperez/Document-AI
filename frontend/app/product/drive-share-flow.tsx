@@ -8,7 +8,7 @@ import { ProviderLogo } from "../provider-logo";
 import { Spinner, btn } from "../ui";
 import { driveShareApi, type DriveShareApi, type InboxFolder, type DriveShareState, type ProvisionStatus } from "./drive-share-api";
 import {
-  ROLE_HINT, SAMPLE_FOLDER_LINK, WORKSPACE_BLOCK_MESSAGE, POLL_INTERVAL_MS, batchRowView, batchSummary, connectLabel, formatCount, foundFoldersLabel, initialPollState, isSelected, itRequestText,
+  ROBOT_RETIRED_MESSAGE, ROLE_HINT, SAMPLE_FOLDER_LINK, WORKSPACE_BLOCK_MESSAGE, POLL_INTERVAL_MS, batchRowView, batchSummary, connectLabel, formatCount, foundFoldersLabel, initialPollState, isSelected, itRequestText,
   canLink, defaultSpaceSelection, knownAncestors, nestedSeparationHint, nestedWarning, nestedWarningText, toggleSpace, parseDriveFolderLink, pollTick, relativeSync, resumePoll, retryableIds, selectedIds, syncTargets, toggleAll, unlinkConfirmCopy, unlinkedFolders, verifyErrorMessage,
   type BatchRow, type FolderLink, type LinkSpaceOption, type SelectionChoices,
 } from "./drive-share-logic";
@@ -226,7 +226,7 @@ export function DriveShareFlow({ organizationId, organizationName, existingSourc
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
 
       {!robot && !enableError && <div className="drive-loading" role="status"><Spinner size={18} /><span>Preparando o e-mail exclusivo da sua empresa…</span></div>}
-      {enableError && <div className="drive-alert" data-tone="error" role="alert"><CircleAlert size={18} aria-hidden="true" /><div><p className="font-semibold">Não foi possível preparar o acesso.</p><p>{enableError}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={btn("secondary", "sm")} onClick={enable}><RefreshCw size={14} aria-hidden="true" />Tentar de novo</button><button type="button" className={btn("ghost", "sm")} onClick={onUseOAuth}>Usar “Entrar com a conta Google”</button></div></div></div>}
+      {enableError && <div className="drive-alert" data-tone="error" role="alert"><CircleAlert size={18} aria-hidden="true" /><div><p className="font-semibold">Não foi possível preparar o acesso.</p><p>{enableError}</p><div className="mt-3 flex flex-wrap gap-2">{enableError !== ROBOT_RETIRED_MESSAGE && <button type="button" className={btn("secondary", "sm")} onClick={enable}><RefreshCw size={14} aria-hidden="true" />Tentar de novo</button>}<button type="button" className={btn("ghost", "sm")} onClick={onUseOAuth}>Usar “Entrar com a conta Google”</button></div></div></div>}
 
       {robot && step === 1 && <StepOne robot={robot.email} folders={folders} poll={poll} checking={checking} noneFound={noneFound} hasExisting={Boolean(existingSource)} onResume={() => setPoll(resumePoll)} onContinue={() => void continueFromStepOne()} onSkipToPick={() => setStep(2)} onPaste={() => setStep(2)} onUseOAuth={onUseOAuth} organizationName={organizationName} />}
       {robot && step === 2 && <StepTwo robot={robot.email} folders={folders} all={all} choices={choices} setChoices={setChoices} picked={picked.length} poll={poll} onResume={() => setPoll(resumePoll)} paste={paste} setPaste={(v) => { setPaste(v); setPasteError(null); }} pasteError={pasteError} pasteChecking={pasteChecking} onAddPasted={() => void addPasted()} spaces={spaces} spaceIds={spaceIds} setSpaceIds={setSpaceIds} onConnect={() => void connectSelected(picked)} onBack={() => setStep(1)} />}

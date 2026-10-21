@@ -76,6 +76,22 @@ export function verifyCodeFor(code: string | null, status: number): string {
   }
 }
 
+export const ROBOT_RETIRED_MESSAGE = "O e-mail exclusivo desta empresa foi desativado quando a conexão anterior foi desconectada e não pode ser reativado por aqui. Fale com o suporte do ArquivIO para reativar o acesso ou use “Entrar com a conta Google”.";
+
+/** Mensagem humana para um código de erro do backend (`/data-sources/google-sa/*`). Nunca devolve o código cru. */
+export function driveShareErrorText(code: string | null, status: number): string {
+  switch (code) {
+    case "robot_retired": return ROBOT_RETIRED_MESSAGE;
+    case "disabled": return "O compartilhamento de pastas por e-mail ainda não está disponível para a sua empresa. Use “Entrar com a conta Google”.";
+    case "provisioning": return "Ainda estamos preparando o e-mail exclusivo da sua empresa. Aguarde alguns instantes e tente de novo.";
+    case "rate_limited": return "Muitas tentativas seguidas. Aguarde um instante e tente de novo.";
+    case "forbidden": return "Você não tem permissão para esta ação.";
+    case "unauthenticated": return "Sua sessão expirou. Entre novamente.";
+    case "invalid_request": return "Não foi possível processar o pedido. Atualize a página e tente de novo.";
+    default: return status >= 500 ? "O serviço está temporariamente indisponível. Tente novamente em instantes." : "Não foi possível concluir esta ação. Tente novamente em instantes.";
+  }
+}
+
 export const WORKSPACE_BLOCK_MESSAGE = "Parece que sua empresa não permite compartilhar com endereços de fora. Peça ao administrador do Google Workspace para liberar (texto pronto abaixo) ou use o modo “Entrar com a conta Google”.";
 
 /** Texto pronto para o TI do cliente (§1.4). */

@@ -1,7 +1,7 @@
 /** Chamadas do modo "e-mail-robô". Único ponto a ajustar se o contrato (specs/google/drive-sa-api-contract.md) mudar.
  * Todas as rotas levam `organization_id` na query; erros chegam como `{detail:{code}}` e viram códigos da UI (drive-share-logic). */
 import { API_BASE, ApiError, api } from "./types-and-api";
-import { verifyCodeFor, type LinkSpaceOption, type BatchRow, type DetectedFolder, type FolderLink, type VerifyResult } from "./drive-share-logic";
+import { driveShareErrorText, verifyCodeFor, type LinkSpaceOption, type BatchRow, type DetectedFolder, type FolderLink, type VerifyResult } from "./drive-share-logic";
 
 /** `status`: "provisioning" enquanto o worker cria o robô exclusivo da organização (poll em `status`); "ready" já traz o e-mail. */
 export type ProvisionStatus = "provisioning" | "ready" | "failed";
@@ -53,7 +53,7 @@ async function call<T>(path: string, init: RequestInit = {}, org = organization)
 }
 const base = (sourceId: string) => `/data-sources/google-sa/${encodeURIComponent(sourceId)}`;
 const post = (body?: unknown): RequestInit => ({ method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
-const asApiError = (error: unknown) => error instanceof DriveShareError ? new ApiError(error.status, error.code === "forbidden" ? "Você não tem permissão para esta ação." : error.code === "unauthenticated" ? "Sua sessão expirou. Entre novamente." : error.code === "invalid_request" ? "Não foi possível processar o pedido. Atualize a página e tente de novo." : error.status >= 500 ? "O serviço está temporariamente indisponível. Tente novamente em instantes." : error.message) : error;
+const asApiError = (error: unknown) => error instanceof DriveShareError ? new ApiError(error.status, driveShareErrorText(error.code, error.status)) : error;
 
 export const driveShareApi: DriveShareApi = {
   enable: async (organizationId) => { organization = organizationId; try { return await call<DriveShareEnable>("/data-sources/google-sa/enable", post(), organizationId); } catch (e) { throw asApiError(e); } },

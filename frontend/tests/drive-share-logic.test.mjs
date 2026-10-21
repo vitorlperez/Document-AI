@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import {
-  driveShareEnabled, parseDriveFolderLink, verifyErrorMessage, verifyChecklist, checklistReach, firstSyncEstimate, itRequestText, ROLE_HINT, verifyCodeFor,
+  driveShareEnabled, parseDriveFolderLink, verifyErrorMessage, verifyChecklist, checklistReach, firstSyncEstimate, itRequestText, ROLE_HINT, verifyCodeFor, driveShareErrorText, ROBOT_RETIRED_MESSAGE,
   foundFoldersLabel, unlinkedFolders, knownAncestors, isSelected, nestedWarning, nestedWarningText, selectedIds, toggleAll, connectLabel, batchRowView, batchSummary, syncTargets, retryableIds, unlinkConfirmCopy,
   initialPollState, pollTick, resumePoll, POLL_MAX_MS, WORKSPACE_HINT_AFTER_MS, driveShareStatus, libraryAccessBadge, relativeSync, daysUntil,
 } from "../app/product/drive-share-logic.ts";
@@ -297,4 +297,20 @@ test("ligar pasta exige ao menos um Espaço e pré-marca o padrão", async () =>
   assert.deepEqual(toggleSpace(["g"], "r"), ["g", "r"]);
   assert.deepEqual(toggleSpace(["g", "r"], "g"), ["r"]);
   assert.match(nestedSeparationHint, /separar por Espaço/);
+});
+
+test("erros do modo robô viram mensagem humana: nunca o código cru (robot_retired etc.)", () => {
+  assert.equal(driveShareErrorText("robot_retired", 409), ROBOT_RETIRED_MESSAGE);
+  assert.match(ROBOT_RETIRED_MESSAGE, /suporte/);
+  for (const [code, status] of [["robot_retired", 409], ["disabled", 404], ["provisioning", 409], ["rate_limited", 429], ["pool_empty", 503], ["algo_novo", 400], [null, 400]]) {
+    const text = driveShareErrorText(code, status);
+    assert.ok(text.includes(" "), `${code}: deve ser frase`);
+    if (code) assert.ok(!text.includes(code), `${code}: não pode vazar o código`);
+  }
+  assert.match(driveShareErrorText("pool_empty", 503), /indisponível/);
+});
+
+test("drive-share-api traduz o código via driveShareErrorText e o fluxo esconde 'Tentar de novo' quando o robô foi aposentado", () => {
+  assert.match(read("../app/product/drive-share-api.ts"), /new ApiError\(error\.status, driveShareErrorText\(error\.code, error\.status\)\)/);
+  assert.match(read("../app/product/drive-share-flow.tsx"), /enableError !== ROBOT_RETIRED_MESSAGE && <button/);
 });
