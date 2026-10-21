@@ -1,13 +1,14 @@
-"""T-G3 / acceptance criterion 1: an organization from before Spaces loses nothing once Spaces always enforce.
+"""T-G3 / acceptance criterion 1: an organization migrated to "Geral" answers exactly as before.
 
-Migration 0038 (``ensure_default_space_coverage``) puts everyone and every folder into "Geral"; afterwards every
-person reads every folder, exactly what they read before Spaces existed."""
+Recorded in ``off`` (no Space rows at all), then ``backfill_default_spaces`` + ``enforce``; the responses must be
+identical, apart from the new informative ``spaces`` field."""
 
 import pytest
 
 from app.access.models import OrganizationAccessSettings
 from app.access.ratelimit import InMemoryRateLimiter
-from app.spaces.backfill import ensure_default_space_coverage
+from app.organizations.models import Organization
+from app.spaces.backfill import backfill_default_spaces
 from app.spaces.models import Space, SpaceFolderGrant, SpaceMember
 from tests.access_helpers import Tenant, bearer, mint_key
 from tests.api.test_text_search_api import login, search_api  # noqa: F401
@@ -21,7 +22,7 @@ def legacy_world(search_api):  # noqa: F811
     client.app.state.rate_limiter = InMemoryRateLimiter()
     client.app.state.semantic_provider = CiteEverythingProvider()
     with factory.begin() as session:
-        world = seed_world(session)
+        world = seed_world(session, mode="off")
         bind_login_identities(session, world)
         for model in (SpaceFolderGrant, SpaceMember, Space):  # an organization from before Spaces existed
             session.query(model).delete()
@@ -71,14 +72,15 @@ def v1_sources(client, factory, world):
 
 
 @pytest.mark.parametrize("who", ["eva", "bruno"])
-def test_organization_without_spaces_is_fully_readable_after_the_coverage_migration(legacy_world, who):
+def test_geral_only_organization_is_indistinguishable_before_and_after_enforce(legacy_world, who):
     client, factory, gateway, world = legacy_world
+    before = record(client, factory, gateway, world, who)
+    before_v1 = v1_sources(client, factory, world)
+    assert before["roots"][0] == 200 and before["answer"][1]
+
     with factory.begin() as session:
-        assert ensure_default_space_coverage(session.connection()) == 1
-    after = record(client, factory, gateway, world, who)
-    assert all(after[name][0] == 200 for name in ("roots", "children", "contexts", "mentions", "search", "folders"))
-    assert len(after["children"][1]["items"]) == 3  # every file of the legacy tree
-    assert after["answer"][1]  # the answer still cites documents
-    with factory.begin() as session:
-        assert ensure_default_space_coverage(session.connection()) == 0  # idempotent
-    assert v1_sources(client, factory, world)[0] == 200
+        assert backfill_default_spaces(session.connection()) == 1
+        session.get(Organization, world.organization_id).spaces_resolver_mode = "enforce"
+
+    assert record(client, factory, gateway, world, who) == before
+    assert v1_sources(client, factory, world) == before_v1
