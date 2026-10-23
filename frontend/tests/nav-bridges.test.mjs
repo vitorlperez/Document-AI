@@ -68,3 +68,20 @@ test("Perguntar is a compact icon action (grid: icon beside ⋯ plus menu item; 
   assert.match(css, /\.library-card \.library-card-ask \{ position: absolute;/, "grid action is absolutely placed, adding no height to the card");
   assert.doesNotMatch(css, /library-card-ask \{ display: inline-flex/, "the old pill style is gone");
 });
+
+test("⌘K: picking a file/folder opens the Library through the focus bridge (?focus=), never ?source= (which only selects a tool root and leaves the Library empty)", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const palette = await readFile(new URL("../app/product/command-palette.tsx", import.meta.url), "utf8");
+  assert.match(palette, /import \{[^}]*libraryFocusPath[^}]*\} from "\.\.\/nav-bridges"/, "the palette builds the Library URL with the focus bridge helper");
+  assert.match(palette, /libraryFocusPath\(company\.id, \{ nodeId: item\.node_id \}\)/, "file and folder results focus the node resolved by /library/locate");
+  assert.doesNotMatch(palette, /libraryPath\(company\.id, item\.node_id\)/, "a file/folder node id must not go into ?source= (it is only valid for tool roots)");
+  assert.equal(libraryFocusPath("org-1", { nodeId: A }), `/companies/org-1/library?focus=${A}`);
+  assert.deepEqual(parseLibraryFocus(`?focus=${A}`), { nodeId: A, documentId: null });
+});
+
+test("a failed /library/locate leaves a clear unavailable state on screen, not the generic 'Escolha uma ferramenta'", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const screen = await readFile(new URL("../app/product/library-screen.tsx", import.meta.url), "utf8");
+  assert.match(screen, /focusUnavailable/, "the Library tracks that the requested item could not be located");
+  assert.match(screen, /focusUnavailable[^?]*\? "Item indisponível"/, "the empty state names the problem");
+});

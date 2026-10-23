@@ -4,7 +4,8 @@ import { ArrowRight, File as FileIcon, Folder, Search } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { filterDestinations, paletteDestinations } from "./account-helpers";
 import { OPEN_PALETTE_EVENT, OPEN_SHORTCUTS_EVENT, isMac } from "./nav-events";
-import { type Company, api, companyPath, libraryPath } from "./types-and-api";
+import { type Company, api, companyPath } from "./types-and-api";
+import { libraryFocusPath } from "../nav-bridges";
 import type { MentionCandidate } from "../mention-composer";
 import "./command-palette.css";
 
@@ -76,7 +77,7 @@ function CommandPalette({ company, onClose, onNavigate }: { company: Company; on
   }, [company.id, query]);
   const entries: Entry[] = [
     ...destinations.map((item) => ({ id: `go-${item.key}`, label: item.label, detail: "Ir para", kind: "page" as const, path: companyPath(company.id, item.suffix) })),
-    ...files.map((item) => ({ id: `node-${item.node_id}`, label: item.name, detail: item.path, kind: item.kind as "file" | "folder", path: libraryPath(company.id, item.node_id) })),
+    ...files.map((item) => ({ id: `node-${item.node_id}`, label: item.name, detail: item.path, kind: item.kind as "file" | "folder", path: libraryFocusPath(company.id, { nodeId: item.node_id }) ?? companyPath(company.id, "/library") })),
   ];
   const current = Math.min(active, Math.max(entries.length - 1, 0));
   function onKeyDown(event: React.KeyboardEvent) {
