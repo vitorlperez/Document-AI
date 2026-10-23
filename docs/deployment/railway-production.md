@@ -58,6 +58,9 @@ CLICKUP_OAUTH_REDIRECT_URI=https://app.seudominio.com/api/data-sources/clickup/o
 # opcional: API_DOCS_ENABLED=true reabre /docs, /redoc e /openapi.json (todas as rotas, inclusive privadas); sem ela ficam fechados com ENVIRONMENT=production
 ```
 
+> **Incidente 2026-10-23 — `AUTH_TRUSTED_PROXY_CIDRS` velho derruba cadastro e login por senha.** O IP privado do frontend na Railway muda a cada deploy; um `/32` fixo deixa de casar e `/auth/register`, `/auth/password`, `/auth/verify-email` e `/auth/password-reset` passam a falhar em 2–6 ms, sem chamar o provedor (`provider_call_count=0`). Antes retornava `403 untrusted authentication proxy context` (a UI mostrava "sem permissão"); agora responde `503 authentication unavailable` e registra `auth proxy peer <ip> is outside AUTH_TRUSTED_PROXY_CIDRS` (nível ERROR). Use a faixa privada da Railway, não um IP: `AUTH_TRUSTED_PROXY_CIDRS=10.0.0.0/8,100.64.0.0/10,fd12::/16`. A identidade do proxy continua provada pelo HMAC de `AUTH_PROXY_SECRET`; o CIDR é só a segunda barreira. Teste após cada deploy sem criar conta: `POST /api/auth/password` com e-mail/senha inexistentes deve devolver 400, nunca 403/503.
+
+
 A API precisa ainda de:
 
 ```text

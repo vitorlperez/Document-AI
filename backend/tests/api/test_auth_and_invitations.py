@@ -594,8 +594,28 @@ def test_proxy_context_forgery_is_rejected_before_workos(auth_api, monkeypatch, 
     if attack == "invalid_ip": headers = _signed_proxy_headers("198.51.100.10, 203.0.113.10")
     with TestClient(client.app, client=(peer, 12345)) as proxy:
         response = proxy.post("/auth/password", headers=headers, json={"email": "person@example.com", "password": "test"})
-    assert response.status_code == 403
+    # A peer outside AUTH_TRUSTED_PROXY_CIDRS is an operations fault (503), not "no permission".
+    assert response.status_code == (503 if attack == "untrusted_peer" else 403)
     assert calls == []
+
+
+def test_register_with_untrusted_proxy_peer_is_503_not_403_and_never_reaches_workos(auth_api):
+    """Prod incident: stale AUTH_TRUSTED_PROXY_CIDRS made every /auth/register answer 403 (UI: 'sem permissao')."""
+    import logging
+    client, _, _, _ = auth_api
+    _configure_signed_proxy(client)
+    path = "/auth/register"
+    records: list[logging.LogRecord] = []
+    handler = logging.Handler()
+    handler.emit = records.append  # type: ignore[method-assign]
+    logging.getLogger("document_intelligence.auth").addHandler(handler)
+    with TestClient(client.app, client=("10.167.148.64", 12345)) as proxy:
+        response = proxy.post(path, headers=_signed_proxy_headers("198.51.100.10", path=path), json={"email": "existing@example.com"})
+    assert response.status_code == 503
+    assert response.json() == {"detail": "authentication unavailable"}
+    logging.getLogger("document_intelligence.auth").removeHandler(handler)
+    logged = " ".join(record.getMessage() for record in records)
+    assert "10.167.148.64" in logged and "AUTH_TRUSTED_PROXY_CIDRS" in logged
 
 
 def test_direct_client_cannot_change_ip_bucket_with_forwarded_headers(auth_api, monkeypatch):

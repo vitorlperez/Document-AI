@@ -1,10 +1,17 @@
 """Authenticated frontend context; forwarded headers alone are never trusted."""
 
 import hmac
+import logging
 import time
 from ipaddress import ip_address, ip_network
 
 from fastapi import HTTPException, Request
+
+logger = logging.getLogger("document_intelligence.auth")
+
+
+class _UntrustedPeer(ValueError):
+    """The TCP peer is outside AUTH_TRUSTED_PROXY_CIDRS (usually stale after a frontend redeploy)."""
 
 
 def auth_client_ip(request: Request) -> str:
@@ -21,7 +28,7 @@ def auth_client_ip(request: Request) -> str:
         peer_ip = getattr(peer_ip, "ipv4_mapped", None) or peer_ip
         networks = [ip_network(item.strip()) for item in settings.auth_trusted_proxy_cidrs.split(",") if item.strip()]
         if not any(peer_ip in network for network in networks):
-            raise ValueError("untrusted peer")
+            raise _UntrustedPeer(peer)
         raw_ip = request.headers["x-auth-client-ip"]
         parsed_ip = ip_address(raw_ip)
         timestamp = request.headers["x-auth-ip-timestamp"]
@@ -32,5 +39,10 @@ def auth_client_ip(request: Request) -> str:
         if not hmac.compare_digest(expected, request.headers["x-auth-ip-signature"]):
             raise ValueError("invalid context")
         return str(getattr(parsed_ip, "ipv4_mapped", None) or parsed_ip)
+    except _UntrustedPeer:
+        # Not a client error: a legitimate frontend whose private IP is outside the allowlist
+        # (Railway reassigns it on redeploy) would otherwise be told 403 "no permission".
+        logger.error("auth proxy peer %s is outside AUTH_TRUSTED_PROXY_CIDRS; update the variable", peer)
+        raise HTTPException(503, "authentication unavailable") from None
     except (KeyError, ValueError, TypeError):
         raise HTTPException(403, "untrusted authentication proxy context") from None

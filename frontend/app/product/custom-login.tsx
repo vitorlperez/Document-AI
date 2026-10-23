@@ -7,8 +7,8 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { Enter, Spinner } from "../ui";
 import { Brand } from "../brand";
 import { ThemeToggle } from "../theme-toggle";
-import { safeInvitationReturnTo } from "./auth-navigation.mjs";
-import { ApiError, api, messageFor } from "./types-and-api";
+import { authErrorMessage, safeInvitationReturnTo } from "./auth-navigation.mjs";
+import { api } from "./types-and-api";
 import "../custom-login.css";
 
 type Mode = "sign-in" | "sign-up" | "forgot" | "reset" | "verify";
@@ -26,6 +26,7 @@ export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo,
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(passwordReset ? "Senha atualizada. Entre com sua nova senha." : null);
   const [hostedRequired, setHostedRequired] = useState(false);
+  const [signupSent, setSignupSent] = useState(false);
   const [resendAfter, setResendAfter] = useState(0);
   const previousMode = useRef(mode);
   useEffect(() => {
@@ -35,7 +36,7 @@ export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo,
     const target = mode === "verify" ? "login-code" : mode === "reset" ? "login-password" : "login-email";
     document.getElementById(target)?.focus({ preventScroll: true });
   }, [mode]);
-  const changeMode = (next: Mode) => { setMode(next); setPassword(""); setCode(""); setError(null); setNotice(null); setHostedRequired(false); setVisible(false); };
+  const changeMode = (next: Mode) => { setMode(next); setPassword(""); setCode(""); setError(null); setNotice(null); setHostedRequired(false); setVisible(false); setSignupSent(false); };
   const copy = {
     "sign-in": { eyebrow: "Seu conhecimento, de volta à mão", title: "Bem-vindo de volta.", description: "Entre no seu espaço e encontre a próxima resposta.", action: "Entrar" },
     "sign-up": { eyebrow: "Um lugar para o que sua equipe sabe", title: "Comece pelo conhecimento.", description: "Confirme seu e-mail pelo link que enviaremos. Depois, escolha sua senha.", action: "Criar minha conta" },
@@ -47,7 +48,7 @@ export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo,
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
-    setBusy(true); setError(null); setNotice(null); setHostedRequired(false);
+    setBusy(true); setError(null); setNotice(null); setHostedRequired(false); setSignupSent(false);
     try {
       if (mode === "forgot") {
         await api("/auth/password-reset", { method: "POST", body: JSON.stringify({ email }) });
@@ -63,13 +64,13 @@ export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo,
           method: "POST", body: JSON.stringify(mode === "verify" ? { code, return_to: returnTo } : mode === "sign-up" ? { email, return_to: returnTo } : { email, password, return_to: returnTo }),
         });
         setPassword("");
-        if (result.status === "registration_pending") setNotice("Confira seu e-mail para confirmar o endereço e escolher sua senha. Se você já tem conta, o link permite recuperar seu acesso.");
+        if (result.status === "registration_pending") { setSignupSent(true); setNotice("Se este e-mail ainda não tiver conta, enviamos um link para confirmar o endereço e escolher sua senha. Se já tiver, o link permite recuperar o acesso. Confira também o spam."); }
         else if (result.status === "authenticated" && result.redirect_url) window.location.replace(result.redirect_url);
         else if (result.status === "email_verification_required") { setMode("verify"); setCode(""); }
         else if (result.status === "hosted_authentication_required") { setHostedRequired(true); setNotice("Sua conta precisa de uma etapa adicional de segurança. Continue para concluir o acesso."); }
       }
     } catch (caught) {
-      setError(caught instanceof ApiError && caught.status === 422 ? "Confira os dados informados e tente novamente." : caught instanceof ApiError && caught.status === 403 ? "Não foi possível validar este endereço de acesso. Abra www.arquivio.com.br e tente novamente." : messageFor(caught));
+      setError(authErrorMessage(caught));
     } finally { setBusy(false); }
   }
 
@@ -81,7 +82,7 @@ export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo,
       await api("/auth/verify-email/resend", { method: "POST" });
       setResendAfter(Date.now() + 60_000);
       setNotice("Novo código solicitado. Confira seu e-mail e use o código mais recente.");
-    } catch (caught) { setError(messageFor(caught)); }
+    } catch (caught) { setError(authErrorMessage(caught)); }
     finally { setBusy(false); }
   }
 
@@ -99,7 +100,7 @@ export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo,
         {mode !== "reset" && mode !== "verify" && <div className="login-field"><label htmlFor="login-email">E-mail</label><input className="mo-field" id="login-email" type="email" autoComplete="email" name="email" required maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@empresa.com" disabled={busy} /></div>}
         {(mode === "sign-in" || mode === "reset") && <div className="login-field"><div className="login-label-row"><label htmlFor="login-password">{mode === "reset" ? "Nova senha" : "Senha"}</label>{mode === "sign-in" && <button type="button" onClick={() => changeMode("forgot")} disabled={busy} className="login-text-button">Esqueceu a senha?</button>}</div><div className="login-password"><input className="mo-field" id="login-password" name="password" type={visible ? "text" : "password"} autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required minLength={mode === "sign-in" ? 1 : 8} maxLength={1024} value={password} onChange={(event) => setPassword(event.target.value)} disabled={busy} aria-describedby={mode !== "sign-in" ? "login-password-hint" : undefined} /><button type="button" onClick={() => setVisible(!visible)} className="login-eye" aria-label={visible ? "Ocultar senha" : "Mostrar senha"} aria-pressed={visible} disabled={busy}>{visible ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>{mode !== "sign-in" && <p id="login-password-hint" className="login-hint">Pelo menos 8 caracteres.</p>}</div>}
         {mode === "verify" && <div className="login-field"><label htmlFor="login-code">Código de confirmação</label><input id="login-code" className="login-code mo-field" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} disabled={busy} /></div>}
-        {error && <p role="alert" className="login-error">{error}</p>}{notice && <p role="status" className="login-notice">{notice}</p>}
+        {error && <p role="alert" className="login-error">{error}</p>}{notice && <p role="status" className="login-notice">{notice}</p>}{signupSent && mode === "sign-up" && <p className="login-hint" data-testid="signup-existing-account">Já tem conta? <button type="button" onClick={() => changeMode("sign-in")} className="login-text-button">Entrar</button> · <button type="button" onClick={() => changeMode("forgot")} className="login-text-button">Esqueci minha senha</button></p>}
         {hostedRequired ? <button type="button" onClick={onLogin} className="login-primary mo-interactive" data-variant="primary">Continuar com segurança <ArrowRight size={18} /></button> : <button type="submit" disabled={busy} className="login-primary mo-interactive" data-variant="primary">{busy ? <Spinner size={18} /> : <ArrowRight size={18} className="mo-arrow" aria-hidden="true" />}{busy ? "Aguarde…" : copy.action}</button>}
       </form>
       <span role="status" className="sr-only">{busy ? "Processando seu acesso…" : ""}</span>

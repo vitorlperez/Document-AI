@@ -20,11 +20,11 @@ test("the canonical www host and Railway's generated domain are never redirected
   assert.equal(redirect("frontend-production-e02d.up.railway.app", "/login"), null);
 });
 
-test("next.config wires the apex redirect and the login explains a 403 instead of the generic permission text", async () => {
+test("next.config wires the apex redirect and the login maps auth errors without the generic permission text", async () => {
   const { readFile } = await import("node:fs/promises");
   const config = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
   assert.match(config, /apexToWwwRedirects/);
   assert.match(config, /async redirects\(\)/);
   const login = await readFile(new URL("../app/product/custom-login.tsx", import.meta.url), "utf8");
-  assert.match(login, /caught\.status === 403 \? "Não foi possível validar este endereço de acesso/);
+  assert.match(login, /setError\(authErrorMessage\(caught\)\)/);
 });

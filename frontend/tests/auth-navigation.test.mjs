@@ -14,3 +14,28 @@ test("neither password login nor hosted fallback accepts an external return", ()
     assert.equal(new URLSearchParams(hostedLoginQuery("sign-in", unsafe)).has("return_to"), false);
   }
 });
+
+import { authErrorMessage } from "../app/product/auth-navigation.mjs";
+
+test("auth errors never say 'sem permissão' and map to specific copy", () => {
+  const err = (status, message = "") => Object.assign(new Error(message), { status });
+  assert.match(authErrorMessage(err(403, "untrusted authentication proxy context")), /validar este acesso/);
+  assert.match(authErrorMessage(err(403, "origin not allowed")), /validar este acesso/);
+  assert.match(authErrorMessage(err(422)), /Confira os dados/);
+  assert.match(authErrorMessage(err(429)), /Muitas tentativas/);
+  assert.match(authErrorMessage(err(503, "authentication unavailable")), /temporariamente indisponível/);
+  assert.match(authErrorMessage(err(502)), /temporariamente indisponível/);
+  assert.equal(authErrorMessage(err(400, "Não foi possível iniciar o cadastro. Tente novamente ou entre na sua conta.")), "Não foi possível iniciar o cadastro. Tente novamente ou entre na sua conta.");
+  assert.match(authErrorMessage(new TypeError("fetch failed")), /conectar/);
+  for (const status of [400, 401, 403, 404, 409, 422, 429, 500, 503]) {
+    assert.doesNotMatch(authErrorMessage(err(status)), /permiss/i);
+  }
+});
+
+test("sign-up screen shows neutral copy with sign-in and forgot-password shortcuts", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(new URL("../app/product/custom-login.tsx", import.meta.url), "utf8");
+  assert.match(source, /Se este e-mail ainda não tiver conta/);
+  assert.match(source, /changeMode\("sign-in"\)[^]*Esqueci minha senha/);
+  assert.doesNotMatch(source, /messageFor/);
+});
