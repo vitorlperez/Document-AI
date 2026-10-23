@@ -2,6 +2,7 @@
 
 import { ChevronRight, ExternalLink, MessageSquare, File, FileSpreadsheet, FileText, Folder, Image as ImageIcon, LayoutGrid, List, MoreHorizontal, Presentation, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { FILE_KIND_LABEL, fileKind, withSpaceHeadings, type FileKind, type LibraryGridSize, type LibraryView } from "../library-view-logic";
 import { SpaceBadges } from "./library-spaces";
 import type { LibraryNode } from "./types-and-api";
@@ -36,7 +37,7 @@ export function LibraryViewControls({ view, onChange }: { view: LibraryView; onC
 
 type MenuAction = { key: string; label: string; icon: ReactNode; danger?: boolean; disabled?: boolean; run: () => void };
 
-/** "⋯" button + keyboard-navigable menu (fixed positioning so the scrolling grid never clips it). Closes on Esc, outside click and scroll. */
+/** "⋯" button + keyboard-navigable menu. The menu is portalled to <body> and positioned with `fixed` viewport coordinates: the card (`.mo-stagger-item`, animation fill-mode both) keeps a transform, which makes it the containing block of any fixed descendant, and `.library-grid` is a scroll container that would clip it. Flips above/left when it does not fit. Closes on Esc (focus returns to the button), outside click and scroll. */
 function CardMenu({ name, actions }: { name: string; actions: MenuAction[] }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
@@ -73,9 +74,9 @@ function CardMenu({ name, actions }: { name: string; actions: MenuAction[] }) {
   if (actions.length === 0) return null;
   return <>
     <button ref={trigger} type="button" className="library-card-more" aria-haspopup="menu" aria-expanded={open} aria-label={`Ações para ${name}`} title="Mais ações" onClick={() => { setPos(null); setOpen((value) => !value); }} onKeyDown={(event) => { if (event.key === "ArrowDown" && !open) { event.preventDefault(); setPos(null); setOpen(true); } }}><MoreHorizontal size={16} aria-hidden="true" /></button>
-    {open && <div ref={menu} role="menu" aria-label={`Ações para ${name}`} className="library-card-menu" data-ready={pos ? "" : undefined} style={pos ? { top: pos.top, left: pos.left } : { top: 0, left: 0, visibility: "hidden" }} onKeyDown={keys}>
+    {open && createPortal(<div ref={menu} role="menu" aria-label={`Ações para ${name}`} className="library-card-menu" data-ready={pos ? "" : undefined} style={pos ? { top: pos.top, left: pos.left } : { top: 0, left: 0, visibility: "hidden" }} onKeyDown={keys}>
       {actions.map((action) => <button key={action.key} type="button" role="menuitem" disabled={action.disabled} data-danger={action.danger || undefined} onClick={() => { close(true); action.run(); }}>{action.icon}<span>{action.label}</span></button>)}
-    </div>}
+    </div>, document.body)}
   </>;
 }
 
