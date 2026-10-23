@@ -69,7 +69,7 @@ export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo,
         else if (result.status === "hosted_authentication_required") { setHostedRequired(true); setNotice("Sua conta precisa de uma etapa adicional de segurança. Continue para concluir o acesso."); }
       }
     } catch (caught) {
-      setError(caught instanceof ApiError && caught.status === 422 ? "Confira os dados informados e tente novamente." : messageFor(caught));
+      setError(caught instanceof ApiError && caught.status === 422 ? "Confira os dados informados e tente novamente." : caught instanceof ApiError && caught.status === 403 ? "Não foi possível validar este endereço de acesso. Abra www.arquivio.com.br e tente novamente." : messageFor(caught));
     } finally { setBusy(false); }
   }
 
