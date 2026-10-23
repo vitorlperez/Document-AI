@@ -4,8 +4,8 @@ import test from "node:test";
 
 // Public, server-rendered pages. vinext's production bundle tree-shakes the navigation
 // exports that <Link> loads lazily (navigateClientSide, getPrefetchCache...), so a click on
-// a next/link throws "e is not a function" and the browser never navigates. Plain <a> works.
-const pages = ["app/docs/api/page.tsx", "app/legal-layout.tsx"];
+// a next/link (also the "Para você" / "Para empresas" switch of the landing header) throws "e is not a function" and the browser never navigates. Plain <a> works.
+const pages = ["app/docs/api/page.tsx", "app/legal-layout.tsx", "app/landing-shared.tsx"];
 
 for (const file of pages) {
   const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");

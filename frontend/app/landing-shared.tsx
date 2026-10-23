@@ -1,8 +1,8 @@
 "use client";
 
+/* eslint-disable @next/next/no-html-link-for-pages -- Native anchors avoid the vinext production lazy-navigation failure (M54). */
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { ArrowRight, ArrowUpRight, Check, ChevronDown, Menu } from "lucide-react";
-import Link from "next/link";
 import { Brand } from "./brand";
 import { ThemeToggle } from "./theme-toggle";
 import { avatarInitial, displayNameFromEmail } from "./product/account-helpers";
@@ -87,12 +87,13 @@ function useHidingHeader() {
   return ref;
 }
 
-/** Switch between the two models: "/" (personal) and "/empresas"; the current one is marked. */
+/** Switch between the two models: "/" (personal) and "/empresas"; the current one is marked.
+ * Plain anchors on purpose: in vinext's minified production bundle a next/link click throws "e is not a function" and never navigates. */
 function ModelSwitch({ current }: { current: "pessoal" | "empresa" }) {
   return (
     <nav className="landing-model-switch" aria-label="Modelo de conta">
-      <Link href="/" aria-current={current === "pessoal" ? "page" : undefined}>Para você</Link>
-      <Link href="/empresas" aria-current={current === "empresa" ? "page" : undefined}>Para empresas</Link>
+      <a href="/" aria-current={current === "pessoal" ? "page" : undefined}>Para você</a>
+      <a href="/empresas" aria-current={current === "empresa" ? "page" : undefined}>Para empresas</a>
     </nav>
   );
 }
