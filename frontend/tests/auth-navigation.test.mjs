@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { hostedLoginQuery, safeInvitationReturnTo } from "../app/product/auth-navigation.mjs";
+import { authCallbackMessage, hostedLoginQuery, safeInvitationReturnTo } from "../app/product/auth-navigation.mjs";
 
 test("hosted fallback preserves the invitation from /login return_to", () => {
   const path = "/invitations/" + "a".repeat(43);
@@ -38,4 +38,16 @@ test("sign-up screen shows neutral copy with sign-in and forgot-password shortcu
   assert.match(source, /Se este e-mail ainda não tiver conta/);
   assert.match(source, /changeMode\("sign-in"\)[^]*Esqueci minha senha/);
   assert.doesNotMatch(source, /messageFor/);
+});
+
+test("a failed OAuth callback is explained by reason, never as raw JSON or a permission error", () => {
+  for (const reason of ["state", "denied", "missing_code", "rejected", "unavailable", "rate_limited", "verification_required", "additional_step"]) {
+    const message = authCallbackMessage(reason);
+    assert.ok(message && message.length > 20, reason);
+    assert.doesNotMatch(message, /authentication failed|permiss|\{|detail/i);
+  }
+  assert.match(authCallbackMessage("unknown-reason"), /Entre novamente/);
+  assert.match(authCallbackMessage("__proto__"), /Entre novamente/);
+  assert.equal(authCallbackMessage(null), undefined);
+  assert.equal(authCallbackMessage(""), undefined);
 });

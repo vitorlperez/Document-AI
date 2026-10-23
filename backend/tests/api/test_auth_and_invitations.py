@@ -15,7 +15,14 @@ from app.access.ratelimit import InMemoryRateLimiter
 from app.audit_usage.models import AuditLog
 from app.core.config import Settings
 from app.core.models import Base
-from app.identity.auth import AuthenticationUnavailable, VerifiedIdentity
+from app.identity.auth import (
+    AuthenticationRateLimited,
+    AuthenticationRejected,
+    AuthenticationUnavailable,
+    HostedAuthenticationRequired,
+    PendingEmailVerification,
+    VerifiedIdentity,
+)
 from app.identity.models import AuthIdentity, User, UserSession
 from app.organizations.models import Membership, MembershipInvitation, MembershipRole, Organization
 
@@ -87,23 +94,99 @@ def callback(client: TestClient, gateway: FakeAuthGateway, *, code: str, email: 
     return cookie
 
 
-def test_callback_rejects_missing_or_mismatched_login_state(auth_api) -> None:
+def test_callback_with_wrong_state_redirects_to_login_with_reason_never_json(auth_api) -> None:
     client, factory, gateway, _ = auth_api
     gateway.identities["good"] = VerifiedIdentity(provider="workos", subject="subject", email="person@example.test")
 
-    missing_without_login = client.get("/auth/callback?code=good", follow_redirects=False)
-    client.get("/auth/login", follow_redirects=False)
-    missing_after_login = client.get("/auth/callback?code=good", follow_redirects=False)
     client.get("/auth/login", follow_redirects=False)
     mismatched = client.get("/auth/callback?code=good&state=wrong-state", follow_redirects=False)
+    other_browser = TestClient(client.app).get("/auth/callback?code=good&state=anything", follow_redirects=False)
 
-    assert missing_without_login.status_code == 401
-    assert missing_after_login.status_code == 401
-    assert missing_after_login.json() == {"detail": "authentication failed"}
-    assert mismatched.status_code == 401
-    assert mismatched.json() == {"detail": "authentication failed"}
+    for response in (mismatched, other_browser):
+        assert response.status_code == 302
+        assert response.headers["location"] == "http://app.example.test/login?auth_error=state"
+        assert "authentication failed" not in response.text
+    assert gateway.codes == []
     with factory() as session:
         assert session.scalar(select(func.count()).select_from(User)) == 0
+        assert session.scalar(select(func.count()).select_from(UserSession)) == 0
+
+
+def test_callback_without_state_is_authkit_initiated_and_restarts_login_instead_of_failing(auth_api) -> None:
+    """Hosted AuthKit (e.g. after the e-mailed password reset) lands on the redirect URI with a code but
+    no state: the login was not started by us, so start it now rather than answer 401 JSON."""
+    client, factory, gateway, _ = auth_api
+    client.app.state.settings.workos_redirect_uri = "https://www.example.test/api/auth/callback"
+    gateway.identities["hosted"] = VerifiedIdentity(provider="workos", subject="subject", email="person@example.test")
+
+    from_email = client.get("/auth/callback?code=hosted", follow_redirects=False)
+    client.get("/auth/login", follow_redirects=False)
+    stale_cookie = client.get("/auth/callback?code=hosted", follow_redirects=False)
+
+    for response in (from_email, stale_cookie):
+        assert response.status_code == 302
+        assert response.headers["location"] == "https://www.example.test/api/auth/login"
+        assert response.headers["cache-control"] == "no-store"
+    assert gateway.codes == []  # the unbound code is never exchanged
+    with factory() as session:
+        assert session.scalar(select(func.count()).select_from(UserSession)) == 0
+
+
+def test_authkit_initiated_callback_keeps_the_invitation_and_then_signs_in(auth_api) -> None:
+    client, _, gateway, _ = auth_api
+    invitation = "/invitations/" + "c" * 43
+    client.cookies.set("document_intelligence_return_to", invitation)
+    restart = client.get("/auth/callback?code=ignored", follow_redirects=False)
+    assert restart.headers["location"] == "http://app.example.test/api/auth/login?" + "return_to=" + invitation.replace("/", "%2F")
+    gateway.identities["fresh"] = VerifiedIdentity(provider="workos", subject="user_hosted", email="hosted@example.test")
+    login = client.get("/auth/login", params={"return_to": invitation}, follow_redirects=False)
+    state = parse_qs(urlparse(login.headers["location"]).query)["state"][0]
+    done = client.get("/auth/callback", params={"code": "fresh", "state": state}, follow_redirects=False)
+    assert done.status_code == 302 and done.headers["location"] == "http://app.example.test" + invitation
+    assert client.get("/me").json()["email"] == "hosted@example.test"
+
+
+def test_callback_without_code_or_with_provider_error_redirects_with_reason(auth_api) -> None:
+    client, _, _, _ = auth_api
+    login = client.get("/auth/login", follow_redirects=False)
+    state = parse_qs(urlparse(login.headers["location"]).query)["state"][0]
+    denied = client.get("/auth/callback", params={"error": "access_denied", "error_description": "secret detail", "state": state}, follow_redirects=False)
+    login = client.get("/auth/login", follow_redirects=False)  # a failed attempt consumes its state cookie
+    state = parse_qs(urlparse(login.headers["location"]).query)["state"][0]
+    empty = client.get("/auth/callback", params={"state": state}, follow_redirects=False)
+    assert denied.status_code == 302 and denied.headers["location"] == "http://app.example.test/login?auth_error=denied"
+    assert empty.status_code == 302 and empty.headers["location"] == "http://app.example.test/login?auth_error=missing_code"
+    assert "secret detail" not in denied.headers["location"]
+
+
+@pytest.mark.parametrize(
+    ("failure", "reason"),
+    [
+        (AuthenticationUnavailable("provider is down"), "unavailable"),
+        (AuthenticationRejected("code already used"), "rejected"),
+        (AuthenticationRateLimited(retry_after=3), "rate_limited"),
+        (PendingEmailVerification(token="pending-token", verification_id=None), "verification_required"),
+        (HostedAuthenticationRequired(), "additional_step"),
+    ],
+)
+def test_callback_exchange_failures_redirect_to_login_with_mapped_reason(auth_api, monkeypatch, failure, reason) -> None:
+    client, factory, gateway, _ = auth_api
+    login = client.get("/auth/login", follow_redirects=False)
+    state = parse_qs(urlparse(login.headers["location"]).query)["state"][0]
+
+    def exchange(**kwargs):
+        if isinstance(failure, Exception):
+            raise failure
+        return failure
+
+    monkeypatch.setattr(gateway, "exchange_code", exchange)
+    response = client.get("/auth/callback", params={"code": "burned", "state": state}, follow_redirects=False)
+
+    assert response.status_code == 302
+    assert response.headers["location"] == f"http://app.example.test/login?auth_error={reason}"
+    assert "document_intelligence_session" not in response.headers.get("set-cookie", "")
+    assert "pending-token" not in response.text and "pending-token" not in response.headers["location"]
+    with factory() as session:
         assert session.scalar(select(func.count()).select_from(UserSession)) == 0
 
 

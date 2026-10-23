@@ -129,3 +129,22 @@ def test_credentials_and_outages_remain_errors_even_with_pending_context(sdk_gat
     with pytest.raises(expected) as error:
         gateway.authenticate_password(email=USER["email"], password="test-password", ip_address=None, user_agent=None)
     assert "private" not in str(error.value)
+
+
+@pytest.mark.parametrize("status,body,expected", [
+    (400, {"error": "invalid_grant", "error_description": "private detail"}, AuthenticationRejected),
+    (429, {"code": "rate_limit_exceeded"}, AuthenticationRateLimited),
+    (503, {"code": "server_error"}, AuthenticationUnavailable),
+])
+def test_exchange_code_failures_are_typed_errors_not_raw_sdk_exceptions(sdk_gateway, status, body, expected):
+    gateway = sdk_gateway(lambda request: httpx.Response(status, json=body))
+    with pytest.raises(expected) as error:
+        gateway.exchange_code(code="burned-code")
+    assert "private" not in str(error.value) and "burned-code" not in str(error.value)
+
+
+def test_exchange_code_pending_verification_is_a_result_not_a_session(sdk_gateway):
+    from app.identity.auth import PendingEmailVerification
+    gateway = sdk_gateway(lambda request: httpx.Response(403, json={"code": "email_verification_required", "pending_authentication_token": "pending-token", "email_verification_id": "email_verification_1"}))
+    result = gateway.exchange_code(code="code-from-authkit")
+    assert isinstance(result, PendingEmailVerification) and result.verification_id == "email_verification_1"

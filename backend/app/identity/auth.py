@@ -92,9 +92,9 @@ class WorkOSAuthKitGateway:
             provider="authkit", redirect_uri=self.redirect_uri, state=state, screen_hint=screen_hint, max_age=max_age
         )
 
-    def exchange_code(self, *, code: str) -> VerifiedIdentity:
-        response = self._client().user_management.authenticate_with_code(code=code)
-        return self._verified_identity(response)
+    def exchange_code(self, *, code: str):
+        """Exchange an AuthKit code; a challenge comes back as a result, a failure as a typed error."""
+        return self._authenticate(self._client().user_management.authenticate_with_code, code=code)
 
     @staticmethod
     def _verified_identity(response) -> VerifiedIdentity:

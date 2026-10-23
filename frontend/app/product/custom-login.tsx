@@ -7,7 +7,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { Enter, Spinner } from "../ui";
 import { Brand } from "../brand";
 import { ThemeToggle } from "../theme-toggle";
-import { authErrorMessage, safeInvitationReturnTo } from "./auth-navigation.mjs";
+import { authCallbackMessage, authErrorMessage, safeInvitationReturnTo } from "./auth-navigation.mjs";
 import { api } from "./types-and-api";
 import "../custom-login.css";
 
@@ -23,12 +23,19 @@ export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo,
   const [code, setCode] = useState("");
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => (typeof window === "undefined" ? undefined : authCallbackMessage(new URLSearchParams(window.location.search).get("auth_error"))) ?? null);
   const [notice, setNotice] = useState<string | null>(passwordReset ? "Senha atualizada. Entre com sua nova senha." : null);
   const [hostedRequired, setHostedRequired] = useState(false);
   const [signupSent, setSignupSent] = useState(false);
   const [resendAfter, setResendAfter] = useState(0);
   const previousMode = useRef(mode);
+  useEffect(() => {
+    // The API reports a failed callback as /login?auth_error=<reason> (shown by the initial error state); keep the URL clean.
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("auth_error")) return;
+    url.searchParams.delete("auth_error");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search);
+  }, []);
   useEffect(() => {
     if (previousMode.current === mode) return;
     previousMode.current = mode;

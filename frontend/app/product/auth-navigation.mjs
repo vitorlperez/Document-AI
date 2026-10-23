@@ -31,3 +31,20 @@ export function authErrorMessage(error) {
   if (status >= 500) return "O acesso está temporariamente indisponível. Tente novamente em instantes.";
   return "Não foi possível concluir agora. Tente novamente.";
 }
+
+const CALLBACK_MESSAGES = {
+  state: "Sua tentativa de acesso expirou ou foi aberta em outro navegador. Entre novamente.",
+  denied: "O acesso foi cancelado. Entre novamente quando quiser.",
+  missing_code: "Não recebemos a confirmação do acesso. Entre novamente.",
+  rejected: "Este link de acesso já foi usado ou expirou. Entre novamente com seu e-mail e senha.",
+  unavailable: "O acesso está temporariamente indisponível. Tente novamente em instantes.",
+  rate_limited: "Muitas tentativas. Aguarde um minuto e tente novamente.",
+  verification_required: "Falta confirmar seu e-mail. Entre com e-mail e senha para receber o código de confirmação.",
+  additional_step: "Sua conta precisa de uma etapa adicional de segurança. Use “Continuar com SSO ou outro método” para concluir o acesso.",
+};
+
+/** Friendly copy for `/login?auth_error=<reason>` set by the API when the OAuth callback fails. */
+export function authCallbackMessage(reason) {
+  if (typeof reason !== "string" || !reason) return undefined;
+  return Object.hasOwn(CALLBACK_MESSAGES, reason) ? CALLBACK_MESSAGES[reason] : "Não foi possível concluir o acesso. Entre novamente.";
+}

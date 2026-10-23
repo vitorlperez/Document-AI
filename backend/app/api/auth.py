@@ -1,9 +1,10 @@
 """HTTP boundary for AuthKit sessions and internal organization invitations."""
 
+import logging
 import secrets
 from collections.abc import Generator
 from typing import Literal
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -61,6 +62,7 @@ class AuthRoute(APIRoute):
 
 
 router = APIRouter(tags=["authentication"], route_class=AuthRoute)
+auth_logger = logging.getLogger("document_intelligence.auth")
 
 
 def _safe_invitation_return_to(value: str | None) -> str | None:
@@ -328,18 +330,64 @@ def login(
     return response
 
 
+def _login_error_redirect(request: Request, reason: str) -> RedirectResponse:
+    """A failed callback is a browser navigation: send people back to /login with a mapped reason, never raw JSON."""
+    settings = request.app.state.settings
+    response = RedirectResponse(f"{settings.public_app_url.rstrip('/')}/login?{urlencode({'auth_error': reason})}", status_code=status.HTTP_302_FOUND)
+    response.headers["cache-control"] = "no-store"
+    response.delete_cookie(settings.auth_login_state_cookie_name)
+    return response
+
+
+def _restart_login_redirect(request: Request) -> RedirectResponse:
+    """AuthKit sent a code we never asked for (no state): begin our own login so state and cookie exist."""
+    settings = request.app.state.settings
+    redirect_uri = settings.workos_redirect_uri or ""
+    base = redirect_uri.rsplit("/", 1)[0] if redirect_uri.endswith("/callback") else f"{settings.public_app_url.rstrip('/')}/api/auth"
+    return_to = _safe_invitation_return_to(request.cookies.get("document_intelligence_return_to"))
+    query = f"?{urlencode({'return_to': return_to})}" if return_to else ""
+    response = RedirectResponse(f"{base}/login{query}", status_code=status.HTTP_302_FOUND)
+    response.headers["cache-control"] = "no-store"
+    return response
+
+
 @router.get("/auth/callback")
 def callback(
-    request: Request, code: str, state: str | None = None, session: Session = Depends(database_session)
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    session: Session = Depends(database_session),
 ) -> Response:
     settings = request.app.state.settings
+    if state is None and error is None:
+        # Not started by /auth/login (e.g. the hosted password-reset page finished and bounced here).
+        # The code is unbound to any login attempt of ours, so never exchange it: restart the flow instead.
+        auth_logger.info("auth callback without state; restarting login", extra={"reason": "authkit_initiated"})
+        return _restart_login_redirect(request)
     expected_state = request.cookies.get(settings.auth_login_state_cookie_name)
     if state is None or not expected_state or not secrets.compare_digest(state, expected_state):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="authentication failed")
+        auth_logger.warning("auth callback state mismatch", extra={"reason": "state", "has_cookie": bool(expected_state)})
+        return _login_error_redirect(request, "state")
+    if error:
+        auth_logger.warning("auth callback returned a provider error", extra={"reason": "denied", "provider_error": error[:64]})
+        return _login_error_redirect(request, "denied")
+    if not code:
+        return _login_error_redirect(request, "missing_code")
     try:
-        identity: VerifiedIdentity = request.app.state.auth_gateway.exchange_code(code=code)
-    except AuthenticationUnavailable as error:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="authentication failed") from error
+        identity = request.app.state.auth_gateway.exchange_code(code=code)
+    except AuthenticationRateLimited:
+        return _login_error_redirect(request, "rate_limited")
+    except AuthenticationRejected:
+        auth_logger.warning("auth callback code rejected", extra={"reason": "rejected"})
+        return _login_error_redirect(request, "rejected")
+    except AuthenticationUnavailable:
+        auth_logger.warning("auth callback exchange unavailable", extra={"reason": "unavailable"})
+        return _login_error_redirect(request, "unavailable")
+    if isinstance(identity, PendingEmailVerification):
+        return _login_error_redirect(request, "verification_required")
+    if isinstance(identity, HostedAuthenticationRequired) or not isinstance(identity, VerifiedIdentity):
+        return _login_error_redirect(request, "additional_step")
     service = IdentityService(session)
     user = service.establish_identity(identity)
     _, raw_session = service.create_session(
