@@ -276,8 +276,8 @@ def ask(payload: AskInput, request: Request,
         raise HTTPException(status.HTTP_403_FORBIDDEN, "not allowed") from error
     except UsageLimitExceeded as error:
         session.rollback()
-        _record(request, principal, "ask", "rate_limited", 429, query=payload.question)
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "organization usage limit reached") from error
+        _record(request, principal, "ask", "rate_limited", error.status_code, query=payload.question)
+        raise
     except AIProviderUnavailable as error:
         session.commit()  # the question quota is recorded before the provider call (ingestion.py:423-426)
         _record(request, principal, "ask", "error", 503, query=payload.question)

@@ -9,6 +9,15 @@ from app.organizations.models import Membership, MembershipInvitation, Membershi
 from app.organizations.service import InvitationInvalid, OrganizationService
 
 
+@pytest.fixture(autouse=True)
+def no_plan_guards(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These tests script the session call by call; the plan guards have their own suite (test_account_types_api)."""
+    from app.entitlements import service as guards
+
+    monkeypatch.setattr(guards, "require_can_invite", lambda *args, **kwargs: None)
+    monkeypatch.setattr(guards, "require_seat_available", lambda *args, **kwargs: None)
+
+
 class FakeInvitationSession:
     def __init__(self, scalar_results: list[object | None]) -> None:
         self.scalar_results = scalar_results

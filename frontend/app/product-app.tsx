@@ -8,12 +8,14 @@ import { AutomationsScreen } from "./product/automations-screen";
 import { DeveloperScreen } from "./product/developer-screen";
 import { ProfileScreen } from "./product/profile-screen";
 import { AdminScreen } from "./product/admin-screen";
-import { LandingPage } from "./landing-page";
-import { landingOrganizationName, shouldAutoEnterOrganization } from "./landing-session.mjs";
+import { LandingPage, type LandingSession } from "./landing-page";
+import { BusinessLandingPage } from "./business-landing";
+import { isLandingPathname, landingOrganizationName, shouldAutoEnterOrganization } from "./landing-session.mjs";
+import { signupHref, type PlanKey } from "./landing-plans.mjs";
 import { Brand } from "./brand";
 import { hostedLoginQuery, safeInvitationReturnTo } from "./product/auth-navigation.mjs";
 import { oauthErrorMessage } from "./provider-labels";
-import { API_BASE, SESSION_PATH, type Screen, type Company, type User, ApiError, api, isUuid, isInvitationToken, messageFor, companyPath } from "./product/types-and-api";
+import { API_BASE, SESSION_PATH, PLAN_CHANGED_EVENT, isPersonal, type Screen, type Company, type User, ApiError, api, isUuid, isInvitationToken, messageFor, companyPath } from "./product/types-and-api";
 import { OrganizationPicker } from "./product/org-picker";
 import { readActiveOrganizationId, writeActiveOrganizationId } from "./product/active-organization";
 import { Loading, SignIn, InvitationAcceptance, Onboarding, InvalidCompany } from "./product/auth-screens";
@@ -22,6 +24,7 @@ import { CompanyDashboard } from "./product/chat-workspace";
 import { LibraryScreen } from "./product/library-screen";
 import { IntegrationScreen } from "./product/integrations-screen";
 import { TeamScreen, StaffCenter } from "./product/team-staff";
+import { PersonalTeamUpgrade } from "./product/plan-ui";
 import { SpacesScreen } from "./product/spaces-screen";
 import "./chat-workspace.css";
 import "./product-layout.css";
@@ -77,6 +80,12 @@ export function ProductApp({ screen }: { screen: Screen }) {
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
   }, [loadSession, onboarding?.required]);
+  // Upgrade/downgrade concluídos em qualquer tela: recarrega o bloco de plano das organizações sem piscar a página.
+  useEffect(() => {
+    const refresh = () => { void loadSession(true); };
+    window.addEventListener(PLAN_CHANGED_EVENT, refresh);
+    return () => window.removeEventListener(PLAN_CHANGED_EVENT, refresh);
+  }, [loadSession]);
   const oauthProvider = screen === "integrations" ? searchParams.get("connected") : null;
   const oauthError = screen === "integrations" ? searchParams.get("error") : null;
   const oauthFailure = oauthErrorMessage(oauthError);
@@ -104,11 +113,13 @@ export function ProductApp({ screen }: { screen: Screen }) {
   const logout = async () => { try { const { redirect_url } = await api<{ redirect_url: string }>("/auth/logout", { method: "POST" }); setUser(null); setCompanies([]); window.location.replace(redirect_url); } catch (caught) { setError(messageFor(caught)); } };
   // Persist the active organization whenever one is resolved (deep link, picker or switcher).
   useEffect(() => { if (company) writeActiveOrganizationId(company.id); }, [company]);
-  const landingActions = { onLogin: () => router.push("/login"), onSignUp: () => router.push("/login?mode=sign-up"), onOpenApp: () => router.push("/login"), onLogout: () => { void logout(); } };
-  if (loading && screen === "home" && pathname === "/") return <LandingPage {...landingActions} session={{ status: "loading" }} />;
+  const landingActions = { onLogin: () => router.push("/login"), onSignUp: (intent?: { tipo?: "pessoal" | "empresa"; plano?: PlanKey }) => router.push(signupHref(intent)), onOpenApp: () => router.push("/login"), onLogout: () => { void logout(); } };
+  const onLanding = screen === "home" && isLandingPathname(pathname);
+  const renderLanding = (session: LandingSession) => pathname === "/empresas" ? <BusinessLandingPage {...landingActions} session={session} /> : <LandingPage {...landingActions} session={session} />;
+  if (loading && onLanding) return renderLanding({ status: "loading" });
   if (loading) return <Loading />;
-  if (!user || (pathname === "/login" && Boolean(resetToken))) return <>{screen === "home" && pathname === "/" ? <LandingPage {...landingActions} session={{ status: "anonymous" }} /> : <SignIn onLogin={() => beginLogin("sign-in")} passwordReset={searchParams.get("password_reset") === "1"} initialMode={searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in"} resetToken={resetToken} returnTo={loginReturnTo} />}{error && <div role="alert" className="session-error"><CircleAlert size={20} /><div><p>{error}</p><button onClick={() => { void loadSession(); }}>Tentar novamente</button></div></div>}</>;
-  if (screen === "home" && pathname === "/") return <LandingPage {...landingActions} session={{ status: "authenticated", email: user.email, organizationName: landingOrganizationName(companies, readActiveOrganizationId()) }} />;
+  if (!user || (pathname === "/login" && Boolean(resetToken))) return <>{onLanding ? renderLanding({ status: "anonymous" }) : <SignIn onLogin={() => beginLogin("sign-in")} passwordReset={searchParams.get("password_reset") === "1"} initialMode={searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in"} resetToken={resetToken} returnTo={loginReturnTo} />}{error && <div role="alert" className="session-error"><CircleAlert size={20} /><div><p>{error}</p><button onClick={() => { void loadSession(); }}>Tentar novamente</button></div></div>}</>;
+  if (onLanding) return renderLanding({ status: "authenticated", email: user.email, organizationName: landingOrganizationName(companies, readActiveOrganizationId()) });
   if (screen === "invitation") return <InvitationAcceptance token={params.token} onAccepted={(organizationId) => router.replace(companyPath(organizationId))} />;
   if (screen === "home" && companies.length === 1) return <Loading />;
   if (screen === "home" && companies.length > 1) return <OrganizationPicker user={user} companies={companies} onChoose={goCompany} onLogout={() => { void logout(); }} />;
@@ -139,7 +150,7 @@ export function ProductApp({ screen }: { screen: Screen }) {
     {screen === "company" && <CompanyDashboard key={company.id} company={company} onboarding={onboarding} onOnboardingChange={(progress) => setOnboarding((current) => current?.organizationId === company.id ? { ...progress, organizationId: company.id } : current)} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "library" && <LibraryScreen key={company.id} company={company} onConnect={() => router.push(companyPath(company.id, "/integrations"))} setError={setError} setNotice={setNotice} />}
     {screen === "spaces" && <SpacesScreen key={company.id} company={company} setError={setError} setNotice={setNotice} />}
-    {screen === "team" && <TeamScreen key={company.id} company={company} setError={setError} setNotice={setNotice} />}
+    {screen === "team" && (isPersonal(company) && company.role === "owner" ? <PersonalTeamUpgrade key={company.id} company={company} /> : <TeamScreen key={company.id} company={company} setError={setError} setNotice={setNotice} />)}
     {screen === "integrations" && (company.role === "member" ? <section role="alert" className="mx-auto max-w-lg rounded-lg border border-line bg-panel p-8 text-center"><ShieldCheck className="mx-auto text-primary" size={28} /><h1 className="mt-4 text-xl font-semibold text-ink">Acesso restrito</h1><p className="mt-2 text-sm text-muted-foreground">Somente responsáveis e administradores podem gerenciar integrações.</p><button onClick={() => router.push(companyPath(company.id))} className="mt-5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Voltar à conversa</button></section> : <div><IntegrationScreen key={company.id} company={company} setError={setError} setNotice={setNotice} onManualSyncStarted={(toolName) => { try { window.sessionStorage.setItem(PENDING_NOTICE_KEY, JSON.stringify({ message: `Sincronização do ${toolName} iniciada — acompanhe pelo ícone de sincronização na Conversa; detalhes na Biblioteca.`, action: { label: "Abrir Biblioteca", href: companyPath(company.id, "/library") } })); } catch { /* storage unavailable */ } router.push(companyPath(company.id)); }} /></div>)}
     {screen === "developer" && (company.role === "member" ? <section role="alert" className="mx-auto max-w-lg rounded-lg border border-line bg-panel p-8 text-center"><ShieldCheck className="mx-auto text-primary" size={28} /><h1 className="mt-4 text-xl font-semibold text-ink">Acesso restrito</h1><p className="mt-2 text-sm text-muted-foreground">Somente responsáveis e administradores podem gerenciar o acesso de desenvolvedor.</p><button onClick={() => router.push(companyPath(company.id))} className="mt-5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Voltar à conversa</button></section> : <DeveloperScreen key={company.id} company={company} />)}
     {screen === "automations" && <AutomationsScreen key={company.id} company={company} currentUserId={user?.id} />}

@@ -20,6 +20,7 @@ from app.integrations.google_drive import RemoteFolder
 from app.integrations.http import RemoteHttp
 from app.integrations.models import DataSource, OAuthConnectionState
 from app.integrations.oauth_base import OAuthConnectionServiceBase
+from app.entitlements.service import require_source_quota
 
 
 class NotionRemoteUnauthorized(SourceRemoteUnauthorized):
@@ -347,6 +348,7 @@ class NotionConnectionService(OAuthConnectionServiceBase):
         if state.source_id is not None and source is None:
             raise NotionOAuthInvalid("Notion source is invalid")
         if source is None:
+            require_source_quota(self.session, state.organization_id, "notion")
             source = DataSource(organization_id=state.organization_id, provider="notion", encrypted_credentials=self.cipher.encrypt(credentials), status="connected", account_email=account_email, connected_by_user_id=state.user_id)
             self.session.add(source)
         else:

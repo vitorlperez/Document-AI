@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.scoping import OrganizationScope
+from app.entitlements.summary import organization_plan_state
 from app.identity.auth import (
     AuthenticationRateLimited,
     AuthenticationRejected,
@@ -83,6 +84,7 @@ def _safe_invitation_return_to(value: str | None) -> str | None:
 
 class OrganizationCreateInput(BaseModel):
     name: str = Field(min_length=1, max_length=160)
+    account_type: Literal["personal", "business"] = "personal"
 
 
 class InvitationCreateInput(BaseModel):
@@ -437,31 +439,45 @@ def logout(request: Request, session: Session = Depends(database_session)) -> Re
 
 
 @router.get("/me")
-def me(user: User = Depends(current_user), session: Session = Depends(database_session)) -> dict[str, str | bool]:
+def me(request: Request, user: User = Depends(current_user), session: Session = Depends(database_session)) -> dict[str, object]:
+    service = PlatformStaffAccessService(session)
+    settings = request.app.state.settings
+    rows = OrganizationService(session).organizations_for_user(user_id=user.id)
     return {
         "id": str(user.id),
         "email": user.email,
         "created_at": user.created_at.isoformat(),
-        "is_platform_staff": PlatformStaffAccessService(session).is_platform_staff(user_id=user.id),
+        "is_platform_staff": service.is_platform_staff(user_id=user.id),
+        "organizations": [
+            {"id": str(organization.id), "name": organization.name, "role": membership.role.value}
+            | organization_plan_state(session, organization, settings)
+            for organization, membership in rows
+        ],
     }
 
 
 @router.post("/organizations", status_code=status.HTTP_201_CREATED)
 def create_organization(
     payload: OrganizationCreateInput,
+    request: Request,
     user: User = Depends(current_user),
     session: Session = Depends(database_session),
-) -> dict[str, str]:
+) -> dict[str, object]:
+    settings = request.app.state.settings
     organization, _, membership = OrganizationService(session).create_organization(
-        name=payload.name, owner_email=user.email, owner_user_id=user.id
+        name=payload.name, owner_email=user.email, owner_user_id=user.id, account_type=payload.account_type,
+        settings=settings,
     )
-    return {"id": str(organization.id), "membership_id": str(membership.id), "role": membership.role.value}
+    return {"id": str(organization.id), "membership_id": str(membership.id), "role": membership.role.value} | (
+        organization_plan_state(session, organization, settings))
 
 
 @router.get("/organizations")
-def organizations(user: User = Depends(current_user), session: Session = Depends(database_session)) -> list[dict[str, str]]:
+def organizations(request: Request, user: User = Depends(current_user), session: Session = Depends(database_session)) -> list[dict[str, object]]:
     rows = OrganizationService(session).organizations_for_user(user_id=user.id)
-    return [{"id": str(organization.id), "name": organization.name, "membership_id": str(membership.id), "role": membership.role.value} for organization, membership in rows]
+    settings = request.app.state.settings
+    return [{"id": str(organization.id), "name": organization.name, "membership_id": str(membership.id), "role": membership.role.value}
+            | organization_plan_state(session, organization, settings) for organization, membership in rows]
 
 
 @router.get("/organizations/{organization_id}/members")

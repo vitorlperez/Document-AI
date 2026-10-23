@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { type OrgMenuItemKey, orgMenuSections } from "./account-helpers";
 import { type Company, companyPath, roleLabel } from "./types-and-api";
 import { Transition } from "../ui";
+import { AccountTypeBadge } from "./plan-ui";
 import "./shell-motion.css";
 
 export const orgItemIcons: Record<OrgMenuItemKey, typeof Users> = { spaces: Users, automations: Clock3, integrations: HardDrive, team: UsersRound, admin: BarChart3, developer: Code2 };
@@ -46,7 +47,7 @@ export function OrgMenu({ company, companies, onCompanyChange, onNavigate }: { c
     <button ref={trigger} type="button" onClick={() => setOpen((value) => !value)} onKeyDown={(event) => { if (event.key === "ArrowDown" && !open) { event.preventDefault(); setOpen(true); } }} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined} aria-label={`Organização ativa: ${company.name}. Abrir menu da organização`} title={company.name} data-tour="org" data-testid="org-menu-trigger" className="organization-name mo-interactive inline-flex min-h-11 max-w-36 items-center gap-1.5 rounded-full border border-line bg-panel px-3 text-sm font-semibold hover:bg-sage focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary min-[1100px]:max-w-52"><span className="truncate">{company.name}</span><ChevronDown size={14} aria-hidden="true" className="shrink-0 text-muted-foreground" /></button>
     <Transition show={open} variant="scale" exitMs={120} className="shell-popover absolute left-0 top-full z-50 mt-2 w-[min(18rem,calc(100vw-2rem))]"><div ref={menu} id={menuId} role="menu" aria-label="Organização" className="max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-lg border border-[var(--card-edge)] bg-[var(--surface-raised)] p-1.5 shadow-xl">
       <p className={headingClass} role="presentation">Organização</p>
-      {companies.map((item) => <button key={item.id} type="button" role="menuitemradio" aria-checked={item.id === company.id} tabIndex={-1} onClick={choose(() => { if (item.id !== company.id) onCompanyChange(item.id); })} className={itemClass}><span className="min-w-0 flex-1 truncate">{item.name}</span><span className="shrink-0 text-xs font-normal text-muted-foreground">{roleLabel(item.role)}</span><Check size={16} aria-hidden="true" className={item.id === company.id ? "shrink-0 text-primary" : "invisible shrink-0"} /></button>)}
+      {companies.map((item) => <button key={item.id} type="button" role="menuitemradio" aria-checked={item.id === company.id} tabIndex={-1} onClick={choose(() => { if (item.id !== company.id) onCompanyChange(item.id); })} className={itemClass}><span className="min-w-0 flex-1 truncate">{item.name}</span><AccountTypeBadge company={item} /><span className="shrink-0 text-xs font-normal text-muted-foreground">{roleLabel(item.role)}</span><Check size={16} aria-hidden="true" className={item.id === company.id ? "shrink-0 text-primary" : "invisible shrink-0"} /></button>)}
       {sections.map((section) => <div key={section.key} role="group" aria-label={section.label}>
         <div role="separator" className="my-1 border-t border-[var(--card-edge)]" />
         <p className={headingClass} role="presentation">{section.label}</p>

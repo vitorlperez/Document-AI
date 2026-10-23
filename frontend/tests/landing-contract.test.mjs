@@ -2,15 +2,19 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
-const source = readFileSync(new URL("../app/landing-page.tsx", import.meta.url), "utf8");
+const pageSource = readFileSync(new URL("../app/landing-page.tsx", import.meta.url), "utf8");
+const sharedSource = readFileSync(new URL("../app/landing-shared.tsx", import.meta.url), "utf8");
+const plansSource = readFileSync(new URL("../app/landing-plans.mjs", import.meta.url), "utf8");
+// Copy lives across the page, the shared sections and the plans module (CTA labels).
+const source = [pageSource, sharedSource, plansSource].join("\n");
 const css = readFileSync(new URL("../app/landing.css", import.meta.url), "utf8");
 
 // Literal copy approved in specs/work-items/lp-chat-modernization-20261002/copy/COPY.md.
 const literals = [
-  "Pular para o conteúdo", "Produto", "Integrações", "Como funciona", "Dúvidas", "Entrar", "Criar conta",
+  "Pular para o conteúdo", "Produto", "Preços", "Dúvidas", "Para empresas", "Entrar", "Testar grátis por 14 dias",
   "SEU CONHECIMENTO, COM CONTEXTO", "A resposta está nos arquivos.", "Agora você sabe onde.",
-  "Pergunte ao Arquivio. Receba uma resposta direta e os documentos que a sustentam.",
-  "Começar com o Arquivio", "Já tenho uma conta", "Conexões de leitura · originais preservados",
+  "Pergunte ao Arquivio sobre seus documentos, sozinho ou com o time inteiro. Receba uma resposta direta e os arquivos que a sustentam.",
+  "Testar com minha empresa", "sem cartão · conexões somente leitura · originais preservados",
   "VEJA A EXPERIÊNCIA", "Converse com seus documentos.", "Confira a origem.",
   "Estúdio Aurora", "Prévia ilustrativa",
   "Arquivos sincronizados", "Projeto Aurora", "Nova conversa", "Documentos utilizados", "O que você gostaria de saber? Digite @ para mencionar um arquivo ou pasta",
@@ -19,23 +23,18 @@ const literals = [
   "E qual o prazo disso?", "Pergunte e receba fontes", "Confira na Biblioteca", "Pausar demonstração", "Retomar demonstração", "Indexado", "Briefing de campanha",
   "Todas as ferramentas", "O que ficou definido para a primeira entrega?", "Escopo do projeto.pdf", "Reunião de alinhamento", "Cronograma de entregas",
   "INTEGRAÇÕES DISPONÍVEIS", "1 lugar para perguntar.", "Conecte o que sua equipe já usa. Os arquivos originais permanecem nas suas ferramentas.",
-  "O QUE MUDA NA ROTINA", "Da procura à resposta,", "sem perder o caminho.",
-  "O conhecimento da equipe já está nos documentos. O Arquivio ajuda a encontrar o trecho certo e a voltar à fonte sempre que você precisar de mais detalhes.",
-  "01 / ENCONTRE", "Pergunte como você perguntaria a um colega.", "Recupere decisões, entregas e informações registradas sem abrir cada arquivo por conta própria.",
-  "02 / DELIMITE", "Escolha onde buscar.", "Consulte todo o conteúdo indexado ou restrinja a pergunta a uma ferramenta ou pasta específica.",
-  "03 / CONFIRA", "Volte aos documentos.", "Veja as fontes apresentadas com a resposta e abra os originais para verificar o contexto completo.",
   "COMO FUNCIONA", "Seus arquivos continuam onde estão.", "As respostas ficam mais perto.",
   "Conecte as fontes", "Escolha materiais compartilháveis no Google Drive, OneDrive, Notion, SharePoint ou ClickUp. As conexões são de leitura e preservam os originais.",
   "Aguarde a sincronização", "O Arquivio processa o conteúdo selecionado em segundo plano. A consulta considera o que já foi sincronizado e indexado.",
   "Pergunte com contexto", "Defina o escopo, faça sua pergunta e confira os documentos que sustentam a resposta.",
   "Todos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais compartilháveis com a equipe.",
   "ANTES DE COMEÇAR", "O que você", "precisa saber.",
-  "Somente Owner/Admin da organização no Arquivio pode conectar fontes.",
+  "Somente Owner/Admin da organização no Arquivio pode conectar fontes.", "Para você", "Para sua equipe", "Começou sozinho?", "Leve o Arquivio para o time.",
   "O Arquivio não reproduz as permissões originais por documento do SharePoint.",
   "Imagens escaneadas, planilhas e apresentações ainda não são indexadas.",
   "Alterações nos originais exigem uma nova sincronização.",
   "Confira se esse uso atende às políticas da sua organização.",
-  "COMECE PELOS SEUS DOCUMENTOS", "Menos procura.", "Mais contexto.", "Criar minha conta",
+  "COMECE PELOS SEUS DOCUMENTOS", "Menos procura.", "Mais contexto.",
   "Conhecimento que encontra o seu contexto.", "Privacidade", "Termos de uso",
 ];
 
@@ -47,16 +46,16 @@ const accessibleNames = [
 
 test("landing keeps every approved literal and accessible name", () => {
   for (const text of [...literals, ...accessibleNames]) assert.ok(source.includes(text), `missing: ${text}`);
-  assert.equal((source.match(/^\s*\["[^"]+\?", "/gm) ?? []).length, 7, "seven FAQ entries");
+  assert.equal((pageSource.match(/^\s*\["[^"]+\?", "/gm) ?? []).length, 13, "thirteen FAQ entries (6 plan/account + the 7 original)");
 });
 
 test("landing keeps the onLogin/onSignUp contract and every destination", () => {
   assert.match(source, /export function LandingPage\(\{ onLogin, onSignUp, onOpenApp = onLogin, onLogout = \(\) => undefined, session = \{ status: "anonymous" \} \}: LandingPageProps\)/);
-  assert.match(source, /type LandingPageProps = \{ onLogin: \(\) => void; onSignUp: \(\) => void; onOpenApp\?: \(\) => void; onLogout\?: \(\) => void; session\?: LandingSession \};/);
-  assert.equal((source.match(/onClick=\{onLogin\}/g) ?? []).length, 3, "Entrar (header + menu) and Já tenho uma conta");
-  assert.equal((source.match(/onClick=\{onSignUp\}/g) ?? []).length, 4, "Criar conta (header + menu), hero and closing CTAs");
-  for (const href of ["#landing-main", "#produto", "#integracoes", "#como-funciona", "#perguntas", "/privacidade", "/termos", "/docs/api"]) assert.ok(source.includes(`href="${href}"`), `missing href ${href}`);
-  for (const id of ["landing-main", "produto", "integracoes", "como-funciona", "perguntas"]) assert.ok(source.includes(`id="${id}"`), `missing id ${id}`);
+  assert.match(source, /export type LandingActions = \{ onLogin: \(\) => void; onSignUp: \(intent\?: SignupIntent\) => void; onOpenApp\?: \(\) => void; onLogout\?: \(\) => void \};/);
+  assert.equal((sharedSource.match(/onClick=\{onLogin\}/g) ?? []).length, 2, "Entrar (header + menu)");
+  assert.equal((sharedSource.match(/onClick=\{\(\) => onSignUp\(intent\)\}/g) ?? []).length, 2, "header + menu signup carry the page intent");
+  for (const href of ["#landing-main", "#produto", "#precos", "#perguntas", "#para-quem", "/empresas", "/privacidade", "/termos", "/docs/api"]) assert.ok(source.includes(`href="${href}"`) || source.includes(`href: "${href}"`), `missing href ${href}`);
+  for (const id of ["landing-main", "produto", "integracoes", "como-funciona", "perguntas", "precos", "para-quem"]) assert.ok(source.includes(`id="${id}"`), `missing id ${id}`);
   assert.match(source, /aria-pressed=\{userPaused\}/, "viewers can pause the moving demo");
   assert.doesNotMatch(source, /activeCase|demoCases|DEMO_ROTATE_MS/, "the three-case selector and rotation are gone");
   assert.match(source, /const DEMO_LOOP_MS = 28400;/, "25-35s loop");
@@ -74,8 +73,10 @@ test("landing keeps the onLogin/onSignUp contract and every destination", () => 
   assert.equal((source.match(/<ProductPreview \/>/g) ?? []).length, 1, "a single ProductPreview");
 });
 
-test("landing adds no pricing, plans or extra integrations", () => {
-  for (const banned of [/R\$/, /preço/i, /\bplanos\b/i, /\/mês/, /gratuit/i, /\btrial\b/i, /provider="github"/, /provider="teams"/, /tempo real/i]) assert.doesNotMatch(source, banned);
+test("landing never shows extra integrations, hard-coded prices or the old CTAs", () => {
+  for (const banned of [/provider="github"/, /provider="teams"/, /tempo real/i, /Começar grátis/i, /Começar com o Arquivio/, /Criar minha conta/, /Stripe/i, /boleto|PIX|cartão de crédito/i]) assert.doesNotMatch(pageSource + sharedSource, banned);
+  // Prices and limits come from landing-plans.mjs: no literal "R$ 123" in JSX or copy.
+  assert.doesNotMatch(pageSource + sharedSource, /R\$\s?\d/, "no hard-coded prices outside the data module");
 });
 
 function splitTopLevel(group) {
@@ -96,11 +97,6 @@ test("landing styles stay scoped and self-hosted", () => {
     assert.ok(css.includes(`/landing/fonts/${font}`));
     assert.ok(existsSync(new URL(`../public/landing/fonts/${font}`, import.meta.url)), `font file ${font}`);
   }
-});
-
-test("decorative story art is optional and hidden from assistive tech", () => {
-  assert.match(source, /\{storyArt && <div className="landing-story-art" aria-hidden="true" \/>\}/);
-  assert.match(source, /image\.onload = \(\) => \{ if \(active\) setReady\(true\); \};/);
 });
 
 test("scripted demo is one decorative, shift-free story with a textual equivalent", () => {

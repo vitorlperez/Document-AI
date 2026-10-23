@@ -98,9 +98,9 @@ def weekly_digest(organization_id: UUID, request: Request, days: int = Query(7, 
     try:
         sections = build_digest(session, scope=scope, user_id=user.id,
                                 provider=request.app.state.semantic_provider, since=since)
-    except UsageLimitExceeded as error:
+    except UsageLimitExceeded:
         session.rollback()
-        raise HTTPException(429, "organization usage limit reached") from error
+        raise
     except AIProviderUnavailable as error:
         session.rollback()
         raise HTTPException(503, "AI provider unavailable") from error

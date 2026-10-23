@@ -81,7 +81,7 @@ def login(client: TestClient, gateway: FakeAuthGateway, *, code: str, email: str
 
 
 def create_organization(client: TestClient, *, name: str) -> UUID:
-    response = client.post("/organizations", json={"name": name})
+    response = client.post("/organizations", json={"account_type": "business", "name": name})
     assert response.status_code == 201
     return UUID(response.json()["id"])
 

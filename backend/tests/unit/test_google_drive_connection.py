@@ -28,6 +28,11 @@ from app.integrations.models import OAuthConnectionState
 from app.organizations.models import Membership, MembershipRole
 
 
+@pytest.fixture(autouse=True)
+def no_source_quota(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("app.integrations.google_drive.require_source_quota", lambda *args, **kwargs: None)
+
+
 class FakeSession:
     def __init__(self, scalar_results: list[object | None]) -> None:
         self.scalar_results = list(scalar_results)

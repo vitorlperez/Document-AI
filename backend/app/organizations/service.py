@@ -9,7 +9,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog
+from app.core.config import Settings, get_settings
 from app.core.scoping import OrganizationScope
+from app.entitlements import service as entitlement_guards
 from app.identity.models import User
 from app.organizations.models import Membership, MembershipInvitation, MembershipRole, Organization
 from app.spaces import enrollment
@@ -41,8 +43,11 @@ class OrganizationService:
         self.session = session
 
     def create_organization(
-        self, *, name: str, owner_email: str, owner_user_id: UUID | None = None
+        self, *, name: str, owner_email: str, owner_user_id: UUID | None = None, account_type: str | None = None,
+        settings: Settings | None = None,
     ) -> tuple[Organization, User, Membership]:
+        """``account_type=None`` keeps the legacy shape (internal seeds); the API always passes an explicit type
+        and gets a local trial of that type."""
         user = self.session.get(User, owner_user_id) if owner_user_id else self.session.scalar(
             select(User).where(User.email == owner_email)
         )
@@ -51,9 +56,15 @@ class OrganizationService:
             self.session.add(user)
             self.session.flush()
 
+        if account_type is not None:
+            entitlement_guards.require_org_creation_quota(self.session, user.id, account_type)
         organization = Organization(name=name)
+        if account_type is not None:
+            organization.account_type = account_type
         self.session.add(organization)
         self.session.flush()
+        if account_type is not None:
+            entitlement_guards.start_trial(self.session, organization, user.id, settings or get_settings())
         geral = Space(
             organization_id=organization.id, name="Geral", name_key="geral", is_default=True,
             description="Espaço inicial — todos os membros e todas as pastas", created_by_user_id=user.id,
@@ -81,6 +92,7 @@ class OrganizationService:
     def add_membership(
         self, *, scope: OrganizationScope, user_id: UUID, role: MembershipRole, actor_user_id: UUID | None = None
     ) -> Membership:
+        entitlement_guards.require_seat_available(self.session, scope.organization_id)
         membership = Membership(organization_id=scope.organization_id, user_id=user_id, role=role, is_active=True)
         self.session.add(membership)
         try:
@@ -185,6 +197,7 @@ class OrganizationService:
         if space_ids is not None and len(enrollment.valid_space_ids(self.session, scope.organization_id, space_ids)) != len(space_ids):
             raise InvitationInvalid("space not found")
         normalized_email = _canonical_email(email)
+        entitlement_guards.require_can_invite(self.session, scope.organization_id, except_email=normalized_email)
         pending = self.session.scalar(
             select(MembershipInvitation).where(
                 MembershipInvitation.organization_id == scope.organization_id,
@@ -230,6 +243,7 @@ class OrganizationService:
         )
         if invitation is None or invitation.email != _canonical_email(user.email):
             raise InvitationInvalid("invitation is invalid")
+        entitlement_guards.require_seat_available(self.session, invitation.organization_id)
         membership = Membership(
             organization_id=invitation.organization_id,
             user_id=user.id,

@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     monthly_limit_embedding_tokens: int = Field(default=10_000_000, gt=0)
     monthly_limit_questions: int = Field(default=1_000, gt=0)
     monthly_limit_ocr_pages: int = Field(default=2_000, gt=0)
+    # Account types / billing (ADR-0022). The payment provider is optional: "none" means no checkout is available.
+    billing_provider: str = "none"
+    trial_days: int = Field(default=14, ge=1)
+    past_due_grace_days: int = Field(default=7, ge=0)
+    account_downgrade_cooldown_days: int = Field(default=30, ge=0)
     service_name: str = "document-intelligence-api"
     auth_session_cookie_name: str = "document_intelligence_session"
     auth_login_state_cookie_name: str = "document_intelligence_login_state"

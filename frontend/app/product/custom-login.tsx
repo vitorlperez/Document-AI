@@ -8,7 +8,7 @@ import { Enter, Spinner } from "../ui";
 import { Brand } from "../brand";
 import { ThemeToggle } from "../theme-toggle";
 import { authCallbackMessage, authErrorMessage, safeInvitationReturnTo } from "./auth-navigation.mjs";
-import { api } from "./types-and-api";
+import { api, parseSignupIntent, saveSignupIntent } from "./types-and-api";
 import "../custom-login.css";
 
 type Mode = "sign-in" | "sign-up" | "forgot" | "reset" | "verify";
@@ -29,6 +29,11 @@ export function SignIn({ onLogin, initialMode = "sign-in", resetToken, returnTo,
   const [signupSent, setSignupSent] = useState(false);
   const [resendAfter, setResendAfter] = useState(0);
   const previousMode = useRef(mode);
+  useEffect(() => {
+    // ?tipo=pessoal|empresa&plano=<plan_key> (vindo da LP) sobrevive a registro, verificação de e-mail e SSO: o front o guarda e a criação da organização consome.
+    const intent = parseSignupIntent(window.location.search);
+    if (intent) saveSignupIntent(intent);
+  }, []);
   useEffect(() => {
     // The API reports a failed callback as /login?auth_error=<reason> (shown by the initial error state); keep the URL clean.
     const url = new URL(window.location.href);

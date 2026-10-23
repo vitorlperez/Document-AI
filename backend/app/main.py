@@ -20,6 +20,8 @@ from app.api.auth import current_user
 from app.api.auth import router as auth_router
 from app.api.automation_webhooks import router as automation_webhooks_router
 from app.api.automations import router as automations_router
+from app.api.billing import public_router as plans_router
+from app.api.billing import router as billing_router
 from app.api.clickup_tasks import router as clickup_tasks_router
 from app.api.conversations import router as conversations_router
 from app.api.document_view import router as document_view_router
@@ -40,9 +42,11 @@ from app.api.public_v1 import router as public_v1_router
 from app.api.saved_queries import router as saved_queries_router
 from app.api.spaces import router as spaces_router
 from app.api.usage import router as usage_router
+from app.billing.provider import build_provider
 from app.core.config import Settings, get_settings
 from app.core.database import build_engine, build_session_factory
 from app.core.logging import configure_observability, provider_call_count, request_context
+from app.entitlements.errors import EntitlementError
 from app.identity.auth import WorkOSAuthKitGateway
 from app.ingestion.dispatch import CeleryIngestionDispatcher
 from app.ingestion.tasks import create_celery_app
@@ -133,6 +137,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.engine = build_engine(runtime_settings)
     app.state.session_factory = build_session_factory(app.state.engine)
+    app.state.billing_provider = build_provider(runtime_settings.billing_provider)
     app.state.auth_verification_secret = secrets.token_urlsafe(32)
     app.state.settings = runtime_settings
     app.state.rate_limiter = RedisRateLimiter(redis.Redis.from_url(runtime_settings.redis_url, socket_timeout=1, socket_connect_timeout=1))
@@ -167,10 +172,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "X-Request-Id", "Idempotency-Key"],
     )
+    @app.exception_handler(EntitlementError)
+    async def entitlement_error_handler(request: Request, error: EntitlementError) -> JSONResponse:
+        body = error.body()
+        if getattr(error, "blockers", None):
+            body["blockers"] = error.blockers
+        return JSONResponse(body, status_code=error.status_code)
+
     app.add_middleware(RequestLogMiddleware)
     app.add_middleware(CookieOriginMiddleware)
     app.include_router(health_router)
     app.include_router(auth_router)
+    app.include_router(plans_router)
     # Fail closed at the router boundary when a new private endpoint is added.
     # FastAPI caches the shared dependency for handlers that also need the user.
     app.include_router(public_v1_router)
@@ -186,6 +199,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(mcp_admin_router, dependencies=authenticated)
     app.include_router(onboarding_router, dependencies=authenticated)
     app.include_router(platform_router, dependencies=authenticated)
+    app.include_router(billing_router, dependencies=authenticated)
     app.include_router(drive_sa_router, dependencies=authenticated)
     app.include_router(integrations_router, dependencies=authenticated)
     app.include_router(saved_queries_router, dependencies=authenticated)

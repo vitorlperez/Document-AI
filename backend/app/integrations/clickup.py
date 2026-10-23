@@ -27,6 +27,7 @@ from app.integrations.http import (
 )
 from app.integrations.models import DataSource
 from app.integrations.oauth_base import OAuthConnectionServiceBase
+from app.entitlements.service import require_source_quota
 
 CLICKUP_API = "https://api.clickup.com"
 # 100 requests/minute/token on Free, Unlimited and Business plans: stay below it.
@@ -296,6 +297,7 @@ class ClickUpConnectionService(OAuthConnectionServiceBase):
         if state.source_id is not None and source is None:
             raise ClickUpOAuthInvalid("ClickUp source is invalid")
         if source is None:
+            require_source_quota(self.session, state.organization_id, "clickup")
             source = DataSource(organization_id=state.organization_id, provider="clickup",
                                 encrypted_credentials=self.cipher.encrypt(credentials), status="connected",
                                 account_email=account_email, connected_by_user_id=state.user_id)

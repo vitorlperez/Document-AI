@@ -10,6 +10,9 @@ import { type MentionCandidate } from "../mention-composer";
 import { type CatalogFolder } from "../new-space-options";
 import { ProviderLogo, type ProviderLogoName } from "../provider-logo";
 import type { LibraryIndexingFields } from "../library-indexing-status";
+import { PLAN_ERROR_EVENT, planErrorFromResponse, type PlanBlock, type PlanErrorInfo } from "./plan-model";
+
+export * from "./plan-model";
 
 export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 export const SESSION_PATH = API_BASE.replace(/\/$/, "") === "/api" ? "/session" : "/me";
@@ -17,7 +20,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 
 export type Role = "owner" | "admin" | "member";
 export type Screen = "home" | "company" | "library" | "team" | "integrations" | "developer" | "automations" | "spaces" | "admin" | "profile" | "staff" | "invitation";
-export type Company = { id: string; name: string; membership_id: string; role: Role };
+export type Company = { id: string; name: string; membership_id: string; role: Role } & PlanBlock;
 export type User = { id: string; email: string; created_at?: string; is_platform_staff?: boolean };
 export type Folder = { id: string; name: string; status: string; last_synced_at: string | null; source_id?: string; external_folder_id?: string; selection_kind?: string; selection_folder_ids?: string[] };
 export type DocumentFailure = { id: string; name: string; status: "failed"; error_code: string | null; source_url: string };
@@ -45,13 +48,21 @@ export type StaffCompany = { organization_id: string; name: string };
 type StaffFolder = Folder & { failure_summary: { error_code: string; count: number }[] };
 export type StaffOverview = { organization_id: string; name: string; folders: StaffFolder[] };
 
-export class ApiError extends Error { constructor(public readonly status: number, message: string) { super(message); } }
+export class ApiError extends Error {
+  /** Corpo JSON da resposta de erro (code/limit/used/upgrade_to/blockers…), quando houver. */
+  constructor(public readonly status: number, message: string, public readonly body: Record<string, unknown> | null = null, public readonly plan: PlanErrorInfo | null = null) { super(message); }
+  get code(): string | null { return typeof this.body?.code === "string" ? this.body.code : null; }
+}
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, { credentials: "include", headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) }, ...init });
   if (response.status === 204) return undefined as T;
   if (!response.ok) {
     const body: unknown = await response.json().catch(() => null);
-    throw new ApiError(response.status, errorDetail(body));
+    const record = typeof body === "object" && body !== null && !Array.isArray(body) ? body as Record<string, unknown> : null;
+    const plan = planErrorFromResponse(response.status, body);
+    // Um único diálogo de upgrade para todo erro de plano (402/403/429 com code): a tela só precisa deixar o erro propagar.
+    if (plan && typeof window !== "undefined") window.dispatchEvent(new CustomEvent<PlanErrorInfo>(PLAN_ERROR_EVENT, { detail: plan }));
+    throw new ApiError(response.status, errorDetail(body), record, plan);
   }
   return response.json() as Promise<T>;
 }

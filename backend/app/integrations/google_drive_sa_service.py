@@ -29,6 +29,7 @@ from app.spaces import enrollment
 from app.spaces.service import SpaceNotFound, SpaceService
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
 from app.workspaces.service import WorkspaceScope, WorkspaceService
+from app.entitlements.service import require_source_quota
 
 logger = logging.getLogger("document_intelligence.integration")
 
@@ -131,6 +132,7 @@ class DriveSaConnectionService(OAuthConnectionServiceBase):
                 source.status = PROVISIONING  # explicit user retry
                 self.needs_provisioning = True
             return source
+        require_source_quota(self.session, scope.organization_id, self.provider)
         identity = self._claim_free_robot(scope.organization_id)
         source = DataSource(
             organization_id=scope.organization_id,

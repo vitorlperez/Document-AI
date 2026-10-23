@@ -8,6 +8,7 @@ import { Brand } from "../brand";
 import { NotificationBell } from "./notification-bell";
 import { AccountMenu } from "./account-menu";
 import { OrgMenu } from "./org-menu";
+import { PlanBanner, PlanErrorHost } from "./plan-ui";
 import { ShellShortcuts } from "./command-palette";
 import { activePrimaryTab } from "./account-helpers";
 import { openPalette, isMac } from "./nav-events";
@@ -98,6 +99,7 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
         </div>
       </div>
     </header>}
+    <PlanBanner company={company} onNavigate={onNavigate} /><PlanErrorHost company={company} onNavigate={onNavigate} />
     <NotificationToast message={alertMessage} tone={alertTone} onDismiss={onDismiss} action={alertAction} onNavigate={onNavigate} />
     <div className={`product-content mx-auto w-full max-w-7xl p-4 ${fillViewport ? "min-h-0 flex-1" : ""}`}><section className={`min-w-0 ${fillViewport ? "workspace-shell h-full min-h-0" : ""} ${pageSurface ? "page-surface" : ""}`}>{children}</section></div>
     {mobile && <MobileTabBar user={user} company={company} pathname={pathname ?? ""} onNavigate={onNavigate} onOpenMore={() => setMore(true)} />}

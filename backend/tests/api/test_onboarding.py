@@ -10,7 +10,7 @@ from tests.api.test_auth_and_invitations import auth_api, callback, make_members
 
 def create(client, gateway):
     callback(client, gateway, code="owner", email="owner@example.test", subject="owner")
-    return client.post("/organizations", json={"name": "Nova equipe"}).json()["id"]
+    return client.post("/organizations", json={"account_type": "business", "name": "Nova equipe"}).json()["id"]
 
 
 def test_first_organization_resumes_and_completion_survives_another_login(auth_api):  # noqa: F811
@@ -84,7 +84,7 @@ def test_member_does_not_configure_org_and_new_org_has_independent_state(auth_ap
     with factory.begin() as session:
         session.scalar(select(Membership)).role = MembershipRole.OWNER
     client.patch(path, json={"step": "complete"})
-    other = client.post("/organizations", json={"name": "Outra equipe"}).json()["id"]
+    other = client.post("/organizations", json={"account_type": "business", "name": "Outra equipe"}).json()["id"]
     assert client.get(f"/organizations/{other}/onboarding").json()["required"] is True
     assert client.get(path).json()["required"] is False
 

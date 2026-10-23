@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.access.models import McpConnection, OrganizationAccessSettings
 from app.api.access_admin import _audit, _require_admin
 from app.api.auth import current_user, database_session
+from app.entitlements.service import require_feature
 from app.identity.models import User
 from app.library.models import LibraryNode
 from app.mcp_server.tools import MCP_TOOL_NAMES
@@ -72,6 +73,8 @@ def update_mcp_settings(organization_id: UUID, payload: McpSettingsInput,
     if row is None:
         row = OrganizationAccessSettings(organization_id=organization_id)
         session.add(row)
+    if payload.mcp_enabled:
+        require_feature(session, organization_id, "mcp")
     row.mcp_enabled = payload.mcp_enabled
     session.flush()
     _audit(session, organization_id, user.id, "mcp_settings.updated", "access_settings", organization_id)
@@ -85,6 +88,7 @@ def enable_connection(organization_id: UUID, payload: McpConnectionInput,
     settings = session.get(OrganizationAccessSettings, organization_id)
     if settings is None or not settings.mcp_enabled:
         raise HTTPException(403, "mcp is not enabled for this organization")
+    require_feature(session, organization_id, "mcp")
     node_ids = list(dict.fromkeys(payload.node_ids or []))
     if node_ids:
         found = set(session.scalars(select(LibraryNode.id).where(

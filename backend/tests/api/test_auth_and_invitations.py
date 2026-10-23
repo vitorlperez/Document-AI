@@ -305,7 +305,7 @@ def test_authenticated_user_creates_organization_owner_and_audit(auth_api) -> No
     client, factory, gateway, _ = auth_api
     callback(client, gateway, code="login", email="owner@example.test", subject="owner")
 
-    response = client.post("/organizations", json={"name": "Acme"})
+    response = client.post("/organizations", json={"account_type": "business", "name": "Acme"})
 
     assert response.status_code == 201
     assert response.json()["role"] == "owner"
@@ -322,7 +322,7 @@ def test_authenticated_user_creates_organization_owner_and_audit(auth_api) -> No
 def test_owner_invitation_delivers_raw_token_once_and_persists_hash_only(auth_api) -> None:
     client, factory, gateway, delivery = auth_api
     callback(client, gateway, code="owner-login", email="owner@example.test", subject="owner")
-    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization_id = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
 
     response = client.post(
         f"/organizations/{organization_id}/members/invitations",
@@ -349,7 +349,7 @@ def test_owner_invitation_delivers_raw_token_once_and_persists_hash_only(auth_ap
 def test_non_owner_cannot_invite_or_change_organization_state(auth_api, role: MembershipRole) -> None:
     client, factory, gateway, delivery = auth_api
     callback(client, gateway, code="owner", email="owner@example.test", subject="owner")
-    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization_id = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     callback(client, gateway, code="non-owner", email=f"{role.value}@example.test", subject=role.value)
     with factory() as session:
         user = session.scalar(select(User).where(User.email == f"{role.value}@example.test"))
@@ -372,7 +372,7 @@ def test_non_owner_cannot_invite_or_change_organization_state(auth_api, role: Me
 def test_invitation_acceptance_requires_matching_verified_email_and_is_single_use(auth_api) -> None:
     client, factory, gateway, delivery = auth_api
     callback(client, gateway, code="owner", email="owner@example.test", subject="owner")
-    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization_id = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     client.post(
         f"/organizations/{organization_id}/members/invitations",
         json={"email": "invitee@acme.co", "role": "member"},
@@ -401,7 +401,7 @@ def test_invitation_acceptance_requires_matching_verified_email_and_is_single_us
 def test_expired_revoked_or_altered_token_cannot_be_accepted(auth_api) -> None:
     client, factory, gateway, delivery = auth_api
     callback(client, gateway, code="owner", email="owner@example.test", subject="owner")
-    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization_id = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     request = lambda email: client.post(
         f"/organizations/{organization_id}/members/invitations", json={"email": email, "role": "member"}
     )
@@ -428,9 +428,9 @@ def test_expired_revoked_or_altered_token_cannot_be_accepted(auth_api) -> None:
 def test_owner_cannot_create_invitation_in_another_organization(auth_api) -> None:
     client, factory, gateway, delivery = auth_api
     callback(client, gateway, code="owner-a", email="owner-a@example.test", subject="owner-a")
-    organization_a = client.post("/organizations", json={"name": "A"}).json()["id"]
+    organization_a = client.post("/organizations", json={"account_type": "business", "name": "A"}).json()["id"]
     callback(client, gateway, code="owner-b", email="owner-b@example.test", subject="owner-b")
-    organization_b = client.post("/organizations", json={"name": "B"}).json()["id"]
+    organization_b = client.post("/organizations", json={"account_type": "business", "name": "B"}).json()["id"]
     callback(client, gateway, code="owner-a-again", email="owner-a@example.test", subject="owner-a")
 
     response = client.post(
@@ -448,15 +448,17 @@ def test_owner_cannot_create_invitation_in_another_organization(auth_api) -> Non
 def test_company_listing_and_member_management_are_owner_scoped(auth_api) -> None:
     client, factory, gateway, _ = auth_api
     callback(client, gateway, code="owner", email="owner@example.test", subject="owner")
-    organization_a = client.post("/organizations", json={"name": "Acme"}).json()["id"]
-    organization_b = client.post("/organizations", json={"name": "Beta"}).json()["id"]
+    organization_a = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
+    organization_b = client.post("/organizations", json={"account_type": "business", "name": "Beta"}).json()["id"]
     callback(client, gateway, code="member", email="member@example.test", subject="member")
     with factory() as session:
         member = session.scalar(select(User).where(User.email == "member@example.test"))
         assert member is not None
     membership = make_membership(factory, organization_id=UUID(organization_a), user_id=member.id, role=MembershipRole.MEMBER)
 
-    assert client.get("/organizations").json() == [{"id": organization_a, "name": "Acme", "membership_id": str(membership.id), "role": "member"}]
+    listed_orgs = client.get("/organizations").json()
+    assert [{key: row[key] for key in ("id", "name", "membership_id", "role")} for row in listed_orgs] == [
+        {"id": organization_a, "name": "Acme", "membership_id": str(membership.id), "role": "member"}]
     assert client.get(f"/organizations/{organization_a}/members").status_code == 403
     callback(client, gateway, code="owner-again", email="owner@example.test", subject="owner")
     listed = client.get(f"/organizations/{organization_a}/members")
@@ -836,7 +838,7 @@ def test_delivery_provider_rejection_returns_503_and_leaves_no_invitation(auth_a
     client, factory, gateway, _ = auth_api
     client.app.state.invitation_delivery = ResendRejectingDelivery(monkeypatch)
     callback(client, gateway, code="owner-login", email="owner@example.test", subject="owner")
-    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization_id = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
 
     response = client.post(
         f"/organizations/{organization_id}/members/invitations",
@@ -852,7 +854,7 @@ def test_delivery_provider_rejection_returns_503_and_leaves_no_invitation(auth_a
 def test_owner_role_invitation_is_rejected_as_validation_error(auth_api) -> None:
     client, _, gateway, delivery = auth_api
     callback(client, gateway, code="owner-login", email="owner@example.test", subject="owner")
-    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization_id = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
 
     response = client.post(
         f"/organizations/{organization_id}/members/invitations",
@@ -876,7 +878,7 @@ def test_delivery_transport_failure_returns_503(auth_api, monkeypatch) -> None:
     monkeypatch.setattr(Request, "make_request", refuse)
     client.app.state.invitation_delivery = ResendInvitationDelivery(api_key="re_test_not_a_secret", from_email="a@b.co")
     callback(client, gateway, code="owner-login", email="owner@example.test", subject="owner")
-    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization_id = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
 
     response = client.post(
         f"/organizations/{organization_id}/members/invitations",

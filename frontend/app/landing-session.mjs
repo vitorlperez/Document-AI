@@ -5,12 +5,17 @@ export function landingCtaMode(session) {
   return "anonymous";
 }
 
+/** Public landing pages: the personal landing at "/" and the business one at "/empresas". */
+export function isLandingPathname(pathname) {
+  return pathname === "/" || pathname === "/empresas";
+}
+
 /**
- * The landing lives at "/" and is visible to everyone. Only the app entry routes
+ * The landing lives at "/" (and "/empresas") and is visible to everyone. Only the app entry routes
  * (/login, also the post-login destination) auto-enter the single organization.
  */
 export function shouldAutoEnterOrganization({ screen, pathname, membershipCount, hasResetToken }) {
-  return screen === "home" && pathname !== "/" && membershipCount === 1 && !hasResetToken;
+  return screen === "home" && !isLandingPathname(pathname) && membershipCount === 1 && !hasResetToken;
 }
 
 /** Name of the organization to show next to the account: the last one entered, else the only one. */

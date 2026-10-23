@@ -5,6 +5,7 @@ import pytest
 
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "postgres: requires a disposable PostgreSQL TEST_DATABASE_URL")
+    config.addinivalue_line("markers", "trial_rules: keep the real one-trial-per-creator rule")
     config.addinivalue_line("markers", "no_auto_spaces: the test builds its own Spaces; no fixture auto-enrolment")
 
 
@@ -44,6 +45,16 @@ def stub_google_revocation(monkeypatch: pytest.MonkeyPatch) -> None:
         return original(url, **kwargs)
 
     monkeypatch.setattr(httpx, "post", post)
+
+
+@pytest.fixture(autouse=True)
+def trial_rules(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Most suites create several organizations for one user; the one-trial-per-creator rule has its own tests
+    (``@pytest.mark.trial_rules``)."""
+    if request.node.get_closest_marker("trial_rules") is None:
+        from app.entitlements import service
+
+        monkeypatch.setattr(service, "trial_already_used", lambda *args, **kwargs: False)
 
 
 AUTO_GERAL = "__test_default__"

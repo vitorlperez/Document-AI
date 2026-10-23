@@ -33,7 +33,7 @@ def children(client, organization, root):
 def test_every_file_reports_state_and_reason(api):
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source = seed_library(factory, organization)
     root = client.get(f"/library?organization_id={organization}").json()["items"][0]["id"]
     with factory() as session:
@@ -70,7 +70,7 @@ def test_every_file_reports_state_and_reason(api):
 def test_search_results_carry_the_same_state(api):
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source = seed_library(factory, organization)
     root = client.get(f"/library?organization_id={organization}").json()["items"][0]["id"]
     with factory() as session:
@@ -85,7 +85,7 @@ def test_search_results_carry_the_same_state(api):
 def test_an_indexed_copy_in_any_workspace_wins_over_a_failure_in_another(api):
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source = seed_library(factory, organization)
     root = client.get(f"/library?organization_id={organization}").json()["items"][0]["id"]
     with factory() as session:
@@ -110,7 +110,7 @@ def test_folder_nodes_report_robot_drive_access_state(api):
 
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source = seed_library(factory, organization)
     root = client.get(f"/library?organization_id={organization}").json()["items"][0]["id"]
     purge = datetime.now(UTC) + timedelta(days=9)
@@ -152,7 +152,7 @@ def test_robot_drive_source_root_has_readable_name(api):
 
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     seed_library(factory, organization)
     with factory() as session:
         user = session.query(User).first()

@@ -12,6 +12,7 @@ from app.access.models import ALL_SCOPES, ApiKey, OrganizationAccessSettings
 from app.api.auth import current_user, database_session
 from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
+from app.entitlements.service import require_api_key_quota, require_feature
 from app.identity.models import User
 from app.ingestion.service import SyncAccessDenied
 from app.knowledge.models import Document
@@ -82,6 +83,7 @@ def _serialize(key: ApiKey):
 def create_key(organization_id: UUID, payload: KeyInput, response: Response,
                user: User = Depends(current_user), session: Session = Depends(database_session)):
     _require_admin(session, organization_id, user.id)
+    require_api_key_quota(session, organization_id)
     node_ids = list(dict.fromkeys(payload.node_ids or []))
     if node_ids:
         found = set(session.scalars(select(LibraryNode.id).where(
@@ -177,6 +179,8 @@ def update_access_settings(organization_id: UUID, payload: SettingsInput,
     if row is None:
         row = OrganizationAccessSettings(organization_id=organization_id)
         session.add(row)
+    if payload.public_api_enabled:
+        require_feature(session, organization_id, "public_api")
     row.public_api_enabled = payload.public_api_enabled
     session.flush()
     _audit(session, organization_id, user.id, "access_settings.updated", "access_settings", organization_id)

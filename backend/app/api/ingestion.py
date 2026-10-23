@@ -356,9 +356,9 @@ def ask_question(
         raise _folder_denied(session, organization_id, user.id) from error
     except AIProviderUnavailable as error:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI provider unavailable") from error
-    except UsageLimitExceeded as error:
+    except UsageLimitExceeded:
         session.rollback()
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="organization usage limit reached") from error
+        raise
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
     return _serialize_question_result(result, include_provider=False)
@@ -453,9 +453,9 @@ def ask_organization_question(
         # auditable attempt even when the provider cannot answer.
         session.commit()
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI provider unavailable") from error
-    except UsageLimitExceeded as error:
+    except UsageLimitExceeded:
         session.rollback()
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="organization usage limit reached") from error
+        raise
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
     response = _serialize_question_result(result, include_provider=True)

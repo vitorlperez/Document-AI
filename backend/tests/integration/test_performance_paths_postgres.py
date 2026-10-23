@@ -57,7 +57,7 @@ def _login(client: TestClient) -> UUID:
     started = client.get("/auth/login", follow_redirects=False)
     state = parse_qs(urlparse(started.headers["location"]).query)["state"][0]
     assert client.get(f"/auth/callback?code=owner&state={state}", follow_redirects=False).status_code == 302
-    response = client.post("/organizations", json={"name": "Performance test"})
+    response = client.post("/organizations", json={"account_type": "business", "name": "Performance test"})
     assert response.status_code == 201
     return UUID(response.json()["id"])
 

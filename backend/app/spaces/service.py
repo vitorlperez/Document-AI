@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog
 from app.core.scoping import OrganizationScope
+from app.entitlements.service import require_space_quota
 from app.identity.models import User
 from app.knowledge.models import Document
 from app.library.models import LibraryNode
@@ -132,6 +133,8 @@ class SpaceService:
         is_default: bool = False,
     ) -> Space:
         self._require_admin(scope, actor_user_id)
+        if not is_default:
+            require_space_quota(self.session, scope.organization_id)
         clean = self._clean_name(name)
         if is_default and self.default_space_id(self.session, scope.organization_id) is not None:
             raise SpaceConflict("a default space already exists")

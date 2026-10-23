@@ -2,7 +2,8 @@ from datetime import UTC, date, datetime
 from uuid import uuid4
 
 from app.audit_usage.models import UsageRecord
-from app.audit_usage.service import active_document_limit, monthly_limits
+from app.core.config import Settings
+from app.entitlements.catalog import plan_for
 from app.identity.models import User
 from app.organizations.models import Membership, MembershipRole
 from tests.api.test_multiscope_questions_api import corpus  # noqa: F401
@@ -10,6 +11,9 @@ from tests.api.test_text_search_api import login, search_api  # noqa: F401
 
 
 def test_usage_panel_reports_levels_for_admin(corpus):  # noqa: F811
+    trial = plan_for("business_trial", Settings.model_construct())  # organizations created through the API start on a trial
+    monthly_limits = lambda: {"questions": trial.monthly_questions, "ocr_pages": trial.monthly_ocr_pages}  # noqa: E731
+    active_document_limit = lambda: trial.active_documents  # noqa: E731
     client, factory, _, org, _, _ = corpus
     now = datetime.now(UTC)
     with factory.begin() as session:

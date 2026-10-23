@@ -22,7 +22,7 @@ pytestmark = pytest.mark.no_auto_spaces
 def setup_org(auth_api):
     client, factory, gateway, delivery = auth_api
     callback(client, gateway, code="owner", email="owner@example.test", subject="owner")
-    org = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    org = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     return client, factory, gateway, delivery, org
 
 
@@ -83,7 +83,7 @@ def test_invitation_with_empty_space_ids_falls_back_to_default_space(auth_api):
 
 def test_invitation_refuses_foreign_or_archived_space_without_side_effects(auth_api):
     client, factory, _gateway, delivery, org = setup_org(auth_api)
-    other_org = client.post("/organizations", json={"name": "Other"}).json()["id"]
+    other_org = client.post("/organizations", json={"account_type": "business", "name": "Other"}).json()["id"]
     foreign = make_space(client, other_org, "Foreign")
     archived = make_space(client, org, "Velho")
     assert client.delete(f"/organizations/{org}/spaces/{archived}").status_code == 204
@@ -117,7 +117,7 @@ def seed_people(auth_api):
             ids[who] = session.scalar(select(User.id).where(User.email == f"{who}@example.test"))
         make_membership(factory, organization_id=UUID(org), user_id=ids[who], role=role)
     callback(client, gateway, code="stranger", email="stranger@elsewhere.test", subject="stranger")
-    client.post("/organizations", json={"name": "Elsewhere"})
+    client.post("/organizations", json={"account_type": "business", "name": "Elsewhere"})
     callback(client, gateway, code="owner", email="owner@example.test", subject="owner")
     assert client.post(f"/organizations/{org}/spaces/{rh}/members", json={"user_id": str(ids["boss"]), "role": "manager"}).status_code == 201
     return client, gateway, org, rh, ids

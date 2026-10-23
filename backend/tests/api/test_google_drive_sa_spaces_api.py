@@ -53,7 +53,7 @@ def test_link_with_space_ids_grants_only_those_spaces(google_api, monkeypatch):
 
 def test_link_refuses_foreign_archived_unknown_space_and_links_nothing(google_api, monkeypatch):
     client, factory, org, source_id = batch_setup(google_api, monkeypatch, TREE)
-    other = client.post("/organizations", json={"name": "Other"}).json()["id"]
+    other = client.post("/organizations", json={"account_type": "business", "name": "Other"}).json()["id"]
     foreign = mk_space(client, other, "Foreign")
     archived = mk_space(client, org, "Velho")
     assert client.delete(f"/organizations/{org}/spaces/{archived}").status_code == 204

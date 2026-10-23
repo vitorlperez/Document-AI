@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Brand } from "../brand";
 import { Enter, StaggerItem } from "../ui";
+import { AccountTypeBadge } from "./plan-ui";
 import { readActiveOrganizationId } from "./active-organization";
 import { roleLabel, type Company, type User } from "./types-and-api";
 import "./org-picker.css";
@@ -17,6 +18,6 @@ export function OrganizationPicker({ user, companies, onChoose, onLogout }: { us
   // Focus the last-used organization (or the first) so Enter continues straight into it.
   useEffect(() => { (lastRef.current ?? firstRef.current)?.focus(); }, []);
   return <main className="auth-page"><Enter variant="slide"><section className="auth-card org-picker" aria-labelledby="org-picker-title"><Brand /><p className="mt-6 text-sm text-muted-foreground">{user.email}</p><h1 id="org-picker-title" className="mt-2 text-3xl font-semibold">Escolha a organização</h1><p className="mt-3 leading-6 text-muted-foreground">Você participa de mais de uma organização. Selecione em qual deseja entrar agora; você pode trocar depois pelo menu.</p>
-    <ul className="org-picker-list">{companies.map((company, index) => <StaggerItem as="li" index={index} key={company.id}><button type="button" ref={company.id === last ? lastRef : index === 0 ? firstRef : undefined} data-last={company.id === last} onClick={() => onChoose(company.id)} className="org-picker-option"><span className="org-picker-avatar" aria-hidden="true">{company.name.trim().charAt(0).toUpperCase() || "?"}</span><span className="org-picker-name"><strong>{company.name}</strong><span>{roleLabel(company.role)}</span></span>{company.id === last && <span className="org-picker-last">Última usada</span>}<ChevronRight size={16} className="mo-arrow" aria-hidden="true" /></button></StaggerItem>)}</ul>
+    <ul className="org-picker-list">{companies.map((company, index) => <StaggerItem as="li" index={index} key={company.id}><button type="button" ref={company.id === last ? lastRef : index === 0 ? firstRef : undefined} data-last={company.id === last} onClick={() => onChoose(company.id)} className="org-picker-option"><span className="org-picker-avatar" aria-hidden="true">{company.name.trim().charAt(0).toUpperCase() || "?"}</span><span className="org-picker-name"><strong>{company.name}</strong><span>{roleLabel(company.role)} <AccountTypeBadge company={company} className="ml-1" /></span></span>{company.id === last && <span className="org-picker-last">Última usada</span>}<ChevronRight size={16} className="mo-arrow" aria-hidden="true" /></button></StaggerItem>)}</ul>
     <button type="button" onClick={onLogout} className="org-picker-logout">Sair</button></section></Enter></main>;
 }

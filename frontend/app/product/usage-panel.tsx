@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { type Company, api, messageFor } from "./types-and-api";
 import { LoadingBlock, SkeletonList } from "../ui";
 
-type UsageRow = { metric: string; used: number; limit: number; ratio: number; level: "ok" | "warning" | "exceeded" };
+type UsageRow = { metric: string; used: number; /** null = ilimitado no plano */ limit: number | null; ratio: number; level: "ok" | "warning" | "exceeded" };
 type Usage = { period_start: string; metrics: UsageRow[]; active_documents: UsageRow };
 
 const labels: Record<string, string> = {
@@ -30,7 +30,7 @@ export function UsagePanel({ company }: { company: Company }) {
     {error && <p role="alert" className="mt-4 text-sm text-rose-700">{error}</p>}
     {!usage && !error && <LoadingBlock label="Carregando uso e cotas…" className="mt-4"><SkeletonList rows={5} avatar={false} /></LoadingBlock>}
     <ul className="mt-4 space-y-4">{rows.map((row) => <li key={row.metric}>
-      <div className="flex items-baseline justify-between gap-3 text-sm"><span className="font-semibold">{labels[row.metric] ?? row.metric}</span><span className="text-muted-foreground">{formatUsage(row.metric, row.used)} de {formatUsage(row.metric, row.limit)} ({Math.min(100, Math.round(row.ratio * 100))}%)</span></div>
+      <div className="flex items-baseline justify-between gap-3 text-sm"><span className="font-semibold">{labels[row.metric] ?? row.metric}</span><span className="text-muted-foreground">{row.limit === null ? `${formatUsage(row.metric, row.used)} · ilimitado no plano` : `${formatUsage(row.metric, row.used)} de ${formatUsage(row.metric, row.limit)} (${Math.min(100, Math.round(row.ratio * 100))}%)`}</span></div>
       <div role="progressbar" aria-label={labels[row.metric] ?? row.metric} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(row.ratio * 100))} className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-sage"><div className={`h-full ${barTone[row.level]}`} style={{ width: `${Math.min(100, row.ratio * 100)}%` }} /></div>
       {row.level !== "ok" && <p role={row.level === "exceeded" ? "alert" : undefined} className={`mt-1 text-xs ${row.level === "exceeded" ? "text-rose-700" : "text-amber-700"}`}>{levelText[row.level]}</p>}
     </li>)}</ul>

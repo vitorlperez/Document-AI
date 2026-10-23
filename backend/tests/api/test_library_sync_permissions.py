@@ -21,7 +21,7 @@ from tests.api.test_company_library_api import (  # noqa: F401
 def world(api):
     client, factory = api
     login(client)  # owner
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source = seed_library(factory, organization)
     folder_node = _nest_file_under_folder(factory, organization, source)
     login(client, "plain")

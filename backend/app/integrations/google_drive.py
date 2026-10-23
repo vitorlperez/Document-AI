@@ -22,6 +22,7 @@ from app.integrations.http import RemoteHttp, RemoteThrottled, parse_retry_after
 from app.integrations.keyring import build_fernet, rotate_token
 from app.integrations.models import DataSource
 from app.integrations.oauth_base import OAuthConnectionServiceBase
+from app.entitlements.service import require_source_quota
 
 GOOGLE_DRIVE_READONLY_SCOPE = "https://www.googleapis.com/auth/drive.readonly"
 
@@ -606,6 +607,7 @@ class GoogleConnectionService(OAuthConnectionServiceBase):
             else None
         )
         if source is None:
+            require_source_quota(self.session, state.organization_id, "google_drive")
             source = DataSource(
                 organization_id=state.organization_id,
                 provider="google_drive",

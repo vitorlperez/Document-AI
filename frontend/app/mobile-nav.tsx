@@ -8,7 +8,7 @@ import { NotificationBell } from "./product/notification-bell";
 import { accountMenuItems, activePrimaryTab, orgMenuSections } from "./product/account-helpers";
 import { orgItemIcons } from "./product/org-menu";
 import { openPalette, openShortcuts, requestTourReplay } from "./product/nav-events";
-import { type Company, type User, companyPath, roleLabel } from "./product/types-and-api";
+import { type Company, type User, accountTypeLabel, companyPath, roleLabel } from "./product/types-and-api";
 import "./mobile-chat.css";
 import "./interface-motion.css";
 
@@ -79,7 +79,7 @@ export function MoreSheet({ open, onOpenChange, user, company, companies, onComp
       <SheetDescription id="mobile-more-description" className="sr-only">Organização, trabalho, gerenciamento e conta</SheetDescription>
       <div className="mobile-more-body">
         <section aria-label="Organização"><p className="mobile-more-label">Organização</p>
-          <div className="mobile-drawer-nav">{companies.map((item) => <button key={item.id} type="button" aria-current={item.id === company.id ? "true" : undefined} onClick={go(() => { if (item.id !== company.id) onCompanyChange(item.id); })}><span className="mobile-more-grow">{item.name}</span><small>{roleLabel(item.role)}</small>{item.id === company.id && <Check size={16} aria-hidden="true" />}</button>)}</div>
+          <div className="mobile-drawer-nav">{companies.map((item) => <button key={item.id} type="button" aria-current={item.id === company.id ? "true" : undefined} onClick={go(() => { if (item.id !== company.id) onCompanyChange(item.id); })}><span className="mobile-more-grow">{item.name}</span><small>{roleLabel(item.role)}{accountTypeLabel(item.account_type) ? ` · ${accountTypeLabel(item.account_type)}` : ""}</small>{item.id === company.id && <Check size={16} aria-hidden="true" />}</button>)}</div>
         </section>
         {sections.map((section) => <section key={section.key} aria-label={section.label}><p className="mobile-more-label">{section.key === "manage" ? "Gerenciar" : section.label}</p>
           <div className="mobile-drawer-nav">{section.items.map((item) => { const Icon = orgItemIcons[item.key]; const path = companyPath(company.id, item.suffix); return <button key={item.key} type="button" aria-current={pathname.replace(/\/$/, "") === path ? "page" : undefined} onClick={go(() => onNavigate(path))}><Icon size={18} aria-hidden="true" />{item.label}</button>; })}</div>

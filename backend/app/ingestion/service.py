@@ -11,7 +11,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.audit_usage.models import AuditLog, SavedQuery
-from app.audit_usage.service import UsageLimitExceeded, UsageService, active_document_limit
+from app.audit_usage.service import UsageLimitExceeded, UsageService, effective_active_documents
+from app.entitlements.resolver import entitlements_for
 from app.core.access_errors import SyncAccessDenied
 from app.core.scoping import OrganizationScope
 from app.core.sqlids import ids_clause
@@ -1017,8 +1018,13 @@ class IngestionService:
             .select_from(Document)
             .where(Document.organization_id == organization_id, Document.index_status == "indexed")
         )
-        if active_count is not None and active_count >= active_document_limit(self.settings):
-            raise UsageLimitExceeded("organization active document limit reached")
+        ent = entitlements_for(self.session, organization_id, self.settings)
+        if ent.read_only:
+            raise UsageLimitExceeded("organization is read-only until a plan is active", code="read_only", status_code=402)
+        cap = effective_active_documents(ent, self.settings)
+        if cap is not None and active_count is not None and active_count >= cap:
+            raise UsageLimitExceeded("organization active document limit reached", code="active_document_limit",
+                                     limit=cap, used=active_count)
 
 
 CHUNK_TARGET_TOKENS = 500

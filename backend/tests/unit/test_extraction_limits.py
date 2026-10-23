@@ -42,7 +42,14 @@ def test_zip_bomb_fails_before_decompression():
     assert error.value.code == "file_too_large"
 
 
-def test_active_document_limit_is_configurable():
+def test_active_document_limit_is_configurable(monkeypatch):
+    from app.core.config import Settings
+    from app.entitlements.resolver import _from_plan
+    from app.entitlements.catalog import plan_for
+
+    legacy = _from_plan(plan_for("legacy", Settings.model_construct()), organization_id=None, account_type="business",
+                        source="legacy", max_members=None)
+    monkeypatch.setattr("app.ingestion.service.entitlements_for", lambda *args, **kwargs: legacy)
     class Session:
         def __init__(self):
             self.results = iter([object(), 3])

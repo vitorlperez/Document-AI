@@ -28,7 +28,7 @@ from app.workspaces.models import WorkspaceFolder
 def test_library_search_progressive_pages_include_results_beyond_old_limit(api):
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = seed_library(factory, organization)
     root = client.get(f"/library?organization_id={organization}").json()["items"][0]
     with factory() as session:
@@ -100,7 +100,7 @@ def seed_library(factory: sessionmaker[Session], organization_id: str) -> str:
 def test_company_library_is_member_scoped_and_nodes_use_uuids(api: tuple[TestClient, sessionmaker[Session]]) -> None:
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = seed_library(factory, organization)
 
     roots = client.get(f"/library?organization_id={organization}")
@@ -135,12 +135,12 @@ def test_company_library_is_member_scoped_and_nodes_use_uuids(api: tuple[TestCli
 def test_company_library_does_not_disclose_foreign_node(api: tuple[TestClient, sessionmaker[Session]]) -> None:
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     seed_library(factory, organization)
     root = client.get(f"/library?organization_id={organization}").json()["items"][0]
 
     login(client, "outsider")
-    outsider_org = client.post("/organizations", json={"name": "Other"}).json()["id"]
+    outsider_org = client.post("/organizations", json={"account_type": "business", "name": "Other"}).json()["id"]
     response = client.get(f"/library/nodes/{root['id']}/children?organization_id={outsider_org}")
     assert response.status_code == 404
     assert "Google Drive" not in response.text and "Brief.pdf" not in response.text
@@ -151,7 +151,7 @@ def test_library_children_loads_document_provenance_in_one_query(
 ) -> None:
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = seed_library(factory, organization)
     root = client.get(f"/library?organization_id={organization}").json()["items"][0]
     with factory() as session:
@@ -194,7 +194,7 @@ def test_library_children_loads_document_provenance_in_one_query(
 def test_member_can_search_library_names_and_see_own_sync_phases(api: tuple[TestClient, sessionmaker[Session]]) -> None:
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     seed_library(factory, organization)
     with factory() as session:
         workspace = session.query(WorkspaceFolder).filter_by(organization_id=UUID(organization)).one()
@@ -211,7 +211,7 @@ def test_member_can_search_library_names_and_see_own_sync_phases(api: tuple[Test
     assert [item["status"] for item in syncs.json()["items"]] == ["syncing"]
 
     login(client, "outsider")
-    outsider_org = client.post("/organizations", json={"name": "Other"}).json()["id"]
+    outsider_org = client.post("/organizations", json={"account_type": "business", "name": "Other"}).json()["id"]
     forbidden = client.get(f"/library/search?organization_id={organization}&query=brief")
     own_empty = client.get(f"/library/syncs?organization_id={outsider_org}")
     assert forbidden.status_code == 403 and "Brief.pdf" not in forbidden.text
@@ -235,7 +235,7 @@ def _nest_file_under_folder(factory: sessionmaker[Session], organization: str, s
 def test_admin_can_reprocess_and_remove_a_library_folder(api: tuple[TestClient, sessionmaker[Session]]) -> None:
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = seed_library(factory, organization)
     outer_id = _nest_file_under_folder(factory, organization, source_id)
     dispatched: list[UUID] = []
@@ -273,7 +273,7 @@ def test_admin_can_reprocess_and_remove_a_library_folder(api: tuple[TestClient, 
 def test_manual_recursive_run_persists_scope_progress_and_failures(api, kind):
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source = seed_library(factory, organization)
     outer = _nest_file_under_folder(factory, organization, source)
     root = client.get(f"/library?organization_id={organization}").json()["items"][0]
@@ -378,7 +378,7 @@ def test_manual_queue_failure_is_persisted_and_active_run_cannot_be_reused(api):
 def test_remove_folder_removes_local_subtree_and_preserves_siblings(api, indexed):
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source = seed_library(factory, organization)
     outer = _nest_file_under_folder(factory, organization, source)
     with factory.begin() as session:
@@ -408,7 +408,7 @@ def test_empty_folder_removal_requires_admin_and_rejects_active_sync(api):
     from app.organizations.models import Membership, MembershipRole
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source = seed_library(factory, organization)
     outer = _nest_file_under_folder(factory, organization, source)
     with factory.begin() as session:
@@ -432,7 +432,7 @@ def test_owner_can_disconnect_notion_and_preserve_knowledge(api):
     from app.integrations.models import OAuthConnectionState
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = seed_library(factory, organization)
     with factory.begin() as session:
         source = session.get(DataSource, UUID(source_id))
@@ -455,7 +455,7 @@ def test_history_contains_normal_sync_and_each_manual_resync_without_duplicates(
     from app.ingestion.service import IngestionService
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source = seed_library(factory, organization)
     outer = _nest_file_under_folder(factory, organization, source)
     root = client.get(f"/library?organization_id={organization}").json()["items"][0]
@@ -493,7 +493,7 @@ def test_normal_sync_history_survives_workspace_deletion_and_is_not_forced(api):
     from app.ingestion.service import IngestionService
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     seed_library(factory, organization)
     client.app.state.ingestion_dispatcher = type("Dispatcher", (), {"dispatch": lambda self, job_id: None})()
     with factory() as session:
@@ -519,7 +519,7 @@ def test_notion_disconnect_rejects_unauthorized_users(api, role):
     from app.organizations.models import Membership, MembershipRole
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = seed_library(factory, organization)
     with factory.begin() as session:
         session.get(DataSource, UUID(source_id)).provider = "notion"
@@ -536,7 +536,7 @@ def test_scheduler_and_legacy_jobs_are_visible_once_in_history(api):
     from app.ingestion.service import IngestionService
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     seed_library(factory, organization)
     with factory.begin() as session:
         folder = session.query(WorkspaceFolder).one()
@@ -564,7 +564,7 @@ def test_library_removal_persists_across_discovery_and_reprocessing(api, kind, s
     from app.ingestion.service import IngestionService
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = seed_library(factory, organization)
     outer_id = _nest_file_under_folder(factory, organization, source_id)
     root = client.get(f"/library?organization_id={organization}").json()["items"][0]
@@ -630,7 +630,7 @@ def test_resync_without_sync_workspace_returns_clear_error_and_no_run(api, kind)
 
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = seed_library(factory, organization)
     with factory.begin() as session:
         source = session.get(DataSource, UUID(source_id))
@@ -660,7 +660,7 @@ def test_production_click_sequence_is_visible_in_history_while_running_and_after
     from app.ingestion.service import IngestionService
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     seed_library(factory, organization)
     root = client.get(f"/library?organization_id={organization}").json()["items"][0]
     client.app.state.ingestion_dispatcher = type("Dispatcher", (), {"dispatch": lambda self, job_id: None})()
@@ -708,7 +708,7 @@ def test_notion_catalog_exposes_page_hierarchy_and_saves_provider_specific_scope
 
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = seed_library(factory, organization)
     with factory.begin() as session:
         session.get(DataSource, UUID(source_id)).provider = "notion"
@@ -739,7 +739,7 @@ def test_sync_status_is_member_safe_and_reports_committed_partial_content(api):
 
     client, factory = api
     login(client)
-    organization_id = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization_id = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = seed_library(factory, organization_id)
     with factory.begin() as session:
         member = session.scalar(select(Membership))
@@ -778,7 +778,7 @@ def test_sync_status_is_member_safe_and_reports_committed_partial_content(api):
 def test_sync_status_connected_tool_without_library_root_is_idle(api, provider, expected):
     client, factory = api
     login(client)
-    organization_id = client.post("/organizations", json={"name": "Empty"}).json()["id"]
+    organization_id = client.post("/organizations", json={"account_type": "business", "name": "Empty"}).json()["id"]
     with factory.begin() as session:
         user = session.scalar(select(User))
         source = DataSource(organization_id=UUID(organization_id), provider=provider,
@@ -797,7 +797,7 @@ def test_sync_history_and_status_report_empty_files_as_skipped(api):
     from app.ingestion.service import IngestionService
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     seed_library(factory, organization)
     client.app.state.ingestion_dispatcher = type("Dispatcher", (), {"dispatch": lambda self, job_id: None})()
     with factory() as session:
@@ -840,7 +840,7 @@ def _fake_clickup_registry(monkeypatch, *, rows=None, error=None):
 def test_clickup_catalog_exposes_the_hierarchy_and_saves_a_folder_scope(api, monkeypatch):
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = _clickup_source(factory, organization)
     _fake_clickup_registry(monkeypatch, rows=[
         RemoteFolder("clickup:workspace:w", "Acme", kind="workspace"),
@@ -872,7 +872,7 @@ def test_clickup_catalog_and_selection_reject_non_admins(api, monkeypatch, role)
     from app.organizations.models import Membership, MembershipRole
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = _clickup_source(factory, organization)
     _fake_clickup_registry(monkeypatch, rows=[RemoteFolder("clickup:list:l", "Contratos", kind="list")])
     with factory.begin() as session:
@@ -894,7 +894,7 @@ def test_clickup_revoked_token_asks_for_reconnection_instead_of_failing(api, mon
     from app.integrations.errors import SourceItemUnavailable
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = _clickup_source(factory, organization)
     _fake_clickup_registry(monkeypatch, error=ClickUpRemoteUnauthorized() if failure == "unauthorized" else SourceItemUnavailable("restricted_resource"))
     response = client.get(f"/data-sources/{source_id}/scope-catalog?organization_id={organization}")
@@ -907,7 +907,7 @@ def test_clickup_disconnect_is_admin_only_and_clears_the_credentials(api):
     from app.organizations.models import Membership, MembershipRole
     client, factory = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     source_id = _clickup_source(factory, organization)
     with factory.begin() as session:
         session.query(Membership).one().role = MembershipRole.MEMBER
@@ -923,7 +923,7 @@ def test_clickup_disconnect_is_admin_only_and_clears_the_credentials(api):
 def test_clickup_oauth_start_requires_configuration(api):
     client, _ = api
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     response = client.get(f"/data-sources/clickup/oauth/start?organization_id={organization}", follow_redirects=False)
     assert response.status_code == 503 and response.json() == {"detail": "integration unavailable"}
 
@@ -940,7 +940,7 @@ def test_clickup_oauth_round_trip_stores_only_encrypted_credentials(api, monkeyp
                         "clickup_token_encryption_key": SecretStr(key)}.items():
         monkeypatch.setattr(settings, name, value)
     login(client)
-    organization = client.post("/organizations", json={"name": "Acme"}).json()["id"]
+    organization = client.post("/organizations", json={"account_type": "business", "name": "Acme"}).json()["id"]
     started = client.get(f"/data-sources/clickup/oauth/start?organization_id={organization}", follow_redirects=False)
     assert started.status_code == 302
     assert started.headers["location"].startswith("https://app.clickup.com/api?")

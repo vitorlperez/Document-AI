@@ -1,22 +1,19 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
-  ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight,
-  ExternalLink, FileText, Folder, FolderOpen, List, Menu, MousePointer2, PanelRightClose, Pause, Play, Plus, Send, ShieldCheck, Sparkles,
+  ArrowRight, Check, ChevronDown, ChevronRight,
+  ExternalLink, FileText, Folder, FolderOpen, List, MousePointer2, PanelRightClose, Pause, Play, Plus, Send, ShieldCheck, Sparkles,
 } from "lucide-react";
 import "./landing.css";
 import { Brand } from "./brand";
-import { ThemeToggle } from "./theme-toggle";
-import { avatarInitial, displayNameFromEmail } from "./product/account-helpers";
 import { landingCtaMode } from "./landing-session.mjs";
 import { ProviderLogo, type ProviderLogoName } from "./provider-logo";
+import { BUSINESS_TRIAL_CTA, TRIAL_CTA, TRIAL_DAYS } from "./landing-plans.mjs";
+import { FaqSection, LandingFooter, LandingHeader, PricingSection, UpgradeBand, useSectionReveal, type LandingActions, type LandingSession } from "./landing-shared";
 
-export type LandingSession = { status: "loading" } | { status: "anonymous" } | { status: "authenticated"; email: string; organizationName?: string | null };
-type LandingPageProps = { onLogin: () => void; onSignUp: () => void; onOpenApp?: () => void; onLogout?: () => void; session?: LandingSession };
-
-/** Optional decorative art for the Rotina section, delivered separately; the layout never depends on it. */
-const STORY_ART_SRC = "/landing/document-context.webp";
+export type { LandingSession, SignupIntent } from "./landing-shared";
+type LandingPageProps = LandingActions & { session?: LandingSession };
 
 type AnswerSegments = [string, boolean][];
 type Turn = {
@@ -319,7 +316,14 @@ function ProductPreview() {
 }
 
 const questions = [
-  ["Quais ferramentas posso conectar?", "Google Drive, OneDrive, Notion, SharePoint e ClickUp. Somente Owner/Admin da organização no Arquivio pode conectar fontes. No SharePoint, selecione bibliotecas de documentos de sites SharePoint e Teams com uma conta corporativa ou escolar do Microsoft 365; um administrador do Microsoft 365 pode precisar aprovar o acesso."],
+  ["Qual a diferença entre conta pessoal e conta de empresa?", "A conta pessoal é só sua: uma pessoa, limites menores, ideal para uso individual. A conta de empresa tem membros, funções (Owner, Admin e Membro) e limites maiores, e é a forma de usar o Arquivio em equipe."],
+  ["Posso começar pessoal e depois virar empresa?", "Sim. Quando precisar convidar outras pessoas, transforme sua conta pessoal em conta de empresa. Seus documentos e suas fontes conectadas ficam onde estão."],
+  ["Conta pessoal pode ter mais de uma pessoa?", "Não. Para trabalhar com colegas, use a conta de empresa."],
+  ["Existe plano grátis?", `Não. Você testa por ${TRIAL_DAYS} dias, sem cartão. Depois, assina um plano para continuar adicionando arquivos e perguntando.`],
+  ["O que acontece quando o teste acaba?", "A conta fica em modo de leitura: você continua entrando, vendo e baixando seus documentos, mas não adiciona arquivos, não convida pessoas e não faz novas perguntas até assinar. Nada é apagado."],
+  ["Como funciona o preço da empresa?", "Um valor base mensal com as primeiras pessoas incluídas (5 no Team, 20 no Scale) e um valor por pessoa extra. Você adiciona ou remove pessoas quando quiser."],
+  ["Meu time vê meus documentos pessoais?", "Não. Conta pessoal e conta de empresa são separadas. Só é compartilhado o que for conectado à conta da empresa."],
+  ["Quais ferramentas posso conectar?", "Google Drive, OneDrive, Notion, SharePoint e ClickUp, conforme o plano. Somente Owner/Admin da organização no Arquivio pode conectar fontes. No SharePoint, selecione bibliotecas de documentos de sites SharePoint e Teams com uma conta corporativa ou escolar do Microsoft 365; um administrador do Microsoft 365 pode precisar aprovar o acesso."],
   ["O Arquivio altera meus arquivos?", "Não. Os originais continuam no Google Drive, OneDrive, Notion, SharePoint ou ClickUp. As conexões são de leitura."],
   ["Quem pode consultar os documentos?", "Todos os membros da organização podem consultar o conteúdo sincronizado. O Arquivio não reproduz as permissões originais por documento do SharePoint. Conecte apenas materiais compartilháveis com a equipe."],
   ["E se faltar informação?", "O Arquivio informa quando não encontra evidência suficiente e mostra os documentos usados em cada resposta."],
@@ -328,91 +332,65 @@ const questions = [
   ["Como a IA usa o conteúdo?", "O texto necessário para busca e resposta é processado pelo provedor de IA configurado. Confira se esse uso atende às políticas da sua organização."],
 ];
 
-/** Below-the-fold reveal is progressive enhancement: content stays visible without JS or with reduced motion. */
-function useSectionReveal(root: RefObject<HTMLDivElement | null>) {
-  useEffect(() => {
-    const page = root.current;
-    if (!page || !("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const targets = Array.from(page.querySelectorAll<HTMLElement>("[data-reveal]")).filter((el) => el.getBoundingClientRect().top > window.innerHeight);
-    if (targets.length === 0) return;
-    // Repeats on every entry: the reveal observer adds .is-revealed; a second observer with no margin and threshold 0
-    // removes it only once the section is fully outside the viewport (hysteresis against flicker at the edge).
-    const reveal = new IntersectionObserver((entries) => {
-      for (const entry of entries) if (entry.isIntersecting) entry.target.classList.add("is-revealed");
-    }, { threshold: 0.1, rootMargin: "0px 0px -6% 0px" });
-    const reset = new IntersectionObserver((entries) => {
-      for (const entry of entries) if (!entry.isIntersecting) entry.target.classList.remove("is-revealed");
-    }, { threshold: 0 });
-    for (const el of targets) { el.classList.add("is-pending"); reveal.observe(el); reset.observe(el); }
-    // Reduced motion switched on mid-page: reveal everything and stop observing, without animating.
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onReducedChange = (event: MediaQueryListEvent) => { if (!event.matches) return; reveal.disconnect(); reset.disconnect(); for (const el of targets) el.classList.add("is-revealed"); };
-    reduced.addEventListener("change", onReducedChange);
-    return () => { reduced.removeEventListener("change", onReducedChange); reveal.disconnect(); reset.disconnect(); for (const el of targets) el.classList.remove("is-pending", "is-revealed"); };
-  }, [root]);
-}
+const NAV = [
+  { href: "#produto", label: "Produto" }, { href: "#para-quem", label: "Para quem" }, { href: "#precos", label: "Preços" },
+  { href: "#perguntas", label: "Dúvidas" },
+];
 
-/** Renders the decorative slot only after the asset has loaded, so a missing file never shows a broken image. */
-function useOptionalImage(src: string) {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    let active = true;
-    const image = new Image();
-    image.onload = () => { if (active) setReady(true); };
-    image.src = src;
-    return () => { active = false; image.onload = null; };
-  }, [src]);
-  return ready;
-}
-
-/** Account chip for the signed-in header: initial + name/e-mail (+ organization), with a two-item menu. */
-function LandingAccount({ session, onOpenApp, onLogout }: { session: Extract<LandingSession, { status: "authenticated" }>; onOpenApp: () => void; onLogout: () => void }) {
-  const name = displayNameFromEmail(session.email) || session.email;
-  const close = (event: { currentTarget: HTMLElement }) => event.currentTarget.closest("details")?.removeAttribute("open");
-  return (
-    <details className="landing-account">
-      <summary aria-label={`Conta de ${session.email}`}>
-        <span className="landing-account-avatar" aria-hidden="true">{avatarInitial(name, session.email)}</span>
-        <span className="landing-account-text"><strong>{name}</strong><small>{session.organizationName ?? session.email}</small></span>
-        <ChevronDown size={16} aria-hidden="true" />
-      </summary>
-      <div className="landing-account-menu" role="group" aria-label="Conta">
-        <p title={session.email}>{session.email}</p>
-        <button onClick={(event) => { close(event); onOpenApp(); }}>Ir para o app</button>
-        <button onClick={(event) => { close(event); onLogout(); }}>Sair</button>
-      </div>
-    </details>
-  );
-}
+const useCases = {
+  pessoal: [
+    ["Estudar e pesquisar", "“Onde eu anotei aquela decisão?” Pergunte e abra o trecho exato."],
+    ["Freela e consultoria", "Reúna contratos, briefings e entregas de clientes e consulte sem caçar pastas."],
+    ["Vida organizada", "Notas do Notion e arquivos do Drive respondendo na mesma conversa."],
+  ],
+  empresa: [
+    ["Onboarding", "Quem entra no time pergunta em vez de interromper alguém."],
+    ["Comercial e atendimento", "Achar política, preço e proposta anterior sem pedir no chat."],
+    ["Operações e jurídico", "Confirmar o que foi combinado, com o documento original à mão."],
+  ],
+} as const;
 
 export function LandingPage({ onLogin, onSignUp, onOpenApp = onLogin, onLogout = () => undefined, session = { status: "anonymous" } }: LandingPageProps) {
   const mode = landingCtaMode(session);
   const signedIn = session.status === "authenticated" ? session : null;
   const pageRef = useRef<HTMLDivElement>(null);
-  const storyArt = useOptionalImage(STORY_ART_SRC);
   useSectionReveal(pageRef);
   return (
     <div className="landing-page" ref={pageRef}>
       <a className="landing-skip-link" href="#landing-main">Pular para o conteúdo</a>
-      <header className="landing-header landing-container">
-        <a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, início"><Brand /></a>
-        <nav className="landing-desktop-nav" aria-label="Navegação principal"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a></nav>
-        <div className="landing-header-actions" data-session={mode}><ThemeToggle />{mode === "anonymous" && <><button className="landing-login" onClick={onLogin}>Entrar</button><button className="landing-button landing-button-small" onClick={onSignUp}>Criar conta <ArrowUpRight size={16} /></button></>}{mode === "loading" && <span className="landing-session-placeholder" aria-hidden="true" />}{signedIn && <><button className="landing-button landing-button-small" onClick={onOpenApp}>Ir para o app <ArrowUpRight size={16} /></button><LandingAccount session={signedIn} onOpenApp={onOpenApp} onLogout={onLogout} /></>}</div>
-        <details className="landing-mobile-menu"><summary aria-label="Abrir navegação"><Menu size={24} /></summary><nav aria-label="Navegação móvel"><a href="#produto">Produto</a><a href="#integracoes">Integrações</a><a href="#como-funciona">Como funciona</a><a href="#perguntas">Dúvidas</a><div className="landing-mobile-theme"><span>Aparência</span><ThemeToggle /></div>{mode === "anonymous" && <><button onClick={onLogin}>Entrar</button><button className="landing-mobile-signup" onClick={onSignUp}>Criar conta</button></>}{signedIn && <><p className="landing-mobile-account" title={signedIn.email}><span className="landing-account-avatar" aria-hidden="true">{avatarInitial(displayNameFromEmail(signedIn.email), signedIn.email)}</span><span><strong>{displayNameFromEmail(signedIn.email) || signedIn.email}</strong><small>{signedIn.organizationName ?? signedIn.email}</small></span></p><button className="landing-mobile-signup" onClick={onOpenApp}>Ir para o app</button><button onClick={onLogout}>Sair</button></>}</nav></details>
-      </header>
+      <LandingHeader current="pessoal" session={session} nav={NAV} intent={{ tipo: "pessoal" }} homeHref="#landing-main" onLogin={onLogin} onSignUp={onSignUp} onOpenApp={onOpenApp} onLogout={onLogout} />
 
       <main id="landing-main">
         <div className="landing-stage landing-container">
           <section className="landing-hero" aria-labelledby="landing-hero-title">
             <p className="landing-eyebrow"><span className="landing-status-dot" /> SEU CONHECIMENTO, COM CONTEXTO</p>
             <h1 id="landing-hero-title">A resposta está nos arquivos.<br /><em>Agora você sabe onde.</em></h1>
-            <p className="landing-hero-description">Pergunte ao Arquivio. Receba uma resposta direta e os documentos que a sustentam.</p>
-            <div className="landing-hero-actions" data-session={mode}>{mode === "anonymous" && <><button className="landing-button" onClick={onSignUp}>Começar com o Arquivio <ArrowRight size={18} /></button><button className="landing-login" onClick={onLogin}>Já tenho uma conta</button></>}{mode === "loading" && <span className="landing-session-placeholder landing-session-placeholder-hero" aria-hidden="true" />}{signedIn && <button className="landing-button" onClick={onOpenApp}>Ir para o app <ArrowRight size={18} /></button>}</div>
-            <p className="landing-hero-note"><Check size={14} /> Conexões de leitura · originais preservados</p>
+            <p className="landing-hero-description">Pergunte ao Arquivio sobre seus documentos, sozinho ou com o time inteiro. Receba uma resposta direta e os arquivos que a sustentam.</p>
+            <div className="landing-hero-actions" data-session={mode}>{mode === "anonymous" && <><button className="landing-button" onClick={() => onSignUp({ tipo: "pessoal" })}>{TRIAL_CTA} <ArrowRight size={18} /></button><button className="landing-login" onClick={() => onSignUp({ tipo: "empresa" })}>{BUSINESS_TRIAL_CTA}</button></>}{mode === "loading" && <span className="landing-session-placeholder landing-session-placeholder-hero" aria-hidden="true" />}{signedIn && <button className="landing-button" onClick={onOpenApp}>Ir para o app <ArrowRight size={18} /></button>}</div>
+            <p className="landing-hero-note"><Check size={14} /> {TRIAL_DAYS} dias para testar, sem cartão · conexões somente leitura · originais preservados</p>
           </section>
 
           <section id="produto" className="landing-product-section"><ProductPreview /></section>
         </div>
+
+        <section id="para-quem" className="landing-audience landing-container" aria-labelledby="landing-audience-title" data-reveal>
+          <div className="landing-audience-intro"><p className="landing-eyebrow">PARA QUEM</p><h2 id="landing-audience-title">Do seu uso individual<br /><em>ao conhecimento do time.</em></h2></div>
+          <div className="landing-audience-cards">
+            <article>
+              <h3>Para você</h3>
+              <p>Seus documentos do Drive, Notion e outros num só lugar para perguntar. Pare de abrir arquivo por arquivo.</p>
+              <ul><li><Check size={14} aria-hidden="true" />Conecte suas fontes em minutos</li><li><Check size={14} aria-hidden="true" />Respostas com a fonte ao lado</li><li><Check size={14} aria-hidden="true" />Fica só com você</li></ul>
+              {mode === "app" ? <button className="landing-button" onClick={onOpenApp}>Ir para o app <ArrowRight size={18} /></button> : mode === "anonymous" ? <button className="landing-button" onClick={() => onSignUp({ tipo: "pessoal" })}>{TRIAL_CTA} <ArrowRight size={18} /></button> : <span className="landing-session-placeholder" aria-hidden="true" />}
+            </article>
+            <article>
+              <h3>Para sua equipe</h3>
+              <p>Todo mundo pergunta ao mesmo acervo, com as mesmas fontes. Você controla quem entra e o que está conectado.</p>
+              <ul><li><Check size={14} aria-hidden="true" />Convide membros e defina funções</li><li><Check size={14} aria-hidden="true" />Admins conectam as fontes da empresa</li><li><Check size={14} aria-hidden="true" />Limites maiores de documentos e consultas</li></ul>
+              {mode === "app" ? <button className="landing-button" onClick={onOpenApp}>Ir para o app <ArrowRight size={18} /></button> : mode === "anonymous" ? <button className="landing-button" onClick={() => onSignUp({ tipo: "empresa" })}>{BUSINESS_TRIAL_CTA} <ArrowRight size={18} /></button> : <span className="landing-session-placeholder" aria-hidden="true" />}
+              <a className="landing-audience-link" href="/empresas">Ver página para empresas <ArrowRight size={16} /></a>
+            </article>
+          </div>
+        </section>
 
         <section id="integracoes" className="landing-integrations landing-container" aria-labelledby="landing-integrations-title" data-reveal>
           <div className="landing-integrations-intro">
@@ -429,15 +407,11 @@ export function LandingPage({ onLogin, onSignUp, onOpenApp = onLogin, onLogout =
           </ul>
         </section>
 
-        <section className="landing-story landing-container" aria-labelledby="landing-story-title" data-reveal>
-          <div className="landing-story-intro">
-            <p className="landing-eyebrow">O QUE MUDA NA ROTINA</p><h2 id="landing-story-title">Da procura à resposta,<br /><em>sem perder o caminho.</em></h2><p>O conhecimento da equipe já está nos documentos. O Arquivio ajuda a encontrar o trecho certo e a voltar à fonte sempre que você precisar de mais detalhes.</p>
-            {storyArt && <div className="landing-story-art" aria-hidden="true" />}
-          </div>
-          <div className="landing-story-list">
-            <article><span>01 / ENCONTRE</span><div><h3>Pergunte como você perguntaria a um colega.</h3><p>Recupere decisões, entregas e informações registradas sem abrir cada arquivo por conta própria.</p></div></article>
-            <article><span>02 / DELIMITE</span><div><h3>Escolha onde buscar.</h3><p>Consulte todo o conteúdo indexado ou restrinja a pergunta a uma ferramenta ou pasta específica.</p></div></article>
-            <article><span>03 / CONFIRA</span><div><h3>Volte aos documentos.</h3><p>Veja as fontes apresentadas com a resposta e abra os originais para verificar o contexto completo.</p></div></article>
+        <section className="landing-usecases landing-container" aria-labelledby="landing-usecases-title" data-reveal>
+          <div className="landing-usecases-intro"><p className="landing-eyebrow">CASOS DE USO</p><h2 id="landing-usecases-title">Do dia a dia<br /><em>à rotina do time.</em></h2></div>
+          <div className="landing-usecases-cols">
+            <div><h3>Para você</h3><ul>{useCases.pessoal.map(([title, text]) => <li key={title}><strong>{title}</strong><span>{text}</span></li>)}</ul></div>
+            <div><h3>Para sua equipe</h3><ul>{useCases.empresa.map(([title, text]) => <li key={title}><strong>{title}</strong><span>{text}</span></li>)}</ul></div>
           </div>
         </section>
 
@@ -449,21 +423,31 @@ export function LandingPage({ onLogin, onSignUp, onOpenApp = onLogin, onLogout =
             <article><span>03</span><h3>Pergunte com contexto</h3><p>Defina o escopo, faça sua pergunta e confira os documentos que sustentam a resposta.</p></article>
           </div>
           <p className="landing-process-note"><ShieldCheck size={18} aria-hidden="true" /> Todos na organização podem consultar o conteúdo sincronizado. Selecione apenas materiais compartilháveis com a equipe.</p>
+          <p className="landing-process-note"><ShieldCheck size={18} aria-hidden="true" /> Em equipe, o Owner ou Admin conecta as fontes uma vez; todos os membros consultam o que foi sincronizado.</p>
         </div></section>
 
-        <section className="landing-faq landing-container" id="perguntas" aria-labelledby="landing-faq-title" data-reveal>
-          <div><p className="landing-eyebrow">ANTES DE COMEÇAR</p><h2 id="landing-faq-title">O que você<br /><em>precisa saber.</em></h2></div>
-          <div className="landing-faq-list">{questions.map(([question, answer]) => <details key={question}><summary>{question}<ChevronDown size={20} /></summary><p>{answer}</p></details>)}</div>
+        <section className="landing-trust landing-container" aria-labelledby="landing-trust-title" data-reveal>
+          <div><p className="landing-eyebrow">SEGURANÇA E CONTROLE</p><h2 id="landing-trust-title">Seus arquivos<br /><em>não saem do lugar.</em></h2></div>
+          <ul>
+            <li><strong>Somente leitura.</strong><span>O Arquivio não altera nem apaga nada nas suas ferramentas.</span></li>
+            <li><strong>Fonte em toda resposta.</strong><span>Se não houver evidência suficiente, ele diz que não achou.</span></li>
+            <li><strong>Funções claras.</strong><span>Na conta da empresa, só Owner e Admin conectam fontes e convidam membros.</span></li>
+          </ul>
         </section>
+
+        <PricingSection kinds={["pessoal", "empresa"]} mode={mode} onSignUp={onSignUp} onOpenApp={onOpenApp} title={<>Teste por {TRIAL_DAYS} dias.<br /><em>Escolha o plano quando fizer sentido.</em></>} subtitle={`Todo plano começa com um teste grátis de ${TRIAL_DAYS} dias, sem cartão. Mude de plano ou de tipo de conta sem perder o que já conectou.`} />
+        <UpgradeBand mode={mode} onOpenApp={onOpenApp} />
+
+        <FaqSection questions={questions} />
 
         <section className="landing-closing landing-container" aria-labelledby="landing-closing-title" data-reveal>
           <p className="landing-eyebrow">COMECE PELOS SEUS DOCUMENTOS</p>
           <h2 id="landing-closing-title">Menos procura.<br /><em>Mais contexto.</em></h2>
-          {mode === "anonymous" && <button className="landing-button" onClick={onSignUp}>Criar minha conta <ArrowRight size={18} /></button>}{mode === "loading" && <span className="landing-session-placeholder landing-session-placeholder-hero" aria-hidden="true" />}{signedIn && <button className="landing-button" onClick={onOpenApp}>Ir para o app <ArrowRight size={18} /></button>}
+          {mode === "anonymous" && <div className="landing-closing-actions"><button className="landing-button" onClick={() => onSignUp({ tipo: "pessoal" })}>{TRIAL_CTA} <ArrowRight size={18} /></button><button className="landing-button" onClick={() => onSignUp({ tipo: "empresa" })}>{BUSINESS_TRIAL_CTA}</button></div>}{mode === "loading" && <span className="landing-session-placeholder landing-session-placeholder-hero" aria-hidden="true" />}{signedIn && <button className="landing-button" onClick={onOpenApp}>Ir para o app <ArrowRight size={18} /></button>}
         </section>
       </main>
 
-      <footer className="landing-footer landing-container"><a href="#landing-main" className="landing-brand-link" aria-label="Arquivio, voltar ao início"><Brand /></a><p>Conhecimento que encontra o seu contexto.</p><nav className="landing-legal-links" aria-label="Informações legais"><a href="/privacidade">Privacidade <ArrowUpRight size={14} /></a><a href="/termos">Termos de uso <ArrowUpRight size={14} /></a><a href="/docs/api">API <ArrowUpRight size={14} /></a></nav></footer>
+      <LandingFooter homeHref="#landing-main" links={[{ href: "/empresas", label: "Para empresas" }, { href: "#precos", label: "Preços" }]} />
     </div>
   );
 }

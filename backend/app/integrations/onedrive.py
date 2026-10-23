@@ -31,6 +31,7 @@ from app.integrations.keyring import build_fernet, rotate_token
 from app.integrations.models import DataSource
 from app.integrations.oauth_base import OAuthConnectionServiceBase
 from app.workspaces.models import WorkspaceFolder, WorkspaceFolderSelection
+from app.entitlements.service import require_source_quota
 
 logger = logging.getLogger("document_intelligence.integration")
 # The common audience accepts both Microsoft personal and work/school accounts.
@@ -752,6 +753,7 @@ class OneDriveConnectionService(OAuthConnectionServiceBase):
             self.session.flush()
             raise OneDriveAccountMismatch(state.organization_id)
         if source is None:
+            require_source_quota(self.session, state.organization_id, self.provider)
             source = DataSource(
                 organization_id=state.organization_id,
                 provider=self.provider,

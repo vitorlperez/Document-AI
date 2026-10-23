@@ -35,6 +35,9 @@ from app.automations.scope import (
 from app.automations.space_access import hidden_result, runs_visibility
 from app.automations.triggers import queue_run
 from app.core.scoping import OrganizationScope
+from app.entitlements.errors import EntitlementError
+from app.entitlements.resolver import entitlements_for
+from app.entitlements.service import require_automation_quota
 from app.identity.models import User
 from app.ingestion.service import SyncAccessDenied
 from app.knowledge.untrusted import sanitize_label
@@ -42,7 +45,6 @@ from app.organizations.models import Membership, MembershipRole
 from app.workspaces.models import WorkspaceFolder
 
 router = APIRouter(tags=["automations"])
-MAX_AUTOMATIONS_PER_ORGANIZATION = 20
 MAX_SCOPE_FOLDERS = 20
 OUTPUT_FORMATS = {"email", "pdf"}
 
@@ -280,16 +282,19 @@ def list_automations(organization_id: UUID, user: User = Depends(current_user),
     if not _is_admin(member):
         statement = statement.where(Automation.created_by_user_id == user.id)
     rows = session.scalars(statement.order_by(Automation.created_at.desc(), Automation.id))
-    return {"limit": MAX_AUTOMATIONS_PER_ORGANIZATION, "items": [_serialize(session, item) for item in rows]}
+    return {"limit": entitlements_for(session, organization_id).max_automations, "items": [_serialize(session, item) for item in rows]}
 
 
 @router.post("/organizations/{organization_id}/automations", status_code=201)
 def create_automation(organization_id: UUID, payload: AutomationCreate, user: User = Depends(current_user),
                       session: Session = Depends(database_session)) -> dict[str, object]:
     member = _membership(session, organization_id, user)
-    count = len(session.scalars(select(Automation.id).where(Automation.organization_id == organization_id)).all())
-    if count >= MAX_AUTOMATIONS_PER_ORGANIZATION:
-        raise HTTPException(409, "automation_limit_reached")
+    try:
+        require_automation_quota(session, organization_id)
+    except EntitlementError as error:
+        if error.code == "automation_limit" and entitlements_for(session, organization_id).source == "legacy":
+            raise HTTPException(409, "automation_limit_reached") from error  # legacy contract is unchanged
+        raise
     automation = Automation(
         organization_id=organization_id, created_by_user_id=user.id, name=payload.name.strip(),
         enabled=payload.enabled, trigger_kind=payload.trigger_kind,
