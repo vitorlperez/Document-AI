@@ -8,7 +8,7 @@ import { Brand } from "../brand";
 import { NotificationBell } from "./notification-bell";
 import { AccountMenu } from "./account-menu";
 import { OrgMenu } from "./org-menu";
-import { PlanBanner, PlanErrorHost } from "./plan-ui";
+import { PlanErrorHost, PlanLabel } from "./plan-ui";
 import { ShellShortcuts } from "./command-palette";
 import { activePrimaryTab } from "./account-helpers";
 import { openPalette, isMac } from "./nav-events";
@@ -94,12 +94,13 @@ export function Shell({ user, company, companies, children, alertMessage, alertT
           <span ref={indicatorRef} aria-hidden="true" className="primary-tab-indicator" data-ready="false" />
         </nav>
         <div className="product-header-end">
+          <PlanLabel company={company} />
           <button type="button" onClick={openPalette} data-tour="search" aria-label="Buscar (atalho: Ctrl K)" title="Buscar" className="shell-search-trigger mo-interactive"><Search size={16} aria-hidden="true" /><span>Buscar…</span><kbd>{isMac() ? "⌘K" : "Ctrl K"}</kbd></button>
           <NotificationBell key={company.id} company={company} /><AccountMenu user={user} company={company} onNavigate={onNavigate} onLogout={onLogout} />
         </div>
       </div>
     </header>}
-    <PlanBanner company={company} onNavigate={onNavigate} /><PlanErrorHost company={company} onNavigate={onNavigate} />
+    <PlanErrorHost company={company} onNavigate={onNavigate} />
     <NotificationToast message={alertMessage} tone={alertTone} onDismiss={onDismiss} action={alertAction} onNavigate={onNavigate} />
     <div className={`product-content mx-auto w-full max-w-7xl p-4 ${fillViewport ? "min-h-0 flex-1" : ""}`}><section className={`min-w-0 ${fillViewport ? "workspace-shell h-full min-h-0" : ""} ${pageSurface ? "page-surface" : ""}`}>{children}</section></div>
     {mobile && <MobileTabBar user={user} company={company} pathname={pathname ?? ""} onNavigate={onNavigate} onOpenMore={() => setMore(true)} />}

@@ -6,13 +6,12 @@ import { useDialogBackdropClose } from "../modal-dismiss";
 import { btn, closeDialogAnimated } from "../ui";
 import {
   BILLING_SOON_MESSAGE, PLAN_CHANGED_EVENT, PLAN_ERROR_EVENT, ApiError, accountTypeLabel, api, companyPath, defaultBusinessPlan, downgradeBlockers, formatCents, isLegacyPlan, isPersonal, messageFor,
-  planBanner, planDialogCopy, planTitle, sourceLabel, upgradeDoneNotice, upgradeIntro, type BillingState, type Company, type PlanErrorInfo, type PlansResponse, type PublicPlan,
+  planDialogCopy, planLabel, planTitle, sourceLabel, upgradeDoneNotice, upgradeIntro, type BillingState, type Company, type PlanBlock, type PlanErrorInfo, type PlansResponse, type PublicPlan,
 } from "./types-and-api";
 import "./automation-modal.css";
 
 export const notifyPlanChanged = () => { if (typeof window !== "undefined") window.dispatchEvent(new Event(PLAN_CHANGED_EVENT)); };
 const adminPlanPath = (companyId: string) => companyPath(companyId, "/admin#plano");
-const canManagePlan = (company: Company) => company.role === "owner" || company.role === "admin";
 
 /** Badge Pessoal/Empresa do seletor de organizações. Sem tipo (resposta antiga) não renderiza nada. */
 export function AccountTypeBadge({ company, className = "" }: { company: Pick<Company, "account_type">; className?: string }) {
@@ -137,15 +136,13 @@ export function PlanErrorHost({ company, onNavigate }: { company: Company; onNav
   </PlanDialog>;
 }
 
-// ── Faixa global ──────────────────────────────────────────────────────────────
-export function PlanBanner({ company, onNavigate }: { company: Company; onNavigate: (path: string) => void }) {
-  const banner = planBanner(company);
-  if (!banner) return null;
-  const Icon = banner.kind === "read_only" ? Lock : Clock3;
-  return <div role={banner.kind === "read_only" ? "alert" : "status"} data-testid="plan-banner" data-kind={banner.kind} className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b px-4 py-2 text-sm font-medium ${banner.kind === "read_only" ? "border-rose-200 bg-rose-50 text-rose-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
-    <Icon size={16} aria-hidden="true" /><span>{banner.text}</span>
-    {canManagePlan(company) && <a href={adminPlanPath(company.id)} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return; event.preventDefault(); onNavigate(adminPlanPath(company.id)); }} className="inline-flex items-center font-semibold underline" data-testid="plan-banner-link">Ver planos</a>}
-  </div>;
+// ── Label do header ───────────────────────────────────────────────────────────
+/** Pill discreto (sem link/botão) no header; `compact` mostra a versão curta no mobile. O diálogo de limite (402) segue em PlanErrorHost. */
+export function PlanLabel({ company, compact = false }: { company: PlanBlock; compact?: boolean }) {
+  const label = planLabel(company);
+  if (!label) return null;
+  const Icon = label.kind === "trial" ? Clock3 : Lock;
+  return <span role="status" aria-label={label.aria} title={label.title} data-testid="plan-label" data-kind={label.kind} data-compact={compact ? "true" : undefined} className="plan-label"><Icon size={12} aria-hidden="true" /><span aria-hidden="true">{compact ? label.short : label.text}</span></span>;
 }
 
 // ── Equipe em conta pessoal ───────────────────────────────────────────────────

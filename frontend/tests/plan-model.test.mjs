@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
-  BILLING_SOON_MESSAGE, clearSignupIntent, daysLeft, defaultBusinessPlan, downgradeBlockers, formatCents, intentAccountType, parseSignupIntent, planBanner, planDialogCopy, planErrorFromResponse, readSignupIntent, saveSignupIntent, upgradeDoneNotice, upgradeIntro,
+  BILLING_SOON_MESSAGE, clearSignupIntent, daysLeft, defaultBusinessPlan, downgradeBlockers, formatCents, intentAccountType, parseSignupIntent, planLabel, planDialogCopy, planErrorFromResponse, readSignupIntent, saveSignupIntent, upgradeDoneNotice, upgradeIntro,
 } from "../app/product/plan-model.ts";
 
 const read = (path) => readFileSync(new URL(`../app/${path}`, import.meta.url), "utf8");
@@ -21,19 +21,25 @@ test("planErrorFromResponse reconhece só 402/403/429 com code de plano no statu
   assert.equal(planErrorFromResponse(403, null), null);
 });
 
-test("faixa: trial mostra dias, somente-leitura avisa; legacy/comp/subscription nunca veem faixa", () => {
+test("label do header: trial mostra dias, teste encerrado e pagamento pendente alertam; legacy/comp/assinatura em dia não veem", () => {
   const trial = { account_type: "personal", plan_key: "personal_trial", entitlement_source: "trial", trial_ends_at: "2026-10-26T12:00:00Z", read_only: false };
-  assert.deepEqual(planBanner(trial, NOW), { kind: "trial", days: 3, text: "Seu teste termina em 3 dias" });
-  assert.equal(planBanner({ ...trial, trial_ends_at: "2026-10-24T11:00:00Z" }, NOW).text, "Seu teste termina em 1 dia");
-  assert.equal(planBanner({ ...trial, trial_ends_at: "2026-10-23T13:00:00Z" }, NOW).days, 1);
-  assert.equal(planBanner({ ...trial, trial_ends_at: "2026-10-23T12:00:00Z" }, NOW).text, "Seu teste termina hoje");
+  const t3 = planLabel(trial, NOW);
+  assert.equal(t3.kind, "trial"); assert.equal(t3.days, 3); assert.equal(t3.text, "Teste · 3 dias"); assert.equal(t3.short, "3d");
+  assert.equal(t3.title, "Seu teste termina em 26/10"); assert.match(t3.aria, /^Seu teste termina em 3 dias/);
+  assert.equal(planLabel({ ...trial, trial_ends_at: "2026-10-24T11:00:00Z" }, NOW).text, "Teste · 1 dia");
+  assert.equal(planLabel({ ...trial, trial_ends_at: "2026-10-23T13:00:00Z" }, NOW).days, 1);
+  const today = planLabel({ ...trial, trial_ends_at: "2026-10-23T12:00:00Z" }, NOW);
+  assert.equal(today.text, "Teste termina hoje"); assert.equal(today.short, "Hoje");
   const expired = { account_type: "business", plan_key: "expired", entitlement_source: "expired", trial_ends_at: "2026-10-01T00:00:00Z", read_only: true };
-  assert.deepEqual(planBanner(expired, NOW), { kind: "read_only", text: "Teste encerrado — assine para voltar a editar" });
-  assert.equal(planBanner({ account_type: "business", plan_key: "legacy", entitlement_source: "legacy", read_only: false }, NOW), null);
-  assert.equal(planBanner({ account_type: "business", plan_key: "business_team", entitlement_source: "comp", trial_ends_at: "2026-10-25T00:00:00Z" }, NOW), null);
-  assert.equal(planBanner({ account_type: "business", plan_key: "business_team", entitlement_source: "subscription", read_only: false }, NOW), null);
-  assert.equal(planBanner({ id: "x" }, NOW), null, "resposta sem bloco de plano = legado");
-  assert.equal(planBanner(undefined, NOW), null);
+  const ro = planLabel(expired, NOW);
+  assert.equal(ro.kind, "read_only"); assert.equal(ro.text, "Teste encerrado"); assert.equal(ro.title, "Somente leitura — assine para voltar a editar");
+  const pending = planLabel({ account_type: "business", plan_key: "business_team", entitlement_source: "subscription", read_only: true }, NOW);
+  assert.equal(pending.kind, "payment_pending"); assert.equal(pending.text, "Pagamento pendente"); assert.match(pending.aria, /^Pagamento pendente\./);
+  assert.equal(planLabel({ account_type: "business", plan_key: "business_team", entitlement_source: "subscription", read_only: false }, NOW), null);
+  assert.equal(planLabel({ account_type: "business", plan_key: "legacy", entitlement_source: "legacy", read_only: false }, NOW), null);
+  assert.equal(planLabel({ account_type: "business", plan_key: "business_team", entitlement_source: "comp", trial_ends_at: "2026-10-25T00:00:00Z" }, NOW), null);
+  assert.equal(planLabel({ id: "x" }, NOW), null, "resposta sem bloco de plano = legado");
+  assert.equal(planLabel(undefined, NOW), null);
 });
 
 test("daysLeft arredonda para cima e nunca é negativo", () => {
@@ -108,7 +114,8 @@ test("contrato de fiação: api() dispara o diálogo único, onboarding envia ac
   assert.match(onboarding, /Para minha empresa/);
   assert.match(read("product/custom-login.tsx"), /saveSignupIntent\(intent\)/);
   const shell = read("product/shell.tsx");
-  assert.match(shell, /<PlanBanner /);
+  assert.match(shell, /<PlanLabel /);
+  assert.doesNotMatch(shell, /PlanBanner/);
   assert.match(shell, /<PlanErrorHost /);
   assert.match(read("product/admin-screen.tsx"), /<PlanBillingSection /);
   assert.match(read("product-app.tsx"), /PersonalTeamUpgrade/);
@@ -140,8 +147,14 @@ test("upgradeIntro diz a verdade do backend em cada estado (o upgrade nunca rein
   assert.match(upgradeIntro({ plan_key: "legacy", entitlement_source: "legacy", account_type: "business" }, NOW).text, /sem os novos limites/);
   for (const state of [trial, { entitlement_source: "expired", account_type: "personal" }]) assert.doesNotMatch(upgradeIntro(state, NOW).text, /14 dias começa/);
 });
-test("a faixa global alinha o link 'Ver planos' ao texto e o diálogo usa upgradeIntro", () => {
+test("o label do header é só texto (sem link/botão/next-link) e o diálogo usa upgradeIntro", () => {
   const ui = read("product/plan-ui.tsx");
-  assert.match(ui, /className="inline-flex items-center font-semibold underline"[^>]*>Ver planos<\/a>/, "o a tem min-height 44px global: sem inline-flex items-center o texto fica no topo");
+  const label = ui.slice(ui.indexOf("export function PlanLabel"), ui.indexOf("// ── Equipe em conta pessoal"));
+  assert.match(label, /data-testid="plan-label"/);
+  assert.match(label, /aria-label=\{label\.aria\}/);
+  assert.match(label, /title=\{label\.title\}/);
+  assert.doesNotMatch(label, /<a |<button|Ver planos|next\/link|onNavigate/, "sem ação por enquanto");
+  assert.doesNotMatch(ui, /plan-banner/, "faixa de largura total removida");
+  assert.match(read("mobile-nav.tsx"), /<PlanLabel company=\{company\} compact \/>/, "versão compacta no header mobile");
   assert.match(ui, /upgradeIntro\(company\)/); assert.doesNotMatch(ui, /começa sem cartão|Seu teste de 14 dias começou/);
 });

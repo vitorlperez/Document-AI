@@ -78,3 +78,8 @@
 .product-app .shell-search-trigger:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .product-app .shell-search-trigger kbd { font: inherit; font-size: 11px; padding: 0 5px; border: 1px solid var(--color-line); border-radius: 5px; }
 @media (max-width: 1099px) { .product-app .shell-search-trigger span, .product-app .shell-search-trigger kbd { display: none; } .product-app .shell-search-trigger { width: 40px; justify-content: center; padding: 0; } }
+
+/* Label de plano no header (teste / somente leitura / pagamento pendente): pill discreto, sem ação. */
+.plan-label { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; max-width: 100%; white-space: nowrap; padding: 2px 8px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--warn-solid) 45%, transparent); background: color-mix(in srgb, var(--warn-solid) 12%, transparent); color: var(--warn-fg); font-size: 11px; font-weight: 600; line-height: 16px; cursor: default; }
+.plan-label[data-kind="read_only"], .plan-label[data-kind="payment_pending"] { border-color: var(--danger-border); background: var(--danger-bg); color: var(--danger-fg); }
+.plan-label[data-compact="true"] { margin-inline: 2px; }

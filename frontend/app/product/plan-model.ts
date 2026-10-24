@@ -55,19 +55,33 @@ export function daysLeft(endsAt: string | null | undefined, now: number = Date.n
   return Math.max(0, Math.ceil((end - now) / 86_400_000));
 }
 
-export type PlanBanner = { kind: "trial"; days: number; text: string } | { kind: "read_only"; text: string };
+export type PlanLabelKind = "trial" | "read_only" | "payment_pending";
+/** `text` = pill do header; `short` = versão compacta (mobile); `title` = tooltip; `aria` = frase completa para leitor de tela. */
+export type PlanLabel = { kind: PlanLabelKind; days: number | null; text: string; short: string; title: string; aria: string };
+const labelDate = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 /**
- * Faixa global. Só aparece em trial (com data) ou somente-leitura; contas legado, cortesia (comp) e assinatura nunca veem faixa.
+ * Label discreto do header. Aparece em trial (com data), somente-leitura de teste encerrado e pagamento pendente (assinatura em read_only).
+ * Contas legado e cortesia (comp) nunca veem; assinatura em dia também não.
  */
-export function planBanner(plan: PlanBlock | null | undefined, now: number = Date.now()): PlanBanner | null {
+export function planLabel(plan: PlanBlock | null | undefined, now: number = Date.now()): PlanLabel | null {
   if (!plan || isLegacyPlan(plan)) return null;
-  if (plan.entitlement_source === "comp" || plan.entitlement_source === "subscription") return null;
-  if (plan.read_only) return { kind: "read_only", text: "Teste encerrado — assine para voltar a editar" };
+  if (plan.entitlement_source === "comp") return null;
+  if (plan.entitlement_source === "subscription") {
+    if (!plan.read_only) return null;
+    const title = "Somente leitura — regularize o pagamento para voltar a editar";
+    return { kind: "payment_pending", days: null, text: "Pagamento pendente", short: "Pagamento", title, aria: `Pagamento pendente. ${title}` };
+  }
+  if (plan.read_only) {
+    const title = "Somente leitura — assine para voltar a editar";
+    return { kind: "read_only", days: null, text: "Teste encerrado", short: "Encerrado", title, aria: `Teste encerrado. ${title}` };
+  }
   if (plan.entitlement_source !== "trial") return null;
   const days = daysLeft(plan.trial_ends_at, now);
   if (days === null) return null;
-  const text = days === 0 ? "Seu teste termina hoje" : days === 1 ? "Seu teste termina em 1 dia" : `Seu teste termina em ${days} dias`;
-  return { kind: "trial", days, text };
+  const text = days === 0 ? "Teste termina hoje" : days === 1 ? "Teste · 1 dia" : `Teste · ${days} dias`;
+  const when = days === 0 ? "termina hoje" : days === 1 ? "termina em 1 dia" : `termina em ${days} dias`;
+  const date = plan.trial_ends_at ? ` (${labelDate(plan.trial_ends_at)})` : "";
+  return { kind: "trial", days, text, short: days === 0 ? "Hoje" : `${days}d`, title: `Seu teste termina em ${labelDate(plan.trial_ends_at!)}`, aria: `Seu teste ${when}${date}` };
 }
 
 export type PlanDialogCopy = { title: string; message: string; usage: string | null; cta: "upgrade" | "plans" | "none"; ctaLabel: string };

@@ -8,6 +8,7 @@ import { NotificationBell } from "./product/notification-bell";
 import { accountMenuItems, activePrimaryTab, orgMenuSections } from "./product/account-helpers";
 import { orgItemIcons } from "./product/org-menu";
 import { openPalette, openShortcuts, requestTourReplay } from "./product/nav-events";
+import { PlanLabel } from "./product/plan-ui";
 import { type Company, type User, accountTypeLabel, companyPath, roleLabel } from "./product/types-and-api";
 import "./mobile-chat.css";
 import "./interface-motion.css";
@@ -108,6 +109,7 @@ export function MobileShellHeader({ company, pathname, more, onOpenMore }: { com
   return <header className="mobile-header" role="banner">
     <button type="button" data-tour="org" className="mobile-header-org" onClick={onOpenMore} aria-haspopup="dialog" aria-expanded={more} aria-controls="mobile-more-sheet" aria-label={`Organização ativa: ${company.name}. Abrir menu`}><span>{company.name}</span><ChevronDown size={14} aria-hidden="true" /></button>
     <span className="mobile-header-title" />
+    <PlanLabel company={company} compact />
     <button type="button" className="mobile-header-button" onClick={openPalette} aria-label="Buscar"><Search size={20} aria-hidden="true" /></button>
     {screen === "chat" && <button type="button" data-testid="mobile-history" className="mobile-header-button" onClick={showHistory} aria-label="Conversas"><History size={20} aria-hidden="true" /></button>}
     <NotificationBell key={company.id} company={company} />
