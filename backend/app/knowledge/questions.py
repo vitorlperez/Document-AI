@@ -249,6 +249,14 @@ class AIProviderUnavailable(RuntimeError):
     pass
 
 
+class AIProviderAuthError(AIProviderUnavailable):
+    """The provider rejected our credentials (401/403): configuration, never transient."""
+
+    def __init__(self, status_code: int):
+        super().__init__("AI provider rejected the configured credentials")
+        self.status_code = status_code
+
+
 class AIProviderRateLimited(AIProviderUnavailable):
     def __init__(self, retry_after_seconds: float | None):
         super().__init__("AI provider rate limited")
@@ -869,6 +877,12 @@ class OpenAIQuestionProvider:
                     failure_kind="http_status", status=429,
                 )
                 raise AIProviderRateLimited(_retry_after_seconds(response))
+            if response.status_code in (401, 403):
+                log_agent_phase(
+                    logger, phase=phase, started_at=started_at, deadline=deadline,
+                    failure_kind="http_status", status=response.status_code,
+                )
+                raise AIProviderAuthError(response.status_code)
             response.raise_for_status()
             data = response.json()
             log_agent_phase(logger, phase=phase, started_at=started_at, deadline=deadline)

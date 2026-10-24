@@ -252,9 +252,9 @@
     "semantic_hash": ""
   },
   "backend/app/ingestion/tasks.py": {
-    "mtime": 1792540127.4649334,
-    "seen": 1792794882.502024,
-    "ast_hash": "e8811dd962dbc7e03ae5d5c9d604f251",
+    "mtime": 1792868325.836123,
+    "seen": 1792868340.23539,
+    "ast_hash": "2452b8a8dc60aa638ca24b324c6f5ece",
     "semantic_hash": ""
   },
   "backend/app/integrations/__init__.py": {
@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "backend/app/knowledge/questions.py": {
-    "mtime": 1792618657.5728848,
-    "seen": 1792794882.502044,
-    "ast_hash": "d4681eb5489382301da41f6033099017",
+    "mtime": 1792868325.836763,
+    "seen": 1792868340.235411,
+    "ast_hash": "88856f3e2d94789f9ca3d5629a949a99",
     "semantic_hash": ""
   },
   "backend/app/knowledge/search.py": {
@@ -498,9 +498,9 @@
     "semantic_hash": ""
   },
   "backend/tests/unit/test_ingestion_tasks.py": {
-    "mtime": 1790949638.2408125,
-    "seen": 1791495846.618332,
-    "ast_hash": "6a9cb750e310ee157416bce24b23250e",
+    "mtime": 1792868325.8370817,
+    "seen": 1792868340.23552,
+    "ast_hash": "67bd020840fd42cc8d1942f17c333b0f",
     "semantic_hash": ""
   },
   "backend/tests/unit/test_invitation_service.py": {
@@ -4494,9 +4494,9 @@
     "semantic_hash": ""
   },
   "frontend/app/mobile-nav.tsx": {
-    "mtime": 1792795841.5510108,
-    "seen": 1792796018.334332,
-    "ast_hash": "b5db6d1fb526046ca0e7e4d590e61758",
+    "mtime": 1792867817.6566613,
+    "seen": 1792868012.406323,
+    "ast_hash": "28af909426aaf244835470c1f16e8582",
     "semantic_hash": ""
   },
   "frontend/app/modal-dismiss.tsx": {
@@ -4536,9 +4536,9 @@
     "semantic_hash": ""
   },
   "frontend/app/product/shell.tsx": {
-    "mtime": 1792795831.4600027,
-    "seen": 1792796018.334358,
-    "ast_hash": "a0b90712dc3c891ce668635b2af51d58",
+    "mtime": 1792867817.6574302,
+    "seen": 1792868012.406348,
+    "ast_hash": "df82a44ac26c7fe166e12439d627a3a5",
     "semantic_hash": ""
   },
   "frontend/app/product/team-staff.tsx": {
@@ -7314,9 +7314,9 @@
     "semantic_hash": ""
   },
   "frontend/tests/public-page-links.test.mjs": {
-    "mtime": 1791745939.3710647,
-    "seen": 1791747287.15779,
-    "ast_hash": "42dc46b6e45ffde7ff7103c02e01928e",
+    "mtime": 1792799185.5285761,
+    "seen": 1792799267.517945,
+    "ast_hash": "dabdff5055bbf3ba2378619ad225b632",
     "semantic_hash": ""
   },
   "frontend/tests/conversation-tour.test.mjs": {
@@ -7680,8 +7680,8 @@
     "semantic_hash": ""
   },
   "frontend/tests/lane2-chat-motion.test.mjs": {
-    "mtime": 1792453020.5341365,
-    "seen": 1792453030.410615,
+    "mtime": 1792867817.657691,
+    "seen": 1792868012.406456,
     "ast_hash": "3dba863b8c088c4ad28be4e06d10af3a",
     "semantic_hash": ""
   },
@@ -9384,9 +9384,9 @@
     "semantic_hash": ""
   },
   "frontend/app/landing-shared.tsx": {
-    "mtime": 1792797469.1047657,
-    "seen": 1792797639.714369,
-    "ast_hash": "af20df6cbec471dccd1abb94e0565111",
+    "mtime": 1792799192.386563,
+    "seen": 1792799267.5177898,
+    "ast_hash": "fc3fc64d1439eb7d80a85a82e0bd8548",
     "semantic_hash": ""
   },
   "frontend/app/product/history-collapse.ts": {
@@ -9516,15 +9516,15 @@
     "semantic_hash": ""
   },
   "frontend/app/product/plan-model.ts": {
-    "mtime": 1792797553.8497162,
-    "seen": 1792797639.714402,
-    "ast_hash": "fec0cde367d260caebd3890ff0f4be16",
+    "mtime": 1792867817.6570058,
+    "seen": 1792868012.406346,
+    "ast_hash": "519d8b84bd130b21751d048889038d8e",
     "semantic_hash": ""
   },
   "frontend/app/product/plan-ui.tsx": {
-    "mtime": 1792797593.2138066,
-    "seen": 1792797639.7144032,
-    "ast_hash": "14f1ac566378c55ca1d8fd3f7b8a8c95",
+    "mtime": 1792867835.7194355,
+    "seen": 1792868012.406347,
+    "ast_hash": "5d75e1d488fc126bb5bd7ff5aa2f8017",
     "semantic_hash": ""
   },
   "frontend/app/product/staff-plan-logic.mjs": {
@@ -9540,9 +9540,9 @@
     "semantic_hash": ""
   },
   "frontend/tests/plan-model.test.mjs": {
-    "mtime": 1792797608.5390606,
-    "seen": 1792797639.714533,
-    "ast_hash": "a57ba48f0754749e20563248f06389fd",
+    "mtime": 1792867817.6578841,
+    "seen": 1792868012.406462,
+    "ast_hash": "aaf51b01f3f9b5af3084bbc59ddca194",
     "semantic_hash": ""
   },
   "frontend/tests/staff-plan.test.mjs": {

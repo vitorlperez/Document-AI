@@ -30,6 +30,7 @@ from app.integrations.registry import IntegrationRegistry
 from app.knowledge.models import Document, DocumentChunk
 from app.knowledge.questions import (
     EMBEDDING_MODEL,
+    AIProviderAuthError,
     AIProviderUnavailable,
     EmbeddingService,
     OpenAIQuestionProvider,
@@ -968,12 +969,25 @@ def reconcile_workspace_folder(self, job_id: str) -> None:  # type: ignore[no-un
                     "job_id": job_id,
                 },
             )
-        except AIProviderUnavailable:
+        except AIProviderUnavailable as error:
             if run_token is None:
                 raise
             # Roll back this batch only; prior committed batches remain searchable.
             session.rollback()
-            if self.request.retries >= self.max_retries:
+            # A rejected API key never heals by waiting: fail now and make it alertable.
+            auth_rejected = isinstance(error, AIProviderAuthError)
+            if auth_rejected:
+                logger.error(
+                    "embedding provider rejected the configured credentials",
+                    extra={
+                        "event": "ingestion_embedding",
+                        "result": "provider_auth_failed",
+                        "action": "embed",
+                        "status": error.status_code,
+                        "job_id": job_id,
+                    },
+                )
+            if auth_rejected or self.request.retries >= self.max_retries:
                 service.fail(
                     job_id=UUID(job_id), error_code="embedding_failed", expected_run_token=run_token
                 )

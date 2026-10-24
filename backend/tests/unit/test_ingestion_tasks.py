@@ -190,6 +190,9 @@ def _run_remote_fault(monkeypatch, error, max_retries):
         def refresh(self, _: object) -> None:
             return None
 
+        def get_bind(self):
+            return SimpleNamespace(dialect=SimpleNamespace(name="sqlite"))
+
         def scalar(self, _: object):
             return next(self.scalar_values)
 
@@ -297,3 +300,38 @@ def test_persistent_source_unauthorized_still_requires_reauth(monkeypatch):
     result, _session, failed, released, source = _run_remote_fault(monkeypatch, SourceRemoteUnauthorized(), 0)
     assert result.successful() and source.status == "reauth_required"
     assert failed[0][1] == "source_reauth_required" and not released
+
+
+def test_embedding_provider_auth_failure_fails_fast_without_retries(monkeypatch):
+    """A rejected API key (401/403) is not transient: no backoff retries, job fails at once."""
+    from app.knowledge.questions import AIProviderAuthError
+    result, session, failed, released, _source = _run_remote_fault(monkeypatch, AIProviderAuthError(401), 3)
+    assert result.successful()
+    assert failed[0][1] == "embedding_failed" and not released
+    assert session.rollback_calls == 1
+
+
+def test_openai_post_maps_401_and_403_to_auth_error(monkeypatch):
+    import httpx
+
+    from app.knowledge.questions import (
+        AIProviderAuthError,
+        AIProviderRateLimited,
+        OpenAIQuestionProvider,
+    )
+
+    def provider_with(status):
+        monkeypatch.setattr(
+            "app.knowledge.questions.httpx.post",
+            lambda *_, **__: httpx.Response(status, request=httpx.Request("POST", "https://api.openai.com/v1/embeddings")),
+        )
+        return OpenAIQuestionProvider("sk-test")
+
+    for status in (401, 403):
+        with pytest.raises(AIProviderAuthError):
+            provider_with(status)._post("/v1/embeddings", {"input": ["x"]})
+    with pytest.raises(AIProviderRateLimited):
+        provider_with(429)._post("/v1/embeddings", {"input": ["x"]})
+    with pytest.raises(Exception) as excinfo:
+        provider_with(500)._post("/v1/embeddings", {"input": ["x"]})
+    assert not isinstance(excinfo.value, AIProviderAuthError)
