@@ -200,3 +200,71 @@ export const DOWNGRADE_BLOCKER_LABEL: Record<string, string> = {
   cooldown: "A conta mudou de tipo recentemente; aguarde alguns dias para voltar.",
 };
 export const downgradeBlockers = (blockers: unknown): string[] => Array.isArray(blockers) ? blockers.filter((item): item is string => typeof item === "string").map((item) => DOWNGRADE_BLOCKER_LABEL[item] ?? item) : [];
+
+// ── Retorno do Checkout/Portal e faturas (GET …/billing/invoices) ─────────────
+/** Status de assinatura do provedor (iguais aos do backend `SUBSCRIPTION_STATUSES`) em pt-BR. */
+export const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
+  active: "ativa", trialing: "em teste", past_due: "com pagamento atrasado", unpaid: "não paga", paused: "pausada",
+  incomplete: "aguardando pagamento", incomplete_expired: "expirada sem pagamento", canceled: "cancelada",
+};
+export const subscriptionStatusLabel = (status: string | null | undefined) => (status && SUBSCRIPTION_STATUS_LABELS[status]) || status || "—";
+
+/** Parâmetro deixado pelo backend nas URLs de retorno: `?checkout=success|canceled` (Checkout) e `?billing=portal` (Portal). */
+export type BillingReturn = "checkout_success" | "checkout_canceled" | "portal";
+export function billingReturnFrom(search: string | URLSearchParams): BillingReturn | null {
+  const params = typeof search === "string" ? new URLSearchParams(search) : search;
+  const checkout = params.get("checkout");
+  if (checkout === "success") return "checkout_success";
+  if (checkout === "canceled") return "checkout_canceled";
+  return params.get("billing") === "portal" ? "portal" : null;
+}
+/** Remove só os parâmetros de retorno, preservando o resto da URL (para `history.replaceState`). */
+export function stripBillingReturn(href: string): string {
+  const url = new URL(href);
+  url.searchParams.delete("checkout");
+  url.searchParams.delete("billing");
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+/** Poll curto de GET …/billing depois do Checkout: o acesso só muda quando o webhook chega. */
+export const CHECKOUT_POLL_INTERVAL_MS = 2_000;
+export const CHECKOUT_POLL_MAX_MS = 20_000;
+const PAID_STATUSES = new Set(["active", "trialing"]);
+export type CheckoutPollOutcome = "active" | "pending" | "timeout";
+/** `active` quando a assinatura já está ativa/em teste; `timeout` ao estourar o prazo; senão `pending` (continua). */
+export function checkoutPollOutcome(state: Pick<BillingState, "subscription"> | null | undefined, elapsedMs: number, maxMs: number = CHECKOUT_POLL_MAX_MS): CheckoutPollOutcome {
+  if (state?.subscription && PAID_STATUSES.has(state.subscription.status)) return "active";
+  return elapsedMs >= maxMs ? "timeout" : "pending";
+}
+export const CHECKOUT_RETURN_MESSAGES = {
+  pending: "Confirmando seu pagamento…",
+  active: "Assinatura confirmada. Obrigado!",
+  timeout: "Recebemos seu retorno do pagamento, mas a confirmação ainda não chegou. Ela pode levar alguns minutos — atualize esta página em instantes.",
+  canceled: "Pagamento não concluído. Nenhuma cobrança foi feita.",
+} as const;
+
+export type InvoiceSummary = {
+  id: string; number: string | null; status: string | null; total: number; currency: string; created: string;
+  hosted_invoice_url: string | null; invoice_pdf: string | null;
+};
+export const INVOICE_STATUS_LABELS: Record<string, string> = { draft: "Rascunho", open: "Em aberto", paid: "Paga", uncollectible: "Não cobrável", void: "Anulada" };
+export const invoiceStatusLabel = (status: string | null | undefined) => (status && INVOICE_STATUS_LABELS[status]) || "—";
+/** Total da fatura em centavos → moeda (sempre com centavos: "R$ 49,90"). Moeda desconhecida cai para BRL. */
+export function formatInvoiceTotal(cents: number, currency: string | null | undefined = "BRL"): string {
+  const code = (currency || "BRL").toUpperCase();
+  try { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: code }).format(cents / 100); }
+  catch { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100); }
+}
+export const invoiceDate = (iso: string) => { const time = Date.parse(iso); return Number.isNaN(time) ? "—" : new Date(time).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }); };
+export const invoiceTitle = (invoice: Pick<InvoiceSummary, "number">) => invoice.number ? `Fatura ${invoice.number}` : "Fatura";
+
+/**
+ * Pagamento pendente visível na seção de cobrança. Boleto/Pix voltam pelo `hosted_voucher_url` (não pelo success_url),
+ * então o poll pós-Checkout não roda: basta GET …/billing mostrar a assinatura `incomplete`/`past_due`.
+ */
+export function pendingPaymentNotice(state: Pick<BillingState, "subscription"> | null | undefined): string | null {
+  const status = state?.subscription?.status;
+  if (status === "incomplete") return "Pagamento pendente — assim que o boleto/Pix for compensado, seu plano é ativado.";
+  if (status === "past_due") return "Pagamento pendente — regularize em Gerenciar cobrança para manter o plano ativo.";
+  return null;
+}

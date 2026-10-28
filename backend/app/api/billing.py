@@ -56,6 +56,13 @@ def _require_member(session: Session, organization_id: UUID, user_id: UUID) -> N
         raise HTTPException(403, "not allowed")
 
 
+def _billing_page_url(settings: Settings, organization_id: UUID) -> str:
+    """Where Checkout/Portal send the user back: the "Plano e cobrança" section of the org's Administração page.
+
+    The page only re-reads ``GET …/billing`` (access changes exclusively via webhook)."""
+    return f"{settings.public_app_url.rstrip('/')}/companies/{organization_id}/admin"
+
+
 def plan_json(plan, *, settings: Settings) -> dict[str, object]:
     return {
         "plan_key": plan.plan_key, "account_type": plan.account_type, "title": plan.title,
@@ -159,6 +166,23 @@ def billing_state(organization_id: UUID, request: Request, user: User = Depends(
     }
 
 
+@router.get("/organizations/{organization_id}/billing/invoices")
+def invoices(organization_id: UUID, request: Request, user: User = Depends(current_user),
+             session: Session = Depends(database_session)) -> list[dict[str, object]]:
+    """Recent provider invoices (owner only, like checkout/portal). 501 without a provider; [] before the first checkout."""
+    _require_owner(session, organization_id, user.id)
+    provider = _provider(request)
+    if not provider.configured:
+        raise BillingNotConfigured
+    org = session.get(Organization, organization_id)
+    if org is None or not org.billing_customer_id:
+        return []
+    return [{
+        "id": inv.id, "number": inv.number, "status": inv.status, "total": inv.total, "currency": inv.currency,
+        "created": inv.created.isoformat(), "hosted_invoice_url": inv.hosted_invoice_url, "invoice_pdf": inv.invoice_pdf,
+    } for inv in provider.list_invoices(org.billing_customer_id)]
+
+
 class CheckoutInput(BaseModel):
     plan_key: str
     interval: Literal["month", "year"] = "month"
@@ -184,11 +208,11 @@ def checkout(organization_id: UUID, payload: CheckoutInput, request: Request, us
     members = guards.active_member_count(session, organization_id)
     if payload.seats < min(members, plan.max_seats or members):
         raise EntitlementError("seats_below_members", "fewer seats than active members", limit=members, status_code=409)
-    app_url = _settings(request).public_app_url
+    billing_page = _billing_page_url(_settings(request), organization_id)
     result = provider.create_checkout(CheckoutRequest(
         organization_id=organization_id, plan_key=payload.plan_key, interval=payload.interval, seats=payload.seats,
         customer_email=user.email, external_customer_id=org.billing_customer_id, promotion_code=payload.promotion_code,
-        success_url=f"{app_url}/app/billing", cancel_url=f"{app_url}/app/billing"))
+        success_url=f"{billing_page}?checkout=success", cancel_url=f"{billing_page}?checkout=canceled"))
     if result.external_customer_id and not org.billing_customer_id:
         org.billing_provider, org.billing_customer_id = provider.name, result.external_customer_id
     return {"url": result.url}
@@ -204,7 +228,7 @@ def portal(organization_id: UUID, request: Request, user: User = Depends(current
     org = session.get(Organization, organization_id)
     result = provider.open_portal(PortalRequest(
         organization_id=organization_id, external_customer_id=org.billing_customer_id,
-        return_url=f"{_settings(request).public_app_url}/app/billing"))
+        return_url=f"{_billing_page_url(_settings(request), organization_id)}?billing=portal"))
     return {"url": result.url}
 
 

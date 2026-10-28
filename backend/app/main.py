@@ -137,7 +137,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.engine = build_engine(runtime_settings)
     app.state.session_factory = build_session_factory(app.state.engine)
-    app.state.billing_provider = build_provider(runtime_settings.billing_provider)
+    app.state.billing_provider = build_provider(runtime_settings.billing_provider, runtime_settings)
     app.state.auth_verification_secret = secrets.token_urlsafe(32)
     app.state.settings = runtime_settings
     app.state.rate_limiter = RedisRateLimiter(redis.Redis.from_url(runtime_settings.redis_url, socket_timeout=1, socket_connect_timeout=1))

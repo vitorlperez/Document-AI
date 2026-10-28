@@ -75,3 +75,9 @@ test("forwards the Idempotency-Key header the ClickUp task endpoint requires (wi
   const forwarded = forwardedRequestHeaders(new Headers({ "idempotency-key": "0f8fad5b-d9cb-469f-a165-70867728950e", "content-type": "application/json" }));
   assert.equal(forwarded.get("idempotency-key"), "0f8fad5b-d9cb-469f-a165-70867728950e");
 });
+
+test("forwards the Stripe-Signature header so a proxied billing webhook can be verified by the API", () => {
+  const signature = "t=1700000000,v1=5257a869e7ecebeda32affa62cdca3fa51cad7e77a0e56ff536d0ce8e108d8bd";
+  const forwarded = forwardedRequestHeaders(new Headers({ "stripe-signature": signature, "content-type": "application/json" }));
+  assert.equal(forwarded.get("stripe-signature"), signature);
+});

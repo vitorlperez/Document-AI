@@ -26,3 +26,6 @@ test('reduced motion reage a mudanças durante reveal e consulta às fontes', ()
   assert.match(read('answer-reveal.tsx'), /const reduced = useReducedMotion\(\)/);
   assert.match(read('source-reading.tsx'), /const reduced = useReducedMotion\(\)/);
 });
+test('a grade da sidebar preserva a terceira coluna do viewer independente da ordem do CSS', () => {
+  assert.match(read('tools-sidebar.css'), /grid-template-columns: var\(--tools-sidebar-width\) minmax\(0, 1fr\) var\(--file-viewer-col, 0px\)/);
+});

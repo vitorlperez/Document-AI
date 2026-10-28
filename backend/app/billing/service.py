@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -10,8 +11,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.billing.provider import (
+    EVENT_IGNORED,
     EVENT_PAYMENT_FAILED,
     EVENT_PAYMENT_SUCCEEDED,
+    EVENT_RISK_FLAGGED,
     EVENT_SUBSCRIPTION_CANCELED,
     EVENT_TYPES,
     SUBSCRIPTION_STATUSES,
@@ -24,6 +27,8 @@ from app.entitlements.catalog import account_type_of, is_sellable
 from app.entitlements.resolver import invalidate, project
 from app.organizations.models import BillingEvent as BillingEventRow
 from app.organizations.models import Organization, Subscription
+
+logger = logging.getLogger("document_intelligence.billing")
 
 
 def _aware(value: datetime | None) -> datetime | None:
@@ -64,10 +69,32 @@ class BillingService:
             Subscription.external_subscription_id == event.external_subscription_id))
 
     def _organization(self, event: BillingEvent, sub: Subscription | None) -> Organization | None:
-        organization_id: UUID | None = sub.organization_id if sub is not None else event.organization_id
+        """Known subscription first, then the provider customer we stored, then the id the provider echoes back."""
+        if sub is not None:
+            return self.session.get(Organization, sub.organization_id)
+        if event.external_customer_id:
+            org = self.session.scalar(select(Organization).where(
+                Organization.billing_provider == self.provider.name,
+                Organization.billing_customer_id == event.external_customer_id))
+            if org is not None:
+                return org
+        organization_id: UUID | None = event.organization_id
         return self.session.get(Organization, organization_id) if organization_id else None
 
+    def _note(self, event: BillingEvent) -> str:
+        """Ledger-only events never touch a subscription or access. Risk signals alert staff through the log."""
+        if event.type != EVENT_RISK_FLAGGED:
+            return "ignored"
+        org = self._organization(event, self._find(event))
+        logger.warning(
+            "billing risk flagged: event=%s organization=%s customer=%s subscription=%s", event.id,
+            org.id if org is not None else None, event.external_customer_id, event.external_subscription_id,
+            extra={"provider": self.provider.name, "event": event.type, "action": "staff_review"})
+        return "processed"
+
     def _apply(self, event: BillingEvent) -> str:
+        if event.type in (EVENT_RISK_FLAGGED, EVENT_IGNORED):
+            return self._note(event)
         sub = self._find(event)
         org = self._organization(event, sub)
         if org is None:

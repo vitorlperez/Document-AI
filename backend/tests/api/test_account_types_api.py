@@ -1,6 +1,7 @@
 # ruff: noqa: F811, RUF059
 """Personal vs business accounts: trial, seats, read-only, upgrade/downgrade, comps, billing without a provider."""
 
+import logging
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
@@ -10,7 +11,9 @@ from sqlalchemy import select
 
 from app.audit_usage.models import AuditLog
 from app.billing.provider import (
+    EVENT_IGNORED,
     EVENT_PAYMENT_FAILED,
+    EVENT_RISK_FLAGGED,
     EVENT_SUBSCRIPTION_CANCELED,
     EVENT_SUBSCRIPTION_UPSERTED,
     BillingEvent,
@@ -19,6 +22,7 @@ from app.billing.provider import (
     WebhookRejected,
 )
 from app.identity.models import User
+from app.organizations.models import BillingEvent as BillingEventRow
 from app.organizations.models import (
     Membership,
     MembershipInvitation,
@@ -411,6 +415,9 @@ class FakeProvider:
             raise WebhookRejected("bad signature")
         return self.next_event
 
+    def list_invoices(self, customer_id, limit=12):
+        return []
+
 
 @pytest.fixture()
 def paid_api(auth_api):
@@ -499,3 +506,118 @@ def test_upgrade_with_an_active_subscription_asks_the_provider(paid_api) -> None
     body = response.json()
     assert (body["account_type"], body["plan_key"], body["entitlement_source"]) == ("business", "business_team", "subscription")
     assert body["entitlements"]["max_members"] == 6
+
+
+class _Records(logging.Handler):
+    def __init__(self) -> None:
+        super().__init__(logging.WARNING)
+        self.records: list[logging.LogRecord] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(record)
+
+
+def test_risk_and_ignored_events_are_recorded_without_touching_access(paid_api) -> None:
+    client, factory, gateway, provider = paid_api
+    login(client, gateway)
+    org = create_org(client, "business", "Acme")["id"]
+    assert post_webhook(client, provider, event(org)).json() == {"status": "processed"}
+    before = client.get(f"/organizations/{org}/billing").json()
+    alerts = _Records()
+    billing_logger = logging.getLogger("document_intelligence.billing")
+    billing_logger.addHandler(alerts)
+    try:
+        flagged = post_webhook(client, provider, event(org, EVENT_RISK_FLAGGED, "evt_dispute", status="canceled", seats=1,
+                                                     plan_key="personal_basic", at=NOW() + timedelta(seconds=5)))
+    finally:
+        billing_logger.removeHandler(alerts)
+    assert flagged.status_code == 200 and flagged.json() == {"status": "processed"}
+    assert [record.event for record in alerts.records] == [EVENT_RISK_FLAGGED]
+    assert org in alerts.records[0].getMessage() and "evt_dispute" in alerts.records[0].getMessage()
+    other = post_webhook(client, provider, event(org, EVENT_IGNORED, "evt_other", status="canceled", at=NOW() + timedelta(seconds=6)))
+    assert other.status_code == 200 and other.json() == {"status": "ignored"}
+    assert post_webhook(client, provider, event(org, EVENT_IGNORED, "evt_other")).json() == {"status": "duplicate"}
+    after = client.get(f"/organizations/{org}/billing").json()
+    for key in ("entitlement_source", "plan_key", "account_type", "read_only", "subscription", "entitlements"):
+        assert after[key] == before[key], key  # no access change, no status/plan/seat regression
+    with factory() as session:
+        for event_id, kind in (("evt_dispute", EVENT_RISK_FLAGGED), ("evt_other", EVENT_IGNORED)):
+            row = session.get(BillingEventRow, f"fake:{event_id}")
+            assert row is not None and row.type == kind and row.processed_at is not None
+        assert len(list(session.scalars(select(Subscription)))) == 1
+
+
+def test_ignored_event_without_any_identifiers_is_accepted(paid_api) -> None:
+    client, factory, _, provider = paid_api
+    bare = BillingEvent(id="evt_ping", type=EVENT_IGNORED, occurred_at=NOW())
+    assert post_webhook(client, provider, bare).json() == {"status": "ignored"}
+    with factory() as session:
+        assert session.get(BillingEventRow, "fake:evt_ping").processed_at is not None
+
+
+def test_webhook_finds_the_organization_by_its_billing_customer(paid_api) -> None:
+    client, factory, gateway, provider = paid_api
+    login(client, gateway)
+    org = create_org(client)["id"]
+    other = create_org(client, "business", "Outra")["id"]
+    assert client.post(f"/organizations/{org}/billing/checkout", json={"plan_key": "personal_pro"}).status_code == 200
+    # No metadata on the event, or metadata pointing elsewhere: the stored customer decides.
+    for event_id, organization_id in (("evt_c1", None), ("evt_c2", UUID(other))):
+        response = post_webhook(client, provider, event(org, event_id=event_id, organization_id=organization_id,
+                                                        external_subscription_id=f"sub_{event_id}", plan_key="personal_pro",
+                                                        seats=1, at=NOW() + timedelta(seconds=len(event_id))))
+        assert response.json() == {"status": "processed"}
+    with factory() as session:
+        owners = {row.organization_id for row in session.scalars(select(Subscription))}
+    assert owners == {UUID(org)}
+    assert client.get(f"/organizations/{org}/billing").json()["plan_key"] == "personal_pro"
+    stranger = event(org, event_id="evt_c3", organization_id=None, external_customer_id="cus_unknown",
+                     external_subscription_id="sub_unknown")
+    assert post_webhook(client, provider, stranger).json() == {"status": "ignored"}
+
+
+def test_build_provider_only_loads_the_stripe_adapter_when_asked(monkeypatch) -> None:
+    import sys
+    import types
+
+    from app.billing.provider import NoBillingProvider, build_provider
+    from app.core.config import Settings
+
+    monkeypatch.setitem(sys.modules, "app.billing.stripe_provider", None)  # any import attempt would fail
+    for name in ("none", "", "  ", "paypal"):
+        assert isinstance(build_provider(name), NoBillingProvider)
+
+    class StubStripe:
+        name, configured = "stripe", True
+
+        def __init__(self, settings) -> None:
+            self.settings = settings
+
+    monkeypatch.setitem(sys.modules, "app.billing.stripe_provider", types.SimpleNamespace(StripeBillingProvider=StubStripe))
+    settings = Settings(database_url="postgresql+psycopg://u:p@localhost/db", billing_provider="stripe",
+                        stripe_api_key="rk_test_x", stripe_webhook_secret="whsec_x", _env_file=None)
+    built = build_provider(" Stripe ", settings)
+    assert isinstance(built, StubStripe) and built.settings is settings
+
+
+def test_create_app_hands_the_runtime_settings_to_the_provider(monkeypatch) -> None:
+    import importlib
+    import sys
+    import types
+
+    from app.core.config import Settings
+
+    received = []
+
+    class StubStripe:
+        name, configured = "stripe", True
+
+        def __init__(self, settings) -> None:
+            received.append(settings)
+
+    monkeypatch.setitem(sys.modules, "app.billing.stripe_provider", types.SimpleNamespace(StripeBillingProvider=StubStripe))
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@localhost/db")
+    settings = Settings(database_url="postgresql+psycopg://u:p@localhost/db", billing_provider="stripe",
+                        stripe_api_key="rk_test_x", stripe_webhook_secret="whsec_x", _env_file=None)
+    app = importlib.import_module("app.main").create_app(settings)
+    assert isinstance(app.state.billing_provider, StubStripe) and received == [settings]

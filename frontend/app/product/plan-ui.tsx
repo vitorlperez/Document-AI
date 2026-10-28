@@ -1,12 +1,13 @@
 "use client";
 
-import { Building2, Clock3, Lock, UserRound, Users } from "lucide-react";
+import { Building2, Clock3, ExternalLink, FileText, Lock, UserRound, Users } from "lucide-react";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
 import { useDialogBackdropClose } from "../modal-dismiss";
 import { btn, closeDialogAnimated } from "../ui";
 import {
-  BILLING_SOON_MESSAGE, PLAN_CHANGED_EVENT, PLAN_ERROR_EVENT, ApiError, accountTypeLabel, api, companyPath, defaultBusinessPlan, downgradeBlockers, formatCents, isLegacyPlan, isPersonal, messageFor,
-  planDialogCopy, planLabel, planTitle, sourceLabel, upgradeDoneNotice, upgradeIntro, type BillingState, type Company, type PlanBlock, type PlanErrorInfo, type PlansResponse, type PublicPlan,
+  BILLING_SOON_MESSAGE, CHECKOUT_POLL_INTERVAL_MS, CHECKOUT_RETURN_MESSAGES, PLAN_CHANGED_EVENT, PLAN_ERROR_EVENT, ApiError, accountTypeLabel, api, billingReturnFrom, checkoutPollOutcome, companyPath,
+  defaultBusinessPlan, downgradeBlockers, formatCents, formatInvoiceTotal, invoiceDate, invoiceStatusLabel, invoiceTitle, isLegacyPlan, isPersonal, messageFor, pendingPaymentNotice, planDialogCopy, planLabel, planTitle, sourceLabel,
+  stripBillingReturn, subscriptionStatusLabel, upgradeDoneNotice, upgradeIntro, type BillingState, type Company, type InvoiceSummary, type PlanBlock, type PlanErrorInfo, type PlansResponse, type PublicPlan,
 } from "./types-and-api";
 import "./automation-modal.css";
 
@@ -161,6 +162,35 @@ export function PersonalTeamUpgrade({ company }: { company: Company }) {
 const dateFormat = (value: string | null | undefined) => value ? new Date(value).toLocaleDateString("pt-BR") : "—";
 const limitText = (value: number | null | undefined) => value === null || value === undefined ? "Ilimitado" : value.toLocaleString("pt-BR");
 
+/** Faturas do provedor (GET …/billing/invoices, só o responsável). Sem provedor (501) a lista some. */
+function InvoiceList({ companyId, refreshKey }: { companyId: string; refreshKey: number }) {
+  const [invoices, setInvoices] = useState<InvoiceSummary[] | null>(null); const [hidden, setHidden] = useState(false); const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    api<InvoiceSummary[]>(`/organizations/${companyId}/billing/invoices`, { cache: "no-store" })
+      .then((value) => { if (alive) { setInvoices(value); setError(null); } })
+      .catch((caught) => { if (!alive) return; if (caught instanceof ApiError && (caught.status === 501 || caught.code === "billing_not_configured")) setHidden(true); else setError(messageFor(caught)); });
+    return () => { alive = false; };
+  }, [companyId, refreshKey]);
+  if (hidden) return null;
+  return <div data-testid="invoice-list" className="mt-6">
+    <h3 className="flex items-center gap-2 text-sm font-semibold"><FileText size={16} aria-hidden="true" />Faturas</h3>
+    {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
+    {!error && invoices === null && <p className="mt-2 text-sm text-muted-foreground">Carregando faturas…</p>}
+    {invoices?.length === 0 && <p className="mt-2 text-sm text-muted-foreground">Nenhuma fatura ainda.</p>}
+    {invoices && invoices.length > 0 && <ul className="mt-2 divide-y divide-line-soft rounded-md border border-line-soft text-sm">
+      {invoices.map((invoice) => <li key={invoice.id} data-testid="invoice-row" className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2">
+        <span className="min-w-0 flex-1"><b className="block truncate">{invoiceTitle(invoice)}</b><span className="text-xs text-muted-foreground">{invoiceDate(invoice.created)} · {invoiceStatusLabel(invoice.status)}</span></span>
+        <span className="font-semibold tabular-nums">{formatInvoiceTotal(invoice.total, invoice.currency)}</span>
+        <span className="flex gap-3 text-xs">
+          {invoice.hosted_invoice_url && <a href={invoice.hosted_invoice_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 underline">Ver fatura<ExternalLink size={12} aria-hidden="true" /></a>}
+          {invoice.invoice_pdf && <a href={invoice.invoice_pdf} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 underline">PDF<ExternalLink size={12} aria-hidden="true" /></a>}
+        </span>
+      </li>)}
+    </ul>}
+  </div>;
+}
+
 export function PlanBillingSection({ company, setNotice }: { company: Company; setNotice?: (message: string | null) => void }) {
   const plans = usePlans();
   const owner = company.role === "owner";
@@ -171,7 +201,32 @@ export function PlanBillingSection({ company, setNotice }: { company: Company; s
   const load = useCallback(() => { setLoadError(null); api<BillingState>(`/organizations/${company.id}/billing`, { cache: "no-store" }).then(setBilling).catch((caught) => setLoadError(messageFor(caught))); }, [company.id]);
   useEffect(() => { void Promise.resolve().then(load); }, [load, company.account_type, company.plan_key]);
   const loaded = billing !== null;
-  useEffect(() => { if (loaded && window.location.hash === "#plano") document.getElementById("plano")?.scrollIntoView({ block: "start" }); }, [loaded]);
+  const [returnedFrom] = useState(() => typeof window === "undefined" ? null : billingReturnFrom(window.location.search));
+  const [confirming, setConfirming] = useState(false); const [invoicesKey, setInvoicesKey] = useState(0);
+  useEffect(() => { if (loaded && (window.location.hash === "#plano" || returnedFrom)) document.getElementById("plano")?.scrollIntoView({ block: "start" }); }, [loaded, returnedFrom]);
+  // Volta do Checkout/Portal (?checkout=…|?billing=portal): o acesso só muda via webhook, então apenas relemos GET …/billing por alguns segundos.
+  useEffect(() => {
+    if (!returnedFrom) return;
+    window.history.replaceState(window.history.state, "", stripBillingReturn(window.location.href));
+    let alive = true; let timer: number | undefined; const started = Date.now();
+    const poll = async () => {
+      let state: BillingState | null = null;
+      try { state = await api<BillingState>(`/organizations/${company.id}/billing`, { cache: "no-store" }); if (alive) setBilling(state); } catch { /* falha transitória: tenta de novo até o prazo */ }
+      if (!alive) return;
+      const outcome = checkoutPollOutcome(state, Date.now() - started);
+      if (outcome === "pending") { timer = window.setTimeout(() => { void poll(); }, CHECKOUT_POLL_INTERVAL_MS); return; }
+      setConfirming(false); setMessage({ tone: "info", text: CHECKOUT_RETURN_MESSAGES[outcome] });
+      if (outcome === "active") { notifyPlanChanged(); setInvoicesKey((value) => value + 1); }
+    };
+    void Promise.resolve().then(() => {
+      if (!alive) return;
+      if (returnedFrom === "checkout_canceled") { setMessage({ tone: "info", text: CHECKOUT_RETURN_MESSAGES.canceled }); return; }
+      if (returnedFrom === "portal") { notifyPlanChanged(); return; }
+      setConfirming(true); setMessage({ tone: "info", text: CHECKOUT_RETURN_MESSAGES.pending });
+      void poll();
+    });
+    return () => { alive = false; if (timer !== undefined) window.clearTimeout(timer); };
+  }, [returnedFrom, company.id]);
 
   const block = billing ?? company;
   const legacy = isLegacyPlan(block);
@@ -179,6 +234,7 @@ export function PlanBillingSection({ company, setNotice }: { company: Company; s
   const ents = block.entitlements;
   const seatsMax = ents?.max_members ?? null;
   const seatsUsed = billing?.seats_used ?? null;
+  const pendingPayment = pendingPaymentNotice(billing);
 
   async function billingCall(kind: "checkout" | "portal") {
     setBusy(kind); setMessage(null);
@@ -214,18 +270,20 @@ export function PlanBillingSection({ company, setNotice }: { company: Company; s
       {block.read_only && <div><dt className="text-muted-foreground">Situação</dt><dd className="mt-1 font-semibold text-rose-700">Somente leitura</dd></div>}
     </dl>
     {legacy && <p className="mt-4 text-sm text-muted-foreground">Esta conta é anterior aos planos e segue sem novos limites ou bloqueios.</p>}
-    {billing?.subscription && <p className="mt-4 text-sm text-muted-foreground">Assinatura {billing.subscription.status}{billing.subscription.interval ? ` · ${billing.subscription.interval === "year" ? "anual" : "mensal"}` : ""}{billing.subscription.current_period_end ? ` · renova em ${dateFormat(billing.subscription.current_period_end)}` : ""}{billing.subscription.cancel_at_period_end ? " · cancelada ao fim do período" : ""}.</p>}
+    {billing?.subscription && <p className="mt-4 text-sm text-muted-foreground">Assinatura {subscriptionStatusLabel(billing.subscription.status)}{billing.subscription.interval ? ` · ${billing.subscription.interval === "year" ? "anual" : "mensal"}` : ""}{billing.subscription.current_period_end ? ` · renova em ${dateFormat(billing.subscription.current_period_end)}` : ""}{billing.subscription.cancel_at_period_end ? " · cancelada ao fim do período" : ""}.</p>}
     {ents && !legacy && block.plan_key !== "expired" && <p className="mt-3 text-xs text-muted-foreground">Limites: {limitText(ents.max_spaces)} Espaços · {limitText(ents.max_automations)} automações · {limitText(ents.max_data_sources)} fontes · {limitText(ents.max_api_keys)} chaves de API.</p>}
-    {message && <p role={message.tone === "error" ? "alert" : "status"} data-testid="plan-message" className={`mt-4 rounded-md px-3 py-2 text-sm ${message.tone === "error" ? "bg-rose-50 text-rose-800" : "bg-sage text-ink"}`}>{message.text}</p>}
+    {pendingPayment && <p role="status" data-testid="payment-pending" className="mt-4 flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900"><Clock3 size={16} className="mt-0.5 shrink-0" aria-hidden="true" />{pendingPayment}</p>}
+    {message && <p role={message.tone === "error" ? "alert" : "status"} aria-busy={confirming} data-testid="plan-message" data-pending={confirming ? "true" : undefined} className={`mt-4 rounded-md px-3 py-2 text-sm ${message.tone === "error" ? "bg-rose-50 text-rose-800" : "bg-sage text-ink"}`}>{message.text}</p>}
     {blockers.length > 0 && <ul data-testid="downgrade-blockers" className="mt-2 list-disc space-y-1 pl-5 text-sm text-rose-800">{blockers.map((item) => <li key={item}>{item}</li>)}</ul>}
     {!legacy && (owner ? <div className="mt-5 space-y-4">
       <div className="flex flex-wrap gap-3">
         {personal && <button type="button" className={btn("primary")} onClick={() => setUpgrade(true)} data-testid="upgrade-open"><Building2 size={16} aria-hidden="true" />Transformar em empresa</button>}
         {!personal && <button type="button" className={btn("primary")} onClick={() => setSubscribe((value) => !value)} aria-expanded={subscribe}>Assinar</button>}
-        {!personal && <button type="button" className={btn("secondary")} disabled={busy !== null} onClick={() => { void billingCall("portal"); }}>{busy === "portal" ? "Abrindo…" : "Gerenciar cobrança"}</button>}
+        {(!personal || billing?.subscription) && <button type="button" className={btn("secondary")} disabled={busy !== null} onClick={() => { void billingCall("portal"); }} data-testid="billing-portal">{busy === "portal" ? "Abrindo…" : "Gerenciar cobrança"}</button>}
         {!personal && <button type="button" className={btn("ghost")} disabled={busy !== null} onClick={() => { void downgrade(); }}>{busy === "downgrade" ? "Convertendo…" : "Voltar para conta pessoal"}</button>}
       </div>
       {!personal && subscribe && <div className="space-y-3 rounded-md border border-line-soft p-4"><PlanPicker plans={plans} planKey={planKey} onPlanKey={setPlanKey} seats={seats} onSeats={setSeats} interval={interval} onInterval={setInterval} disabled={busy !== null} /><button type="button" className={btn("primary")} disabled={busy !== null} onClick={() => { void billingCall("checkout"); }}>{busy === "checkout" ? "Abrindo…" : "Continuar para o pagamento"}</button></div>}
+      {billing?.billing_configured && <InvoiceList companyId={company.id} refreshKey={invoicesKey} />}
     </div> : <p className="mt-4 text-sm text-muted-foreground">Somente o responsável altera o plano e a cobrança.</p>)}
     {upgrade && <PlanDialog title="Transformar em empresa" onClose={() => setUpgrade(false)}><UpgradeToBusinessForm company={company} onDone={() => { setUpgrade(false); setNotice?.(upgradeDoneNotice(company)); load(); }} /></PlanDialog>}
   </section>;

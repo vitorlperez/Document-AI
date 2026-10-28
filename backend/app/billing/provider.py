@@ -5,17 +5,24 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 from uuid import UUID
 
 from app.entitlements.errors import BillingNotConfigured
 from app.organizations.models import Subscription
 
+if TYPE_CHECKING:
+    from app.core.config import Settings
+
 EVENT_SUBSCRIPTION_UPSERTED = "subscription.upserted"
 EVENT_SUBSCRIPTION_CANCELED = "subscription.canceled"
 EVENT_PAYMENT_FAILED = "payment.failed"
 EVENT_PAYMENT_SUCCEEDED = "payment.succeeded"
-EVENT_TYPES = {EVENT_SUBSCRIPTION_UPSERTED, EVENT_SUBSCRIPTION_CANCELED, EVENT_PAYMENT_FAILED, EVENT_PAYMENT_SUCCEEDED}
+# Recorded in the ledger but never change access: disputes/refunds/fraud warnings (staff alert) and everything else.
+EVENT_RISK_FLAGGED = "risk.flagged"
+EVENT_IGNORED = "ignored"
+EVENT_TYPES = {EVENT_SUBSCRIPTION_UPSERTED, EVENT_SUBSCRIPTION_CANCELED, EVENT_PAYMENT_FAILED, EVENT_PAYMENT_SUCCEEDED,
+               EVENT_RISK_FLAGGED, EVENT_IGNORED}
 SUBSCRIPTION_STATUSES = {"active", "trialing", "past_due", "unpaid", "paused", "incomplete", "incomplete_expired", "canceled"}
 
 
@@ -72,6 +79,20 @@ class BillingEvent:
     discount_summary: dict | None = None
 
 
+@dataclass(frozen=True)
+class InvoiceSummary:
+    """Provider-neutral invoice row for the billing page (amounts in cents)."""
+
+    id: str
+    number: str | None
+    status: str | None
+    total: int  # cents
+    currency: str
+    created: datetime  # tz-aware UTC
+    hosted_invoice_url: str | None
+    invoice_pdf: str | None
+
+
 class WebhookRejected(ValueError):
     """Bad signature or unparseable payload (HTTP 400)."""
 
@@ -90,6 +111,8 @@ class BillingProvider(Protocol):
     def cancel(self, *, subscription: Subscription, at_period_end: bool = True) -> None: ...
 
     def parse_webhook(self, *, body: bytes, headers: Mapping[str, str]) -> BillingEvent: ...
+
+    def list_invoices(self, customer_id: str, limit: int = 12) -> list[InvoiceSummary]: ...
 
 
 class NoBillingProvider:
@@ -113,7 +136,20 @@ class NoBillingProvider:
     def parse_webhook(self, *, body: bytes, headers: Mapping[str, str]) -> BillingEvent:
         raise BillingNotConfigured
 
+    def list_invoices(self, customer_id: str, limit: int = 12) -> list[InvoiceSummary]:
+        raise BillingNotConfigured
 
-def build_provider(name: str) -> BillingProvider:
-    """Registry for future adapters; an unknown or empty name never silently enables payments."""
+
+def build_provider(name: str, settings: Settings | None = None) -> BillingProvider:
+    """Registry of adapters; an unknown or empty name never silently enables payments.
+
+    The Stripe SDK is imported only when ``name`` is ``stripe``, so the default deployment never loads it."""
+    if (name or "").strip().lower() == "stripe":
+        from app.billing.stripe_provider import StripeBillingProvider
+
+        if settings is None:
+            from app.core.config import get_settings
+
+            settings = get_settings()
+        return StripeBillingProvider(settings)
     return NoBillingProvider()

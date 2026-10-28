@@ -71,6 +71,21 @@ RESEND_API_KEY=<segredo>
 INVITATION_FROM_EMAIL=convites@seudominio.com
 ```
 
+Cobrança (Stripe, ADR-0023) — somente na API; omita tudo (ou deixe `BILLING_PROVIDER=none`) enquanto a cobrança não estiver pronta, e as rotas de pagamento respondem `501 billing_not_configured`:
+
+```text
+BILLING_PROVIDER=stripe
+STRIPE_API_KEY=<chave restrita rk_live_…; chaves de teste são recusadas com ENVIRONMENT=production>
+STRIPE_WEBHOOK_SECRET=<segredo whsec_… do endpoint de webhook>
+STRIPE_API_VERSION=<opcional; padrão pinado no código>
+STRIPE_CHECKOUT_INTEGRATION_ID=<opcional; padrão fixo no código>
+STRIPE_PORTAL_CONFIGURATION_ID=<opcional; bpc_… criado pelo script de catálogo, se não for o padrão da conta>
+STRIPE_PIX_ENABLED=false
+# Só para rodar backend/scripts/stripe_sync_catalog.py (a API não lê): STRIPE_CATALOG_API_KEY=<segunda chave restrita, com escrita em Products/Prices/Portal>
+```
+
+Use duas chaves restritas distintas: a de runtime (`STRIPE_API_KEY`) e a de catálogo (`STRIPE_CATALOG_API_KEY`). Rode o script de catálogo primeiro com `--dry-run` (padrão) e só depois com `--apply`. Mantenha `STRIPE_PIX_ENABLED=false` até o Pix Automático estar disponível na conta e verificado no sandbox. Passo a passo completo: `docs/stripe-integration-plan.md` § "Ops checklist para go-live (sandbox → produção)".
+
 As URLs de PostgreSQL exportadas pela Railway são aceitas pelo backend, que seleciona o driver `psycopg` instalado. Use a URL privada `DATABASE_URL` do Postgres, nunca `DATABASE_PUBLIC_URL`. As chaves de criptografia precisam continuar iguais às utilizadas para os tokens já salvos; a troca sem migração torna as conexões existentes ilegíveis. Cada chave de provider deve também ser idêntica na API e no worker. Para ClickUp, client ID/secret/redirect são necessários na API para OAuth; o worker sincroniza com o access token salvo e precisa da chave, sem exigir esses três parâmetros no fluxo atual. Uma divergência de chave no worker é corrigida preservando a API e redeployando somente o worker, após validar filas e a descriptografia real. Defina os segredos apenas em Railway Variables, nunca em arquivos versionados. Se alguma integração não estiver pronta para produção, omita suas variáveis e deixe sua conexão indisponível até configurá-la.
 
 O worker não recebe domínio público nem variáveis Resend. Reset de senha revoga as sessões WorkOS automaticamente; não há fila/tarefa Beat de autenticação nem exigência de credenciais WorkOS no worker para esse fluxo. Os processos que carregam o mesmo Settings em produção (incluindo worker e MCP) exigem AUTH_PROXY_SECRET e AUTH_TRUSTED_PROXY_CIDRS válidos na inicialização. Comece com limite de memória adequado para extração de documentos e concorrência Celery igual a 1; aumente somente após medir uso de memória e duração dos jobs.
@@ -122,6 +137,7 @@ Depois de HTTPS funcionar, cadastre os callbacks exatos:
 - Notion: `https://app.seudominio.com/api/data-sources/notion/oauth/callback`.
 - ClickUp (app OAuth em Settings > Apps): `https://app.seudominio.com/api/data-sources/clickup/oauth/callback`. Veja `docs/integracoes/clickup-runbook.md`.
 - Resend: verifique o domínio do remetente de convites.
+- Stripe (Workbench > Webhooks): endpoint `https://api.seudominio.com/webhooks/billing/stripe` (domínio público da API), com `api_version` `2026-09-30.endive` e exatamente os eventos listados no ops checklist de `docs/stripe-integration-plan.md` (inclui `mandate.updated`); copie o segredo de assinatura para `STRIPE_WEBHOOK_SECRET`. Use um endpoint e chaves separados para homologação (sandbox).
 
 Se um provedor aceita apenas um callback por aplicação, use credenciais de homologação separadas para evitar substituir o callback já usado por produção.
 

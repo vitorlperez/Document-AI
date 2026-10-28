@@ -1,0 +1,77 @@
+# ADR-0023: Stripe como provedor de cobrança
+
+- **Status:** Aceito — implementação em andamento.
+- **Data:** 2026-10-27
+- **Decisor:** produto (usuário). Os padrões marcados como **provisórios** (§ "Decisões provisórias do dono") foram adotados para destravar a implementação e precisam de confirmação explícita antes do go-live.
+- **Relaciona-se com:** ADR-0022 (tipos de conta, planos e entitlements), `docs/contas-pessoal-empresa.md` (§5 e §14.4), `docs/stripe-integration-plan.md` (plano de execução), `docs/deployment/railway-production.md`.
+- **Emenda** o ADR-0022: revoga a decisão "**não integrar Stripe agora**". O restante do ADR-0022 (D1–D10) continua valendo; em especial, a camada de cobrança segue **agnóstica de provedor** (D8) e o Stripe entra apenas como mais um adaptador de `BillingProvider`.
+
+## Contexto
+
+O ADR-0022 entregou planos, trial local, comps e a porta `BillingProvider` com `billing_provider="none"` (rotas de pagamento respondem `501 billing_not_configured`). Para vender os planos é preciso um provedor real. O Stripe atende o Brasil (BRL, cartão; boleto/Pix sujeitos à elegibilidade da conta), oferece Checkout e Customer Portal hospedados e assinaturas com preço escalonado por quantidade, o que encaixa no **modelo B** (preço base com assentos incluídos + assento extra). Nada no resolvedor, nas tabelas (`subscriptions`, `billing_events`) ou no contrato de API precisa mudar.
+
+## Decisões
+
+| # | Decisão |
+|---|---|
+| S1 | **Adaptador `StripeBillingProvider`** em `backend/app/billing/stripe_provider.py`, registrado em `build_provider(name, settings=None)` com *import* tardio quando `name == "stripe"`. Usa `StripeClient` com a versão da API **pinada** (`stripe_api_version`, padrão `2026-09-30.endive`). Ativado por `BILLING_PROVIDER=stripe`; o padrão continua `none` e o app sobe sem Stripe. |
+| S2 | **Configuração** em `backend/app/core/config.py`: `stripe_api_key: SecretStr \| None` (`STRIPE_API_KEY`), `stripe_webhook_secret: SecretStr \| None` (`STRIPE_WEBHOOK_SECRET`), `stripe_api_version: str` (`STRIPE_API_VERSION`), `stripe_checkout_integration_id: str` (`STRIPE_CHECKOUT_INTEGRATION_ID`, rótulo fixo de identificação da integração no Checkout), `stripe_portal_configuration_id: str \| None` (`STRIPE_PORTAL_CONFIGURATION_ID`, configuração `bpc_…` do Customer Portal; vazio = padrão da conta) e `stripe_pix_enabled: bool = False` (`STRIPE_PIX_ENABLED`, S11), além dos existentes `billing_provider` e `trial_days`. Com `billing_provider="stripe"` as duas chaves secretas são obrigatórias; em produção chaves de teste são recusadas e chaves `sk_` geram aviso (preferir **chave restrita `rk_`**). Segredos nunca aparecem em `repr`/logs. |
+| S3 | **Catálogo**: `app/entitlements/catalog.py` continua a fonte única. `backend/app/billing/stripe_catalog.py` (sem importar `stripe`) descreve o catálogo desejado (`ProductSpec`, `PriceSpec`, `desired_products()`, `desired_price(plan_key, interval)`, `lookup_key(plan_key, interval)` → `{plan_key}_{monthly\|yearly}`, `plan_from_price(price)`). O script `backend/scripts/stripe_sync_catalog.py` sincroniza (padrão `--dry-run`, grava só com `--apply`), com IDs estáveis de Product (ex.: `arquivio_business_team`), e usa uma chave restrita própria (`STRIPE_CATALOG_API_KEY`, só no script). Mudança de valor **cria um Price novo** com `transfer_lookup_key=true`; Prices existentes nunca são editados (assinaturas antigas ficam no Price antigo). |
+| S4 | **Modelo de preço por assento**: um Product por plano e dois Prices (mensal/anual) com `metadata` `plan_key`, `interval`, `account_type`. Planos de empresa usam **um único Price escalonado (`tiers_mode=graduated`)** com `quantity = assentos`: faixa 1 `up_to=included_seats`, `flat_amount=<preço base>`, `unit_amount=0`; faixa 2 `up_to=inf`, `unit_amount=<assento extra>`; anual = 10× o mensal. Planos pessoais: preço fixo, `quantity=1`. O app continua impondo `max_seats`; trocar plano ou quantidade **não** é feito pelo Customer Portal. *Fallback*, se o Checkout não aceitar o preço escalonado no sandbox: base `quantity=1` + item "assento extra". |
+| S5 | **Derivação do plano** sempre por `price.metadata.plan_key` (fallback `product.metadata.plan_key`), **nunca** pelo `lookup_key`. Price desconhecido ⇒ log + alerta, o plano anterior é mantido. **Resolução da org**: Customer → `organizations.billing_customer_id`; fallback `metadata.organization_id` (Customer e `subscription_data.metadata`). |
+| S6 | **Checkout**: Customer criado sob demanda (idempotency key `org-{id}-customer`, `metadata.organization_id`, `preferred_locales=['pt-BR']`); Session `mode=subscription`, `line_items=[{price, quantity: seats}]`, `client_reference_id`, `subscription_data.metadata`, `locale=pt-BR`, identificador de integração; `discounts=[{promotion_code}]` quando o código vem do app, senão `allow_promotion_codes=true` (nunca os dois). `subscription_data.billing_mode={type: flexible}` explícito; **sem `ui_mode`** (página hospedada padrão). `seats ≥ 1` validado no adaptador (`422 invalid_seats`) antes de qualquer chamada. **Sem `payment_method_types`**: os métodos vêm da configuração dinâmica do Dashboard. **Nunca `automatic_tax`** (S12). Empresa: `billing_address_collection=required` e `tax_id_collection.enabled=true` em melhor esforço — **nunca obrigatório** (o Checkout pode não oferecer CPF/CNPJ). Com `STRIPE_PIX_ENABLED=true`, envia `payment_method_options.pix.mandate_options` (S11). **URLs de retorno** (não existe rota `/app/billing`; montadas por `_billing_page_url` em `backend/app/api/billing.py`, seção "Plano e cobrança" da Administração da org): sucesso `{public_app_url}/companies/{org_id}/admin?checkout=success`, cancelamento `…/admin?checkout=canceled`, retorno do Portal `…/admin?billing=portal`. A página de retorno só relê `GET …/billing` — acesso muda apenas por webhook. Boleto volta pelo `hosted_voucher_url`, não pelo `success_url`: com assinatura `incomplete` a UI mostra "pagamento pendente". |
+| S7 | **Troca de plano/assentos** (`change_plan`): atualiza preço e quantidade do item com `payment_behavior=error_if_incomplete` e idempotency key; `proration_behavior=always_invoice` no upgrade e `create_prorations` no downgrade. Falha no Stripe **levanta antes** de qualquer escrita local. Assinatura paga por Pix: se o novo valor por ciclo ultrapassar o teto do mandato (ou mudar de anual para mensal), levanta `409 pix_mandate_reauth_required` antes de chamar o Stripe (detecção pelo `default_payment_method` da assinatura, em melhor esforço). **Cancelamento**: `cancel_at_period_end=true` (ou imediato, quando pedido). |
+| S8 | **Webhook** em `POST /webhooks/billing/stripe` (rota genérica `/webhooks/billing/{provider}` já existente), entregue direto no domínio público da API. Assinatura verificada com `client.construct_event(corpo_bruto, Stripe-Signature, STRIPE_WEBHOOK_SECRET)`; falha ⇒ `WebhookRejected` (400). A assinatura é **re-buscada** (`expand` de `items.data.price.product` e `discounts.promotion_code`) em vez de confiar no payload. `id` do evento normalizado = `event.id`, `occurred_at = event.created`; o *ledger* `billing_events` usa a chave `stripe:evt_…` (idempotência) e `subscriptions.last_event_at` descarta eventos mais antigos. Erro de API do Stripe propaga 5xx para o Stripe repetir. |
+| S9 | **Mapeamento de eventos** para `BillingEvent` (tabela abaixo). Dois tipos novos em `app/billing/provider.py`: `EVENT_RISK_FLAGGED="risk.flagged"` e `EVENT_IGNORED="ignored"` — ambos são gravados no *ledger*, **não alteram acesso** e respondem 200. |
+| S10 | **Faturas**: faturas automáticas da assinatura; Customer Portal v1 (histórico de faturas, atualizar forma de pagamento, cancelar ao fim do período, atualizar CNPJ; `subscription_update` **desligado**). Nova rota `GET /organizations/{id}/billing/invoices` — **somente owner** (como checkout/portal; demais membros `403`) → lista com `id, number, status, total` (centavos), `currency, created` (ISO 8601 UTC), `hosted_invoice_url, invoice_pdf`; até 12 faturas mais recentes (`BillingProvider.list_invoices`); `[]` antes do primeiro checkout; `501 billing_not_configured` sem provedor. |
+| S11 | **Pix Automático** (atrás de `STRIPE_PIX_ENABLED`, padrão `false`): o Checkout envia `payment_method_options.pix.mandate_options = {amount: <cobrança máxima do plano/intervalo em max_seats, centavos>, amount_type: maximum, currency: brl, payment_schedule: monthly\|yearly, reference: "Arquivio <plan_key>"}`. Sem `mandate_options` o Stripe aplicaria o teto padrão de **R$ 400**, insuficiente para os planos de empresa. Troca de plano acima do teto ⇒ `409 pix_mandate_reauth_required` (S7), e o cliente precisa autorizar um novo mandato (novo Checkout). `mandate.updated` (ex.: mandato revogado no app do banco) ⇒ re-busca da assinatura quando resolvível (payment method → Customer → assinatura) ⇒ `subscription.upserted`; senão `risk.flagged` para staff. **Atenção:** a documentação do Stripe diz que o Pix Automático **não está disponível para empresas domiciliadas no Brasil** — como a conta do Arquivio é BR, o Pix recorrente provavelmente fica indisponível; `STRIPE_PIX_ENABLED` permanece `false` e a questão é decisão do dono. Além disso, o teto do Business Scale anual (R$ 40.190) excede o limite padrão por pagamento Pix (~USD 3.000). Só ligar depois que a capacidade estiver ativa na conta e o caminho de código for verificado no sandbox. |
+| S12 | **Impostos e nota fiscal no Brasil**: o **Stripe Tax não é suportado para contas BR** ⇒ `automatic_tax` nunca é enviado. **NFS-e é emitida fora do Stripe** por um provedor a escolher pelo dono (eNotas, NFE.io ou Focus NFe). Gancho futuro: ao processar `payment.succeeded` (`invoice.paid`), buscar a fatura (`GET /v1/invoices/{id}`) e enviar tomador/valor ao emissor. **CPF/CNPJ**: `tax_id_collection` do Checkout provavelmente **não** coleta `br_cpf`/`br_cnpj`; coletar no app (antes do Checkout) é decisão do dono. **Boleto**: exige solicitar a capacidade na conta e ligar, nas configurações de cobrança, o envio de "link hospedado" da fatura; `checkout.session.async_payment_succeeded/failed` já são tratados. Hoje Boleto e Pix estão **indisponíveis** na conta sandbox (BR/BRL). |
+
+### Códigos de erro novos do adaptador
+
+| `code` | HTTP | Quando |
+|---|---|---|
+| `invalid_seats` | 422 | `seats < 1` em checkout/troca de plano |
+| `invalid_promotion_code` | 422 | código promocional inexistente/inativo no Stripe |
+| `subscription_required` | 409 | Portal/troca de plano sem Customer ou assinatura no provedor |
+| `pix_mandate_reauth_required` | 409 | troca de plano acima do teto do mandato Pix (S11) |
+| `payment_failed` | 402 | cobrança recusada na troca de plano (`error_if_incomplete`) |
+| `plan_unavailable` | 503 | Price do plano/intervalo não encontrado no Stripe (catálogo não sincronizado) |
+
+### Mapeamento de eventos (S9)
+
+| Evento Stripe | `BillingEvent.type` |
+|---|---|
+| `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` | `subscription.upserted` (re-busca `session.subscription`; `incomplete` não concede acesso) |
+| `customer.subscription.created` / `updated` / `paused` / `resumed` | `subscription.upserted` |
+| `customer.subscription.deleted` | `subscription.canceled` |
+| `invoice.paid` | `payment.succeeded` |
+| `invoice.payment_failed` | `payment.failed` |
+| `invoice.payment_action_required` | `subscription.upserted` |
+| `charge.dispute.created`, `charge.refunded`, `radar.early_fraud_warning.created` | `risk.flagged` (log + alerta para staff, sem mudança de acesso) |
+| `mandate.updated` (Pix Automático) | `subscription.upserted` via re-busca, se resolvível à assinatura; senão `risk.flagged` |
+| qualquer outro | `ignored` (200, registrado no *ledger*) |
+
+Campos que mudaram de lugar na versão pinada: `current_period_end` vem de `items.data[0]`; a assinatura de uma fatura vem de `invoice.parent.subscription_details.subscription`. Os status do Stripe coincidem com `SUBSCRIPTION_STATUSES`.
+
+### Decisões provisórias do dono
+
+Adotadas como padrão até confirmação; cada uma é reversível sem mudança de modelo de dados.
+
+- **Métodos de pagamento**: cartão via métodos dinâmicos (nunca `payment_method_types`); boleto/Pix ficam para depois, como chave no Dashboard.
+- **Impostos**: `automatic_tax` **nunca** (Stripe Tax não suporta contas BR). No Checkout de empresa, `tax_id_collection` ligado em melhor esforço (nunca obrigatório) e `billing_address_collection=required`.
+- **NFS-e**: emitida fora do Stripe; provedor a escolher (eNotas, NFE.io ou Focus NFe) com o contador (S12).
+- **CPF/CNPJ**: sem coleta no app por enquanto; decidir se o app passa a coletar antes do Checkout.
+- **Boleto/Pix**: desligados no lançamento (capacidades indisponíveis hoje); Pix só com `STRIPE_PIX_ENABLED=true` após verificação.
+- **Webhook**: entregue direto no domínio público da API; `stripe-signature` também entra na lista de cabeçalhos repassados pelo proxy do frontend (`frontend/app/api/proxy-headers.mjs`) como salvaguarda inócua.
+- **Trial**: assinar durante o trial local **cobra imediatamente** (sem `trial_end` no Stripe); o trial continua 100% local.
+
+## Consequências
+
+- Nenhuma mudança no resolvedor de entitlements, nas tabelas ou no contrato de API além da rota de faturas e dos dois tipos de evento novos.
+- Em produção ficam **duas chaves restritas** nas Variables da Railway: a de runtime (`STRIPE_API_KEY`, API) e a de catálogo (`STRIPE_CATALOG_API_KEY`, usada só ao rodar o script de sincronização). Mais `STRIPE_WEBHOOK_SECRET`, `STRIPE_API_VERSION`, `STRIPE_CHECKOUT_INTEGRATION_ID`, `STRIPE_PORTAL_CONFIGURATION_ID` (opcional), `STRIPE_PIX_ENABLED` (padrão `false`) e `BILLING_PROVIDER=stripe`.
+- A re-busca no webhook acrescenta latência e chamadas ao Stripe, em troca de robustez contra eventos fora de ordem. Eventos no mesmo segundo usam comparação estrita (`<`) com `last_event_at`.
+- Testes nunca chamam a rede do Stripe: o `StripeClient` é substituído por um *fake*; payloads de webhook são assinados localmente.
+- A UI ainda não oferece Checkout para planos **pessoais** (só empresa tem "Assinar"); o seletor de plano pessoal é decisão/trabalho pendente.
+- Checklist operacional de go-live (sandbox → produção): `docs/stripe-integration-plan.md` § "Ops checklist para go-live".
+- Pendentes: validação ponta a ponta no sandbox (`stripe listen`/`stripe trigger`), confirmação das decisões provisórias, calendário de retentativas e carência de 7 dias em `past_due`, e confirmação do modelo escalonado no Checkout do sandbox.

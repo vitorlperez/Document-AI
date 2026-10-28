@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
-  BILLING_SOON_MESSAGE, clearSignupIntent, daysLeft, defaultBusinessPlan, downgradeBlockers, formatCents, intentAccountType, parseSignupIntent, planLabel, planDialogCopy, planErrorFromResponse, readSignupIntent, saveSignupIntent, upgradeDoneNotice, upgradeIntro,
+  BILLING_SOON_MESSAGE, CHECKOUT_POLL_INTERVAL_MS, CHECKOUT_POLL_MAX_MS, CHECKOUT_RETURN_MESSAGES, billingReturnFrom, checkoutPollOutcome, formatInvoiceTotal, invoiceDate, invoiceStatusLabel, invoiceTitle, pendingPaymentNotice, stripBillingReturn, subscriptionStatusLabel,
+  clearSignupIntent, daysLeft, defaultBusinessPlan, downgradeBlockers, formatCents, intentAccountType, parseSignupIntent, planLabel, planDialogCopy, planErrorFromResponse, readSignupIntent, saveSignupIntent, upgradeDoneNotice, upgradeIntro,
 } from "../app/product/plan-model.ts";
 
 const read = (path) => readFileSync(new URL(`../app/${path}`, import.meta.url), "utf8");
@@ -157,4 +158,72 @@ test("o label do header é só texto (sem link/botão/next-link) e o diálogo us
   assert.doesNotMatch(ui, /plan-banner/, "faixa de largura total removida");
   assert.match(read("mobile-nav.tsx"), /<PlanLabel company=\{company\} compact \/>/, "versão compacta no header mobile");
   assert.match(ui, /upgradeIntro\(company\)/); assert.doesNotMatch(ui, /começa sem cartão|Seu teste de 14 dias começou/);
+});
+
+test("retorno do Checkout/Portal: lê e limpa só os parâmetros de cobrança", () => {
+  assert.equal(billingReturnFrom("?checkout=success"), "checkout_success");
+  assert.equal(billingReturnFrom("?checkout=canceled&x=1"), "checkout_canceled");
+  assert.equal(billingReturnFrom(new URLSearchParams("billing=portal")), "portal");
+  assert.equal(billingReturnFrom("?checkout=talvez"), null);
+  assert.equal(billingReturnFrom(""), null);
+  assert.equal(stripBillingReturn("https://app.test/companies/c1/admin?checkout=success&x=1#plano"), "/companies/c1/admin?x=1#plano");
+  assert.equal(stripBillingReturn("https://app.test/companies/c1/admin?billing=portal"), "/companies/c1/admin");
+});
+
+test("poll pós-Checkout para quando a assinatura fica ativa ou o prazo estoura", () => {
+  assert.ok(CHECKOUT_POLL_INTERVAL_MS >= 1_000 && CHECKOUT_POLL_MAX_MS <= 30_000 && CHECKOUT_POLL_MAX_MS > CHECKOUT_POLL_INTERVAL_MS);
+  const sub = (status) => ({ subscription: { status, plan_key: "personal_pro", interval: "month", seats: 1, current_period_end: null, cancel_at_period_end: false, coupon_code: null, discount_summary: null } });
+  assert.equal(checkoutPollOutcome(sub("active"), 0), "active");
+  assert.equal(checkoutPollOutcome(sub("trialing"), 50_000), "active", "ativa vence o prazo");
+  assert.equal(checkoutPollOutcome(sub("incomplete"), 2_000), "pending", "pagamento assíncrono ainda pendente");
+  assert.equal(checkoutPollOutcome({ subscription: null }, 2_000), "pending");
+  assert.equal(checkoutPollOutcome(null, 4_000), "pending", "erro transitório continua tentando");
+  assert.equal(checkoutPollOutcome({ subscription: null }, CHECKOUT_POLL_MAX_MS), "timeout");
+  assert.equal(checkoutPollOutcome(sub("past_due"), 25_000, 20_000), "timeout");
+  assert.match(CHECKOUT_RETURN_MESSAGES.timeout, /alguns minutos/);
+  assert.match(CHECKOUT_RETURN_MESSAGES.canceled, /Nenhuma cobrança/);
+});
+
+test("faturas: status, total em BRL e data em pt-BR", () => {
+  assert.equal(invoiceStatusLabel("paid"), "Paga");
+  assert.equal(invoiceStatusLabel("open"), "Em aberto");
+  assert.equal(invoiceStatusLabel("void"), "Anulada");
+  assert.equal(invoiceStatusLabel("uncollectible"), "Não cobrável");
+  assert.equal(invoiceStatusLabel("draft"), "Rascunho");
+  assert.equal(invoiceStatusLabel(null), "—");
+  assert.equal(invoiceStatusLabel("novo_status"), "—");
+  const brl = (text) => text.replace(/\u00a0/g, " ");
+  assert.equal(brl(formatInvoiceTotal(4990, "brl")), "R$ 49,90");
+  assert.equal(brl(formatInvoiceTotal(29900, "BRL")), "R$ 299,00");
+  assert.equal(brl(formatInvoiceTotal(0, null)), "R$ 0,00");
+  assert.equal(brl(formatInvoiceTotal(100, "???")), "R$ 1,00", "moeda inválida cai para BRL");
+  assert.equal(invoiceDate("2026-10-01T02:00:00+00:00"), "30/09/2026", "fuso de São Paulo");
+  assert.equal(invoiceDate("lixo"), "—");
+  assert.equal(invoiceTitle({ number: "ARQ-0001" }), "Fatura ARQ-0001");
+  assert.equal(invoiceTitle({ number: null }), "Fatura");
+  assert.equal(subscriptionStatusLabel("active"), "ativa");
+  assert.equal(subscriptionStatusLabel("past_due"), "com pagamento atrasado");
+  assert.equal(subscriptionStatusLabel("x"), "x");
+});
+
+test("fiação da cobrança: portal também para conta pessoal assinante, poll ao voltar e lista de faturas", () => {
+  const ui = read("product/plan-ui.tsx");
+  assert.match(ui, /\(!personal \|\| billing\?\.subscription\) && <button[^\n]*billingCall\("portal"\)[^\n]*Gerenciar cobrança/);
+  assert.match(ui, /billingReturnFrom\(window\.location\.search\)/);
+  assert.match(ui, /checkoutPollOutcome\(/);
+  assert.match(ui, /\/billing\/invoices/);
+  assert.match(ui, /caught\.status === 501/);
+  assert.match(ui, /rel="noopener noreferrer"/);
+});
+
+test("pagamento pendente (boleto/Pix volta pelo voucher, não pelo success_url) aparece pelo status da assinatura", () => {
+  const sub = (status) => ({ subscription: { status, plan_key: "personal_pro", interval: "month", seats: 1, current_period_end: null, cancel_at_period_end: false, coupon_code: null, discount_summary: null } });
+  assert.match(pendingPaymentNotice(sub("incomplete")), /^Pagamento pendente — assim que o boleto\/Pix for compensado/);
+  assert.match(pendingPaymentNotice(sub("past_due")), /^Pagamento pendente/);
+  for (const status of ["active", "trialing", "canceled", "incomplete_expired"]) assert.equal(pendingPaymentNotice(sub(status)), null, status);
+  assert.equal(pendingPaymentNotice({ subscription: null }), null);
+  assert.equal(pendingPaymentNotice(null), null);
+  const ui = read("product/plan-ui.tsx");
+  assert.match(ui, /pendingPaymentNotice\(billing\)/);
+  assert.match(ui, /data-testid="payment-pending"/);
 });

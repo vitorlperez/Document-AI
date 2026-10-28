@@ -25,6 +25,7 @@ dependencies = [
   "uvicorn[standard]>=0.32,<1",
   "workos>=10.3,<11",
   "resend>=2.44,<3",
+  "stripe>=16,<17",
 ]
 
 [project.optional-dependencies]

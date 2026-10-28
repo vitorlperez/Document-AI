@@ -11,6 +11,7 @@ const FORWARDED_REQUEST_HEADERS = [
   "user-agent",
   "x-request-id",
   "idempotency-key", // required by POST .../clickup-task; dropping it makes the API answer 422
+  "stripe-signature", // Stripe webhook signature, verified by the API against the raw body (ADR-0023)
 ];
 
 /** Keep the proxy allowlist narrow while preserving the backend's CSRF signals. */

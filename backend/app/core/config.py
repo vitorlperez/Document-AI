@@ -1,3 +1,4 @@
+import logging
 from functools import lru_cache
 from typing import Literal
 
@@ -54,6 +55,15 @@ class Settings(BaseSettings):
     # Account types / billing (ADR-0022). The payment provider is optional: "none" means no checkout is available.
     billing_provider: str = "none"
     trial_days: int = Field(default=14, ge=1)
+    # Stripe adapter (ADR-0023), read only when BILLING_PROVIDER=stripe. Prefer a restricted key (rk_) in production.
+    stripe_api_key: SecretStr | None = None
+    stripe_webhook_secret: SecretStr | None = None
+    stripe_api_version: str = "2026-09-30.endive"
+    stripe_checkout_integration_id: str = "arquivio_checkout_pnsxiqba"
+    # Customer Portal configuration (bpc_...) created by scripts/stripe_sync_catalog.py; None uses the account default.
+    stripe_portal_configuration_id: str | None = None
+    # Pix Automático mandate options on Checkout (requires Pix enabled in the Dashboard; see ADR-0023).
+    stripe_pix_enabled: bool = False
     past_due_grace_days: int = Field(default=7, ge=0)
     account_downgrade_cooldown_days: int = Field(default=30, ge=0)
     service_name: str = "document-intelligence-api"
@@ -89,6 +99,24 @@ class Settings(BaseSettings):
         if self.api_docs_enabled is not None:
             return self.api_docs_enabled
         return self.environment.strip().lower() != "production"
+
+    @model_validator(mode="after")
+    def validate_stripe(self):
+        # Messages name variables only: a key value must never reach a log or an error page.
+        if self.billing_provider.strip().lower() != "stripe":
+            return self
+        required = {"STRIPE_API_KEY": self.stripe_api_key, "STRIPE_WEBHOOK_SECRET": self.stripe_webhook_secret}
+        missing = [name for name, value in required.items() if not value or not value.get_secret_value().strip()]
+        if missing:
+            raise ValueError(f"BILLING_PROVIDER=stripe requires {' and '.join(missing)}")
+        if self.environment.strip().lower() == "production":
+            api_key = self.stripe_api_key.get_secret_value().strip()
+            if "_test_" in api_key:
+                raise ValueError("Production refuses a Stripe test-mode STRIPE_API_KEY")
+            if api_key.startswith("sk_"):
+                logging.getLogger("document_intelligence.config").warning(
+                    "STRIPE_API_KEY is an unrestricted secret key; prefer a restricted key (rk_) in production")
+        return self
 
     @model_validator(mode="after")
     def validate_production_auth_proxy(self):
