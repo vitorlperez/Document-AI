@@ -79,7 +79,17 @@ class BillingService:
             if org is not None:
                 return org
         organization_id: UUID | None = event.organization_id
-        return self.session.get(Organization, organization_id) if organization_id else None
+        org = self.session.get(Organization, organization_id) if organization_id else None
+        if (org is not None and event.external_customer_id and org.billing_customer_id
+                and org.billing_provider == self.provider.name and org.billing_customer_id != event.external_customer_id):
+            # The metadata is writable by anyone with access to the provider account: it must not move an
+            # organization onto a different customer. Ledger only, flagged for staff.
+            logger.warning(
+                "billing event %s names organization %s but customer %s differs from the stored one; ignored",
+                event.id, org.id, event.external_customer_id,
+                extra={"provider": self.provider.name, "event": event.type, "action": "staff_review"})
+            return None
+        return org
 
     def _note(self, event: BillingEvent) -> str:
         """Ledger-only events never touch a subscription or access. Risk signals alert staff through the log."""
@@ -99,6 +109,10 @@ class BillingService:
         org = self._organization(event, sub)
         if org is None:
             return "ignored"
+        # Serialize concurrent webhooks of one organization, then re-read the row the stale check compares against.
+        self.session.execute(select(Organization.id).where(Organization.id == org.id).with_for_update())
+        if sub is not None:
+            self.session.refresh(sub)
         if event.type in (EVENT_PAYMENT_FAILED, EVENT_PAYMENT_SUCCEEDED):
             if sub is None:
                 return "ignored"

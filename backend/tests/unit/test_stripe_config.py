@@ -103,14 +103,21 @@ def test_production_rejects_test_mode_keys(key):
 
 
 def test_production_warns_on_an_unrestricted_secret_key(config_warnings):
-    stripe(environment="production", stripe_api_key="sk_live_unit_only_value", **PROXY)
+    stripe(environment="production", stripe_api_key="sk_live_unit_only_value",
+           stripe_portal_configuration_id="bpc_unit", **PROXY)
     assert len(config_warnings) == 1 and "restricted key (rk_)" in config_warnings[0]
     assert "sk_live_unit_only_value" not in config_warnings[0]
 
 
 def test_production_accepts_a_live_restricted_key_quietly(config_warnings):
-    settings = stripe(environment="production", stripe_api_key="rk_live_unit_only_value", **PROXY)
+    settings = stripe(environment="production", stripe_api_key="rk_live_unit_only_value",
+                      stripe_portal_configuration_id="bpc_unit", **PROXY)
     assert settings.billing_provider == "stripe" and config_warnings == []
+
+
+def test_production_warns_when_the_portal_configuration_is_not_pinned(config_warnings):
+    stripe(environment="production", stripe_api_key="rk_live_unit_only_value", **PROXY)
+    assert len(config_warnings) == 1 and "STRIPE_PORTAL_CONFIGURATION_ID" in config_warnings[0]
 
 
 def test_production_without_stripe_ignores_stripe_settings():

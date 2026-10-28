@@ -353,6 +353,7 @@ def test_subscription_webhook_refetches_with_expand_and_reads_item_period(provid
     expand = http.to("get", "/v1/subscriptions/sub_1")[0].query
     assert expand["expand[0]"] == "items.data.price.product"
     assert expand["expand[1]"] == "discounts.promotion_code"
+    assert expand["expand[2]"] == "discounts.source.coupon"
 
 
 @pytest.mark.parametrize("shape", ["source", "legacy"])
@@ -555,3 +556,15 @@ def test_other_invalid_requests_still_propagate(provider, http):
         provider.create_checkout(checkout(promotion_code="promo_x", external_customer_id="cus_1"))
     with pytest.raises(stripe.InvalidRequestError):  # no promotion code sent: never relabelled
         provider.create_checkout(checkout(external_customer_id="cus_1"))
+
+
+def test_discount_with_unexpanded_coupon_id_keeps_the_code_and_id(provider, http):
+    """Real sandbox shape (2026-09-30.endive): ``source.coupon`` is a bare ID unless ``discounts.source.coupon`` is expanded."""
+    discount = {"id": "di_1", "object": "discount", "source": {"type": "coupon", "coupon": "E2E_LANCA20"},
+                "promotion_code": {"id": "promo_1", "object": "promotion_code", "code": "E2ELANCA20",
+                                   "promotion": {"type": "coupon", "coupon": "E2E_LANCA20"}}}
+    http.routes["GET /v1/subscriptions/sub_1"] = subscription_json(discounts=[discount])
+    body = event_body("customer.subscription.updated", {"id": "sub_1", "object": "subscription"})
+    event = provider.parse_webhook(body=body, headers=webhook_headers(body))
+    assert event.coupon_code == "E2ELANCA20"
+    assert event.discount_summary == {"coupon_id": "E2E_LANCA20", "promotion_code": "E2ELANCA20"}

@@ -80,3 +80,29 @@ def test_unknown_events_are_acknowledged_and_recorded(stripe_api) -> None:
 def test_the_route_name_must_match_the_configured_provider(stripe_api) -> None:
     client, *_ = stripe_api
     assert client.post("/webhooks/billing/fake", content=b"{}").status_code == 501
+
+
+def test_metadata_cannot_move_an_organization_onto_another_customer(stripe_api) -> None:
+    """A subscription from an unknown customer that merely claims the org id in its metadata is ledger-only."""
+    client, factory, gateway, fake = stripe_api
+    login(client, gateway)
+    org = create_org(client, "business", "Acme")["id"]
+    fake.subscriptions_by_id["sub_1"] = subscription_obj(metadata={"organization_id": org})
+    assert post(client, "customer.subscription.created", {"id": "sub_1"}, "evt_real").json() == {"status": "processed"}
+
+    fake.subscriptions_by_id["sub_evil"] = subscription_obj(
+        sub_id="sub_evil", metadata={"organization_id": org}, customer="cus_evil")
+    response = post(client, "customer.subscription.created", {"id": "sub_evil"}, "evt_evil")
+    assert response.status_code == 200 and response.json() == {"status": "ignored"}
+    with factory() as session:
+        assert session.get(Organization, UUID(org)).billing_customer_id == "cus_1"
+        assert session.scalar(select(Subscription).where(Subscription.external_subscription_id == "sub_evil")) is None
+
+
+def test_oversized_webhook_bodies_are_refused_before_verification(stripe_api) -> None:
+    client, _, _, fake = stripe_api
+    big = b"x" * 1_000_001
+    response = client.post("/webhooks/billing/stripe", content=big,
+                           headers={"content-type": "application/json", "stripe-signature": "t=1,v1=aa"})
+    assert response.status_code == 413
+    assert fake.calls == []

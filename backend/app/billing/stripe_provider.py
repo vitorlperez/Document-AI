@@ -55,7 +55,9 @@ logger = logging.getLogger("document_intelligence.billing.stripe")
 LOCALE = "pt-BR"
 PRICE_CACHE_SECONDS = 300.0
 # Nested expansion also expands the parent (``discounts``); price metadata carries plan_key, product is the fallback.
-SUBSCRIPTION_EXPAND = ["items.data.price.product", "discounts.promotion_code"]
+# ``discounts.source.coupon`` is needed for the coupon's name/percent_off/duration: without it ``source.coupon`` is
+# only the coupon ID (verified against the sandbox, API 2026-09-30.endive).
+SUBSCRIPTION_EXPAND = ["items.data.price.product", "discounts.promotion_code", "discounts.source.coupon"]
 
 CHECKOUT_EVENTS = {
     "checkout.session.completed",

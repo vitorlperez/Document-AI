@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Literal
@@ -31,6 +32,9 @@ from app.entitlements.summary import plan_state
 from app.identity.models import User
 from app.organizations.models import Membership, MembershipRole, Organization
 
+logger = logging.getLogger("document_intelligence.billing.api")
+MAX_WEBHOOK_BODY_BYTES = 1_000_000  # Stripe events are a few KB; refuse anything bigger before buffering it
+
 public_router = APIRouter(tags=["plans"])
 router = APIRouter(tags=["billing"])
 
@@ -44,6 +48,7 @@ USER_MESSAGES = {
     "plan_unavailable": "Este plano não está disponível para contratação no momento. Tente novamente em instantes.",
     "payment_failed": "O pagamento não foi aprovado. Confira a forma de pagamento e tente novamente.",
     "subscription_required": "Esta organização ainda não tem uma assinatura ativa. Escolha um plano para continuar.",
+    "billing_provider_unavailable": "Não foi possível falar com o provedor de pagamento agora. Tente novamente em instantes.",
     "subscription_exists": "Esta organização já tem uma assinatura. Para trocar de plano ou pagamento, use Gerenciar cobrança.",
 }
 # A new Checkout while one of these exists would bill the organization twice.
@@ -60,6 +65,15 @@ def _friendly_errors() -> Iterator[None]:
         if message:
             error.message = message
             error.args = (message,)
+        raise
+    except Exception as error:
+        # Provider SDK failures (matched by class name: the SDK is optional) never reach the client as a bare 500
+        # and are logged without the message, which can echo request parameters.
+        if any(cls.__name__ == "StripeError" for cls in type(error).__mro__):
+            logger.error("billing provider call failed: %s request_id=%s", type(error).__name__,
+                         getattr(error, "request_id", None))
+            code = "billing_provider_unavailable"
+            raise EntitlementError(code, USER_MESSAGES[code], status_code=502) from error
         raise
 
 
@@ -134,7 +148,16 @@ async def billing_webhook(provider_name: str, request: Request, session: Session
     provider = _provider(request)
     if not provider.configured or provider.name != provider_name:
         raise BillingNotConfigured
-    body = await request.body()
+    if int(request.headers.get("content-length") or 0) > MAX_WEBHOOK_BODY_BYTES:
+        raise HTTPException(413, "webhook body too large")
+    chunks: list[bytes] = []
+    received = 0
+    async for chunk in request.stream():  # also caps bodies sent without a Content-Length
+        received += len(chunk)
+        if received > MAX_WEBHOOK_BODY_BYTES:
+            raise HTTPException(413, "webhook body too large")
+        chunks.append(chunk)
+    body = b"".join(chunks)
     try:
         outcome = BillingService(session, provider, _settings(request)).handle_webhook(body=body, headers=request.headers)
     except WebhookRejected as error:

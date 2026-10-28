@@ -116,6 +116,10 @@ class Settings(BaseSettings):
             if api_key.startswith("sk_"):
                 logging.getLogger("document_intelligence.config").warning(
                     "STRIPE_API_KEY is an unrestricted secret key; prefer a restricted key (rk_) in production")
+            if not (self.stripe_portal_configuration_id or "").strip():
+                logging.getLogger("document_intelligence.config").warning(
+                    "STRIPE_PORTAL_CONFIGURATION_ID is unset: the account's default Customer Portal applies and may "
+                    "allow plan or quantity changes that bypass the app's seat limits")
         return self
 
     @model_validator(mode="after")

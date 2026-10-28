@@ -202,6 +202,12 @@ def main(argv: list[str] | None = None) -> int:
         print("set STRIPE_CATALOG_API_KEY (or STRIPE_API_KEY)", file=sys.stderr)
         return 2
     live = "_live_" in api_key
+    if "_live_" not in api_key and "_test_" not in api_key:
+        print("unrecognized key: expected an sk_/rk_ test or live key", file=sys.stderr)  # fail closed, never echo it
+        return 2
+    if args.apply and not os.environ.get("STRIPE_CATALOG_API_KEY"):
+        print("--apply requires STRIPE_CATALOG_API_KEY (the runtime STRIPE_API_KEY is never used to write)", file=sys.stderr)
+        return 2
     if args.apply and live and not args.confirm_live:
         print("refusing to --apply with a live-mode key without --confirm-live", file=sys.stderr)
         return 2

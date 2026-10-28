@@ -142,3 +142,20 @@ def test_checkout_is_refused_while_a_subscription_is_live(api, status, blocked) 
         assert response.json()["detail"] == USER_MESSAGES["subscription_exists"]
     else:
         assert response.status_code == 200, response.text
+
+
+class StripeError(Exception):
+    """Same class name as ``stripe.StripeError`` (the API layer matches by name)."""
+
+    request_id = "req_123"
+
+
+def test_unexpected_provider_failures_are_a_502_without_leaking_their_text(api) -> None:
+    client, _, provider = api
+    org = create_org(client)["id"]
+    provider.error = StripeError("Invalid API Key provided: rk_live_secretvalue")
+    response = client.post(f"/organizations/{org}/billing/portal")
+    assert response.status_code == 502
+    body = response.json()
+    assert body["code"] == "billing_provider_unavailable" and body["detail"] == USER_MESSAGES["billing_provider_unavailable"]
+    assert "rk_live" not in str(body)

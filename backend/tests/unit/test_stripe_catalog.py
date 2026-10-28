@@ -272,6 +272,16 @@ def test_main_requires_a_key(monkeypatch, capsys):
     assert "x" * 8 not in capsys.readouterr().err
 
 
+def test_main_fails_closed_on_unrecognized_keys_and_never_applies_with_the_runtime_key(monkeypatch, capsys):
+    monkeypatch.delenv("STRIPE_CATALOG_API_KEY", raising=False)
+    monkeypatch.setenv("STRIPE_API_KEY", "sk_unknown_" + "y" * 8)
+    assert sync.main([]) == 2  # neither _test_ nor _live_
+    monkeypatch.setenv("STRIPE_API_KEY", "rk_test_" + "y" * 8)
+    assert sync.main(["--apply"]) == 2  # --apply needs the dedicated catalog key
+    err = capsys.readouterr().err
+    assert "y" * 8 not in err and "STRIPE_CATALOG_API_KEY" in err
+
+
 # ---------------------------------------------------------------- Pix mandate ceiling
 
 
