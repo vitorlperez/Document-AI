@@ -1,6 +1,6 @@
 # Plano de integração com o Stripe
 
-- **Status:** implementação em andamento (2026-10-27).
+- **Status:** implementado e validado contra o SDK real `stripe` 16.0.1 (2026-10-28). Falta o E2E no sandbox (WP9): a rede do ambiente de desenvolvimento nega `api.stripe.com`.
 - **Decisão:** ADR-0023 (`specs/adr/ADR-0023-stripe-billing-provider.md`), que emenda o ADR-0022.
 - **Contexto de produto e contrato de API:** `docs/contas-pessoal-empresa.md` (§5 e §14).
 - **Deploy:** `docs/deployment/railway-production.md` (variáveis e endpoint de webhook).
@@ -79,7 +79,7 @@ Outros nomes: `EVENT_RISK_FLAGGED = "risk.flagged"` e `EVENT_IGNORED = "ignored"
 | WP8 | Documentação: ADR-0023, `docs/contas-pessoal-empresa.md`, `docs/deployment/railway-production.md`, `.env.example`, `.env.production.example`, este plano. | — |
 | WP9 | E2E no sandbox com `stripe listen` / `stripe trigger` — executado pelo usuário, depois das chaves. | — |
 
-Regra geral dos testes: nenhuma chamada de rede ao Stripe; o `StripeClient` é sempre substituído por um *fake*.
+Regra geral dos testes: nenhuma chamada de rede ao Stripe. Os testes de unidade usam um *fake*; `tests/unit/test_stripe_sdk_contract.py` usa o `StripeClient` real com HTTP gravado e valida os parâmetros contra os `TypedDict` do SDK (e contra o `stripe-mock`, se estiver em `STRIPE_MOCK_URL`; `go install github.com/stripe/stripe-mock@latest` e `stripe-mock -http-port 12111`).
 
 ## 6. Brasil: impostos, NFS-e, CPF/CNPJ, Boleto e Pix
 
@@ -149,8 +149,10 @@ Os itens marcados **[provisório]** já têm um padrão adotado na implementaç�
 - [ ] **Coleta de CPF/CNPJ no app** — o Checkout provavelmente não coleta `br_cpf`/`br_cnpj`; decidir se o app coleta antes do Checkout (necessário para NFS-e com tomador identificado).
 - [ ] **Boleto/Pix no lançamento** — [provisório] só cartão via métodos dinâmicos (código nunca envia `payment_method_types`). Boleto exige solicitar a capacidade; Pix Automático provavelmente indisponível para conta BR (`STRIPE_PIX_ENABLED=false`).
 - [ ] **Política de retentativas e carência** — calendário de Smart Retries, estado final após as retentativas (`unpaid` proposto vs. cancelar) e carência de 7 dias em `past_due`.
-- [ ] **Seletor de plano para contas pessoais** — a UI hoje não oferece Checkout para planos pessoais (só empresa tem "Assinar"); decidir o fluxo (Básico/Pro, mensal/anual) e implementar.
+- [x] **Seletor de plano para contas pessoais** — implementado (Básico/Pro, mensal/anual, 1 assento, mesmo fluxo de checkout). Troca de plano com assinatura viva vai pelo Portal; sem UI de cancelamento/troca no app e sem campo de código promocional.
 - [ ] **Comportamento do trial** — [provisório] assinar durante o trial local cobra imediatamente (sem `trial_end` no Stripe); alternativa: preservar os dias restantes como `trial_end`.
 - [ ] **Abordagem fiscal** — `automatic_tax` nunca (Stripe Tax não suporta BR); no Checkout de empresa, `tax_id_collection` em melhor esforço e `billing_address_collection=required`.
 - [ ] **Webhook pelo domínio da API vs. pelo proxy do frontend** — [provisório] direto no domínio público da API; `stripe-signature` também na lista de cabeçalhos do proxy como salvaguarda.
 - [ ] **Confirmar o modelo escalonado no sandbox** (Checkout aceita Price `graduated` com `quantity` definida pelo app; senão, *fallback* base + item de assento extra).
+- [ ] **Achados da revisão de segurança ainda abertos** — ver ADR-0023 (índice único de customer, `FOR UPDATE` no webhook, limite de corpo/taxa na rota do webhook, Portal sempre com configuração própria em produção, 502 para erros do SDK, chave de catálogo obrigatória com `--apply`).
+- [ ] **Sandbox (bloqueado por rede)** — confirmar: campo CNPJ no Checkout para endereço BR (`tax_id_collection`), forma de `discount.coupon` vs `discount.source.coupon`, expand `discounts.promotion_code`, Price escalonado com `quantity`. A documentação da Stripe só diz que o formulário de tax ID aparece conforme o país e some se o customer já tem tax ID salvo; não confirma `br_cnpj`.
