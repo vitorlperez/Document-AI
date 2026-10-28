@@ -5,8 +5,8 @@ import { type FormEvent, type ReactNode, useCallback, useEffect, useId, useRef, 
 import { useDialogBackdropClose } from "../modal-dismiss";
 import { btn, closeDialogAnimated } from "../ui";
 import {
-  BILLING_SOON_MESSAGE, CHECKOUT_POLL_INTERVAL_MS, CHECKOUT_RETURN_MESSAGES, PLAN_CHANGED_EVENT, PLAN_ERROR_EVENT, ApiError, accountTypeLabel, api, billingReturnFrom, checkoutPollOutcome, companyPath,
-  defaultBusinessPlan, downgradeBlockers, formatCents, formatInvoiceTotal, invoiceDate, invoiceStatusLabel, invoiceTitle, isLegacyPlan, isPersonal, messageFor, pendingPaymentNotice, planDialogCopy, planLabel, planTitle, sourceLabel,
+  BILLING_SOON_MESSAGE, CHECKOUT_POLL_INTERVAL_MS, CHECKOUT_RETURN_MESSAGES, PLAN_CHANGED_EVENT, PLAN_ERROR_EVENT, ApiError, accountTypeLabel, api, billingReturnFrom, canOpenPortal, checkoutPollOutcome, companyPath,
+  defaultBusinessPlan, downgradeBlockers, formatCents, formatInvoiceTotal, hasLiveSubscription, invoiceDate, invoiceStatusLabel, invoiceTitle, isLegacyPlan, isPersonal, messageFor, pendingPaymentNotice, personalCheckoutBody, personalPlanOptions, planDialogCopy, planLabel, planTitle, sourceLabel,
   stripBillingReturn, subscriptionStatusLabel, upgradeDoneNotice, upgradeIntro, type BillingState, type Company, type InvoiceSummary, type PlanBlock, type PlanErrorInfo, type PlansResponse, type PublicPlan,
 } from "./types-and-api";
 import "./automation-modal.css";
@@ -68,6 +68,9 @@ export function PlanDialog({ title, onClose, busy = false, children }: { title: 
 const FORM_ERRORS: Record<string, string> = {
   invalid_plan: "Este plano não é válido para a conta.", invalid_seats: "Número de assentos inválido para o plano escolhido.", seats_below_members: "Há mais membros do que os assentos escolhidos.",
   comp_type_mismatch: "Esta conta tem uma cortesia de outro tipo. Fale com a gente para ajustar.", personal_org_limit: "Você já tem uma conta pessoal. Transforme-a em empresa ou crie uma conta de empresa.",
+  pix_mandate_reauth_required: "Esta alteração ultrapassa o valor autorizado no Pix Automático. Faça uma nova assinatura para autorizar o novo valor.",
+  invalid_promotion_code: "Este código promocional não existe ou não está mais ativo.", plan_unavailable: "Este plano não está disponível para contratação no momento. Tente novamente em instantes.",
+  payment_failed: "O pagamento não foi aprovado. Confira a forma de pagamento e tente novamente.", subscription_required: "Esta organização ainda não tem uma assinatura ativa. Escolha um plano para continuar.",
 };
 export const planFormError = (caught: unknown) => caught instanceof ApiError ? (caught.code && FORM_ERRORS[caught.code]) || (caught.code === "billing_not_configured" ? BILLING_SOON_MESSAGE : messageFor(caught)) : messageFor(caught);
 
@@ -90,6 +93,23 @@ function PlanPicker({ plans, planKey, onPlanKey, seats, onSeats, interval, onInt
       <label className="block text-sm font-medium">Assentos<input type="number" min={1} max={maxSeats} required value={seats} disabled={disabled} onChange={(event) => onSeats(Math.max(1, Math.min(maxSeats, Number(event.target.value) || 1)))} className="mt-1 w-full rounded-md border border-line bg-panel px-3 py-2" /></label>
       <label className="block text-sm font-medium">Cobrança<select value={interval} disabled={disabled} onChange={(event) => onInterval(event.target.value === "year" ? "year" : "month")} className="mt-1 w-full rounded-md border border-line bg-panel px-3 py-2"><option value="month">Mensal</option><option value="year">Anual</option></select></label>
     </div>
+  </div>;
+}
+
+/** Seletor dos planos pessoais (Básico/Pro) com alternância mensal/anual; preços vêm do catálogo GET /plans. */
+function PersonalPlanPicker({ plans, planKey, onPlanKey, interval, onInterval, disabled }: { plans: PlansResponse | null; planKey: string; onPlanKey: (key: string) => void; interval: "month" | "year"; onInterval: (value: "month" | "year") => void; disabled: boolean }) {
+  const options = personalPlanOptions(plans);
+  if (!options.length) return <p className="text-sm text-muted-foreground">Os planos pessoais não estão disponíveis no momento.</p>;
+  return <div className="space-y-3" data-testid="personal-plan-picker">
+    <div role="group" aria-label="Periodicidade da cobrança" className="inline-flex gap-1 rounded-md border border-line-soft p-1">
+      {(["month", "year"] as const).map((value) => <button key={value} type="button" disabled={disabled} aria-pressed={interval === value} onClick={() => onInterval(value)} className={`min-h-11 min-w-11 rounded px-4 text-sm font-medium ${interval === value ? "bg-primary text-white" : "text-muted-foreground"}`}>{value === "year" ? "Anual" : "Mensal"}</button>)}
+    </div>
+    <fieldset className="space-y-2" disabled={disabled}><legend className="text-sm font-medium">Plano pessoal</legend>
+      {options.map((plan) => <label key={plan.plan_key} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-line-soft p-3 has-[:checked]:border-primary">
+        <input type="radio" name="personal-plan-key" value={plan.plan_key} checked={planKey === plan.plan_key} onChange={() => onPlanKey(plan.plan_key)} />
+        <span className="min-w-0 flex-1"><b className="block text-sm">{plan.title}</b><span className="text-xs text-muted-foreground">{formatCents(planPrice(plan, interval), plan.currency)}/{interval === "year" ? "ano" : "mês"}</span></span>
+      </label>)}
+    </fieldset>
   </div>;
 }
 
@@ -197,6 +217,7 @@ export function PlanBillingSection({ company, setNotice }: { company: Company; s
   const [billing, setBilling] = useState<BillingState | null>(null); const [loadError, setLoadError] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: "info" | "error"; text: string } | null>(null); const [blockers, setBlockers] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null); const [upgrade, setUpgrade] = useState(false); const [subscribe, setSubscribe] = useState(false);
+  const [personalPlanKey, setPersonalPlanKey] = useState<string>("personal_basic"); const [personalSubscribe, setPersonalSubscribe] = useState(false);
   const [planKey, setPlanKey] = useState<string>("business_team"); const [seats, setSeats] = useState(5); const [interval, setInterval] = useState<"month" | "year">("month");
   const load = useCallback(() => { setLoadError(null); api<BillingState>(`/organizations/${company.id}/billing`, { cache: "no-store" }).then(setBilling).catch((caught) => setLoadError(messageFor(caught))); }, [company.id]);
   useEffect(() => { void Promise.resolve().then(load); }, [load, company.account_type, company.plan_key]);
@@ -239,7 +260,9 @@ export function PlanBillingSection({ company, setNotice }: { company: Company; s
   async function billingCall(kind: "checkout" | "portal") {
     setBusy(kind); setMessage(null);
     try {
-      const body = kind === "checkout" ? { plan_key: planKey, interval, seats } : {};
+      // O cliente nunca envia price id: o backend resolve o preço pelo plan_key/intervalo. Conta pessoal: sempre 1 assento.
+      const body = kind === "portal" ? {} : personal ? personalCheckoutBody(personalPlanKey, interval) : { plan_key: planKey, interval, seats };
+      if (body === null) throw new Error("Plano inválido.");
       const { url } = await api<{ url: string }>(`/organizations/${company.id}/billing/${kind}`, { method: "POST", body: JSON.stringify(body) });
       window.location.assign(url);
     } catch (caught) {
@@ -278,10 +301,13 @@ export function PlanBillingSection({ company, setNotice }: { company: Company; s
     {!legacy && (owner ? <div className="mt-5 space-y-4">
       <div className="flex flex-wrap gap-3">
         {personal && <button type="button" className={btn("primary")} onClick={() => setUpgrade(true)} data-testid="upgrade-open"><Building2 size={16} aria-hidden="true" />Transformar em empresa</button>}
+        {personal && billing && !hasLiveSubscription(billing) && <button type="button" className={btn("secondary")} onClick={() => setPersonalSubscribe((value) => !value)} aria-expanded={personalSubscribe} data-testid="personal-subscribe-open">Assinar plano pessoal</button>}
         {!personal && <button type="button" className={btn("primary")} onClick={() => setSubscribe((value) => !value)} aria-expanded={subscribe}>Assinar</button>}
-        {(!personal || billing?.subscription) && <button type="button" className={btn("secondary")} disabled={busy !== null} onClick={() => { void billingCall("portal"); }} data-testid="billing-portal">{busy === "portal" ? "Abrindo…" : "Gerenciar cobrança"}</button>}
+        {canOpenPortal(billing) && <button type="button" className={btn("secondary")} disabled={busy !== null} onClick={() => { void billingCall("portal"); }} data-testid="billing-portal">{busy === "portal" ? "Abrindo…" : "Gerenciar cobrança"}</button>}
         {!personal && <button type="button" className={btn("ghost")} disabled={busy !== null} onClick={() => { void downgrade(); }}>{busy === "downgrade" ? "Convertendo…" : "Voltar para conta pessoal"}</button>}
       </div>
+      {personal && hasLiveSubscription(billing) && <p className="text-sm text-muted-foreground" data-testid="personal-manage-hint">Para trocar de plano ou de periodicidade, use Gerenciar cobrança.</p>}
+      {personal && billing && !hasLiveSubscription(billing) && personalSubscribe && <div className="space-y-3 rounded-md border border-line-soft p-4"><PersonalPlanPicker plans={plans} planKey={personalPlanKey} onPlanKey={setPersonalPlanKey} interval={interval} onInterval={setInterval} disabled={busy !== null} /><button type="button" className={btn("primary")} disabled={busy !== null || !personalPlanOptions(plans).length} onClick={() => { void billingCall("checkout"); }} data-testid="personal-checkout">{busy === "checkout" ? "Abrindo…" : "Continuar para o pagamento"}</button></div>}
       {!personal && subscribe && <div className="space-y-3 rounded-md border border-line-soft p-4"><PlanPicker plans={plans} planKey={planKey} onPlanKey={setPlanKey} seats={seats} onSeats={setSeats} interval={interval} onInterval={setInterval} disabled={busy !== null} /><button type="button" className={btn("primary")} disabled={busy !== null} onClick={() => { void billingCall("checkout"); }}>{busy === "checkout" ? "Abrindo…" : "Continuar para o pagamento"}</button></div>}
       {billing?.billing_configured && <InvoiceList companyId={company.id} refreshKey={invoicesKey} />}
     </div> : <p className="mt-4 text-sm text-muted-foreground">Somente o responsável altera o plano e a cobrança.</p>)}

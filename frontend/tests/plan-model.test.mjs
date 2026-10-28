@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
-  BILLING_SOON_MESSAGE, CHECKOUT_POLL_INTERVAL_MS, CHECKOUT_POLL_MAX_MS, CHECKOUT_RETURN_MESSAGES, billingReturnFrom, checkoutPollOutcome, formatInvoiceTotal, invoiceDate, invoiceStatusLabel, invoiceTitle, pendingPaymentNotice, stripBillingReturn, subscriptionStatusLabel,
+  BILLING_SOON_MESSAGE, CHECKOUT_POLL_INTERVAL_MS, CHECKOUT_POLL_MAX_MS, CHECKOUT_RETURN_MESSAGES, billingReturnFrom, canOpenPortal, hasLiveSubscription, personalCheckoutBody, personalPlanOptions, checkoutPollOutcome, formatInvoiceTotal, invoiceDate, invoiceStatusLabel, invoiceTitle, pendingPaymentNotice, stripBillingReturn, subscriptionStatusLabel,
   clearSignupIntent, daysLeft, defaultBusinessPlan, downgradeBlockers, formatCents, intentAccountType, parseSignupIntent, planLabel, planDialogCopy, planErrorFromResponse, readSignupIntent, saveSignupIntent, upgradeDoneNotice, upgradeIntro,
 } from "../app/product/plan-model.ts";
 
@@ -208,7 +208,7 @@ test("faturas: status, total em BRL e data em pt-BR", () => {
 
 test("fiação da cobrança: portal também para conta pessoal assinante, poll ao voltar e lista de faturas", () => {
   const ui = read("product/plan-ui.tsx");
-  assert.match(ui, /\(!personal \|\| billing\?\.subscription\) && <button[^\n]*billingCall\("portal"\)[^\n]*Gerenciar cobrança/);
+  assert.match(ui, /canOpenPortal\(billing\) && <button[^\n]*billingCall\("portal"\)[^\n]*Gerenciar cobrança/);
   assert.match(ui, /billingReturnFrom\(window\.location\.search\)/);
   assert.match(ui, /checkoutPollOutcome\(/);
   assert.match(ui, /\/billing\/invoices/);
@@ -226,4 +226,37 @@ test("pagamento pendente (boleto/Pix volta pelo voucher, não pelo success_url) 
   const ui = read("product/plan-ui.tsx");
   assert.match(ui, /pendingPaymentNotice\(billing\)/);
   assert.match(ui, /data-testid="payment-pending"/);
+});
+
+test("portal só aparece com cliente no provedor ou assinatura", () => {
+  const sub = { status: "active", plan_key: "personal_pro", interval: "month", seats: 1, current_period_end: null, cancel_at_period_end: false, coupon_code: null, discount_summary: null };
+  assert.equal(canOpenPortal({ subscription: null, has_billing_customer: false }), false);
+  assert.equal(canOpenPortal({ subscription: null }), false, "ausente = false");
+  assert.equal(canOpenPortal({ subscription: null, has_billing_customer: true }), true);
+  assert.equal(canOpenPortal({ subscription: sub, has_billing_customer: false }), true);
+  assert.equal(canOpenPortal(null), false);
+  assert.equal(canOpenPortal(undefined), false);
+});
+
+test("plano pessoal: opções do catálogo, checkout com 1 assento e sem price id, assinatura viva bloqueia novo checkout", () => {
+  const plan = (plan_key, account_type) => ({ plan_key, account_type, title: plan_key, price_month_cents: 1900, price_year_cents: 19000, currency: "BRL" });
+  const plans = { plans: [plan("business_team", "business"), plan("personal_pro", "personal"), plan("personal_basic", "personal")] };
+  assert.deepEqual(personalPlanOptions(plans).map((p) => p.plan_key), ["personal_basic", "personal_pro"]);
+  assert.deepEqual(personalPlanOptions(null), []);
+  assert.deepEqual(personalCheckoutBody("personal_pro", "year"), { plan_key: "personal_pro", interval: "year", seats: 1 });
+  assert.equal(personalCheckoutBody("business_team", "month"), null);
+  assert.equal(personalCheckoutBody("personal_trial", "month"), null);
+  assert.equal(Object.keys(personalCheckoutBody("personal_basic", "month")).some((k) => /price/.test(k)), false);
+  const withStatus = (status) => ({ subscription: { status } });
+  for (const s of ["active", "trialing", "past_due"]) assert.equal(hasLiveSubscription(withStatus(s)), true, s);
+  for (const s of ["canceled", "incomplete_expired"]) assert.equal(hasLiveSubscription(withStatus(s)), false, s);
+  assert.equal(hasLiveSubscription({ subscription: null }), false);
+});
+
+test("fiação do plano pessoal e erros pt-BR novos", () => {
+  const ui = read("product/plan-ui.tsx");
+  assert.match(ui, /<PersonalPlanPicker /);
+  assert.match(ui, /aria-pressed=\{interval === value\}/);
+  for (const code of ["pix_mandate_reauth_required", "invalid_seats", "invalid_promotion_code", "plan_unavailable", "payment_failed", "subscription_required"]) assert.match(ui, new RegExp(`${code}:`), code);
+  assert.equal([...ui.matchAll(/target="_blank"/g)].length, [...ui.matchAll(/target="_blank" rel="noopener noreferrer"/g)].length, "todo link externo tem rel seguro");
 });

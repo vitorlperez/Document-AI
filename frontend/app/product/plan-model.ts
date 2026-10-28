@@ -188,7 +188,7 @@ export type PlansResponse = { currency: string; trial_days: number; trial_requir
 export const formatCents = (cents: number | null | undefined, currency = "BRL") => cents === null || cents === undefined ? "—" : new Intl.NumberFormat("pt-BR", { style: "currency", currency, minimumFractionDigits: cents % 100 === 0 ? 0 : 2 }).format(cents / 100);
 
 export type BillingState = PlanBlock & {
-  billing_configured: boolean; provider: string | null; legacy: boolean; seats_used: number | null; comp_expires_at: string | null; grace_ends_at: string | null;
+  billing_configured: boolean; provider: string | null; /** Já existe cliente no provedor (Stripe). Ausente em respostas antigas ⇒ false. */ has_billing_customer?: boolean; legacy: boolean; seats_used: number | null; comp_expires_at: string | null; grace_ends_at: string | null;
   subscription: { status: string; plan_key: string; interval: string | null; seats: number | null; current_period_end: string | null; cancel_at_period_end: boolean; coupon_code: string | null; discount_summary: string | null } | null;
   account_type_changed_at: string | null;
 };
@@ -267,4 +267,24 @@ export function pendingPaymentNotice(state: Pick<BillingState, "subscription"> |
   if (status === "incomplete") return "Pagamento pendente — assim que o boleto/Pix for compensado, seu plano é ativado.";
   if (status === "past_due") return "Pagamento pendente — regularize em Gerenciar cobrança para manter o plano ativo.";
   return null;
+}
+
+// ── Portal e plano pessoal ────────────────────────────────────────────────────
+/** O portal só abre quando a organização já tem cliente no provedor ou assinatura; antes disso o backend responde 409 subscription_required. */
+export const canOpenPortal = (state: Pick<BillingState, "subscription"> & { has_billing_customer?: boolean } | null | undefined): boolean =>
+  Boolean(state && (state.has_billing_customer === true || state.subscription != null));
+
+/** Planos pessoais vendáveis, na ordem do catálogo (básico antes de pro); sem catálogo, lista vazia. */
+export const PERSONAL_SELLABLE_KEYS = ["personal_basic", "personal_pro"] as const;
+export const personalPlanOptions = (plans: PlansResponse | null | undefined): PublicPlan[] =>
+  PERSONAL_SELLABLE_KEYS.flatMap((key) => plans?.plans.filter((plan) => plan.plan_key === key && plan.account_type === "personal") ?? []);
+
+const LIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "past_due", "unpaid", "paused", "incomplete"]);
+/** Assinatura que ainda ocupa a conta: novo Checkout duplicaria a cobrança, então a troca/gestão vai pelo portal. */
+export const hasLiveSubscription = (state: Pick<BillingState, "subscription"> | null | undefined): boolean =>
+  Boolean(state?.subscription && LIVE_SUBSCRIPTION_STATUSES.has(state.subscription.status));
+
+/** Corpo do checkout pessoal: nunca envia price id; assentos sempre 1. Retorna null se o plano não é vendável para conta pessoal. */
+export function personalCheckoutBody(planKey: string, interval: "month" | "year"): { plan_key: string; interval: "month" | "year"; seats: 1 } | null {
+  return (PERSONAL_SELLABLE_KEYS as readonly string[]).includes(planKey) ? { plan_key: planKey, interval, seats: 1 } : null;
 }
