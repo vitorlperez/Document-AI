@@ -165,7 +165,7 @@ def _resolve(annotation, module):
     if isinstance(annotation, str):
         try:
             return eval(annotation, vars(module))
-        except (NameError, SyntaxError, TypeError):  # noqa: S110 - an unresolvable annotation is simply not checked
+        except (NameError, SyntaxError, TypeError):
             return None
     return annotation
 

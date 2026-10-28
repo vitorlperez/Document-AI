@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Literal
 from uuid import UUID
 
@@ -31,6 +33,31 @@ from app.organizations.models import Membership, MembershipRole, Organization
 
 public_router = APIRouter(tags=["plans"])
 router = APIRouter(tags=["billing"])
+
+
+# User-facing (pt-BR) text for the billing error codes; ``code`` stays the machine-readable contract for clients.
+USER_MESSAGES = {
+    "pix_mandate_reauth_required": (
+        "Esta alteração ultrapassa o valor autorizado no Pix Automático. Faça uma nova assinatura para autorizar o novo valor."),
+    "invalid_seats": "Número de assentos inválido: fora do limite do plano ou menor que o total de membros ativos.",
+    "invalid_promotion_code": "Este código promocional não existe ou não está mais ativo.",
+    "plan_unavailable": "Este plano não está disponível para contratação no momento. Tente novamente em instantes.",
+    "payment_failed": "O pagamento não foi aprovado. Confira a forma de pagamento e tente novamente.",
+    "subscription_required": "Esta organização ainda não tem uma assinatura ativa. Escolha um plano para continuar.",
+}
+
+
+@contextmanager
+def _friendly_errors() -> Iterator[None]:
+    """Swap the English provider/guard message of known billing errors for its pt-BR text (code/status untouched)."""
+    try:
+        yield
+    except EntitlementError as error:
+        message = USER_MESSAGES.get(error.code)
+        if message:
+            error.message = message
+            error.args = (message,)
+        raise
 
 
 def _provider(request: Request) -> BillingProvider:
@@ -126,11 +153,12 @@ class DowngradeInput(BaseModel):
 @router.post("/organizations/{organization_id}/upgrade")
 def upgrade(organization_id: UUID, payload: UpgradeInput, request: Request, user: User = Depends(current_user),
             session: Session = Depends(database_session)) -> dict[str, object]:
-    _require_owner(session, organization_id, user.id)
-    org = guards.upgrade_to_business(
-        session, organization_id=organization_id, actor_user_id=user.id, name=payload.name, plan_key=payload.plan_key,
-        seats=payload.seats, interval=payload.interval, provider=_provider(request), settings=_settings(request))
-    return {"id": str(org.id), "name": org.name} | plan_state(entitlements_for(session, org.id))
+    with _friendly_errors():
+        _require_owner(session, organization_id, user.id)
+        org = guards.upgrade_to_business(
+            session, organization_id=organization_id, actor_user_id=user.id, name=payload.name, plan_key=payload.plan_key,
+            seats=payload.seats, interval=payload.interval, provider=_provider(request), settings=_settings(request))
+        return {"id": str(org.id), "name": org.name} | plan_state(entitlements_for(session, org.id))
 
 
 @router.post("/organizations/{organization_id}/downgrade")
@@ -154,6 +182,7 @@ def billing_state(organization_id: UUID, request: Request, user: User = Depends(
     sub = current_subscription(session, organization_id)
     return plan_state(ent) | {
         "billing_configured": bool(_provider(request).configured), "provider": _provider(request).name,
+        "has_billing_customer": bool(org and org.billing_customer_id),
         "legacy": ent.source == "legacy", "seats_used": guards.active_member_count(session, organization_id),
         "comp_expires_at": ent.comp_expires_at.isoformat() if ent.comp_expires_at else None,
         "grace_ends_at": ent.grace_ends_at.isoformat() if ent.grace_ends_at else None,
@@ -193,43 +222,45 @@ class CheckoutInput(BaseModel):
 @router.post("/organizations/{organization_id}/billing/checkout")
 def checkout(organization_id: UUID, payload: CheckoutInput, request: Request, user: User = Depends(current_user),
              session: Session = Depends(database_session)) -> dict[str, object]:
-    _require_owner(session, organization_id, user.id)
-    provider = _provider(request)
-    if not provider.configured:
-        raise BillingNotConfigured
-    org = session.get(Organization, organization_id)
-    if not is_sellable(payload.plan_key) or account_type_of(payload.plan_key) != org.account_type:
-        raise EntitlementError("invalid_plan", "plan does not match the account type", status_code=422)
-    plan = plan_for(payload.plan_key, _settings(request))
-    if plan.max_seats is not None and payload.seats > plan.max_seats:
-        raise EntitlementError("invalid_seats", "seat count outside the plan range", limit=plan.max_seats, status_code=422)
-    if org.account_type == PERSONAL and payload.seats != 1:
-        raise EntitlementError("invalid_seats", "personal plans have one seat", limit=1, status_code=422)
-    members = guards.active_member_count(session, organization_id)
-    if payload.seats < min(members, plan.max_seats or members):
-        raise EntitlementError("seats_below_members", "fewer seats than active members", limit=members, status_code=409)
-    billing_page = _billing_page_url(_settings(request), organization_id)
-    result = provider.create_checkout(CheckoutRequest(
-        organization_id=organization_id, plan_key=payload.plan_key, interval=payload.interval, seats=payload.seats,
-        customer_email=user.email, external_customer_id=org.billing_customer_id, promotion_code=payload.promotion_code,
-        success_url=f"{billing_page}?checkout=success", cancel_url=f"{billing_page}?checkout=canceled"))
-    if result.external_customer_id and not org.billing_customer_id:
-        org.billing_provider, org.billing_customer_id = provider.name, result.external_customer_id
-    return {"url": result.url}
+    with _friendly_errors():
+        _require_owner(session, organization_id, user.id)
+        provider = _provider(request)
+        if not provider.configured:
+            raise BillingNotConfigured
+        org = session.get(Organization, organization_id)
+        if not is_sellable(payload.plan_key) or account_type_of(payload.plan_key) != org.account_type:
+            raise EntitlementError("invalid_plan", "plan does not match the account type", status_code=422)
+        plan = plan_for(payload.plan_key, _settings(request))
+        if plan.max_seats is not None and payload.seats > plan.max_seats:
+            raise EntitlementError("invalid_seats", "seat count outside the plan range", limit=plan.max_seats, status_code=422)
+        if org.account_type == PERSONAL and payload.seats != 1:
+            raise EntitlementError("invalid_seats", "personal plans have one seat", limit=1, status_code=422)
+        members = guards.active_member_count(session, organization_id)
+        if payload.seats < min(members, plan.max_seats or members):
+            raise EntitlementError("seats_below_members", "fewer seats than active members", limit=members, status_code=409)
+        billing_page = _billing_page_url(_settings(request), organization_id)
+        result = provider.create_checkout(CheckoutRequest(
+            organization_id=organization_id, plan_key=payload.plan_key, interval=payload.interval, seats=payload.seats,
+            customer_email=user.email, external_customer_id=org.billing_customer_id, promotion_code=payload.promotion_code,
+            success_url=f"{billing_page}?checkout=success", cancel_url=f"{billing_page}?checkout=canceled"))
+        if result.external_customer_id and not org.billing_customer_id:
+            org.billing_provider, org.billing_customer_id = provider.name, result.external_customer_id
+        return {"url": result.url}
 
 
 @router.post("/organizations/{organization_id}/billing/portal")
 def portal(organization_id: UUID, request: Request, user: User = Depends(current_user),
            session: Session = Depends(database_session)) -> dict[str, object]:
-    _require_owner(session, organization_id, user.id)
-    provider = _provider(request)
-    if not provider.configured:
-        raise BillingNotConfigured
-    org = session.get(Organization, organization_id)
-    result = provider.open_portal(PortalRequest(
-        organization_id=organization_id, external_customer_id=org.billing_customer_id,
-        return_url=f"{_billing_page_url(_settings(request), organization_id)}?billing=portal"))
-    return {"url": result.url}
+    with _friendly_errors():
+        _require_owner(session, organization_id, user.id)
+        provider = _provider(request)
+        if not provider.configured:
+            raise BillingNotConfigured
+        org = session.get(Organization, organization_id)
+        result = provider.open_portal(PortalRequest(
+            organization_id=organization_id, external_customer_id=org.billing_customer_id,
+            return_url=f"{_billing_page_url(_settings(request), organization_id)}?billing=portal"))
+        return {"url": result.url}
 
 
 class ChangePlanInput(BaseModel):
@@ -241,45 +272,47 @@ class ChangePlanInput(BaseModel):
 @router.post("/organizations/{organization_id}/billing/change-plan")
 def change_plan(organization_id: UUID, payload: ChangePlanInput, request: Request, user: User = Depends(current_user),
                 session: Session = Depends(database_session)) -> dict[str, object]:
-    _require_owner(session, organization_id, user.id)
-    provider = _provider(request)
-    if not provider.configured:
-        raise BillingNotConfigured
-    org = session.get(Organization, organization_id)
-    sub = current_subscription(session, organization_id)
-    if sub is None:
-        raise EntitlementError("subscription_required", "no active subscription", status_code=409)
-    if not is_sellable(payload.plan_key) or account_type_of(payload.plan_key) != org.account_type:
-        raise EntitlementError("invalid_plan", "plan does not match the account type", status_code=422)
-    plan = plan_for(payload.plan_key, _settings(request))
-    members = guards.active_member_count(session, organization_id)
-    if (plan.max_seats is not None and payload.seats > plan.max_seats) or payload.seats < members:
-        raise EntitlementError("invalid_seats", "seat count outside the plan range or below active members",
-                               limit=plan.max_seats, used=members, status_code=409)
-    provider.change_plan(subscription=sub, plan_key=payload.plan_key, interval=payload.interval, seats=payload.seats)
-    sub.plan_key, sub.interval, sub.seats = payload.plan_key, payload.interval, payload.seats
-    session.flush()
-    from app.entitlements.resolver import project
-    project(session, org, _settings(request))
-    return plan_state(entitlements_for(session, organization_id))
+    with _friendly_errors():
+        _require_owner(session, organization_id, user.id)
+        provider = _provider(request)
+        if not provider.configured:
+            raise BillingNotConfigured
+        org = session.get(Organization, organization_id)
+        sub = current_subscription(session, organization_id)
+        if sub is None:
+            raise EntitlementError("subscription_required", "no active subscription", status_code=409)
+        if not is_sellable(payload.plan_key) or account_type_of(payload.plan_key) != org.account_type:
+            raise EntitlementError("invalid_plan", "plan does not match the account type", status_code=422)
+        plan = plan_for(payload.plan_key, _settings(request))
+        members = guards.active_member_count(session, organization_id)
+        if (plan.max_seats is not None and payload.seats > plan.max_seats) or payload.seats < members:
+            raise EntitlementError("invalid_seats", "seat count outside the plan range or below active members",
+                                   limit=plan.max_seats, used=members, status_code=409)
+        provider.change_plan(subscription=sub, plan_key=payload.plan_key, interval=payload.interval, seats=payload.seats)
+        sub.plan_key, sub.interval, sub.seats = payload.plan_key, payload.interval, payload.seats
+        session.flush()
+        from app.entitlements.resolver import project
+        project(session, org, _settings(request))
+        return plan_state(entitlements_for(session, organization_id))
 
 
 @router.post("/organizations/{organization_id}/billing/cancel")
 def cancel(organization_id: UUID, request: Request, user: User = Depends(current_user),
            session: Session = Depends(database_session)) -> dict[str, object]:
-    _require_owner(session, organization_id, user.id)
-    provider = _provider(request)
-    if not provider.configured:
-        raise BillingNotConfigured
-    sub = current_subscription(session, organization_id)
-    if sub is None:
-        raise EntitlementError("subscription_required", "no active subscription", status_code=409)
-    provider.cancel(subscription=sub, at_period_end=True)
-    sub.cancel_at_period_end = True
-    session.flush()
-    from app.entitlements.resolver import invalidate
-    invalidate(session, organization_id)
-    return plan_state(entitlements_for(session, organization_id))
+    with _friendly_errors():
+        _require_owner(session, organization_id, user.id)
+        provider = _provider(request)
+        if not provider.configured:
+            raise BillingNotConfigured
+        sub = current_subscription(session, organization_id)
+        if sub is None:
+            raise EntitlementError("subscription_required", "no active subscription", status_code=409)
+        provider.cancel(subscription=sub, at_period_end=True)
+        sub.cancel_at_period_end = True
+        session.flush()
+        from app.entitlements.resolver import invalidate
+        invalidate(session, organization_id)
+        return plan_state(entitlements_for(session, organization_id))
 
 
 __all__ = ["BUSINESS", "public_router", "router"]
