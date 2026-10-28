@@ -114,6 +114,10 @@ def _is_card_error(error: Exception) -> bool:
     return any(cls.__name__ == "CardError" for cls in type(error).__mro__)
 
 
+def _is_invalid_request(error: Exception) -> bool:
+    return any(cls.__name__ == "InvalidRequestError" for cls in type(error).__mro__)
+
+
 def _require_seats(seats: Any) -> int:
     """Seat counts come from the API layer; anything below 1 is a client error, never silently clamped."""
     try:
@@ -252,7 +256,15 @@ class StripeBillingProvider:
             params["discounts"] = [{"promotion_code": self._promotion_code_id(request.promotion_code)}]
         else:
             params["allow_promotion_codes"] = True  # mutually exclusive with discounts
-        session = self.client.v1.checkout.sessions.create(params=params)
+        try:
+            session = self.client.v1.checkout.sessions.create(params=params)
+        except Exception as error:
+            # A ``promo_...`` id is passed through unchecked; Stripe rejects an unknown/ineligible one on the discounts param.
+            if request.promotion_code and _is_invalid_request(error) and any(
+                    part in str(getattr(error, "param", "") or "") for part in ("promotion_code", "discounts")):
+                raise EntitlementError("invalid_promotion_code", "promotion code not found or inactive",
+                                       status_code=422) from error
+            raise
         return CheckoutSession(url=get_field(session, "url"), external_customer_id=customer_id,
                                external_id=get_field(session, "id"))
 

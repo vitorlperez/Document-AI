@@ -122,3 +122,23 @@ def test_billing_state_tells_whether_a_provider_customer_exists(api) -> None:
     state = client.get(f"/organizations/{org}/billing").json()
     assert state["has_billing_customer"] is True
     assert "cus_42" not in str(state)  # the id itself is never exposed
+
+
+@pytest.mark.parametrize("status,blocked", [("active", True), ("trialing", True), ("past_due", True), ("unpaid", True),
+                                            ("paused", True), ("incomplete", False)])
+def test_checkout_is_refused_while_a_subscription_is_live(api, status, blocked) -> None:
+    from uuid import UUID
+
+    from app.organizations.models import Subscription
+
+    client, factory, _ = api
+    org = create_org(client)["id"]
+    with factory.begin() as session:
+        session.add(Subscription(organization_id=UUID(org), provider="fake", external_subscription_id="sub_1",
+                                 plan_key="personal_basic", status=status, seats=1, interval="month"))
+    response = client.post(f"/organizations/{org}/billing/checkout", json={"plan_key": "personal_pro"})
+    if blocked:
+        assert response.status_code == 409 and response.json()["code"] == "subscription_exists"
+        assert response.json()["detail"] == USER_MESSAGES["subscription_exists"]
+    else:
+        assert response.status_code == 200, response.text

@@ -44,7 +44,10 @@ USER_MESSAGES = {
     "plan_unavailable": "Este plano não está disponível para contratação no momento. Tente novamente em instantes.",
     "payment_failed": "O pagamento não foi aprovado. Confira a forma de pagamento e tente novamente.",
     "subscription_required": "Esta organização ainda não tem uma assinatura ativa. Escolha um plano para continuar.",
+    "subscription_exists": "Esta organização já tem uma assinatura. Para trocar de plano ou pagamento, use Gerenciar cobrança.",
 }
+# A new Checkout while one of these exists would bill the organization twice.
+BLOCKING_SUBSCRIPTION_STATUSES = {"active", "trialing", "past_due", "unpaid", "paused"}
 
 
 @contextmanager
@@ -227,6 +230,10 @@ def checkout(organization_id: UUID, payload: CheckoutInput, request: Request, us
         provider = _provider(request)
         if not provider.configured:
             raise BillingNotConfigured
+        guards.lock_organization(session, organization_id)  # serializes with invites/other billing calls
+        existing = current_subscription(session, organization_id)
+        if existing is not None and existing.status in BLOCKING_SUBSCRIPTION_STATUSES:
+            raise EntitlementError("subscription_exists", "organization already has a subscription", status_code=409)
         org = session.get(Organization, organization_id)
         if not is_sellable(payload.plan_key) or account_type_of(payload.plan_key) != org.account_type:
             raise EntitlementError("invalid_plan", "plan does not match the account type", status_code=422)
@@ -277,6 +284,7 @@ def change_plan(organization_id: UUID, payload: ChangePlanInput, request: Reques
         provider = _provider(request)
         if not provider.configured:
             raise BillingNotConfigured
+        guards.lock_organization(session, organization_id)
         org = session.get(Organization, organization_id)
         sub = current_subscription(session, organization_id)
         if sub is None:
@@ -304,6 +312,7 @@ def cancel(organization_id: UUID, request: Request, user: User = Depends(current
         provider = _provider(request)
         if not provider.configured:
             raise BillingNotConfigured
+        guards.lock_organization(session, organization_id)
         sub = current_subscription(session, organization_id)
         if sub is None:
             raise EntitlementError("subscription_required", "no active subscription", status_code=409)

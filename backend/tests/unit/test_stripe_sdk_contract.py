@@ -537,3 +537,21 @@ def test_stripe_mock_accepts_catalog_sync_writes():
     creates = [a for a in actions if a.op == "create"]
     assert creates, "the mock holds none of the Arquivio catalog, so creates are planned"
     assert len(apply_actions(client, creates)) == len(creates)
+
+
+def test_invalid_promotion_code_id_is_a_422_not_a_500(provider, http):
+    http.routes["POST /v1/checkout/sessions"] = (400, {"error": {
+        "type": "invalid_request_error", "message": "No such promotion code: 'promo_nope'",
+        "param": "discounts[0][promotion_code]"}})
+    with pytest.raises(EntitlementError) as error:
+        provider.create_checkout(checkout(promotion_code="promo_nope", external_customer_id="cus_1"))
+    assert (error.value.code, error.value.status_code) == ("invalid_promotion_code", 422)
+
+
+def test_other_invalid_requests_still_propagate(provider, http):
+    http.routes["POST /v1/checkout/sessions"] = (400, {"error": {
+        "type": "invalid_request_error", "message": "Invalid locale", "param": "locale"}})
+    with pytest.raises(stripe.InvalidRequestError):
+        provider.create_checkout(checkout(promotion_code="promo_x", external_customer_id="cus_1"))
+    with pytest.raises(stripe.InvalidRequestError):  # no promotion code sent: never relabelled
+        provider.create_checkout(checkout(external_customer_id="cus_1"))
