@@ -38,7 +38,9 @@ def get_field(obj: Any, key: str, default: Any = None) -> Any:
     try:
         return obj[key]
     except (KeyError, TypeError, IndexError):
-        return getattr(obj, key, default)
+        value = getattr(obj, key, default)
+        # A missing field must not resolve to a StripeObject method of the same name (e.g. ``Subscription.update``).
+        return default if callable(value) else value
 
 
 def normalize_interval(interval: str) -> str:
